@@ -338,3 +338,57 @@ def test_the_trainer_asks_the_site_only_what_a_ride_needs(page: Page, live_serve
     ready = page.frame_locator("iframe.virtual-ride-frame").locator("html").evaluate("() => phase === 'menu'")
     if ready:  # a browser that draws 3D reaches the menu, and asks; one that cannot stops before asking
         assert "GET /api/v1/virtual-ride/me" in asked, asked
+
+
+_RIDE_ALONE = ("text/ru.js", "text/kk.js", "text/en.js", "js/page.js", "js/track.js", "js/physics.js", "js/ride.js")
+
+
+def _ride_alone(page: Page) -> list[str]:
+    """The ride's own files in an empty page -- no scene, no HUD, no devices -- and a rider at a flat road's start."""
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.set_content("<!doctype html><title>ride</title>")
+    for name in _RIDE_ALONE:
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    page.evaluate(
+        """() => {
+            const L = 20000, T = { N: 2, X: [0, 0], Y: [800, 800], Z: [0, -L], D: [0, L], L, loop: false };
+            world = { T, S0: 20, FIN: L - 8, route: { id: 'flat' }, lms: [] };
+            me = startRider(newRider('me', 0, 75, world.S0, 2)); Object.assign(me, { bike: 8, CdA: .3, Crr: .004 });
+            phase = 'race';
+        }"""
+    )
+    return errors
+
+
+def test_the_ride_rides_without_the_page_the_scene_or_the_devices(page: Page):
+    errors = _ride_alone(page)
+    ridden = page.evaluate(
+        """() => {
+            const inp = { P: 200, cad: 85, mode: 'power', hr: 140, direct: false };
+            for (let i = 1; i <= 3600; i++) stepRide(1 / 60, inp, i / 60);
+            const st = me.stats;
+            return { m: me.s - world.S0, t: st.t, points: me.track.length, beats: st.nHR, real: st.real };
+        }"""
+    )
+    # a minute at 200 W: carried along the road, the track kept a point a second, the power meter counted as real
+    assert ridden["m"] > 400 and ridden["t"] == pytest.approx(60) and ridden["points"] >= 59, ridden
+    assert ridden["beats"] == 3600 and ridden["real"], ridden
+    assert errors == [], errors
+
+
+def test_a_rider_settles_where_the_power_meets_the_drag(page: Page):
+    _ride_alone(page)
+    v, rho, g = page.evaluate(
+        """() => {
+            const inp = { P: 200, cad: 85, mode: 'power', direct: false };
+            for (let i = 1; i <= 240 * 60; i++) stepRide(1 / 60, inp, i / 60);
+            return [me.v, PHYS.rho, PHYS.g];
+        }"""
+    )
+    # on the flat 200 W = v * (air rho * CdA * v^2 / 2 + rolling Crr * m * g): CdA .3, Crr .004, 75 + 8 kg
+    lo, hi = 0.0, 30.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if mid * (rho * 0.3 * mid * mid / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
+    assert v == pytest.approx(lo, abs=0.01)

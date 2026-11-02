@@ -12,7 +12,6 @@ const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 7
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
 settings.char = 'me'; // выбор героев убран: игрок всегда в форме UBT
 
-function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, phase: Math.random() * 6, finishT: null, P: 0 }; }
 function spawnBots(n, levelKey, s0) {
   bots.forEach(removeRiderModel); bots = [];
   const lv = LEVELS[levelKey] || LEVELS.mid, W = world.route.width, pool = CHARS.filter(c => c.id !== settings.char);
@@ -78,13 +77,12 @@ function startRace() {
     $('#gl').classList.remove('hidden'); onResize();
     if (!world || world.route.id !== route.id) buildWorld(route);
     world.lms.forEach(l => { l.done = false; });
-    me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5));
+    me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5)));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
-    me.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
-    me.powerLog = []; me.pAcc = 0; me.pT = 0; me.track = []; stravaShow(null, null);
+    stravaShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
     spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
-    me.lap = 0; Work.active = false;
+    Work.active = false;
     if (planMode) { Work.start(settings.plan.steps); gearF = settings.plan.steps[0].f; gearR = settings.plan.steps[0].r; }
     else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
     $('#planBox').classList.toggle('hidden', !planMode); $('#board').classList.toggle('hidden', planMode || freeMode);
