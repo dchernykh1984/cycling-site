@@ -2,23 +2,10 @@
 /* ---------------- Состояние заезда ---------------- */
 function bikeType() { return BIKE_TYPES[settings.bikeType] || BIKE_TYPES.road; }
 function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (settings.height || 178) / 178, tire: bikeType().tire }); } // размер модели — по росту
-// Аэродинамика по росту и весу: лобовая площадь гонщика с велосипедом (формула Бассетта и соавт., 1999)
-// A = 0,0293 · рост(м)^0,725 · вес(кг)^0,425 + 0,0604; CdA = 0,88 · A (посадка с руками на тормозных ручках)
-function riderAero(hcm, kg) { const A = 0.0293 * Math.pow((hcm || 178) / 100, .725) * Math.pow(kg || 75, .425) + .0604; return { A, CdA: A * .88 }; }
 function renderBodyHint() {
   const el = $('#bodyHint'); if (!el) return; const h = settings.height || 178, m = settings.mass || 75, a = riderAero(h, m), bt = bikeType(), bk = settings.bikeKg || bt.kg, cda = a.CdA * bt.aero, bmi = m / Math.pow(h / 100, 2);
   el.textContent = t('body.hint', { a: numF(a.A, 2), cda: numF(cda, 3), total: fmt1(m + bk), bike: lc(bt.name), kg: fmt1(bk) }) + (bmi < 15 || bmi > 45 ? t('body.check') : '');
 } // игрок всегда в форме UBT
-function styleMult(b, grade) {
-  switch (b.ch.style) {
-    case 'climber': return grade > .03 ? 1.13 : .96;
-    case 'sprinter': return world.FIN - b.s < 450 ? 1.32 : .97;
-    case 'rouleur': return Math.abs(grade) < .02 ? 1.06 : .97;
-    case 'attacker': return ((clockT + b.seed * 9) % 90) < 16 ? 1.27 : .95;
-    default: return 1;
-  }
-}
-const LEVELS = { easy: [1.8, 2.4], mid: [2.5, 3.2], hard: [3.3, 4.2] };
 let phase = 'loading', bots = [], me = null, raceT = 0, cdT = 0, paused = false, photo = false, demoP = 150;
 let routeSel = store.get('route', 'center');
 const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
