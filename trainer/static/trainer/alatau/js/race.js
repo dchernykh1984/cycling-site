@@ -19,7 +19,7 @@ function styleMult(b, grade) {
   }
 }
 const LEVELS = { easy: [1.8, 2.4], mid: [2.5, 3.2], hard: [3.3, 4.2] };
-let phase = 'loading', bots = [], me = null, raceT = 0, cdT = 0, paused = false, photo = false, demoP = 150, cogIdx = 5;
+let phase = 'loading', bots = [], me = null, raceT = 0, cdT = 0, paused = false, photo = false, demoP = 150;
 let routeSel = store.get('route', 'center');
 const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица

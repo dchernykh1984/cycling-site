@@ -5,7 +5,6 @@ const TRAINERS = { // мощность по скорости колеса на �
   mag: v => 7.5 * v + 0.0012 * v * v * v,
   rollers: v => 4.0 * v + 0.0006 * v * v * v
 };
-const COGS = [11, 12, 13, 14, 15, 17, 19, 21, 24, 28];
 const PHYS = { g: 9.81, rho: 1.08, CdA: .32, Crr: .005, bike: 8.5 };
 function stepRider(r, P, grade, dt) {
   const m = r.mass + (r.bike || PHYS.bike), th = Math.atan(grade);
