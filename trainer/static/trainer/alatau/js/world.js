@@ -1,15 +1,25 @@
 'use strict';
 /* ---------------- Мир: рельеф, дорога, здания, деревья, горы, старт и финиш ---------------- */
+let scenery = null; // the 3D world drawn along the course being ridden
 function disposeWorld() {
-  if (!world) return;
-  scene.remove(world.group);
-  world.group.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat || m === osmMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
-  world = null;
+  if (!scenery) return;
+  scene.remove(scenery);
+  scenery.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat || m === osmMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
+  scenery = null; world = null;
+}
+function terrainH(T, x, z) {
+  const n = nearest(T, x, z); let h = n.y - 1.2;
+  if (T.route.scenery === 'gorge') {
+    if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
+  } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
+  return h;
 }
 let world_osmKept = 0;
+// the course to ride, and the scenery along it
 function buildWorld(route) {
   disposeWorld();
-  const T = buildTrack(route), grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
+  world = buildCourse(route);
+  const { T, S0, FIN, lms } = world, grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
   const W = route.width, gorge = route.scenery === 'gorge';
   // --- рельеф ---
   const margin = gorge ? 2400 : 1600;
@@ -55,7 +65,6 @@ function buildWorld(route) {
 
   // --- здания ---
   const bl = [];
-  const lms = nearLandmarks(T);
   const osmB = route.osm ? prepOSM(route.osm.buildings) : null;
   const tooClose = (x, z, rad) => nearest(T, x, z).d < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
@@ -103,11 +112,9 @@ function buildWorld(route) {
   // --- ориентиры ---
   lms.forEach(lm => addLandmark(grp, lm, lm, T));
   // --- старт и финиш ---
-  const S0 = 20, FIN = T.loop ? S0 + T.L : T.L - 8;
   if (T.loop) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 
-  scene.add(grp);
-  world = { T, group: grp, S0, FIN, route, lms };
+  scene.add(grp); scenery = grp;
   return world;
 }
 function addTrees(grp, list) {

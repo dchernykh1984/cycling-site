@@ -2,7 +2,6 @@
 /* ---------------- Камера ---------------- */
 const cam = { q: new THREE.Quaternion(), init: false, yaw: 0, pitch: 0, dist: 7, oyaw: .6, opitch: .25 };
 const _p0 = {}, _p1 = {}, _m4 = new THREE.Matrix4(), _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _qd = new THREE.Quaternion(), _e = new THREE.Euler(0, 0, 0, 'YXZ');
-function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + o.rx * R.lane; o.pz = o.z + o.rz * R.lane; return o; }
 let viewMode = 'fpv';
 const _p2 = {}, _v3 = new THREE.Vector3();
 function setFov(f) { if (Math.abs(camera.fov - f) > .01) { camera.fov = f; camera.updateProjectionMatrix(); } }
