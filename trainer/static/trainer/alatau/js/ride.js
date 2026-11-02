@@ -9,6 +9,13 @@ let rideMode = 'race';  // режим текущего заезда: race | plan
 // what the page does when something happens in the ride: go, lap, backToStart, sight, finish, planStep, planSoon, planDone
 const rideHooks = {};
 function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args); }
+function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, phase: Math.random() * 6, finishT: null, P: 0 }; }
+// a rider at the start of a ride: nothing ridden yet
+function startRider(r) {
+  r.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
+  r.powerLog = []; r.pAcc = 0; r.pT = 0; r.track = []; r.lap = 0;
+  return r;
+}
 const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
 // [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
 function trackPoint(inp) {
