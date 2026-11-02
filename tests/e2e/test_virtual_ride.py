@@ -411,3 +411,28 @@ def test_the_ride_keeps_real_time_on_a_device_that_draws_a_few_frames_a_second(p
     (fast, fast_time), (slow, slow_time) = ridden
     assert fast_time == pytest.approx(120) and slow_time == pytest.approx(120), ridden
     assert slow == pytest.approx(fast, rel=0.005), ridden
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
+    page.add_init_script(
+        """(() => {
+            let now = 1000; const frames = [];
+            performance.now = () => now;
+            window.requestAnimationFrame = callback => frames.push(callback);
+            window.drawFrame = ms => { now += ms; frames.splice(0).forEach(callback => callback(now)); };
+            window.takeTime = ms => { now += ms; };
+        })()"""
+    )
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.evaluate("drawFrame(16)")
+    if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
+        pytest.skip("this browser cannot draw 3D, so no ride starts in it")
+    page.evaluate(
+        "() => { const build = buildWorld; buildWorld = route => { build(route); takeTime(2000); }; startRace(); }"
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(16)")
+    # a slow phone takes two seconds to build the course: none of them comes off the countdown, which a
+    # group race starts at the server's time
+    assert page.evaluate("cdT") > 3.9
