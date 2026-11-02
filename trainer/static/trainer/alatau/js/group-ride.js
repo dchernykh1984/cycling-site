@@ -27,7 +27,6 @@ async function mpCheckLink() {
   catch (e) { if (e.status === 404) mpNote(t('mp.linkMissing')); }
 }
 let groupRide = null;   // { gid, startAt } во время групповой гонки
-let rideMode = 'race';  // режим текущего заезда: race | plan | free
 const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
 const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
 const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
@@ -100,7 +99,6 @@ function mpSyncRemotes() {
 function mpStepRemote(b, dt) {
   const pred = b.sampleS + b.v * Math.min(2.5, (performance.now() - b.sampleT) / 1000);
   if (Math.abs(pred - b.s) > 60) b.s = pred; else b.s += (pred - b.s) * (1 - Math.exp(-dt * 4));
-  b.phase += (b.cad || 0) / 60 * Math.PI * 2 * dt;
 }
 // итоги групповой гонки с сервера: время тех, кто финишировал, и тех, кто ещё едет
 async function mpPollResults(gid, until) {

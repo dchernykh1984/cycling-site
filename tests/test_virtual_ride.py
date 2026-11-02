@@ -72,6 +72,19 @@ class VirtualRideTests(TestCase):
         self.assertIsNone(re.search(r"sendBeacon|XMLHttpRequest|WebSocket|EventSource", code))
         self.assertIn("const API_BASE = '/api/v1/virtual-ride';", code)
 
+    def test_the_ride_is_stepped_apart_from_its_drawing(self):
+        files = {path.name: path.read_text(encoding="utf-8") for path in trainer_page.local_files()}
+        # the physics and the ride's step touch neither the page, the scene nor the devices: the drawing only reads them
+        page_or_scene = re.compile(
+            r"\$\(|\b(?:document|window|navigator|THREE|scene|camera|renderer|riderModels|Sensors|Trainer)\."
+            r"|\.(?:innerHTML|textContent|classList)\b|\b(?:t|tr|toast|updateModeUI)\("
+        )
+        for name in ("physics.js", "ride.js"):
+            self.assertEqual(page_or_scene.findall(files[name]), [], name)
+        # and nothing but the ride steps the physics
+        stepping = {name for name, code in files.items() if re.search(r"\b(?:stepRider|directStep)\(", code)}
+        self.assertEqual(stepping, {"physics.js", "ride.js"})
+
     def test_the_page_is_in_the_sections_sitemap(self):
         self.assertIn(reverse("virtual_ride"), self.client.get("/sitemap-sections.xml").content.decode())
 

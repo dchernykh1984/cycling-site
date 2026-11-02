@@ -11,7 +11,7 @@ function readInput() {
   let direct = false;
   if (mode === 'demo' && Work.active && Work.idx >= 0) { const gt = gearTeeth(gearF, gearR); wheelKmh = cad * gt[0] / gt[1] * circ * 60 / 1000; P = curve(wheelKmh); direct = true; }
   if (mode === 'cadence' && settings.cadSpeed !== 'physics') direct = true;
-  return { P, cad, mode, wheelKmh, direct };
+  return { P, cad, mode, wheelKmh, direct, hr: Sensors.hr() };
 }
 function updateModeUI() {
   const mode = Sensors.mode(), inRace = phase === 'race' || phase === 'countdown';

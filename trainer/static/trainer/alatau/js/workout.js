@@ -1,28 +1,5 @@
 'use strict';
-/* ---- выполнение плана во время заезда ---- */
-const Work = {
-  active: false, steps: [], ends: [], idx: -1, t: 0, ss: [], warned: false,
-  start(steps) {
-    this.steps = steps.map(s => Object.assign({}, s)); let acc = 0; this.ends = this.steps.map(s => (acc += s.min * 60));
-    this.ss = this.steps.map(() => ({ time: 0, sumCad: 0, n: 0, zone: 0 })); this.idx = -1; this.t = 0; this.active = true; this.warned = false;
-  },
-  total() { return this.ends[this.ends.length - 1] || 0; },
-  cur() { return this.steps[Math.max(0, this.idx)]; },
-  update(dt, cad, mode) {
-    this.t += dt;
-    let i = this.ends.findIndex(e => this.t < e); if (i < 0) { this.active = false; return true; }
-    if (i !== this.idx) {
-      this.idx = i; this.warned = false; const s = this.steps[i];
-      if (mode === 'cadence' || mode === 'demo') { gearF = s.f; gearR = s.r; updateModeUI(); }
-      toast(t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }), 5);
-    }
-    const s = this.steps[i], st = this.ss[i];
-    st.time += dt; if (cad > 0) { st.sumCad += cad * dt; st.n += dt; } if (Math.abs((cad || 0) - s.cad) <= 5) st.zone += dt;
-    const left = this.ends[i] - this.t, nx = this.steps[i + 1];
-    if (!this.warned && left < 10 && nx) { this.warned = true; toast(t('plan.soon', { g: gearLabel(nx.f, nx.r), c: nx.cad }), 4); }
-    return false;
-  }
-};
+/* ---- план во время заезда: подсказки и итоги (сам план выполняет заезд, js/ride.js) ---- */
 function updatePlanHUD(cad) {
   if (!Work.active || Work.idx < 0) return;
   const i = Work.idx, s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60;

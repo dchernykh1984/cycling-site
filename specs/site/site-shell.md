@@ -30,8 +30,13 @@ home page, Map, Knowledge Base) is addressed under its own language's prefix
 lock and full screen; a link opens the same page on its own. The page is a static file that loads
 its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
 words (`text/<lang>.js`), its route and rider catalogues (`data/`) and its code, a file per part of
-it (`js/`: the scene, the riders, the devices, the race, the HUD, the site's API and the rest).
-Production names each file after a hash of its content, as it names the page, and the page links
+it (`js/`: the physics, the ride, the scene, the riders, the devices, the HUD, the site's API and the
+rest). The ride is stepped apart from its drawing: the physics (`js/physics.js` -- the speed from
+power or gear, the riders' drag, the bots, what a smart trainer is set to) and the ride's state and
+step (`js/ride.js` -- the countdown, the rider, the bots, laps, sights, the finish, a plan's steps)
+neither read the page nor draw, and nothing else steps the physics. Each frame the ride takes its
+step, the trainer is told the grade, and the scene and the HUD are drawn from the ride's state; what
+happened in the step reaches the page through `rideHooks`. Production names each file after a hash of its content, as it names the page, and the page links
 those names (`cycling_site/storage.py`), so the page and its files are cached together. The ride
 runs in the browser: the page talks to the site only through `Site.req` (`js/site.js`), to
 `/api/v1/virtual-ride/` -- who rides, a member's records and rides, the lobby and group races, a

@@ -1,13 +1,6 @@
 'use strict';
 /* ---------------- Strava: every finished ride goes there as a virtual ride, once the member allows it ---------------- */
-const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
 const STRAVA_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>';
-// [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
-function trackPoint(inp) {
-  const o = riderPos(me, {}), ll = unproj(o.px, o.pz);
-  return [Math.round(raceT * 10) / 10, +ll.lat.toFixed(6), +ll.lon.toFixed(6), Math.round(o.y * 10) / 10, Math.round(me.stats.dist * 10) / 10,
-    Math.round(clamp(me.v, 0, 40) * 100) / 100, Math.round(clamp(inp.P || 0, 0, 3000)), Math.round(clamp(inp.cad || 0, 0, 250)), Math.round(clamp(Sensors.hr() || 0, 0, 260))];
-}
 // on the setup page: an offer to connect Strava, to a member who has not; turning it off is the profile's
 function renderStravaNote() {
   const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available && !who.strava_connected);
