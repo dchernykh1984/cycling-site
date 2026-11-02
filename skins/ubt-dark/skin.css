@@ -170,6 +170,8 @@ p, li, label, td, th, .form-label, .form-control, .form-select, .dropdown-item, 
 }
 a { text-underline-offset: 0.18em; }
 .text-muted { color: var(--ubt-muted) !important; }
+/* Lux greys it to #55595c with !important, 2.6:1 here -- the event page's empty favourite star. */
+:root[data-skin="ubt-dark"] .text-secondary { color: var(--ubt-muted) !important; }
 ::selection { background: var(--ubt-orange-100); color: var(--ubt-ink); }
 
 /* The page heading carries a short orange bar -- the one place the eye starts on every page. */

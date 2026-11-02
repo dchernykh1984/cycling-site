@@ -3,10 +3,16 @@
 import datetime
 
 import pytest
+from django.conf import settings
 from playwright.sync_api import Page, expect
 
 from calendar_app.models import Competition, CompetitionFavorite
 from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, inject_session, open_filter_panel
+from tests.e2e.contrast import legibility
+
+# The dark skin draws the empty star in Lux's grey, 2.46:1: kept as it is, as light and dark do not
+# change unasked, and never allowed to get worse. Every other skin clears 3:1.
+FAINT_STAR = {"dark": 2.4}
 
 
 @pytest.mark.django_db(transaction=True)
@@ -30,6 +36,17 @@ def test_star_toggles_favorite_on_detail_page(page: Page, live_server, superuser
     page.locator("#favorite-btn").click()
     expect(page.locator("#favorite-btn")).to_have_attribute("aria-pressed", "false")
     assert not CompetitionFavorite.objects.filter(user=superuser, competition=approved_competition).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_empty_star_can_be_seen_in_this_skin(page: Page, live_server, superuser, approved_competition):
+    """The star is a button without words, so the glyph is what shows it is there: 3:1 (WCAG 1.4.11)."""
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
+    star = page.locator("#favorite-btn")
+    expect(star).to_have_attribute("aria-pressed", "false")
+    page.mouse.move(0, 0)
+    assert legibility(star) >= FAINT_STAR.get(settings.DEFAULT_SKIN, 3)
 
 
 @pytest.mark.django_db(transaction=True)
