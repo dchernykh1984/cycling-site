@@ -47,6 +47,10 @@ const Work = {
     return false;
   }
 };
+// A frame's time is ridden in steps of at most RIDE_STEP s, so the ride keeps real time however fast the
+// device draws, down to frames of MAX_FRAME s; a longer one is a stall (a hidden page) and counts as MAX_FRAME.
+const RIDE_STEP = .05, MAX_FRAME = .5;
+function advanceRide(dt, inp, t) { const n = Math.max(1, Math.ceil(dt / RIDE_STEP)); for (let i = 0; i < n; i++) stepRide(dt / n, inp, t); }
 // one step of the ride, dt seconds at time t: the countdown, the rider, the bots and what the rider passes
 const _ry = {};
 function stepRide(dt, inp, t) {

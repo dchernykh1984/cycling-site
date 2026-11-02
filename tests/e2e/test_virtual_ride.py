@@ -392,3 +392,22 @@ def test_a_rider_settles_where_the_power_meets_the_drag(page: Page):
         mid = (lo + hi) / 2
         lo, hi = (mid, hi) if mid * (rho * 0.3 * mid * mid / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
     assert v == pytest.approx(lo, abs=0.01)
+
+
+def test_the_ride_keeps_real_time_on_a_device_that_draws_a_few_frames_a_second(page: Page):
+    _ride_alone(page)
+    ridden = page.evaluate(
+        """() => {
+            const inp = { P: 200, cad: 85, mode: 'power', direct: false }, ride = fps => {
+                me = startRider(newRider('me', 0, 75, world.S0, 2)); Object.assign(me, { bike: 8, CdA: .3, Crr: .004 });
+                raceT = 0;
+                for (let i = 1; i <= 120 * fps; i++) advanceRide(1 / fps, inp, i / fps);
+                return [me.s - world.S0, raceT];
+            };
+            return [ride(60), ride(4)];
+        }"""
+    )
+    # two minutes at 200 W, drawn 60 times a second and 4: two minutes ridden either way, and the same road
+    (fast, fast_time), (slow, slow_time) = ridden
+    assert fast_time == pytest.approx(120) and slow_time == pytest.approx(120), ridden
+    assert slow == pytest.approx(fast, rel=0.005), ridden

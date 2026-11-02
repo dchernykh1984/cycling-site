@@ -15,13 +15,13 @@ Object.assign(rideHooks, {
 });
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(.1, (now - last) / 1000); last = now; clockT += dt;
+  const dt = Math.min(MAX_FRAME, (now - last) / 1000); last = now; clockT += dt;
   Sensors.tick(now);
   if (phase === 'menu') { renderPreview(dt); return; } // на странице настроек 3D-сцену не рисуем
   if (!world) return;
   const T = world.T, frozen = paused || photo, grade = gradeAt(T, me.s);
   const inp = frozen ? { P: 0, cad: 0, mode: 'demo' } : readInput();
-  if (!frozen) { stepRide(dt, inp, clockT); showCount(); }
+  if (!frozen) { advanceRide(dt, inp, clockT); showCount(); }
   Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0);
   MP.lastInp = inp;
   // боты: позиция и анимация
