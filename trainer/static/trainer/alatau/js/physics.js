@@ -38,6 +38,7 @@ function botPower(b, grade, toFinish, t) {
 function botCadence(b, grade, t) {
   return b.v > .5 ? clamp((b.finishT != null ? 62 : (b.ch.style === 'sprinter' ? 94 : b.ch.style === 'climber' ? 86 : 90)) + Math.sin(t * .37 + b.seed) * 4 - Math.max(0, grade) * 120, 58, 115) : 0;
 }
-// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, no wind, Crr 0.004, CdA·ρ/2 ≈ 0.51
-const TRAINER_SIM = { crr: .004, wind: .51 };
+// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, with no wind, rolling
+// resistance crr 0.004 and air resistance CdA·ρ/2 ≈ 0.51
+const TRAINER_SIM = { crr: .004, air: .51 };
 function trainerGrade(gradePct, difficulty) { return Math.round(gradePct * difficulty / 100 * 10) / 10; }

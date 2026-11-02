@@ -75,7 +75,7 @@ class BLEDev {
   onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast(t('dev.noControl')); } }
   async setGrade(g) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
-    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(TRAINER_SIM.crr * 1e4), Math.round(TRAINER_SIM.wind * 100)]); return true; } // FTMS: wind 0, grade in 0.01 %, Crr in 0.0001, CdA·ρ/2 in 0.01
+    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(TRAINER_SIM.crr * 1e4), Math.round(TRAINER_SIM.air * 100)]); return true; } // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, CdA·ρ/2 in 0.01
     catch (e) { return false; } finally { this.busy = false; }
   }
   onIBD(dv) {
