@@ -18,8 +18,7 @@ let world_osmKept = 0;
 // the course to ride, and the scenery along it
 function buildWorld(route) {
   disposeWorld();
-  world = buildCourse(route);
-  const { T, S0, FIN, lms } = world, grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
+  const course = buildCourse(route), { T, S0, FIN, lms } = course, grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
   const W = route.width, gorge = route.scenery === 'gorge';
   // --- рельеф ---
   const margin = gorge ? 2400 : 1600;
@@ -115,6 +114,7 @@ function buildWorld(route) {
   if (T.loop) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 
   scene.add(grp); scenery = grp;
+  world = course; // only once its scenery stands: a build that failed half way leaves nothing to ride
   return world;
 }
 function addTrees(grp, list) {
