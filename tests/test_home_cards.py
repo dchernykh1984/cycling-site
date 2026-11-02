@@ -120,6 +120,21 @@ class HomePageDrawsTheCardsTests(TestCase):
             with self.subTest(skin=key):
                 self.assertNotIn("home-body", self._page(key))
 
+    def test_every_skin_offers_the_edit_page_to_the_owner_alone(self):
+        """A skin's own home page asks who may edit it itself; the role matrix sees the default skin only."""
+        members = {User.Role.OWNER: True, User.Role.ADMIN: False, User.Role.ORGANIZER: False}
+        for key in TILES:
+            with self.subTest(skin=key, who="guest"):
+                self.client.logout()
+                self.assertNotIn('href="/en/home/edit/"', self._page(key, "en"))
+            for role, offered in members.items():
+                with self.subTest(skin=key, who=str(role)):
+                    member = _member(f"{role}-{key}", role)
+                    member.theme = key
+                    member.save(update_fields=["theme"])
+                    self.client.force_login(member)
+                    self.assertEqual('href="/en/home/edit/"' in self._page(key, "en"), offered)
+
 
 class OwnerEditsTheCardsTests(TestCase):
     def setUp(self):
