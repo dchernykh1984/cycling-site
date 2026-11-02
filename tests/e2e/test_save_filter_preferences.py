@@ -10,6 +10,7 @@ from playwright.sync_api import Page, expect
 
 from accounts.models import User
 from tests.e2e.conftest import inject_session, open_filter_panel
+from tests.e2e.contrast import legibility
 
 
 def _member(**extra):
@@ -44,6 +45,23 @@ def test_the_button_saves_the_filter_and_the_next_visit_opens_with_it(page: Page
     page.goto(f"{live_server.url}/ru/calendar/list/")
     open_filter_panel(page)
     expect(page).to_have_url(re.compile(rf"event_type={race.pk}"))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_button_still_reads_once_it_has_saved(page: Page, live_server, race_event_type):
+    """Disabled, the button says the filter is saved: in the skin the suite runs in, that must still read.
+
+    3:1 rather than 4.5:1, as a disabled control is drawn faded; Dark UBT drew it in Lux's near-black.
+    """
+    inject_session(page, live_server, _member())
+    page.goto(f"{live_server.url}/ru/calendar/list/?event_type={race_event_type.pk}")
+    open_filter_panel(page)
+    button = page.locator("#save-filter-btn")
+    button.click()
+    expect(button).to_be_disabled()
+    page.mouse.move(0, 0)
+    button.evaluate("el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => {})))")
+    assert legibility(button) >= 3
 
 
 @pytest.mark.django_db(transaction=True)

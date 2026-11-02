@@ -253,6 +253,10 @@ main .ubt-hero h1::after { display: none; }
     --bs-btn-active-color: var(--ubt-on-orange);
     --bs-btn-active-bg: var(--ubt-orange);
     --bs-btn-active-border-color: var(--ubt-orange);
+    /* "Saved" on the filter's button, a relay's full team: Lux's own disabled colour is near-black. */
+    --bs-btn-disabled-color: var(--ubt-ink);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--ubt-muted);
     border-width: 1.5px;
 }
 /* The language on screen: filled with the lightest colour, as UBT Almaty fills it with the darkest. */
@@ -297,6 +301,9 @@ main .ubt-hero h1::after { display: none; }
     --bs-btn-active-color: var(--ubt-on-orange);
     --bs-btn-active-bg: var(--ubt-orange);
     --bs-btn-active-border-color: var(--ubt-orange);
+    --bs-btn-disabled-color: var(--ubt-ink);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--ubt-muted);
 }
 .btn-outline-danger {
     --bs-btn-color: var(--skin-danger);
@@ -308,6 +315,9 @@ main .ubt-hero h1::after { display: none; }
     --bs-btn-active-color: var(--ubt-on-orange);
     --bs-btn-active-bg: var(--skin-danger);
     --bs-btn-active-border-color: var(--skin-danger);
+    --bs-btn-disabled-color: var(--skin-danger);
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: var(--skin-danger);
 }
 /* The dark mode paints these outline buttons with !important (skins/dark/skin.css), and Lux paints
    them with selectors as strong; answered in kind, they draw from the variables above again. */
@@ -327,9 +337,9 @@ main .ubt-hero h1::after { display: none; }
     border-color: var(--bs-btn-active-border-color) !important;
 }
 :root[data-skin="ubt-dark"] :is(.btn-outline-primary, .btn-outline-secondary, .btn-outline-dark, .btn-outline-danger):is([disabled], .disabled) {
-    color: var(--bs-btn-disabled-color, var(--bs-btn-color)) !important;
-    background-color: var(--bs-btn-disabled-bg, var(--bs-btn-bg)) !important;
-    border-color: var(--bs-btn-disabled-border-color, var(--bs-btn-border-color)) !important;
+    color: var(--bs-btn-disabled-color) !important;
+    background-color: var(--bs-btn-disabled-bg) !important;
+    border-color: var(--bs-btn-disabled-border-color) !important;
 }
 /* The tab on screen keeps the site's own fill (calendar_app/_view_switcher.html), which the pressed
    outline button above would otherwise tint. */
