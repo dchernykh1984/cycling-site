@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Рендер ---------------- */
-let renderer, scene, camera, rt, postScene, postCam, postMat, world = null, sky, sun, hemi, bars, playerAvatar;
+let renderer, scene, camera, rt, postScene, postCam, postMat, sky, sun, hemi, bars, playerAvatar;
 const LOOKS = {
   bodycam: { fov: 98, dist: .62, ca: .012, grain: .085, vig: .75, exp: 1.06, sat: .74, con: 1.2, tint: [.95, 1.02, 1.0], mono: 0, blur: 1, sway: 1, h: 1.36 },
   clean: { fov: 72, dist: 0, ca: 0, grain: 0, vig: .2, exp: 1.0, sat: 1.06, con: 1.03, tint: [1, 1, 1], mono: 0, blur: .25, sway: .35, h: 1.62 },

@@ -2,6 +2,11 @@
 /* ---------------- HUD ---------------- */
 let hudAcc = 0, toastT = 0;
 function toast(t, dur) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); toastT = dur || 2.5; }
+// the countdown over the scene: the seconds left, then "go", gone 0.8 s after the start
+function showCount() {
+  const el = $('#count'); if (cdT < -0.8) { el.classList.add('hidden'); return; }
+  const n = Math.ceil(cdT); el.textContent = n > 0 ? n : t('count.go');
+}
 function gradeColor(g) { const p = g * 100; if (p < -1.5) return 'rgba(61,123,182,.85)'; if (p < 2) return 'rgba(76,124,85,.85)'; if (p < 5) return 'rgba(214,160,40,.88)'; if (p < 8) return 'rgba(214,110,40,.9)'; return 'rgba(195,50,59,.92)'; }
 let profBase = null, profScale = null;
 function drawProfileBase() {
