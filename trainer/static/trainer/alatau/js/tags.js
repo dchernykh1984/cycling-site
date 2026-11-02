@@ -31,7 +31,7 @@ function placeTags() {
   camera.updateMatrixWorld();
   const vis = [];
   tagEls.forEach(t => {
-    const g = t.b.mesh.g, sz = (t.b.ch && t.b.ch.size) || 1;
+    const g = riderModels.get(t.b).g, sz = (t.b.ch && t.b.ch.size) || 1;
     _tv.set(g.position.x, g.position.y + 2.05 * sz, g.position.z);
     const d = _tv.distanceTo(camera.position); _tv.project(camera);
     if (_tv.z > 1 || d > 140 || d < 2.2) { t.el.style.display = 'none'; return; }

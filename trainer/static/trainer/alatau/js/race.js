@@ -14,13 +14,13 @@ settings.char = 'me'; // выбор героев убран: игрок всег
 
 function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, phase: Math.random() * 6, finishT: null, P: 0 }; }
 function spawnBots(n, levelKey, s0) {
-  bots.forEach(b => scene.remove(b.mesh.g)); bots = [];
+  bots.forEach(removeRiderModel); bots = [];
   const lv = LEVELS[levelKey] || LEVELS.mid, W = world.route.width, pool = CHARS.filter(c => c.id !== settings.char);
   for (let i = 0; i < n; i++) {
     const ch = pool[i % pool.length];
     const b = newRider(ch.name, ch.a, ch.mass, s0 - 3 - (i % 4) * 2.2, clamp(1.2 + (i % 3) * 1.6 + Math.random() * .4, .8, W / 2 - 1));
     b.ch = ch; b.wkg = lv[0] + (lv[1] - lv[0]) * (i + Math.random()) / Math.max(1, n); b.seed = Math.random() * 100;
-    b.mesh = makeRider(ch); scene.add(b.mesh.g); bots.push(b);
+    addRiderModel(b, ch); bots.push(b);
   }
 }
 function setPlayerChar(id) {
@@ -55,7 +55,7 @@ function startMenu() { // страница 1: настройки (3D-сцена 
   phase = 'menu'; paused = false; photo = false;
   $('#menu').classList.remove('hidden'); $('#gl').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#count').classList.add('hidden');
   $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');
-  bots.forEach(b => scene.remove(b.mesh.g)); bots = [];
+  bots.forEach(removeRiderModel); bots = [];
   me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
   applyLook('clean'); setView(settings.view, true); renderStartSum();
   groupRide = null; rideMode = settings.mode; MP.resultsFor = null; $('#btnPhoto').classList.remove('hidden'); if (MP.status === 'on') mpSchedule(300); renderMP();

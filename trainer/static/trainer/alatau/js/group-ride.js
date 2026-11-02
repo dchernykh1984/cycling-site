@@ -81,15 +81,15 @@ function mpSyncRemotes() {
   const want = new Map(MP.riders.filter(r => r.route === world.route.id).map(r => [r.user_id, r]));
   // кто пропал из ответа, остаётся на трассе ещё 20 с: связь у соседа могла просто запнуться
   const nowMs = performance.now();
-  for (let i = bots.length - 1; i >= 0; i--) { const b = bots[i]; if (b.remote && !want.has(b.uid) && nowMs - (b.seenAt || 0) > 20000) { scene.remove(b.mesh.g); bots.splice(i, 1); } }
+  for (let i = bots.length - 1; i >= 0; i--) { const b = bots[i]; if (b.remote && !want.has(b.uid) && nowMs - (b.seenAt || 0) > 20000) { removeRiderModel(b); bots.splice(i, 1); } }
   let changedFinish = false;
   want.forEach((r, uid) => {
     let b = bots.find(x => x.remote && x.uid === uid);
     if (!b) {
       const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col });
       b = newRider(r.name || t('mp.rider'), col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
-      Object.assign(b, { remote: true, uid, ch, mesh: makeRider(ch), seed: 0, wkg: 0 });
-      scene.add(b.mesh.g); bots.push(b);
+      Object.assign(b, { remote: true, uid, ch, seed: 0, wkg: 0 });
+      addRiderModel(b, ch); bots.push(b);
     }
     b.seenAt = nowMs; b.sampleS = r.distance_m; b.sampleT = performance.now() - (r.age_s || 0) * 1000; b.v = r.speed_ms || 0; b.cad = r.cadence_rpm || 0; b.P = r.power_w || 0;
     b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || t('mp.rider');
