@@ -42,13 +42,15 @@ def clean_folder_link(url: str) -> str:
 
 
 def preview_url(folder_url: str, file_name: str) -> str:
-    """Dropbox's own address for one file of a shared folder: opens it, with download, signed out."""
+    """One file of a shared folder by name: a browser opens the file, but Dropbox's phone app opens the
+    whole folder, so it is only the fallback while the file's own address is not known."""
     return f"{folder_url}&dl=0&preview={quote(file_name)}"
 
 
 def open_url(photo) -> str:
-    """Where a photo opens: the index's own link for it, or Dropbox's address in the shared folder."""
-    return photo.original_view_url or preview_url(photo.album.folder_url, photo.file_name)
+    """Where a photo opens: the index's own link for it, else the file's own address in the shared
+    folder once the site has asked Dropbox for it, else the folder's preview of it."""
+    return photo.original_view_url or photo.file_url or preview_url(photo.album.folder_url, photo.file_name)
 
 
 def _read_capped(response, limit: int) -> bytes:
@@ -107,6 +109,20 @@ class DropboxAdapter:
             arg={"url": folder_url, "path": "/" + path},
             limit=limit or settings.PHOTO_INDEX_MAX_BYTES,
         )
+
+    def file_url(self, folder_url: str, path: str) -> str:
+        """The file's own address inside the shared folder, which Dropbox's phone app opens as that file."""
+        data = self._call(
+            "https://api.dropboxapi.com/2/sharing/get_shared_link_metadata",
+            body={"url": folder_url, "path": "/" + path},
+            limit=_MAX_ERROR_BYTES,
+            timeout=(3.05, 5),
+        )
+        url = json.loads(data).get("url") or ""
+        # Only ever an address inside the album's own folder on Dropbox: the site redirects readers there.
+        if not url.startswith(folder_url.split("?", 1)[0].rsplit("/", 1)[0] + "/"):
+            raise DropboxError("invalid-link", "Dropbox named no address inside the folder for this file")
+        return url
 
     def thumbnail(self, folder_url: str, path: str) -> bytes:
         return self._call(

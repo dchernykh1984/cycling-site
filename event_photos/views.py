@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST
 from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
-from event_photos.dropbox import DropboxError, open_url
+from event_photos.dropbox import DropboxError
 from event_photos.forms import DeclaredBibForm, ExternalAlbumForm
 from event_photos.index import SAMPLE
 from event_photos.models import (
@@ -86,7 +86,9 @@ def _declare_form(user, competition, declared_cards) -> DeclaredBibForm | None:
 
 def _with_links(photos, competition):
     for photo in photos:
-        photo.open_url = open_url(photo)
+        # Through the site, which asks Dropbox for the file's own address: its phone app opens the
+        # folder's preview address as the whole folder.
+        photo.open_url = reverse("event_photos:open", args=[competition.pk, photo.pk])
         # No thumbnail can be made for a big original without a preview: the card shows a placeholder.
         photo.thumb_url = (
             ""
@@ -400,8 +402,8 @@ def thumb(request, pk, photo_pk, digest):
     return thumbnail_response(request.user, _event(request, pk), photo_pk)
 
 
-def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpResponse:
-    """A photo's thumbnail for ``user``, by the album's visibility; the page and the API share it."""
+def visible_photo(user, competition, photo_pk) -> IndexedPhoto:
+    """A photo ``user`` may see, by its album's visibility and its own; the page and the API share it."""
     photo = get_object_or_404(
         IndexedPhoto.objects.select_related("album"),
         pk=photo_pk,
@@ -410,6 +412,17 @@ def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpRespon
     )
     if photo.is_hidden and not can_manage_albums(user, competition):
         raise Http404
+    return photo
+
+
+def open_photo(request, pk, photo_pk):
+    """Send the reader to the photo in Dropbox, by the file's own address."""
+    return redirect(actions.file_url(visible_photo(request.user, _event(request, pk), photo_pk)))
+
+
+def thumbnail_response(user, competition, photo_pk) -> FileResponse | HttpResponse:
+    """A photo's thumbnail for ``user``, by the album's visibility; the page and the API share it."""
+    photo = visible_photo(user, competition, photo_pk)
     try:
         path = actions.thumbnail_path(photo)
         response = FileResponse(path.open("rb"), content_type="image/jpeg")

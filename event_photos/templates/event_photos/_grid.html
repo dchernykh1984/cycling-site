@@ -1,10 +1,11 @@
 {% load i18n %}
-{% comment %}Thumbnails of event photos; each opens the photo in Dropbox in a new tab, where it can be
-viewed full size and downloaded. With can_mark, each card carries the athlete's two marks.{% endcomment %}
+{% comment %}Thumbnails of event photos; each opens the photo in Dropbox in a new tab, through the site,
+which sends the reader to the file's own address, where it can be viewed full size and downloaded.
+With can_mark, each card carries the athlete's two marks.{% endcomment %}
 <div class="gallery-grid event-photos-grid">
   {% for photo in photos %}
   <div class="event-photo" id="photo-{{ photo.pk }}">
-    <a class="gallery-card" href="{{ photo.open_url }}" target="_blank" rel="noopener">
+    <a class="gallery-card" href="{{ photo.open_url }}" target="_blank" rel="noopener nofollow">
       {% if photo.thumb_url %}
       {% include "event_photos/_thumbnail.html" with thumbnail_url=photo.thumb_url %}
       {% else %}

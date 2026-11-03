@@ -38,6 +38,7 @@ MEDIA = tempfile.mkdtemp()
 class FakeAdapter:
     files: ClassVar[dict[str, bytes]] = {}
     thumbnails_served = 0
+    links_asked = 0
 
     def read_file(self, folder_url, path, limit=None):
         from event_photos.dropbox import DropboxError
@@ -51,6 +52,10 @@ class FakeAdapter:
     def thumbnail(self, folder_url, path):
         FakeAdapter.thumbnails_served += 1
         return b"jpeg:" + path.encode()
+
+    def file_url(self, folder_url, path):
+        FakeAdapter.links_asked += 1
+        return f"https://www.dropbox.com/scl/fo/abc123/AK{len(path)}/{path}?rlkey=k&dl=0"
 
 
 def _sha(text: str) -> str:
@@ -90,6 +95,29 @@ def _index(photos, *, revision=1, album=ALBUM, removed=(), complete=True) -> byt
 
 
 class AdapterTests(TestCase):
+    @override_settings(DROPBOX_APP_KEY="k", DROPBOX_APP_SECRET="s")
+    def test_a_files_own_address_is_asked_for_and_must_lie_inside_the_folder(self):
+        from event_photos.dropbox import DropboxAdapter, DropboxError
+
+        def answer(url):
+            response = mock.MagicMock(status_code=200)
+            response.iter_content.return_value = [json.dumps({".tag": "file", "url": url}).encode()]
+            response.__enter__.return_value = response
+            return response
+
+        inside = "https://www.dropbox.com/scl/fo/abc123/AKfile/a.jpg?rlkey=k&dl=0"
+        with mock.patch("event_photos.dropbox.requests.post", return_value=answer(inside)) as post:
+            self.assertEqual(DropboxAdapter().file_url(FOLDER, "a.jpg"), inside)
+        self.assertEqual(post.call_args.args[0], "https://api.dropboxapi.com/2/sharing/get_shared_link_metadata")
+        self.assertEqual(post.call_args.kwargs["json"], {"url": FOLDER, "path": "/a.jpg"})
+        for elsewhere in ("https://example.com/a.jpg", "https://www.dropbox.com/scl/fo/other/AKfile/a.jpg?rlkey=x", ""):
+            with (
+                self.subTest(elsewhere),
+                mock.patch("event_photos.dropbox.requests.post", return_value=answer(elsewhere)),
+            ):
+                with self.assertRaises(DropboxError):
+                    DropboxAdapter().file_url(FOLDER, "a.jpg")
+
     @override_settings(DROPBOX_APP_KEY="k", DROPBOX_APP_SECRET="s")
     def test_thumbnail_requests_have_a_shorter_timeout_than_index_imports(self):
         from event_photos.dropbox import DropboxAdapter
@@ -225,6 +253,7 @@ class EventPhotosTestCase(TestCase):
     def setUp(self):
         FakeAdapter.files = {}
         FakeAdapter.thumbnails_served = 0
+        FakeAdapter.links_asked = 0
         self.race = Competition.objects.create(
             title_ru="Alatau XCO", date_start=datetime.date(2026, 10, 11), status=Competition.Status.APPROVED
         )
@@ -592,7 +621,7 @@ class PageAndApiTests(EventPhotosTestCase):
         self.client.force_login(self.athlete)
         page = self.client.get(self._url("registration", self.reg.pk))
         self.assertContains(page, "&#10003;")
-        self.assertContains(page, "preview=IMG_0001.jpg")
+        self.assertContains(page, f'href="{self._url("open", self.photo.pk)}"')
         response = self.client.post(self._url("decide", self.reg.pk, self.photo.pk), {"state": "not_me"})
         self.assertIn("?undo=", response["Location"])
         self.assertEqual(PhotoDecision.objects.get().state, "not_me")
@@ -847,7 +876,7 @@ class PageAndApiTests(EventPhotosTestCase):
         photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=4))
         page = self.client.get(self._url("event") + "?bib=12")
         self.assertNotContains(page, self._url("thumb", photo.pk, photo.source_sha256[:16]))
-        self.assertContains(page, "preview=IMG_0003.jpg")  # still opens in Dropbox
+        self.assertContains(page, f'href="{self._url("open", photo.pk)}"')  # still opens in Dropbox
         self.client.force_login(self.organizer)
         self.assertContains(self.client.get(self._url("manage")), "IMG_0003.jpg")
         served = FakeAdapter.thumbnails_served
@@ -1409,3 +1438,53 @@ class DeclaredBibTests(EventPhotosTestCase):
             with self.subTest(url):
                 self.assertEqual(self.client.get(url, **stranger_auth).status_code, 404)
         self.assertEqual(self.client.get("/api/v1/event-photos/me/declared-bibs", **stranger_auth).json(), [])
+
+
+class OpenPhotoTests(EventPhotosTestCase):
+    """A photo opens as itself, also in Dropbox's phone app: by the file's own address, which the app
+    opens as the file -- a folder's preview address it opens as the whole folder."""
+
+    def setUp(self):
+        super().setUp()
+        self._publish(_index([_photo(1), _photo(2)]))
+        self.photo = IndexedPhoto.objects.get(photo_uuid=uuid.UUID(int=2))
+        self.own_address = "https://www.dropbox.com/scl/fo/abc123/AK12/IMG_0001.jpg?rlkey=k&dl=0"
+
+    def _url(self, name, *args):
+        from django.urls import reverse
+
+        return reverse(f"event_photos:{name}", args=[self.race.pk, *args])
+
+    def test_a_photo_opens_by_the_files_own_address_which_is_asked_for_once(self):
+        page = self.client.get(self._url("album", self.album.pk))
+        self.assertContains(page, f'href="{self._url("open", self.photo.pk)}"')
+        self.assertNotContains(page, "preview=")
+        for _ in range(2):
+            opened = self.client.get(self._url("open", self.photo.pk))
+            self.assertRedirects(opened, self.own_address, fetch_redirect_response=False)
+        self.assertEqual(FakeAdapter.links_asked, 1)
+        listed = self.client.get(f"/api/v1/event-photos/albums/{self.album.pk}/photos").json()["photos"]
+        api_link = next(p["open_url"] for p in listed if p["id"] == self.photo.pk)
+        self.assertEqual(api_link, f"http://testserver/api/v1/event-photos/photos/{self.photo.pk}/open")
+        self.assertRedirects(self.client.get(api_link), self.own_address, fetch_redirect_response=False)
+        self.assertEqual(FakeAdapter.links_asked, 1)
+
+    def test_while_dropbox_cannot_be_asked_a_photo_opens_by_the_folders_preview_as_before(self):
+        from event_photos.dropbox import DropboxError
+
+        with mock.patch.object(FakeAdapter, "file_url", side_effect=DropboxError("unavailable")):
+            opened = self.client.get(self._url("open", self.photo.pk))
+        self.assertIn("&preview=IMG_0001.jpg", opened["Location"])
+        self.assertEqual(IndexedPhoto.objects.get(pk=self.photo.pk).file_url, "")
+
+    def test_a_hidden_photo_does_not_open_and_a_moved_one_is_asked_for_again(self):
+        self.client.get(self._url("open", self.photo.pk))
+        IndexedPhoto.objects.filter(pk=self.photo.pk).update(is_hidden=True)
+        self.assertEqual(self.client.get(self._url("open", self.photo.pk)).status_code, 404)
+        self.assertEqual(self.client.get(f"/api/v1/event-photos/photos/{self.photo.pk}/open").status_code, 404)
+        IndexedPhoto.objects.filter(pk=self.photo.pk).update(is_hidden=False)
+        moved = _photo(1)
+        moved["original"]["path"] = "day-2/IMG_0001.jpg"
+        self._publish(_index([moved, _photo(2)], revision=2))
+        self.assertEqual(IndexedPhoto.objects.get(pk=self.photo.pk).file_url, "")
+        self.assertIn("/day-2/IMG_0001.jpg?", self.client.get(self._url("open", self.photo.pk))["Location"])

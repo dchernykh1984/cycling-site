@@ -21,4 +21,5 @@ urlpatterns = [
     path("<int:pk>/photos/registration/<int:reg_pk>/<int:photo_pk>/", views.decide, name="decide"),
     path("<int:pk>/photos/registration/<int:reg_pk>/undo/", views.undo, name="undo"),
     path("<int:pk>/photos/thumb/<int:photo_pk>/<str:digest>.jpg", views.thumb, name="thumb"),
+    path("<int:pk>/photos/open/<int:photo_pk>/", views.open_photo, name="open"),
 ]

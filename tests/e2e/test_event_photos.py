@@ -219,7 +219,7 @@ def test_unavailable_previews_keep_the_original_link_and_have_no_broken_image(pa
     page.goto(f"{live_server.url}/en/calendar/{race.pk}/photos/registration/{reg.pk}/")
     expect(page.locator("[data-photo-unavailable]").first).to_be_visible()
     expect(page.locator(".event-photo img").first).to_be_hidden()
-    expect(page.locator(".event-photo a").first).to_have_attribute("href", re.compile("preview=IMG_0001.jpg"))
+    expect(page.locator(".event-photo a").first).to_have_attribute("href", re.compile(r"/photos/open/\d+/$"))
 
 
 @pytest.mark.django_db(transaction=True)

@@ -5,7 +5,7 @@ from http import HTTPStatus
 
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import Field
@@ -15,7 +15,6 @@ from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
-from event_photos.dropbox import open_url
 from event_photos.forms import DeclaredBibForm, ExternalAlbumForm
 from event_photos.models import (
     BIB_MAX_LENGTH,
@@ -39,6 +38,7 @@ from event_photos.views import (
     bib_archive_name,
     thumbnail_response,
     visible_albums,
+    visible_photo,
 )
 from registrations.models import CompetitionRegistration
 
@@ -215,7 +215,8 @@ def _photos(request, qs, page_number, decisions=None) -> dict:
                 "is_hidden": photo.is_hidden,
                 # The API's own address, so the caller's token is what decides, as for the list.
                 "thumbnail_url": _thumbnail_url(request, photo),
-                "open_url": open_url(photo),
+                # The API's own address too: it sends the caller on to the file's own address in Dropbox.
+                "open_url": request.build_absolute_uri(f"/api/v1/event-photos/photos/{photo.pk}/open"),
                 "confirmed": getattr(photo, "confirmed", None),
                 "decision": decisions.get(photo.pk) if decisions is not None else None,
             }
@@ -227,6 +228,13 @@ def _photos(request, qs, page_number, decisions=None) -> dict:
 def photo_thumbnail(request, photo_id: int, v: str = ""):
     photo = get_object_or_404(IndexedPhoto.objects.select_related("album"), pk=photo_id)
     return thumbnail_response(request.auth, _competition(request.auth, photo.album.competition_id), photo.pk)
+
+
+@router.get("/photos/{photo_id}/open", auth=optional_auth, summary="A photo in Dropbox (a redirect)")
+def photo_open(request, photo_id: int):
+    photo = get_object_or_404(IndexedPhoto.objects.select_related("album"), pk=photo_id)
+    competition = _competition(request.auth, photo.album.competition_id)
+    return redirect(actions.file_url(visible_photo(request.auth, competition, photo.pk)))
 
 
 @router.get("/competitions/{competition_id}/albums", response=list[AlbumOut], auth=optional_auth)
