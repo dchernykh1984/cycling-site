@@ -137,7 +137,9 @@ def test_a_member_without_a_bib_names_one_finds_its_photos_unmarked_and_takes_it
     )
     inject_session(page, live_server, member)
     with translation_override("ru"):
-        label, save, remove, yes = (gettext(s) for s in ("My bib at this event", "Save", "Remove", "This is me"))
+        label, save, remove, yes, bib = (
+            gettext(s) for s in ("My bib at this event", "Save", "Remove", "This is me", "bib")
+        )
         counters = gettext("Confirmed: %(confirmed)s. To check: %(to_check)s.") % {"confirmed": 1, "to_check": 1}
     overview = f"{live_server.url}/ru/calendar/{race.pk}/photos/"
     page.goto(overview)
@@ -158,7 +160,7 @@ def test_a_member_without_a_bib_names_one_finds_its_photos_unmarked_and_takes_it
     expect(page.locator(".event-photo")).to_have_count(2)
     expect(page.get_by_role("button", name=yes)).to_have_count(0)
     page.goto(f"{live_server.url}/ru/accounts/profile/")
-    expect(page.locator(".event-photo-cards")).to_contain_text("12")
+    expect(page.locator(".event-photo-cards")).to_contain_text(f"{bib} 12")
     page.goto(overview)
     _follow(page, page.get_by_role("button", name=remove))
     expect(page.locator(".event-photo-cards")).to_have_count(0)
