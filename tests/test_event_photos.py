@@ -1354,6 +1354,16 @@ class DeclaredBibTests(EventPhotosTestCase):
                 self._declare("7")
                 self.assertFalse(DeclaredBib.objects.exists())
 
+    def test_a_named_bib_can_still_be_taken_back_once_the_events_albums_are_hidden(self):
+        self._declare("7")
+        ExternalAlbum.objects.filter(pk=self.album.pk).update(is_hidden=True)
+        self.assertEqual(self.client.get(self._url("event")).context["declare_form"].initial, {"bib": "7"})
+        refused = self._declare("8", follow=True)
+        self.assertEqual(len(list(refused.context["messages"])), 1)
+        self.assertEqual(DeclaredBib.objects.get().bib, "7")
+        self.client.post(self._url("declare"), {"action": "remove"})
+        self.assertFalse(DeclaredBib.objects.exists())
+
     def test_a_named_bib_is_read_as_an_index_reads_a_bib(self):
         for bib in ("7\x07", "x" * 33, "   "):
             with self.subTest(bib=bib):
