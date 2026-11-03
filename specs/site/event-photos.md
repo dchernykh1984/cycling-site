@@ -121,7 +121,8 @@ start list's bib: marks still do.
   or a dropped request is retried with a growing, randomly spread delay (never sooner than
   Retry-After, at most 30 s apart, 12 times) once the card is in view again, so a busy server
   delays a preview instead of losing it. Each web process allows at most two concurrent storage
-  thumbnail downloads and uses four Gunicorn threads so marks need not wait for them. Cached
+  calls -- thumbnail downloads and photo addresses (FR-EVP-015) -- and uses four Gunicorn threads so
+  marks need not wait for them. Cached
   thumbnails bypass this limit, and a disk below its reserve refuses before downloading. Busy or
   temporarily unavailable thumbnails return private, non-cacheable 503 with Retry-After on both
   site and API. Index imports retain their own timeout.
@@ -150,7 +151,9 @@ start list's bib: marks still do.
   `GET /event-photos/photos/{id}/open`, which a photo page's `open_url` names; both follow the photo's
   visibility. The file's own address comes from `sharing/get_shared_link_metadata` with the site's app
   on the first open and is kept (`IndexedPhoto.file_url`); a newer index that moves the file empties
-  it. The site redirects only to an address inside the album's own folder on Dropbox.
+  it. Asking takes one of the storage slots of FR-EVP-011; with both busy, or Dropbox not answering,
+  the reader goes to the folder's preview at once. The site redirects only to an address inside the
+  album's own folder on Dropbox.
 
 ## Key Entities
 

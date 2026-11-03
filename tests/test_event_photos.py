@@ -699,7 +699,7 @@ class PageAndApiTests(EventPhotosTestCase):
         slots.acquire()
         slots.acquire()
         url = self._url("thumb", self.photo.pk, self.photo.source_sha256[:16])
-        with mock.patch.object(actions, "_THUMBNAIL_SLOTS", slots):
+        with mock.patch.object(actions, "_STORAGE_SLOTS", slots):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 503)
             self.assertEqual(response["Retry-After"], "1")
@@ -1481,6 +1481,17 @@ class OpenPhotoTests(EventPhotosTestCase):
             opened = self.client.get(self._url("open", self.photo.pk))
         self.assertIn("&preview=IMG_0001.jpg", opened["Location"])
         self.assertEqual(IndexedPhoto.objects.get(pk=self.photo.pk).file_url, "")
+
+    def test_with_both_storage_slots_busy_a_photo_opens_by_the_folders_preview_at_once(self):
+        from threading import BoundedSemaphore
+
+        slots = BoundedSemaphore(2)
+        slots.acquire()
+        slots.acquire()
+        with mock.patch.object(actions, "_STORAGE_SLOTS", slots):
+            opened = self.client.get(self._url("open", self.photo.pk))
+        self.assertIn("&preview=IMG_0001.jpg", opened["Location"])
+        self.assertEqual(FakeAdapter.links_asked, 0)
 
     def test_a_hidden_photo_does_not_open_and_a_moved_one_is_asked_for_again(self):
         self.client.get(self._url("open", self.photo.pk))
