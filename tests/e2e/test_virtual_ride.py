@@ -394,6 +394,27 @@ def test_a_rider_settles_where_the_power_meets_the_drag(page: Page):
     assert v == pytest.approx(lo, abs=0.01)
 
 
+def test_a_smart_trainer_is_set_to_the_riders_own_drag(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    sent, rho = page.evaluate(
+        """() => {
+            globalThis.settings = { difficulty: 50 };
+            const trainer = new BLEDev({ name: 'trainer' }), sent = [];
+            trainer.ctrl = true; trainer.roles.add('trainer'); trainer.write = async bytes => { sent.push(bytes); };
+            Sensors.devs.push(trainer);
+            Object.assign(me, { CdA: .35, Crr: .0058 });
+            Trainer.update(10, 6, me);
+            return [sent, PHYS.rho];
+        }"""
+    )
+    # 6 % at half the difficulty is 3 % (300 in 0.01 %); then the rider's own rolling resistance (in 0.0001)
+    # and wind resistance CdA x air density (in 0.01 kg/m), not a trainer's defaults
+    assert sent == [[0x11, 0, 0, 300 & 255, 300 >> 8, 58, round(0.35 * rho * 100)]], sent
+    assert errors == [], errors
+
+
 def test_the_ride_keeps_real_time_on_a_device_that_draws_a_few_frames_a_second(page: Page):
     _ride_alone(page)
     ridden = page.evaluate(

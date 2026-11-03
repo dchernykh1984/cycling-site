@@ -23,7 +23,7 @@ function frame(now) {
   const T = world.T, frozen = paused || photo, grade = gradeAt(T, me.s);
   const inp = frozen ? { P: 0, cad: 0, mode: 'demo' } : readInput();
   if (!frozen) { advanceRide(dt, inp, clockT); showCount(); }
-  Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0);
+  Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0, me);
   MP.lastInp = inp;
   // боты: позиция и анимация
   bots.forEach(b => {

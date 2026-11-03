@@ -38,7 +38,8 @@ function botPower(b, grade, toFinish, t) {
 function botCadence(b, grade, t) {
   return b.v > .5 ? clamp((b.finishT != null ? 62 : (b.ch.style === 'sprinter' ? 94 : b.ch.style === 'climber' ? 86 : 90)) + Math.sin(t * .37 + b.seed) * 4 - Math.max(0, grade) * 120, 58, 115) : 0;
 }
-// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, with no wind, rolling
-// resistance crr 0.004 and air resistance CdA·ρ/2 ≈ 0.51
-const TRAINER_SIM = { crr: .004, air: .51 };
+// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, with no wind, and to the
+// rider's own drag as the ride counts it: rolling resistance Crr and wind resistance Cw = CdA·ρ in kg/m
+// (as ANT+ FE-C defines it: frontal area × drag coefficient × air density; the air drag is ½·Cw·v²)
 function trainerGrade(gradePct, difficulty) { return Math.round(gradePct * difficulty / 100 * 10) / 10; }
+function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * PHYS.rho }; }
