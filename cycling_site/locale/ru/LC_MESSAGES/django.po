@@ -4714,3 +4714,35 @@ msgstr "Категория «%(name)s»: «%(value)s» — это не дата.
 #: calendar_app/forms.py
 msgid "Category \"%(name)s\": \"%(value)s\" is not a year."
 msgstr "Категория «%(name)s»: «%(value)s» — это не год."
+
+#: event_photos/forms.py
+msgid "My bib at this event"
+msgstr "Мой номер на этом старте"
+
+#: event_photos/forms.py
+msgid "A bib holds only letters, digits and other printable characters."
+msgstr "Номер может состоять только из букв, цифр и других печатных знаков."
+
+#: event_photos/permissions.py
+msgid "This event has no indexed photo album yet."
+msgstr "У этого мероприятия пока нет проиндексированного фотоальбома."
+
+#: event_photos/permissions.py
+msgid "The start list already gives you a bib at this event."
+msgstr "В стартовом протоколе уже есть ваш номер на этом старте."
+
+#: event_photos/templates/event_photos/event_photos.html
+msgid "The start list gives you no bib at this event. Name yours, and its photos will be here and in your profile; only a bib from the start list lets you mark them."
+msgstr "В стартовом протоколе нет вашего номера на этом старте. Укажите свой — фото с ним появятся здесь и в профиле. Отмечать их можно только по номеру из протокола."
+
+#: event_photos/templates/event_photos/_registration_cards.html
+msgid "named by the participant"
+msgstr "указан участником"
+
+#: event_photos/templates/event_photos/declared_album.html
+msgid "The participant named this bib themselves; the start list does not give it. Its photos are here, and nobody can mark them."
+msgstr "Этот номер указал сам участник, в стартовом протоколе его нет. Фото с ним собраны здесь, отмечать их нельзя."
+
+#: event_photos/templates/event_photos/declared_album.html
+msgid "No photos with this bib yet."
+msgstr "Фото с этим номером пока нет."

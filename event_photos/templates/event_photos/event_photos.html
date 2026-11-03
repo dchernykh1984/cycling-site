@@ -8,9 +8,25 @@
   {% include "event_photos/_breadcrumbs.html" %}
   <h1 class="h3 mb-3">{% trans "Photos from the event" %}</h1>
 
-  {% if registrations %}
+  {% if registration_cards or declared_cards or declare_form %}
   <h2 class="h5">{% trans "Photos with me" %}</h2>
-  <div class="mb-4">{% include "event_photos/_registration_cards.html" with cards=registration_cards %}</div>
+  {% if registration_cards or declared_cards %}
+  <div class="mb-3">{% include "event_photos/_registration_cards.html" with cards=registration_cards|add:declared_cards %}</div>
+  {% endif %}
+  {% if declare_form %}
+  <form method="post" action="{% url 'event_photos:declare' competition.pk %}" class="event-photos-own-bib mb-4">
+    {% csrf_token %}
+    <p class="mb-2">{% trans "The start list gives you no bib at this event. Name yours, and its photos will be here and in your profile; only a bib from the start list lets you mark them." %}</p>
+    <label for="{{ declare_form.bib.id_for_label }}" class="form-label mb-1">{{ declare_form.bib.label }}</label>
+    <div class="d-flex flex-wrap gap-2">
+      <div>{{ declare_form.bib }}</div>
+      <button type="submit" name="action" value="save" class="btn btn-outline-primary">{% trans "Save" %}</button>
+      {% if declare_form.initial.bib %}
+      <button type="submit" name="action" value="remove" formnovalidate class="btn btn-outline-primary">{% trans "Remove" %}</button>
+      {% endif %}
+    </div>
+  </form>
+  {% endif %}
   {% endif %}
 
   <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4" role="search">

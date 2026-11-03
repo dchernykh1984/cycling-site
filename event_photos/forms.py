@@ -2,7 +2,24 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from event_photos.dropbox import clean_folder_link, is_folder_link
-from event_photos.models import ExternalAlbum
+from event_photos.index import is_valid_bib, normalize_bib
+from event_photos.models import BIB_MAX_LENGTH, ExternalAlbum
+
+
+class DeclaredBibForm(forms.Form):
+    """The bib a member names for themselves at an event, read as an index's bib is."""
+
+    bib = forms.CharField(
+        label=_("My bib at this event"),
+        max_length=BIB_MAX_LENGTH,
+        widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
+    )
+
+    def clean_bib(self):
+        bib = normalize_bib(self.cleaned_data["bib"])
+        if not is_valid_bib(bib):
+            raise forms.ValidationError(_("A bib holds only letters, digits and other printable characters."))
+        return bib
 
 
 class ExternalAlbumForm(forms.ModelForm):

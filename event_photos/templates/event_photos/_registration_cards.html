@@ -1,10 +1,10 @@
 {% load i18n event_photos_tags %}
-{% comment %}One card per registration: my own cover and counts, never the photographer's. Shared by
-the profile and the event page.{% endcomment %}
+{% comment %}One card per personal album -- a registration's, or a bib a member named themselves: my own
+cover and counts, never the photographer's. Shared by the profile and the event page.{% endcomment %}
 <div class="gallery-grid event-photo-cards">
   {% for card in cards %}
-  {% with reg=card.registration %}
-  <a class="gallery-card gallery-album-card" href="{% url 'event_photos:registration' reg.competition_id reg.pk %}">
+  {% with reg=card.registration declared=card.declared %}
+  <a class="gallery-card gallery-album-card" href="{% if reg %}{% url 'event_photos:registration' reg.competition_id reg.pk %}{% else %}{% url 'event_photos:declared' declared.competition_id declared.pk %}{% endif %}">
     {% if card.cover %}
     {% photo_thumb_url card.cover as thumbnail_url %}
     {% include "event_photos/_thumbnail.html" %}
@@ -12,11 +12,19 @@ the profile and the event page.{% endcomment %}
     <span class="gallery-card-blank">{% include "gallery/_icons.html" with name="image" %}</span>
     {% endif %}
     <span class="gallery-card-caption">
+      {% if reg %}
       <span class="gallery-card-title">{% if with_event %}{{ reg.competition.title }}{% else %}{{ reg.display_name }}{% endif %}</span>
       <span class="gallery-card-date">
         {% if with_event %}{{ reg.competition.date_start|date:"d.m.Y" }} &middot; {{ reg.display_name }} &middot; {% endif %}
         {% if card.bibs %}{% trans "bib" %} {{ card.bibs|join:", " }}{% endif %}{% if reg.category %} &middot; {{ reg.category.name }}{% endif %}
       </span>
+      {% else %}
+      <span class="gallery-card-title">{% if with_event %}{{ declared.competition.title }}{% else %}{{ declared.user.public_display_name }}{% endif %}</span>
+      <span class="gallery-card-date">
+        {% if with_event %}{{ declared.competition.date_start|date:"d.m.Y" }} &middot; {{ declared.user.public_display_name }} &middot; {% endif %}
+        {% trans "bib" %} {{ declared.bib }} &middot; {% trans "named by the participant" %}
+      </span>
+      {% endif %}
       <span class="gallery-card-date">
         {% if card.state == "no-bib" %}{% trans "Bib not received yet" %}
         {% elif card.state == "conflict" %}{% trans "Bib in dispute" %}

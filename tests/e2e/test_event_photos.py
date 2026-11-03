@@ -128,6 +128,44 @@ def test_retrying_a_rejection_keeps_the_original_undo(page: Page, live_server, i
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_member_without_a_bib_names_one_finds_its_photos_unmarked_and_takes_it_back(
+    page: Page, live_server, indexed_event
+):
+    _, race, _, _ = indexed_event
+    member = User.objects.create_user(
+        username="named", email="named@example.com", role=User.Role.PARTICIPANT, first_name="Aliya", last_name="Nur"
+    )
+    inject_session(page, live_server, member)
+    with translation_override("ru"):
+        label, save, remove, yes = (gettext(s) for s in ("My bib at this event", "Save", "Remove", "This is me"))
+        counters = gettext("Confirmed: %(confirmed)s. To check: %(to_check)s.") % {"confirmed": 1, "to_check": 1}
+    overview = f"{live_server.url}/ru/calendar/{race.pk}/photos/"
+    page.goto(overview)
+    page.get_by_label(label).fill("12")
+    _follow(page, page.get_by_role("button", name=save))
+    card = page.locator(".event-photo-cards a")
+    expect(card).to_contain_text(counters)
+    expect(page.get_by_label(label)).to_have_value("12")
+    for control in (
+        page.get_by_label(label),
+        page.get_by_role("button", name=save),
+        page.get_by_role("button", name=remove),
+    ):
+        box = control.bounding_box()
+        assert box is not None and box["height"] >= 44, box
+    _follow(page, card)
+    # the bib's accepted match and its candidate, as a registration holding it has them, and no marks
+    expect(page.locator(".event-photo")).to_have_count(2)
+    expect(page.get_by_role("button", name=yes)).to_have_count(0)
+    page.goto(f"{live_server.url}/ru/accounts/profile/")
+    expect(page.locator(".event-photo-cards")).to_contain_text("12")
+    page.goto(overview)
+    _follow(page, page.get_by_role("button", name=remove))
+    expect(page.locator(".event-photo-cards")).to_have_count(0)
+    expect(page.get_by_label(label)).to_have_value("")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_portraits_are_complete_and_captions_never_cover_them(page: Page, live_server, indexed_event):
     athlete, race, reg, _ = indexed_event
     inject_session(page, live_server, athlete)

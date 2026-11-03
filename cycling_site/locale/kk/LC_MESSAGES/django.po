@@ -4712,3 +4712,35 @@ msgstr "«%(name)s» санаты: «%(value)s» — күн емес."
 #: calendar_app/forms.py
 msgid "Category \"%(name)s\": \"%(value)s\" is not a year."
 msgstr "«%(name)s» санаты: «%(value)s» — жыл емес."
+
+#: event_photos/forms.py
+msgid "My bib at this event"
+msgstr "Осы жарыстағы нөмірім"
+
+#: event_photos/forms.py
+msgid "A bib holds only letters, digits and other printable characters."
+msgstr "Нөмір тек әріптерден, сандардан және басқа басылатын таңбалардан тұра алады."
+
+#: event_photos/permissions.py
+msgid "This event has no indexed photo album yet."
+msgstr "Бұл іс-шараның әзірге индекстелген фотоальбомы жоқ."
+
+#: event_photos/permissions.py
+msgid "The start list already gives you a bib at this event."
+msgstr "Старт хаттамасында бұл жарыстағы нөміріңіз бар."
+
+#: event_photos/templates/event_photos/event_photos.html
+msgid "The start list gives you no bib at this event. Name yours, and its photos will be here and in your profile; only a bib from the start list lets you mark them."
+msgstr "Старт хаттамасында бұл жарыстағы нөміріңіз жоқ. Өз нөміріңізді көрсетіңіз — осы нөмір бар фотолар осында және профиліңізде пайда болады. Оларды тек хаттамадағы нөмір бойынша белгілеуге болады."
+
+#: event_photos/templates/event_photos/_registration_cards.html
+msgid "named by the participant"
+msgstr "қатысушы көрсеткен"
+
+#: event_photos/templates/event_photos/declared_album.html
+msgid "The participant named this bib themselves; the start list does not give it. Its photos are here, and nobody can mark them."
+msgstr "Бұл нөмірді қатысушының өзі көрсеткен, старт хаттамасында ол жоқ. Осы нөмір бар фотолар осында жиналған, оларды белгілеуге болмайды."
+
+#: event_photos/templates/event_photos/declared_album.html
+msgid "No photos with this bib yet."
+msgstr "Бұл нөмір бар фото әзірге жоқ."
