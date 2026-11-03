@@ -31,7 +31,8 @@ INDEX_FILE = "photo-index.v1.json"
 # A bib the index found on a photo, accepted or not yet; a rider's answer about a photo.
 _FOUND = (BibObservation.State.ACCEPTED, BibObservation.State.CANDIDATE)
 _DECIDED = (PhotoDecision.State.ME, PhotoDecision.State.NOT_ME)
-_THUMBNAIL_SLOTS = BoundedSemaphore(2)
+# Web threads that may wait on Dropbox at once -- for a thumbnail or a photo's address -- out of four.
+_STORAGE_SLOTS = BoundedSemaphore(2)
 
 
 class ImportFailedError(Exception):
@@ -166,12 +167,12 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
     if shutil.disk_usage(path.parent).free < settings.GALLERY_DISK_RESERVE_MB * 1024 * 1024:
         raise DropboxError("unavailable", "no disk space left for thumbnails")
     # Never let external storage occupy all four web threads, including for API callers.
-    if not _THUMBNAIL_SLOTS.acquire(blocking=False):
+    if not _STORAGE_SLOTS.acquire(blocking=False):
         raise DropboxError("busy", retry_after=1)
     try:
         data = get_adapter().thumbnail(photo.album.folder_url, photo.preview_path or photo.original_path)
     finally:
-        _THUMBNAIL_SLOTS.release()
+        _STORAGE_SLOTS.release()
     # Other web threads may already be reading this name: publish only a complete image.
     with NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
         temporary_path = Path(temporary.name)
@@ -189,13 +190,18 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
 
 def file_url(photo: IndexedPhoto) -> str:
     """Where one photo opens as itself: Dropbox's own address for the file, asked for on its first open
-    and kept. While Dropbox cannot be asked, the folder's preview address, as before."""
+    and kept. While Dropbox cannot be asked -- or both storage slots are busy -- the folder's preview
+    address, as before."""
     if photo.original_view_url or photo.file_url:
+        return open_url(photo)
+    if not _STORAGE_SLOTS.acquire(blocking=False):
         return open_url(photo)
     try:
         url = get_adapter().file_url(photo.album.folder_url, photo.original_path)
     except DropboxError:
         return open_url(photo)
+    finally:
+        _STORAGE_SLOTS.release()
     if len(url) <= FILE_URL_MAX_LENGTH:
         # Kept only while the index still has the file where Dropbox was asked about it.
         IndexedPhoto.objects.filter(pk=photo.pk, original_path=photo.original_path).update(file_url=url)
