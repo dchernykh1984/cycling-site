@@ -73,9 +73,9 @@ class BLEDev {
   }
   async write(bytes) { const data = new Uint8Array(bytes); if (this.cpt.writeValueWithResponse) await this.cpt.writeValueWithResponse(data); else await this.cpt.writeValue(data); }
   onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast(t('dev.noControl')); } }
-  async setGrade(g) {
+  async setGrade(g, drag) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
-    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(TRAINER_SIM.crr * 1e4), Math.round(TRAINER_SIM.air * 100)]); return true; } // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, CdA·ρ/2 in 0.01
+    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); return true; } // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
     catch (e) { return false; } finally { this.busy = false; }
   }
   onIBD(dv) {
@@ -159,15 +159,15 @@ const Sensors = {
   mode() { if (this.power() != null) return 'power'; if (this.wheel() != null) return 'speed'; if (this.crank() != null) return 'cadence'; return 'demo'; },
   changed() { renderDevs(); updateModeUI(); }
 };
-// Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении
+// Управление сопротивлением: шлём уклон маршрута и сопротивление самого гонщика не чаще раза в секунду и только при изменении
 const Trainer = {
   last: -10, sent: null,
-  update(t, grade) {
+  update(t, grade, rider) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
     const target = trainerGrade(grade, settings.difficulty);
     if (t - this.last < 1) return;
     if (this.sent !== null && Math.abs(target - this.sent) < .2 && t - this.last < 5) return;
-    this.last = t; d.setGrade(target).then(ok => { if (ok) this.sent = target; });
+    this.last = t; d.setGrade(target, trainerDrag(rider)).then(ok => { if (ok) this.sent = target; });
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; }
 };
