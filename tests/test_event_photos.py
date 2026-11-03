@@ -1048,6 +1048,7 @@ class PageAndApiTests(EventPhotosTestCase):
         self.assertEqual(self.client.get(url, **auth).status_code, 200)
         archive = self.client.get(self._url("registration_archive", self.reg.pk))
         self.assertEqual(archive["Content-Type"], "application/zip")
+        b"".join(archive.streaming_content)  # unread, it would keep the process's one archive slot
 
     def test_once_the_link_ends_the_former_manager_sees_nothing_of_the_members_photos(self):
         from accounts import managing
@@ -1255,7 +1256,7 @@ class DeclaredBibTests(EventPhotosTestCase):
         self.assertNotContains(album, 'name="state"')
         archive = self.client.get(self._url("declared_archive", declared.pk))
         self.assertEqual(archive["Content-Type"], "application/zip")
-        archive.close()  # unread, it would keep the process's one archive slot from the tests after it
+        b"".join(archive.streaming_content)  # unread, it would keep the process's one archive slot
         self.assertContains(self.client.get("/en/accounts/profile/"), self._url("declared", declared.pk))
 
     def test_a_named_bib_lets_neither_the_member_nor_their_manager_mark_a_photo(self):
