@@ -142,6 +142,9 @@ start list's bib: marks still do.
   while the start lists bound no bib to the member's own registration there (`declared_bib_refusal`);
   while such a binding exists it is not shown (`declared_in_force`). Its album is `_bib_album` without
   a registration, seen by its member and their manager (`can_see_declared`); no mark operation takes it.
+  The API: `PUT` and `DELETE /event-photos/competitions/{id}/my-bib` (always the caller's own; 409 with
+  the reason when refused, 422 for a bib an index would refuse), `GET /event-photos/me/declared-bibs`
+  (cards; `own` marks the caller's), `GET /event-photos/declared-bibs/{id}/photos` and its `/archive`.
 
 ## Key Entities
 
@@ -160,7 +163,7 @@ start list's bib: marks still do.
 
 ## API gaps
 
-- Naming one's own bib, and its album and archive, are on the pages only.
+None: the pages' operations are all in `/api/v1/event-photos/`.
 
 ## Binding review
 

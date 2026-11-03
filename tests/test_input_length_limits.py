@@ -96,6 +96,7 @@ SCHEMA_TARGETS = {
     "api.endpoints.home.HomeCardPatchIn": HomeCard,
     "api.endpoints.event_photos.AlbumIn": ExternalAlbum,
     "api.endpoints.event_photos.AlbumPatchIn": ExternalAlbum,
+    "api.endpoints.event_photos.DeclaredBibIn": DeclaredBib,
     # A mark and an undo name a state (a fixed pattern) and an id; nothing lands in a text column.
     "api.endpoints.event_photos.DecisionIn": None,
     "api.endpoints.event_photos.UndoIn": None,

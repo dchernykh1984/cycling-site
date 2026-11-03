@@ -16,9 +16,24 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import open_url
-from event_photos.forms import ExternalAlbumForm
-from event_photos.models import BIB_MAX_LENGTH, ExternalAlbum, IndexedPhoto, PhotoDecision, StartListDiagnostics
-from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration, looked_after
+from event_photos.forms import DeclaredBibForm, ExternalAlbumForm
+from event_photos.models import (
+    BIB_MAX_LENGTH,
+    DeclaredBib,
+    ExternalAlbum,
+    IndexedPhoto,
+    PhotoDecision,
+    StartListDiagnostics,
+)
+from event_photos.permissions import (
+    can_manage_albums,
+    can_mark,
+    can_see_declared,
+    can_see_event,
+    can_see_registration,
+    declared_bib_refusal,
+    looked_after,
+)
 from event_photos.views import (
     archive_response,
     bib_archive_name,
@@ -99,6 +114,30 @@ class RegistrationAlbumOut(Schema):
     cover_thumbnail_url: str
     participant: str
     category: LocalizedStr | None
+
+
+class DeclaredBibIn(Schema):
+    bib: str = Field(max_length=BIB_MAX_LENGTH)
+
+
+class DeclaredBibOut(Schema):
+    id: int
+    competition_id: int
+    bib: str
+
+
+class DeclaredAlbumOut(Schema):
+    declared_bib_id: int
+    competition_id: int
+    competition_title: str
+    bib: str
+    # the caller's own bib, which they may change; otherwise one of a member whose photos they manage
+    own: bool
+    count: int
+    confirmed: int
+    state: str
+    cover_thumbnail_url: str
+    participant: str
 
 
 class DecisionIn(Schema):
@@ -228,6 +267,78 @@ def my_albums(request):
         .select_related("competition", "category")
     )
     return [_registration_card(request, r) for r in regs if can_see_event(request.auth, r.competition)]
+
+
+@router.put("/competitions/{competition_id}/my-bib", response=DeclaredBibOut, auth=auth)
+def declare_bib(request, competition_id: int, payload: DeclaredBibIn):
+    """Name the caller's own bib at the event, in place of any named before: 409 while the event has
+    no indexed album or once the start lists bound a bib to the caller's registration there."""
+    competition = _competition(request.auth, competition_id)
+    refusal = declared_bib_refusal(request.auth, competition)
+    if refusal:
+        raise HttpError(HTTPStatus.CONFLICT, refusal)
+    form = DeclaredBibForm({"bib": payload.bib})
+    if not form.is_valid():
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "bib: " + " ".join(str(e) for e in form.errors["bib"]))
+    return actions.declare_bib(request.auth, competition, form.cleaned_data["bib"])
+
+
+@router.delete("/competitions/{competition_id}/my-bib", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
+def forget_bib(request, competition_id: int):
+    actions.forget_bib(request.auth, _competition(request.auth, competition_id))
+    return Status(HTTPStatus.NO_CONTENT, None)
+
+
+@router.get("/me/declared-bibs", response=list[DeclaredAlbumOut], auth=auth)
+def my_declared_albums(request):
+    """The bibs the caller and the members whose photos they manage named themselves, as cards."""
+    named = actions.declared_in_force(
+        DeclaredBib.objects.filter(
+            looked_after(request.auth), competition__is_deleted=False, competition__external_albums__is_hidden=False
+        )
+    )
+    return [
+        _declared_card(request, declared)
+        for declared in named.distinct().select_related("competition", "user")
+        if can_see_event(request.auth, declared.competition)
+    ]
+
+
+def _declared_card(request, declared) -> dict:
+    summary = actions.declared_summary(declared)
+    return {
+        "declared_bib_id": declared.pk,
+        "competition_id": declared.competition_id,
+        "competition_title": declared.competition.title,
+        "bib": declared.bib,
+        "own": declared.user_id == request.auth.pk,
+        "count": summary["count"],
+        "confirmed": summary["confirmed"],
+        "state": summary["state"],
+        "cover_thumbnail_url": _thumbnail_url(request, summary["cover"]),
+        "participant": declared.user.public_display_name,
+    }
+
+
+def _declared(user, declared_bib_id) -> DeclaredBib:
+    named = DeclaredBib.objects.select_related("competition", "user")
+    declared = get_object_or_404(actions.declared_in_force(named), pk=declared_bib_id)
+    if not can_see_event(user, declared.competition) or not can_see_declared(user, declared):
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+    return declared
+
+
+@router.get("/declared-bibs/{declared_bib_id}/photos", response=PhotoPageOut, auth=auth)
+def declared_photos(request, declared_bib_id: int, page: int = 1):
+    """A named bib's album: confirmed and candidate photos, which no operation marks."""
+    declared = _declared(request.auth, declared_bib_id)
+    return _photos(request, actions.declared_photos(declared).select_related("album"), page)
+
+
+@router.get("/declared-bibs/{declared_bib_id}/photos/archive", auth=auth, summary="A named bib's photos as one ZIP")
+def declared_archive(request, declared_bib_id: int):
+    declared = _declared(request.auth, declared_bib_id)
+    return _archive(actions.declared_photos(declared), bib_archive_name(declared.competition, declared.bib))
 
 
 def _registration(user, registration_id) -> CompetitionRegistration:
