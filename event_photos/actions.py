@@ -14,8 +14,9 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from event_photos import index as index_module
-from event_photos.dropbox import DropboxError, get_adapter
+from event_photos.dropbox import DropboxError, get_adapter, open_url
 from event_photos.models import (
+    FILE_URL_MAX_LENGTH,
     THUMBNAIL_LIMIT_BYTES,
     BibObservation,
     DeclaredBib,
@@ -78,6 +79,8 @@ def _publish(album_pk: int, parsed: index_module.Index, user) -> bool:
             if row.thumb_file and row.thumb_source_sha256 != new_source:
                 stale_thumbs.append(row.thumb_file)
                 row.thumb_file, row.thumb_source_sha256 = "", ""
+            if row.original_path != item.original_path:
+                row.file_url = ""  # Dropbox's address named the old path
             row.original_path = item.original_path
             row.original_sha256 = item.original_sha256
             row.original_bytes = item.original_bytes
@@ -102,6 +105,7 @@ def _publish(album_pk: int, parsed: index_module.Index, user) -> bool:
             "in_index",
             "thumb_file",
             "thumb_source_sha256",
+            "file_url",
         ]
         IndexedPhoto.objects.bulk_update(to_update, fields, batch_size=500)
         by_uuid = {p.photo_uuid: p for p in album.photos.all()}
@@ -181,6 +185,21 @@ def thumbnail_path(photo: IndexedPhoto) -> Path:
         pk=photo.pk, preview_sha256=photo.preview_sha256, original_sha256=photo.original_sha256
     ).update(thumb_file=name, thumb_source_sha256=source)
     return path
+
+
+def file_url(photo: IndexedPhoto) -> str:
+    """Where one photo opens as itself: Dropbox's own address for the file, asked for on its first open
+    and kept. While Dropbox cannot be asked, the folder's preview address, as before."""
+    if photo.original_view_url or photo.file_url:
+        return open_url(photo)
+    try:
+        url = get_adapter().file_url(photo.album.folder_url, photo.original_path)
+    except DropboxError:
+        return open_url(photo)
+    if len(url) <= FILE_URL_MAX_LENGTH:
+        # Kept only while the index still has the file where Dropbox was asked about it.
+        IndexedPhoto.objects.filter(pk=photo.pk, original_path=photo.original_path).update(file_url=url)
+    return url
 
 
 def set_photo_hidden(photo: IndexedPhoto, hidden: bool) -> None:

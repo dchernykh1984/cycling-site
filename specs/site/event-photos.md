@@ -48,8 +48,10 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
    with personal registration cards, photo sources and bib search. The search shows the
    photos with that accepted bib (or confirmed by a registration holding it), unless every
    registration holding the bib marked the photo "not me".
-2. Each thumbnail opens the photo in Dropbox in a new tab (Dropbox's `preview=` address, or the
-   index's own file link).
+2. Each thumbnail opens the photo in Dropbox in a new tab: through the site, which sends the reader to
+   the index's own file link, or to the file's own address in the shared folder. Dropbox's phone app
+   opens the folder's `preview=` address as the whole folder, so that address is only the fallback
+   while Dropbox cannot be asked.
 3. **Given** a signed-in reader and a search with results, **Then** "Download all (ZIP, size)" gives
    the found photos' originals as one archive; a guest is offered sign-in that returns to the search.
 
@@ -145,6 +147,11 @@ start list's bib: marks still do.
   The API: `PUT` and `DELETE /event-photos/competitions/{id}/my-bib` (always the caller's own; 409 with
   the reason when refused, 422 for a bib an index would refuse), `GET /event-photos/me/declared-bibs`
   (cards; `own` marks the caller's), `GET /event-photos/declared-bibs/{id}/photos` and its `/archive`.
+- **FR-EVP-015**: A photo opens through `<event>/photos/open/<photo>/`, and over the API through
+  `GET /event-photos/photos/{id}/open`, which a photo page's `open_url` names; both follow the photo's
+  visibility. The file's own address comes from `sharing/get_shared_link_metadata` with the site's app
+  on the first open and is kept (`IndexedPhoto.file_url`); a newer index that moves the file empties
+  it. The site redirects only to an address inside the album's own folder on Dropbox.
 
 ## Key Entities
 

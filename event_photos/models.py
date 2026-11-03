@@ -18,6 +18,8 @@ THUMBNAIL_LIMIT_BYTES = 20 * 1024 * 1024
 
 # How long a bib number may be, wherever one is stored, read or asked for.
 BIB_MAX_LENGTH = 32
+# Dropbox's own address for a photo carries the file's name, as long as the index allows.
+FILE_URL_MAX_LENGTH = 2000
 
 
 class ExternalAlbum(models.Model):
@@ -58,6 +60,9 @@ class IndexedPhoto(models.Model):
     original_sha256 = models.CharField(max_length=64)
     original_bytes = models.PositiveBigIntegerField()
     original_view_url = models.URLField(max_length=500, blank=True)
+    # Dropbox's own address for the file, asked for when it is first opened (Dropbox's phone app opens
+    # the folder's preview address as the whole folder); emptied when the index moves the file.
+    file_url = models.URLField(max_length=FILE_URL_MAX_LENGTH, blank=True)
     preview_path = models.CharField(max_length=500, blank=True)
     preview_sha256 = models.CharField(max_length=64, blank=True)
     processing_state = models.CharField(max_length=10)
