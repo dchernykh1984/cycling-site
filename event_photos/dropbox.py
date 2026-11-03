@@ -118,9 +118,12 @@ class DropboxAdapter:
             limit=_MAX_ERROR_BYTES,
             timeout=(3.05, 5),
         )
-        url = json.loads(data).get("url") or ""
+        try:
+            url = json.loads(data)["url"]
+        except (ValueError, KeyError, TypeError):
+            raise DropboxError("unavailable", "Dropbox answered without an address") from None
         # Only ever an address inside the album's own folder on Dropbox: the site redirects readers there.
-        if not url.startswith(folder_url.split("?", 1)[0].rsplit("/", 1)[0] + "/"):
+        if not isinstance(url, str) or not url.startswith(folder_url.split("?", 1)[0].rsplit("/", 1)[0] + "/"):
             raise DropboxError("invalid-link", "Dropbox named no address inside the folder for this file")
         return url
 

@@ -99,9 +99,9 @@ class AdapterTests(TestCase):
     def test_a_files_own_address_is_asked_for_and_must_lie_inside_the_folder(self):
         from event_photos.dropbox import DropboxAdapter, DropboxError
 
-        def answer(url):
+        def answer(url, body=None):
             response = mock.MagicMock(status_code=200)
-            response.iter_content.return_value = [json.dumps({".tag": "file", "url": url}).encode()]
+            response.iter_content.return_value = [body or json.dumps({".tag": "file", "url": url}).encode()]
             response.__enter__.return_value = response
             return response
 
@@ -115,6 +115,11 @@ class AdapterTests(TestCase):
                 self.subTest(elsewhere),
                 mock.patch("event_photos.dropbox.requests.post", return_value=answer(elsewhere)),
             ):
+                with self.assertRaises(DropboxError):
+                    DropboxAdapter().file_url(FOLDER, "a.jpg")
+        # an answer that is not the metadata it should be counts as Dropbox being unavailable
+        for body in (b"<html>", b"[]", b'{"name": "a.jpg"}', b'{"url": 7}'):
+            with self.subTest(body), mock.patch("event_photos.dropbox.requests.post", return_value=answer("", body)):
                 with self.assertRaises(DropboxError):
                     DropboxAdapter().file_url(FOLDER, "a.jpg")
 
