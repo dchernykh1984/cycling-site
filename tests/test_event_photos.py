@@ -1347,3 +1347,65 @@ class DeclaredBibTests(EventPhotosTestCase):
         self.client.logout()
         self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 302)
         self.assertIsNone(self.client.get(self._url("event")).context["declare_form"])
+
+    def _token(self, user):
+        user.api_token = uuid.uuid4()
+        user.save(update_fields=["api_token"])
+        return {"HTTP_AUTHORIZATION": f"Bearer {user.api_token}"}
+
+    def test_the_api_names_changes_and_takes_back_a_bib_by_the_pages_rules(self):
+        auth = self._token(self.member)
+        url = f"/api/v1/event-photos/competitions/{self.race.pk}/my-bib"
+
+        def name(bib):
+            return self.client.put(url, {"bib": bib}, content_type="application/json", **auth)
+
+        named = name(" 7 ")
+        self.assertEqual((named.status_code, named.json()["bib"]), (200, "7"))
+        self.assertEqual(name("8").json()["id"], named.json()["id"])  # one bib per member and event
+        for bad in ("7\x07", "x" * 33):
+            with self.subTest(bib=bad):
+                self.assertEqual(name(bad).status_code, 422)
+        cards = self.client.get("/api/v1/event-photos/me/declared-bibs", **auth).json()
+        self.assertEqual(
+            [(c["bib"], c["own"], c["count"], c["confirmed"], c["state"]) for c in cards], [("8", True, 1, 1, "ready")]
+        )
+        album = f"/api/v1/event-photos/declared-bibs/{named.json()['id']}/photos"
+        photos = self.client.get(album, **auth).json()["photos"]
+        self.assertEqual(
+            [(p["file_name"], p["confirmed"], p["decision"]) for p in photos], [("IMG_0003.jpg", True, None)]
+        )
+        self._bib(self._own_registration(), "12")  # the start list bound a bib: it takes the named one's place
+        self.assertEqual(name("7").status_code, 409)
+        self.assertEqual(self.client.get("/api/v1/event-photos/me/declared-bibs", **auth).json(), [])
+        self.assertEqual(self.client.get(album, **auth).status_code, 404)
+        self.assertEqual(self.client.delete(url, **auth).status_code, 204)
+        self.assertFalse(DeclaredBib.objects.exists())
+
+    def test_the_api_shows_a_named_bib_to_its_member_and_their_manager_and_to_nobody_else(self):
+        self._declare("7")
+        declared = DeclaredBib.objects.get()
+        coach_auth = self._token(self._managed_by_a_coach())
+        album = f"/api/v1/event-photos/declared-bibs/{declared.pk}/photos"
+        cards = self.client.get("/api/v1/event-photos/me/declared-bibs", **coach_auth).json()
+        self.assertEqual(
+            [(c["declared_bib_id"], c["own"], c["participant"]) for c in cards], [(declared.pk, False, "Aliya Nur")]
+        )
+        self.assertEqual(self.client.get(album, **coach_auth).status_code, 200)
+        archive = self.client.get(album + "/archive", **coach_auth)
+        self.assertEqual(archive["Content-Type"], "application/zip")
+        b"".join(archive.streaming_content)
+        # my-bib is always the caller's own: a manager names nothing for the member
+        coachs = self.client.put(
+            f"/api/v1/event-photos/competitions/{self.race.pk}/my-bib",
+            {"bib": "9"},
+            content_type="application/json",
+            **coach_auth,
+        )
+        self.assertEqual(coachs.status_code, 200)
+        self.assertEqual(DeclaredBib.objects.get(user=self.member).bib, "7")
+        stranger_auth = self._token(self.stranger)
+        for url in (album, album + "/archive"):
+            with self.subTest(url):
+                self.assertEqual(self.client.get(url, **stranger_auth).status_code, 404)
+        self.assertEqual(self.client.get("/api/v1/event-photos/me/declared-bibs", **stranger_auth).json(), [])
