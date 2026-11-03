@@ -20,18 +20,27 @@ from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
 from event_photos.dropbox import DropboxError, open_url
-from event_photos.forms import ExternalAlbumForm
+from event_photos.forms import DeclaredBibForm, ExternalAlbumForm
 from event_photos.index import SAMPLE
 from event_photos.models import (
     BIB_MAX_LENGTH,
     THUMBNAIL_LIMIT_BYTES,
+    DeclaredBib,
     ExternalAlbum,
     IndexedPhoto,
     IssuedBib,
     PhotoDecision,
     StartListDiagnostics,
 )
-from event_photos.permissions import can_manage_albums, can_mark, can_see_event, can_see_registration, looked_after
+from event_photos.permissions import (
+    can_manage_albums,
+    can_mark,
+    can_see_declared,
+    can_see_event,
+    can_see_registration,
+    declared_bib_refusal,
+    looked_after,
+)
 from gallery.models import Album as GalleryAlbum
 from registrations.models import CompetitionRegistration
 
@@ -57,6 +66,22 @@ def my_registrations(user, competition):
     if not user.is_authenticated:
         return CompetitionRegistration.objects.none()
     return CompetitionRegistration.objects.filter(looked_after(user), competition=competition, is_rejected=False)
+
+
+def my_declared_bibs(user, competition):
+    """The bibs named at this event whose albums ``user`` looks after, while the site still needs them."""
+    if not user.is_authenticated:
+        return DeclaredBib.objects.none()
+    named = DeclaredBib.objects.filter(looked_after(user), competition=competition).select_related("user")
+    return actions.declared_in_force(named)
+
+
+def _declare_form(user, competition, declared_cards) -> DeclaredBibForm | None:
+    """The member's own bib, filled in: offered while they may name one, and while one they named is shown."""
+    own = next((card["declared"] for card in declared_cards if card["declared"].user_id == user.pk), None)
+    if own is None and (not user.is_authenticated or declared_bib_refusal(user, competition)):
+        return None
+    return DeclaredBibForm(initial={"bib": own.bib} if own else None)
 
 
 def _with_links(photos, competition):
@@ -126,6 +151,7 @@ def event_photos(request, pk):
         archive = archive_summary(
             found, reverse("event_photos:bib_archive", args=[competition.pk]) + "?" + urlencode({"bib": bib})
         )
+    declared_cards = [actions.declared_summary(d) for d in my_declared_bibs(request.user, competition)]
     return render(
         request,
         "event_photos/event_photos.html",
@@ -136,10 +162,11 @@ def event_photos(request, pk):
             "archive": archive,
             "photo_page_title": (_("Photos with bib %(bib)s") % {"bib": bib}) if bib else "",
             "photos": page,
-            "registrations": my_registrations(request.user, competition),
             "registration_cards": [
                 actions.registration_summary(r) for r in my_registrations(request.user, competition)
             ],
+            "declared_cards": declared_cards,
+            "declare_form": _declare_form(request.user, competition, declared_cards),
             # The club's curated albums of this event are photo sources too, with their own rights.
             "gallery_albums": GalleryAlbum.objects.visible_to(request.user).filter(competition=competition),
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},
@@ -256,6 +283,75 @@ def bib_archive(request, pk):
     photos = actions.bib_photos(competition, bib).filter(album__in=visible_albums(request.user, competition))
     back = reverse("event_photos:event", args=[competition.pk]) + "?" + urlencode({"bib": bib})
     return _archive_or_back(request, photos, bib_archive_name(competition, bib), back)
+
+
+@login_required
+@require_POST
+def declare(request, pk):
+    """Name the member's own bib at the event, or take it back."""
+    competition = _event(request, pk)
+    if request.POST.get("action") == "remove":
+        actions.forget_bib(request.user, competition)
+        return redirect("event_photos:event", competition.pk)
+    form = DeclaredBibForm(request.POST)
+    refusal = declared_bib_refusal(request.user, competition)
+    if refusal:
+        messages.error(request, _(refusal))
+    elif not form.is_valid():
+        messages.error(request, " ".join(form.errors["bib"]))
+    else:
+        actions.declare_bib(request.user, competition, form.cleaned_data["bib"])
+    return redirect("event_photos:event", competition.pk)
+
+
+def _declared(request, pk, bib_pk):
+    competition = _event(request, pk)
+    named = DeclaredBib.objects.filter(competition=competition).select_related("user")
+    declared = get_object_or_404(actions.declared_in_force(named), pk=bib_pk)
+    if not can_see_declared(request.user, declared):
+        raise Http404
+    return competition, declared
+
+
+@login_required
+def declared_album(request, pk, bib_pk):
+    """The photos of a bib a member named themselves, as a registration with that bib has them, unmarked."""
+    competition, declared = _declared(request, pk, bib_pk)
+    photos = actions.declared_photos(declared).select_related("album")
+    page = Paginator(photos, PER_PAGE).get_page(request.GET.get("page"))
+    _with_links(page, competition)
+    confirmed = photos.filter(confirmed=True).count()
+    title = (
+        _("Photos with me: %(participant)s") if declared.user_id == request.user.pk else _("Photos of %(participant)s")
+    ) % {"participant": declared.user.public_display_name}
+    return render(
+        request,
+        "event_photos/declared_album.html",
+        {
+            "competition": competition,
+            "declared": declared,
+            "photo_page_title": title,
+            "photos": page,
+            "archive": archive_summary(
+                photos, reverse("event_photos:declared_archive", args=[competition.pk, declared.pk])
+            ),
+            "confirmed_count": confirmed,
+            "to_check_count": page.paginator.count - confirmed,
+            "meta_title": f"{title} - {competition.title}",
+        },
+    )
+
+
+@login_required
+def declared_archive(request, pk, bib_pk):
+    """A named bib's album as one ZIP of originals."""
+    competition, declared = _declared(request, pk, bib_pk)
+    return _archive_or_back(
+        request,
+        actions.declared_photos(declared),
+        bib_archive_name(competition, declared.bib),
+        reverse("event_photos:declared", args=[competition.pk, declared.pk]),
+    )
 
 
 @login_required

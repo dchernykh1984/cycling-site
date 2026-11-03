@@ -18,6 +18,7 @@ from event_photos.dropbox import DropboxError, get_adapter
 from event_photos.models import (
     THUMBNAIL_LIMIT_BYTES,
     BibObservation,
+    DeclaredBib,
     ExternalAlbum,
     IndexedPhoto,
     IssuedBib,
@@ -297,6 +298,59 @@ def bib_photos(competition, bib: str) -> QuerySet:
             rejections=len(holders)
         )
     return qs.distinct().order_by("original_path", "pk")
+
+
+# -- a bib the member names ------------------------------------------------------------------------
+
+
+def _bound_to_members(**where) -> QuerySet:
+    """Bibs the start lists bound to members' own registrations, in dispute or not."""
+    return IssuedBib.objects.filter(registration__is_rejected=False, **where)
+
+
+def has_bound_bib(user, competition) -> bool:
+    """Whether the start lists bound a bib, even one in dispute, to the member's own registration at the
+    event: then the site has their bib, and they name none themselves."""
+    return _bound_to_members(competition=competition, registration__user=user).exists()
+
+
+def declared_in_force(declared: QuerySet) -> QuerySet:
+    """The named bibs that still stand: the start lists bound no bib to their members at those events."""
+    return declared.exclude(
+        Exists(_bound_to_members(competition=OuterRef("competition"), registration__user=OuterRef("user")))
+    )
+
+
+def has_indexed_album(competition) -> bool:
+    """Whether the event has an album readers see whose index has been imported."""
+    return ExternalAlbum.objects.filter(competition=competition, is_hidden=False, imported_at__isnull=False).exists()
+
+
+def declare_bib(user, competition, bib: str) -> DeclaredBib:
+    """The member's one bib at the event, in place of any they named before."""
+    declared, _created = DeclaredBib.objects.update_or_create(user=user, competition=competition, defaults={"bib": bib})
+    return declared
+
+
+def forget_bib(user, competition) -> None:
+    DeclaredBib.objects.filter(user=user, competition=competition).delete()
+
+
+def declared_photos(declared) -> QuerySet:
+    """A named bib's album: what a registration holding that bib has before it marks anything -- the
+    bib's accepted matches and candidates. Annotated with ``confirmed``; nobody's marks change it."""
+    return _bib_album(declared.competition_id, [declared.bib])
+
+
+def declared_summary(declared) -> dict:
+    """A named bib's card, as a registration's card shows it."""
+    summary = _album_summary(declared_photos(declared), declared.competition_id)
+    return {
+        "declared": declared,
+        "bibs": [declared.bib],
+        **summary,
+        "state": "indexing" if summary["indexing"] else "ready",
+    }
 
 
 # -- decisions -------------------------------------------------------------------------------------

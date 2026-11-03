@@ -704,6 +704,13 @@ main .event-photo-preview img { object-fit: contain; }
     display: inline-flex;
     align-items: center;
 }
+/* So is the member's own bib on the event's photos: its field and its buttons. */
+.event-photos-own-bib .btn {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+}
+.event-photos-own-bib .form-control { min-height: 2.75rem; }
 /* The profile's link to the virtual ride is tapped on phones: 44 px, reaching into the header's
    padding so the header keeps the height of the others. */
 #virtual-rides-strava .btn {

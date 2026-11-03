@@ -7,7 +7,8 @@ it never decodes camera formats or rewrites originals.
 
 **Status**: Baseline -- describes the first slice of issue #349 as built
 **Verified against**: branch fix/event-photo-gallery on 2026-10-27; a member's manager (issue #315) against
-branch `315-managing-registrations` on 2026-10-28
+branch `315-managing-registrations` on 2026-10-28; a bib a member names themselves against branch
+`own-bib-and-trainer-drag` on 2026-11-03
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,
 templates, template tags), `api/endpoints/event_photos.py`, `api/endpoints/start_list.py` (bindings on
 upload), `cycling_site/urls.py` (`serve_media` refuses the private prefix),
@@ -22,7 +23,9 @@ A photographer's Dropbox folder, shared "anyone with the link", holds the race p
 `photo-index.v1.json` saying which bibs are on which photo. The event's creator or an admin connects
 the folder; the site reads the index with its own Dropbox app (no organizer token) and keeps a copy.
 Readers find photos by bib; a member opens "Photos with me" -- one album per registration, from the
-bib StartProtocolMaker gave that registration -- and marks each photo "this is me" or "not me".
+bib StartProtocolMaker gave that registration -- and marks each photo "this is me" or "not me". A
+member the start lists bound no bib to may name their own, which finds them that bib's photos and lets
+nobody mark them.
 Thumbnails come from Dropbox and are kept by the site; a click opens the photo in Dropbox.
 
 ## User Scenarios
@@ -66,6 +69,25 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
    name and bib; they open the member's albums ("Photos of ...") and mark the photos as the member
    would (`can_represent`). The member sees and marks only their own; once the link ends, the former
    manager gets a 404, as any stranger does.
+
+### Story 4 -- A member names their own bib (P2)
+
+Maintainer decision 2026-11-03. It widens, for looking only, the 349 rule that a personal album needs a
+start list's bib: marks still do.
+
+1. **Given** a signed-in member, an event with an indexed album (imported, not hidden) and no bib the
+   start lists bound to the member's own registration there -- whether they have no registration or one
+   still without a bib -- **Then** the event's photo overview offers "My bib at this event": one bib per
+   member and event, which they change or take back whenever they like. Only the member names it, not
+   their manager.
+2. **Then** its card is in "Photos with me" and in the profile's "My race photos", for the member and
+   whoever manages their photos, as a registration holding that bib would have it: the bib's accepted
+   matches (confirmed) and candidates (to check), the counts, a cover and "Download all".
+3. Nobody marks its photos "this is me" or "not me", neither the member nor their manager. It never
+   enters a registration's album or the bib search, and nobody else's marks change it.
+4. **Given** a bib the start lists bound to the member's own registration at the event -- active, under
+   review or in dispute -- **Then** no bib is named there and one named before is not shown, until the
+   binding goes. The bib search stays open to everybody as it was.
 
 ## Functional Requirements
 
@@ -115,6 +137,12 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
   `PHOTO_ARCHIVE_MAX_FILE_BYTES`, or one storage cannot give after one short retry, is left out and
   listed with its link in a text file inside the archive. Equal file names get a number.
 
+- **FR-EVP-014**: A named bib (`DeclaredBib`) is unique per member and event and is read as an index's
+  bib (`normalize_bib`, `is_valid_bib`). It is offered only at an event with an indexed album and only
+  while the start lists bound no bib to the member's own registration there (`declared_bib_refusal`);
+  while such a binding exists it is not shown (`declared_in_force`). Its album is `_bib_album` without
+  a registration, seen by its member and their manager (`can_see_declared`); no mark operation takes it.
+
 ## Key Entities
 
 - **ExternalAlbum**: event, folder link, localized title and photographer, album id from the index,
@@ -122,6 +150,7 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 - **IndexedPhoto** / **BibObservation**: a photo of the index and the bibs on it.
 - **IssuedBib** / **IssuedBibEvent**: a bib a start list gave a registration, and its history.
 - **PhotoDecision** / **PhotoDecisionEvent**: a registration's mark on a photo, and every change.
+- **DeclaredBib**: the bib a member named for themselves at an event; a preference, never a right.
 
 ## Local assumptions
 
@@ -131,7 +160,7 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 
 ## API gaps
 
-None: the pages' operations are all in `/api/v1/event-photos/`.
+- Naming one's own bib, and its album and archive, are on the pages only.
 
 ## Binding review
 

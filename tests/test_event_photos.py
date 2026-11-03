@@ -20,6 +20,7 @@ from event_photos import actions, bindings
 from event_photos import index as index_module
 from event_photos.models import (
     BibObservation,
+    DeclaredBib,
     ExternalAlbum,
     IndexedPhoto,
     IssuedBib,
@@ -1184,3 +1185,164 @@ class PageAndApiTests(EventPhotosTestCase):
         )
         self.assertEqual(undone.context["photos"].number, 2)
         self.assertContains(undone, last_photo.file_name)
+
+
+class DeclaredBibTests(EventPhotosTestCase):
+    """A member whose bib the start lists do not give names one: its photos come to them as a
+    registration's would, and nobody can mark them."""
+
+    def setUp(self):
+        super().setUp()
+        from accounts.models import User
+
+        self.member = User.objects.create_user(
+            username="m@x.kz", email="m@x.kz", password="pw", role="participant", first_name="Aliya", last_name="Nur"
+        )
+        self.stranger = User.objects.create_user(username="s@x.kz", email="s@x.kz", password="pw", role="participant")
+        self._publish(
+            _index(
+                [
+                    _photo(1, [("7", "accepted", "ocr")]),
+                    _photo(2, [("7", "candidate", "appearance")]),
+                    _photo(3, [("8", "accepted", "ocr")]),
+                ]
+            )
+        )
+        self.photos = {p.photo_uuid.int - 1: p for p in IndexedPhoto.objects.all()}
+
+    def _url(self, name, *args):
+        from django.urls import reverse
+
+        return reverse(f"event_photos:{name}", args=[self.race.pk, *args])
+
+    def _declare(self, bib, user=None, **extra):
+        self.client.force_login(user or self.member)
+        return self.client.post(self._url("declare"), {"bib": bib, "action": "save"}, **extra)
+
+    def _own_registration(self):
+        registration = self._registration()
+        registration.user = self.member
+        registration.save(update_fields=["user"])
+        return registration
+
+    def _managed_by_a_coach(self):
+        from accounts import managing
+        from accounts.models import User
+
+        coach = User.objects.create_user(
+            username="c@x.kz", email="c@x.kz", password="pw", role="participant", api_token=uuid.uuid4()
+        )
+        managing.ask(self.member, managing.issue_invite(coach).key)
+        managing.accept(coach, self.member.pk)
+        return coach
+
+    def test_a_member_without_a_bib_names_one_and_gets_its_album_here_and_in_the_profile(self):
+        self.client.force_login(self.member)
+        self.assertIsNotNone(self.client.get(self._url("event")).context["declare_form"])
+        self.assertEqual(self._declare(" 7 ").status_code, 302)
+        declared = DeclaredBib.objects.get()
+        self.assertEqual((declared.user, declared.competition, declared.bib), (self.member, self.race, "7"))
+        cards = self.client.get(self._url("event")).context["declared_cards"]
+        self.assertEqual(
+            [(c["declared"], c["count"], c["confirmed"], c["state"]) for c in cards], [(declared, 2, 1, "ready")]
+        )
+        album = self.client.get(self._url("declared", declared.pk))
+        # the bib's accepted match first, then its candidate, as a registration holding it has them
+        self.assertEqual(
+            [(p.photo_uuid.int - 1, p.confirmed) for p in album.context["photos"]], [(1, True), (2, False)]
+        )
+        self.assertContains(album, "Aliya Nur")
+        self.assertNotContains(album, 'name="state"')
+        archive = self.client.get(self._url("declared_archive", declared.pk))
+        self.assertEqual(archive["Content-Type"], "application/zip")
+        archive.close()  # unread, it would keep the process's one archive slot from the tests after it
+        self.assertContains(self.client.get("/en/accounts/profile/"), self._url("declared", declared.pk))
+
+    def test_a_named_bib_lets_neither_the_member_nor_their_manager_mark_a_photo(self):
+        registration = self._own_registration()  # the start list gave it no bib
+        self._declare("7")
+        declared = DeclaredBib.objects.get()
+        coach = self._managed_by_a_coach()
+        for who in (self.member, coach):
+            with self.subTest(who.username):
+                self.client.force_login(who)
+                album = self.client.get(self._url("declared", declared.pk))
+                self.assertEqual(album.status_code, 200)
+                self.assertNotContains(album, 'name="state"')
+                self.assertContains(self.client.get("/en/accounts/profile/"), self._url("declared", declared.pk))
+                for state in PhotoDecision.State.values:
+                    marked = self.client.post(self._url("decide", registration.pk, self.photos[1].pk), {"state": state})
+                    self.assertEqual(marked.status_code, 404)
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {coach.api_token}"}
+        url = f"/api/v1/event-photos/registrations/{registration.pk}/photos/{self.photos[2].pk}/decision"
+        self.assertEqual(
+            self.client.post(url, {"state": "me"}, content_type="application/json", **auth).status_code, 404
+        )
+        self.assertEqual(list(actions.registration_photos(registration)), [])
+        self.assertFalse(PhotoDecision.objects.exists())
+
+    def test_a_member_names_one_bib_per_event_and_can_take_it_back(self):
+        self._declare("7")
+        self._declare("8")
+        self.assertEqual(list(DeclaredBib.objects.values_list("bib", flat=True)), ["8"])
+        self.client.post(self._url("declare"), {"action": "remove"})
+        self.assertFalse(DeclaredBib.objects.exists())
+
+    def test_a_bib_the_start_list_bound_takes_the_place_of_a_named_one_and_search_stays(self):
+        self._declare("7")
+        declared = DeclaredBib.objects.get()
+        registration = self._own_registration()
+        self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 200)  # no bib bound yet
+        for state in (IssuedBib.State.ACTIVE, IssuedBib.State.CONFLICT):
+            with self.subTest(state):
+                IssuedBib.objects.update_or_create(
+                    competition=self.race, registration=registration, bib="12", defaults={"state": state}
+                )
+                page = self.client.get(self._url("event"))
+                self.assertEqual((page.context["declared_cards"], page.context["declare_form"]), ([], None))
+                self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 404)
+                self.assertNotContains(self.client.get("/en/accounts/profile/"), self._url("declared", declared.pk))
+                refused = self._declare("9", follow=True)
+                self.assertEqual(len(list(refused.context["messages"])), 1)
+                self.assertEqual(DeclaredBib.objects.get().bib, "7")
+                found = self.client.get(self._url("event"), {"bib": "7"}).context["photos"]
+                self.assertEqual([p.photo_uuid.int - 1 for p in found], [1])
+        IssuedBib.objects.filter(registration=registration).delete()  # a later start list took it back
+        self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 200)
+
+    def test_a_bib_is_named_only_at_an_event_with_an_indexed_album(self):
+        self.client.force_login(self.member)
+        for fields in ({"is_hidden": True}, {"is_hidden": False, "imported_at": None}):
+            with self.subTest(**fields):
+                ExternalAlbum.objects.filter(pk=self.album.pk).update(**fields)
+                self.assertIsNone(self.client.get(self._url("event")).context["declare_form"])
+                self._declare("7")
+                self.assertFalse(DeclaredBib.objects.exists())
+
+    def test_a_named_bib_is_read_as_an_index_reads_a_bib(self):
+        for bib in ("7\x07", "x" * 33, "   "):
+            with self.subTest(bib=bib):
+                self._declare(bib)
+                self.assertFalse(DeclaredBib.objects.exists())
+
+    def test_a_named_bib_changes_nothing_anybody_else_sees(self):
+        holder = self._registration(last="Holder")
+        self._bib(holder, "7")
+        actions.decide(holder, self.photos[2], PhotoDecision.State.NOT_ME, None)
+        before = (list(actions.bib_photos(self.race, "7")), list(actions.registration_photos(holder)))
+        self._declare("7")
+        self.assertEqual((list(actions.bib_photos(self.race, "7")), list(actions.registration_photos(holder))), before)
+        # a holder's marks are about the holder: the photo they crossed out stays in the named bib's album
+        named = actions.declared_photos(DeclaredBib.objects.get())
+        self.assertEqual([p.photo_uuid.int - 1 for p in named], [1, 2])
+
+    def test_nobody_else_opens_a_named_bibs_album(self):
+        self._declare("7")
+        declared = DeclaredBib.objects.get()
+        self.client.force_login(self.stranger)
+        self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 404)
+        self.assertEqual(self.client.get(self._url("declared_archive", declared.pk)).status_code, 404)
+        self.assertEqual(self.client.get(self._url("event")).context["declared_cards"], [])
+        self.client.logout()
+        self.assertEqual(self.client.get(self._url("declared", declared.pk)).status_code, 302)
+        self.assertIsNone(self.client.get(self._url("event")).context["declare_form"])

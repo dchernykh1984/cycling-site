@@ -12,7 +12,7 @@ viewed full size and downloaded. With can_mark, each card carries the athlete's 
       {% endif %}
       <span class="gallery-card-caption">
         <span class="gallery-card-title">{{ photo.file_name }}</span>
-        {% if registration %}<span class="gallery-card-date">{% if photo.confirmed %}{% trans "Confirmed" %}{% else %}{% trans "Check: is this you?" %}{% endif %}</span>{% endif %}
+        {% if registration or declared %}<span class="gallery-card-date">{% if photo.confirmed %}{% trans "Confirmed" %}{% else %}{% trans "Check: is this you?" %}{% endif %}</span>{% endif %}
       </span>
     </a>
     {% if can_manage and not registration %}

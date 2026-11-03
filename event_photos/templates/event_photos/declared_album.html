@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="event-photos">
+  {% include "event_photos/_breadcrumbs.html" %}
+  <h1 class="h3">{{ photo_page_title }} &middot; {% trans "bib" %} {{ declared.bib }}</h1>
+  <p>{% trans "The participant named this bib themselves; the start list does not give it. Its photos are here, and nobody can mark them." %}</p>
+  {% if photos %}
+    <p class="text-muted">{% blocktrans with confirmed=confirmed_count to_check=to_check_count %}Confirmed: {{ confirmed }}. To check: {{ to_check }}.{% endblocktrans %}</p>
+    {% include "event_photos/_download_all.html" %}
+    {% include "event_photos/_grid.html" %}
+  {% else %}
+    <p>{% trans "No photos with this bib yet." %}</p>
+  {% endif %}
+</section>
+{% endblock %}

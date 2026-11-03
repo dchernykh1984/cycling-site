@@ -28,7 +28,7 @@ from django.test import SimpleTestCase
 from ninja import Schema
 
 from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
-from event_photos.models import ExternalAlbum
+from event_photos.models import DeclaredBib, ExternalAlbum
 from gallery.models import Album, Photo
 from home.models import HomeCard
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
@@ -79,6 +79,7 @@ FORM_TARGETS = {
     "registrations.forms.RejectRegistrationForm": CompetitionRegistration,
     "gallery.forms.AlbumForm": Album,
     "gallery.forms.PhotoUploadForm": None,
+    "event_photos.forms.DeclaredBibForm": DeclaredBib,
     "event_photos.forms.ExternalAlbumForm": ExternalAlbum,
 }
 

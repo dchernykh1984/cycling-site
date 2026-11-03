@@ -156,6 +156,25 @@ class IssuedBibEvent(models.Model):
         return f"{self.change} {self.bib} r{self.registration_id}"
 
 
+class DeclaredBib(models.Model):
+    """The bib a member names for themselves at an event where the start lists give them none, one per
+    member and event. A preference that finds them that bib's photos, not a right: nobody marks them,
+    and no registration's album or bib search reads it."""
+
+    competition = models.ForeignKey("calendar_app.Competition", on_delete=models.CASCADE, related_name="declared_bibs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="declared_bibs")
+    bib = models.CharField(max_length=BIB_MAX_LENGTH)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(fields=["competition", "user"], name="declared_bib_unique")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.bib} u{self.user_id}"
+
+
 class PhotoDecision(models.Model):
     class State(models.TextChoices):
         ME = "me"
