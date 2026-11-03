@@ -159,7 +159,8 @@ const Sensors = {
   mode() { if (this.power() != null) return 'power'; if (this.wheel() != null) return 'speed'; if (this.crank() != null) return 'cadence'; return 'demo'; },
   changed() { renderDevs(); updateModeUI(); }
 };
-// Управление сопротивлением: шлём уклон маршрута и сопротивление самого гонщика не чаще раза в секунду и только при изменении
+// Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении (и раз в 5 с без него);
+// сопротивление самого гонщика уходит вместе с каждым уклоном
 const Trainer = {
   last: -10, sent: null,
   update(t, grade, rider) {
