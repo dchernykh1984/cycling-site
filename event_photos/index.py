@@ -75,6 +75,11 @@ def normalize_bib(value: str) -> str:
     return unicodedata.normalize("NFC", value.strip())
 
 
+def is_valid_bib(bib: str) -> bool:
+    """A normalized bib: 1 to BIB_MAX_LENGTH printable characters."""
+    return 1 <= len(bib) <= BIB_MAX_LENGTH and not any(unicodedata.category(c).startswith("C") for c in bib)
+
+
 def _fail(where: str, why: str) -> NoReturn:
     raise IndexValidationError(f"{where}: {why}")
 
@@ -121,7 +126,7 @@ def _bib(value, where: str, original_sha: str) -> Bib:
     if not isinstance(raw, str):
         _fail(f"{where}.value", "must be text")
     bib = normalize_bib(raw)
-    if not 1 <= len(bib) <= BIB_MAX_LENGTH or any(unicodedata.category(c).startswith("C") for c in bib):
+    if not is_valid_bib(bib):
         _fail(f"{where}.value", f"must be 1 to {BIB_MAX_LENGTH} printable characters")
     state, method = value.get("state"), value.get("method")
     if not isinstance(state, str) or state not in _STATES:

@@ -212,23 +212,23 @@ def registration_bibs(registration) -> list[str]:
 def registration_photos(registration) -> QuerySet:
     """A registration's album: its bibs' accepted matches and candidates, plus its own "this is me",
     minus its own "not me". Annotated with ``confirmed``."""
-    bibs = registration_bibs(registration)
-    albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id)
-    mine = PhotoDecision.objects.filter(registration=registration, photo=OuterRef("pk"))
-    matched = Q(bibs__value__in=bibs, bibs__state__in=_FOUND)
-    return (
-        visible_photos(albums)
-        .filter(matched | Q(decisions__registration=registration, decisions__state=PhotoDecision.State.ME))
-        .exclude(Exists(mine.filter(state=PhotoDecision.State.NOT_ME)))
-        .annotate(
-            confirmed=Exists(mine.filter(state=PhotoDecision.State.ME))
-            | Exists(
-                BibObservation.objects.filter(photo=OuterRef("pk"), value__in=bibs, state=BibObservation.State.ACCEPTED)
-            )
-        )
-        .distinct()
-        .order_by("-confirmed", "original_path", "pk")
+    return _bib_album(registration.competition_id, registration_bibs(registration), registration)
+
+
+def _bib_album(competition_id, bibs, registration=None) -> QuerySet:
+    """The photos of ``bibs`` at the event -- accepted matches and candidates, confirmed first -- and,
+    for a registration, its own marks on top: its "this is me" in, its "not me" out."""
+    found = Q(bibs__value__in=bibs, bibs__state__in=_FOUND)
+    confirmed: Exists | Q = Exists(
+        BibObservation.objects.filter(photo=OuterRef("pk"), value__in=bibs, state=BibObservation.State.ACCEPTED)
     )
+    photos = visible_photos(ExternalAlbum.objects.filter(competition_id=competition_id))
+    if registration is not None:
+        mine = PhotoDecision.objects.filter(registration=registration, photo=OuterRef("pk"))
+        found |= Q(decisions__registration=registration, decisions__state=PhotoDecision.State.ME)
+        photos = photos.exclude(Exists(mine.filter(state=PhotoDecision.State.NOT_ME)))
+        confirmed = Exists(mine.filter(state=PhotoDecision.State.ME)) | confirmed
+    return photos.filter(found).annotate(confirmed=confirmed).distinct().order_by("-confirmed", "original_path", "pk")
 
 
 def registration_summary(registration) -> dict:
@@ -236,24 +236,27 @@ def registration_summary(registration) -> dict:
     and a state while there is nothing to show yet. Database only -- no call to Dropbox."""
     bibs = registration_bibs(registration)
     conflict = IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.CONFLICT).exists()
-    photos = registration_photos(registration)
-    count = photos.count()
-    confirmed = photos.filter(confirmed=True).count() if count else 0
-    albums = ExternalAlbum.objects.filter(competition_id=registration.competition_id, is_hidden=False)
-    indexing = any(not a.inventory_complete or a.processed_count < a.photo_count for a in albums)
+    summary = _album_summary(registration_photos(registration), registration.competition_id)
     if conflict and not bibs:
         state = "conflict"
     elif not bibs:
         state = "no-bib"
     elif IssuedBib.objects.filter(registration=registration, state=IssuedBib.State.REVIEW).exists():
         state = "review"
-    elif indexing:
+    elif summary["indexing"]:
         state = "indexing"
     else:
         state = "ready"
+    return {"registration": registration, "bibs": bibs, **summary, "state": state}
+
+
+def _album_summary(photos, competition_id) -> dict:
+    """A personal album's counts, a cover from its confirmed photos that can be thumbnailed, and
+    whether the event's albums are still being indexed."""
+    count = photos.count()
+    confirmed = photos.filter(confirmed=True).count() if count else 0
+    albums = ExternalAlbum.objects.filter(competition_id=competition_id, is_hidden=False)
     return {
-        "registration": registration,
-        "bibs": bibs,
         "count": count,
         "confirmed": confirmed,
         "to_check": count - confirmed,
@@ -263,7 +266,7 @@ def registration_summary(registration) -> dict:
         .first()
         if count
         else None,
-        "state": state,
+        "indexing": any(not a.inventory_complete or a.processed_count < a.photo_count for a in albums),
     }
 
 
