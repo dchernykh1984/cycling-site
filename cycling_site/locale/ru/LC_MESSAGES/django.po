@@ -4755,3 +4755,8 @@ msgstr "Календарь соревнований"
 #: calendar_app/listing_seo.py
 msgid "%(title)s -- %(tail)s"
 msgstr "%(title)s — %(tail)s"
+
+#, python-format
+#: calendar_app/listing_seo.py
+msgid "%(calendar)s: %(sports)s"
+msgstr "%(calendar)s: %(sports)s"

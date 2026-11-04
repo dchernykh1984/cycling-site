@@ -54,8 +54,9 @@ def describe_filters(
     Empty is deliberate: an unfiltered list has nothing of its own to say, and inventing a
     description for it would put the same words on it as on the site's other pages.
 
-    The title carries what people search for -- "competition calendar", the place with its country,
-    the sports the place's events belong to -- all read from the data; the heading is its short form.
+    The title and the description carry what people search for -- "competition calendar", the place
+    with its country, the sports the place's events belong to -- all read from the data; the heading
+    on the page keeps its own words ("Events in Almaty").
     """
     from calendar_app.models import Discipline, DisciplineCategory, EventType
     from locations.models import Location
@@ -68,14 +69,15 @@ def describe_filters(
 
     calendar = _("Competition calendar")
     subject = ", ".join(kinds or types)
-    heading = title = subject or calendar
+    # The heading readers see keeps the page's own words, and the title begins with it; the words
+    # people search with follow: the country, "competition calendar", and a place's sports.
+    heading = title = subject or _("Events")
     if places:
         heading = _("%(subject)s in %(place)s") % {"subject": heading, "place": ", ".join(p.name for p in places)}
         title = _("%(subject)s in %(place)s") % {"subject": title, "place": ", ".join(map(_with_country, places))}
-    # A page about a sport says it is a calendar; a page about a place says which sports it holds.
-    tail = calendar if subject else ", ".join(_sports(competitions))
-    if tail:
-        title = _("%(title)s -- %(tail)s") % {"title": title, "tail": tail}
+    sports = [] if subject else _sports(competitions)
+    tail = _("%(calendar)s: %(sports)s") % {"calendar": calendar, "sports": ", ".join(sports)} if sports else calendar
+    title = _("%(title)s -- %(tail)s") % {"title": title, "tail": tail}
 
     parts = [_("%(count)s events in the calendar.") % {"count": count}]
     if date_from and date_to:

@@ -55,6 +55,9 @@ class EventWordingTests(SimpleTestCase):
 
 # "sorevnovanie" -- the Russian for a competition, escaped because sources here are ASCII only.
 COMPETITION_RU = "\u0441\u043e\u0440\u0435\u0432\u043d\u043e\u0432\u0430\u043d"
+# What only search engines read -- a page's title and description -- may use the words people type
+# into them ("competition calendar Almaty"); a heading, a button or a hint never does.
+SEARCH_WORDS = {"Competition calendar"}
 
 
 class NoCompetitionWordingLeftTests(SimpleTestCase):
@@ -68,5 +71,9 @@ class NoCompetitionWordingLeftTests(SimpleTestCase):
         from django.conf import settings
 
         path = Path(settings.BASE_DIR) / "cycling_site" / "locale" / "ru" / "LC_MESSAGES" / "django.po"
-        offenders = [e.msgid for e in polib.pofile(str(path)) if not e.obsolete and COMPETITION_RU in e.msgstr.lower()]
+        offenders = [
+            e.msgid
+            for e in polib.pofile(str(path))
+            if not e.obsolete and e.msgid not in SEARCH_WORDS and COMPETITION_RU in e.msgstr.lower()
+        ]
         self.assertEqual(offenders, [])

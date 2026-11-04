@@ -311,9 +311,6 @@ breakpoint where the filters fold away too.{% endcomment %}
 </div>
 
 {% include "_pagination.html" with page_obj=competitions %}
-{% comment %}What the page is about in words, under the events rather than above them, so the header
-stands where it stands on the calendar and the map.{% endcomment %}
-{% if list_heading %}<p class="text-muted small mt-3">{{ meta_description }}</p>{% endif %}
 
 {% else %}
 <p class="text-muted">{% trans "No events found for the selected period." %}</p>
