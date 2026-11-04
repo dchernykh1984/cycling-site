@@ -145,7 +145,8 @@ def _bots(start, end, bucket) -> dict:
     for (day, _key), count in daily.items():
         totals[_bucket_of(day, bucket)] += count
     return {
-        "views": sum(n for _key, n in names),
+        # The day's total, not the names': past a day's limit of names a robot goes unnamed, still counted.
+        "views": dict(_sums(Tally.Dimension.VIEWS, start, end)).get(Tally.Audience.BOTS, 0),
         "series": [{"at": at, "views": totals[at]} for at in _buckets(start, end, bucket)],
         "kinds": [{"kind": kind, "views": n} for kind, n in sorted(kinds.items(), key=lambda item: -item[1])],
         "names": [{"kind": key.split(":", 1)[0], "name": key.split(":", 1)[-1], "views": n} for key, n in names[:TOP]],
