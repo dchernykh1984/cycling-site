@@ -231,3 +231,22 @@
     }
     images.forEach(enqueue);
 }());
+
+(function () {
+    // How people are counted (issue #184): the page tells the site it was opened -- no cookie, nothing
+    // kept about the reader but sums. A robot seldom runs scripts, which is what tells the two apart
+    // (stats/middleware.py counts robots). A page that answered with an error is no page read, and one
+    // Chrome drew ahead of a click it expected counts once it is shown.
+    if (!navigator.sendBeacon) return;
+    var navigation = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (navigation && navigation.responseStatus >= 400) return;
+    function count() {
+        var hit = JSON.stringify({path: location.pathname, referrer: document.referrer});
+        navigator.sendBeacon('/api/v1/stats/hit', new Blob([hit], {type: 'application/json'}));
+    }
+    if (document.prerendering) {
+        document.addEventListener('prerenderingchange', count, {once: true});
+    } else {
+        count();
+    }
+}());

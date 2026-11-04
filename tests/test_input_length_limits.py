@@ -112,6 +112,9 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
     "api.endpoints.locations.LocationPatchIn": Location,
+    # A page's address and where it was opened from, as tally keys: stats.counting.add cuts a key to its
+    # column, and the schema bounds the request.
+    "api.endpoints.stats.HitIn": None,
     # Timing and start-list payloads are device streams, not rows of these models: they carry a
     # competition token and a list of lines, parsed and validated by their own endpoints.
     "api.endpoints.live_stats.LiveStatsIn": None,
