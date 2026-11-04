@@ -15,6 +15,7 @@ from tests.e2e.conftest import inject_session
 BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
+@pytest.mark.counts_pages
 @pytest.mark.browser_context_args(user_agent=BROWSER)
 @pytest.mark.django_db(transaction=True)
 def test_a_page_a_person_opens_counts_itself(page: Page, live_server):
