@@ -1,4 +1,4 @@
-{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags seo_tags %}
+{% load static i18n wagtailcore_tags wagtailuserbar home_tags knowledge_tags locations_tags news_tags seo_tags roles %}
 {% get_current_language as CURRENT_LANGUAGE %}
 <!DOCTYPE html>
 <html lang="{{ CURRENT_LANGUAGE }}" data-bs-theme="{{ skin.mode }}" data-skin="{{ skin.key }}">
@@ -125,6 +125,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'virtual_ride' %}">{% include "_ubt_icon.html" with name="bike" %}<span>{% trans "Virtual ride" %}</span></a>
                     </li>
+                    {% if user|at_least:ROLES.SEE_SITE_STATS %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'stats:dashboard' %}">{% include "_ubt_icon.html" with name="list" %}<span>{% trans "Statistics" %}</span></a>
+                    </li>
+                    {% endif %}
                     {% get_about_url as about_url %}
                     {% if about_url %}
                     <li class="nav-item">
