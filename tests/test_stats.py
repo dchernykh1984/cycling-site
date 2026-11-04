@@ -319,6 +319,13 @@ class ReportTests(TestCase):
         )
         self.assertEqual((team["views"], team["actions"]), (6, 1))
 
+    def test_a_member_who_left_the_team_keeps_the_line_of_their_pages(self):
+        former = _member("former", User.Role.ORGANIZER)
+        self._tally(self.today, Tally.Dimension.TEAM, str(former.pk), 4)
+        team = self._build("week")["team"]
+        self.assertEqual(team["members"], [{"name": "former@example.com", "views": 4, "actions": 0}])
+        self.assertEqual(team["views"], 4)
+
     def test_newcomers_are_the_members_who_joined_in_the_period(self):
         joined = _member("newcomer", User.Role.PARTICIPANT)
         old = _member("old", User.Role.PARTICIPANT)

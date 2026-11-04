@@ -159,8 +159,9 @@ def _team(start, end, bucket) -> dict:
     from audit.models import AuditLog
 
     first, after = _moments(start, end)
-    team = {user.pk: user for user in User.objects.filter(roles.holding(roles.COUNTED_AS_TEAM))}
     views = {int(key): n for key, n in _sums(Tally.Dimension.TEAM, start, end) if key.isdecimal()}
+    # The team as it is, and whoever was in it in the period: their pages are in the total.
+    team = {user.pk: user for user in User.objects.filter(roles.holding(roles.COUNTED_AS_TEAM) | Q(pk__in=views))}
     changes = AuditLog.objects.filter(user_id__in=team, timestamp__gte=first, timestamp__lt=after)
     actions = dict(changes.values("user_id").annotate(n=Count("pk")).values_list("user_id", "n"))
     by_day: dict[datetime.date, dict[str, int]] = defaultdict(lambda: {"views": 0, "actions": 0})
