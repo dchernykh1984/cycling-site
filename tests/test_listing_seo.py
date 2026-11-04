@@ -90,6 +90,16 @@ class FilteredListMetaTests(TestCase):
         html = self.client.get(in_language(reverse("calendar_list"), "ru"), {**SPAN, "location": self.city.pk})
         self.assertIn(calendar, _title(html.content.decode()))
 
+    def test_the_calendar_and_the_map_are_titled_a_competition_calendar(self):
+        from django.utils import translation
+
+        with translation.override("ru"):
+            calendar = translation.gettext("Competition calendar")
+        for name in ("calendar", "calendar_map"):
+            with self.subTest(name):
+                html = self.client.get(in_language(reverse(name), "ru")).content.decode()
+                self.assertTrue(_title(html).startswith(calendar), _title(html))
+
     def test_an_unfiltered_list_keeps_the_site_wide_text(self):
         """Nothing of its own to say, so it must not invent something."""
         self.assertNotIn("Almaty", _title(self._get()))
