@@ -23,7 +23,9 @@
     {% comment %}
     Each language is its own address, so each has to point at the other two -- otherwise the three
     look like three copies of the same page and an engine picks one and drops the rest. x-default
-    goes to Russian, which is what the unprefixed URL resolves to for most of our readers.
+    goes to Russian, which is what the unprefixed URL resolves to for most of our readers. A page
+    written in one language alone (a knowledge article) names only that one: its other addresses
+    are copies, not translations.
     {% endcomment %}
     {% language_alternates as alternates %}
     {% for code, alternate_url in alternates %}
