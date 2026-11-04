@@ -40,7 +40,7 @@
     first thing that says so -- to a reader who arrived from search as much as to the crawler that
     put them there. Without a filter there is nothing to name, and the plain word stands.{% endcomment %}
     {% trans "Events" as events %}
-    {% include "calendar_app/_page_heading.html" with heading=meta_title|default:events %}
+    {% include "calendar_app/_page_heading.html" with heading=list_heading|default:events %}
     <div class="calendar-controls d-flex flex-wrap align-items-center">
       {% include "calendar_app/_view_switcher.html" with active_view="list" %}
       {% include "calendar_app/_filter_toggle.html" %}
@@ -311,6 +311,9 @@ breakpoint where the filters fold away too.{% endcomment %}
 </div>
 
 {% include "_pagination.html" with page_obj=competitions %}
+{% comment %}What the page is about in words, under the events rather than above them, so the header
+stands where it stands on the calendar and the map.{% endcomment %}
+{% if list_heading %}<p class="text-muted small mt-3">{{ meta_description }}</p>{% endif %}
 
 {% else %}
 <p class="text-muted">{% trans "No events found for the selected period." %}</p>
