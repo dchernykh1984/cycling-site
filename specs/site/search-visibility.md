@@ -33,7 +33,9 @@ and an IndexNow notice whenever something is published.
    robots, the IndexNow key), **Then** it carries no prefix, and a missing API address is a 404,
    not a redirect.
 4. **Given** any page, **Then** it declares itself canonical, `hreflang` alternates for all three
-   languages plus `x-default` (all absolute), Open Graph and Twitter tags, and the feeds.
+   languages plus `x-default` (all absolute), Open Graph and Twitter tags, and the feeds. A knowledge
+   article, written in one language, names its own-language address and that language only
+   ([news and knowledge](news-and-knowledge.md)).
 5. **Given** an event page, **Then** `og:description` -- the line a chat shows under a pasted
    link -- is the event's preview text in the page's language, else the sentence about the event
    (date and place) in that language; `meta description`, which search engines read, stays that

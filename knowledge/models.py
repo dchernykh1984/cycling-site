@@ -203,6 +203,11 @@ class KnowledgeIndexPage(RoutablePageMixin, OwnLanguageUrlMixin, AsciiSlugMixin,
                 author=str(article.published_by) if article.published_by else "",
                 language=article.locale,
             ),
+            # Written in one language, shown under every prefix: the other two are copies of it, so
+            # each names the article's own address and has no other language to point to.
+            "canonical_path": article.get_absolute_url(),
+            "canonical_url": request.build_absolute_uri(article.get_absolute_url()),
+            "own_language": article.locale,
         }
 
         user_lang = (getattr(request, "LANGUAGE_CODE", None) or get_language() or "").split("-")[0]
