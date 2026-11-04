@@ -78,11 +78,12 @@ and an IndexNow notice whenever something is published.
 ### Story 3 -- A filtered calendar is a page of its own (P2)
 
 1. **Given** the list filtered by a city, region, direction or discipline, **Then** its title,
-   heading and description name it as a competition calendar and give the number of events, and it
+   heading and description name it -- the title and the description as a competition calendar -- and
+   give the number of events, and it
    reaches the whole season ahead; the unfiltered list keeps the site-wide text and the 30-day span.
    The title gives a place with its country ("Almaty, Kazakhstan") and, for a place, the directions
-   its events belong to, the most common three; the heading is the short form, without either; the
-   description stands under the list too. All of it is read from the data
+   its events belong to, the most common three, and so does the description; the heading on the page
+   keeps its own words ("Events in Almaty"), and the title begins with it. All of it is read from the data
    (`listing_seo.describe_filters`).
 2. **Given** the calendar, **Then** it links the places and disciplines that hold upcoming events,
    busiest first -- never a catch-all venue or a category's "other" bin, never one whose races are
