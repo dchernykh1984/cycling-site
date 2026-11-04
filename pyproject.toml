@@ -118,4 +118,5 @@ addopts = "-n auto --cov=. --cov-fail-under=90 --cov-report=term-missing --ignor
 markers = [
     "debug: mark test for local debugging and run it in isolation",
     "e2e: end-to-end Playwright tests (run separately via tests/e2e/)",
+    "counts_pages: a browser test whose pages' pings reach the server (tests/e2e/conftest.py)",
 ]

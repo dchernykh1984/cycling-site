@@ -131,6 +131,15 @@ def _cdn_files_from_memory(page):
 
 
 @pytest.fixture(autouse=True)
+def _pings_answered_in_the_browser(page, request):
+    """Every page says it was opened as it loads (issue #184), a request of its own that would land after
+    the page -- one more write a flush could meet halfway. The browser answers it, except for a test of
+    the counting itself (``@pytest.mark.counts_pages``)."""
+    if "counts_pages" not in request.keywords:
+        page.route("**/api/v1/stats/hit", lambda route: route.fulfill(status=204))
+
+
+@pytest.fixture(autouse=True)
 def _generous_ci_timeouts(page):
     """Raise Playwright's default 30s navigation/action timeout.
 
