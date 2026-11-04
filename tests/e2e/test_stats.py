@@ -48,3 +48,18 @@ def test_the_statistics_fit_a_phone_and_draw_their_charts(page: Page, live_serve
     assert page.locator("canvas[data-chart]").count() == 3
     assert page.evaluate("document.documentElement.scrollWidth") <= 360
     assert errors == []
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_period_opens_by_its_button_not_while_it_is_chosen(page: Page, live_server):
+    owner = User.objects.create_user(username="owner@example.com", email="owner@example.com", role=User.Role.OWNER)
+    inject_session(page, live_server, owner)
+    page.goto(f"{live_server.url}/ru/stats/?period=week")
+
+    # The arrow keys change a select's value at each press in some browsers: nothing may reload then.
+    page.select_option("#stats-period", "year")
+    page.wait_for_timeout(300)
+    assert page.url.endswith("?period=week")
+
+    page.locator(".stats-period button[type=submit]").click()
+    page.wait_for_url("**?period=year")
