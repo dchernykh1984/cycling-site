@@ -13,6 +13,14 @@ from tests.e2e.conftest import inject_session
 
 # A browser as people have one: Playwright's own calls itself HeadlessChrome, which counts as a robot.
 BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+# What runs past the screen's right edge, outermost first, outside a box that scrolls on its own: what a
+# failure names, since a pixel too wide shows only with the fonts of the machine that runs the test.
+PAST_THE_EDGE = """() => {
+  const past = [...document.querySelectorAll('body *')].filter(
+    e => e.getBoundingClientRect().right > innerWidth + 0.5 && !e.closest('.table-responsive'));
+  return past.filter(e => !past.includes(e.parentElement)).slice(0, 5).map(
+    e => `${e.tagName}.${e.className} right=${e.getBoundingClientRect().right} "${e.textContent.trim().slice(0, 40)}"`);
+}"""
 
 
 @pytest.mark.counts_pages
@@ -49,7 +57,7 @@ def test_the_statistics_fit_a_phone_and_draw_their_charts(page: Page, live_serve
 
     page.wait_for_function("[...document.querySelectorAll('canvas[data-chart]')].every(c => Chart.getChart(c))")
     assert page.locator("canvas[data-chart]").count() == 3
-    assert page.evaluate("document.documentElement.scrollWidth") <= width
+    assert page.evaluate("document.documentElement.scrollWidth") <= width, page.evaluate(PAST_THE_EDGE)
     assert errors == []
 
 
