@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "gallery",
     "event_photos",
     "trainer",
+    "stats",
     "assistant",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
@@ -173,6 +174,8 @@ MIDDLEWARE = [
     "cycling_site.middleware.ReaderTimezoneMiddleware",
     "cycling_site.middleware.NoindexAccountPagesMiddleware",
     "cycling_site.middleware.LocaleFallbackMiddleware",
+    # Last, so it sees the page the view made: robots and the team are counted as their pages go out.
+    "stats.middleware.CountingMiddleware",
 ]
 
 ROOT_URLCONF = "cycling_site.urls"
