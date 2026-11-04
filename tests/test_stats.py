@@ -201,10 +201,11 @@ class HitTests(TestCase):
             self.assertEqual(answer.status_code, 204)
         self.assertFalse(Tally.objects.exists())
 
-    def test_a_member_below_the_team_is_a_reader(self):
-        organizer = Client()
+    def test_a_signed_in_reader_below_the_team_is_counted_with_no_csrf_token(self):
+        # The page sends no token, and the test client skips the check unless it is asked to make it.
+        organizer = Client(enforce_csrf_checks=True)
         organizer.force_login(_member("organizer", User.Role.ORGANIZER))
-        self._hit(organizer)
+        self.assertEqual(self._hit(organizer).status_code, 204)
         self.assertEqual(_tallies(Tally.Dimension.VIEWS), {Tally.Audience.PEOPLE: 1})
 
 
