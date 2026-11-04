@@ -1,5 +1,6 @@
 import importlib
 import json
+import re
 import time
 
 from django.test import TestCase
@@ -291,8 +292,6 @@ class KnowledgeForeignLocaleBannerTests(TestCase):
         self.assertContains(resp, reverse("search"))
 
     def test_every_language_names_the_articles_own_address_and_no_translation(self):
-        import re
-
         article = KnowledgeArticle.objects.create(title="Kazakh article", locale="kk", body="<p>Kazakh body</p>")
         own = "http://testserver" + in_language(article.get_absolute_url(), "kk")
         for language in ("ru", "kk", "en"):
