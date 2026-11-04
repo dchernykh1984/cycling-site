@@ -1,9 +1,11 @@
 """The site's own statistics over the API (issue #184): a person's browser saying it opened a page,
 and the owners reading what the statistics page shows."""
 
+import logging
 from http import HTTPStatus
 from urllib.parse import urlsplit
 
+from django.db import DatabaseError
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
@@ -12,6 +14,7 @@ from api.auth import ApiTokenAuth
 from stats import counting, report
 from stats.robots import robot
 
+logger = logging.getLogger(__name__)
 auth = ApiTokenAuth()
 router = Router(tags=["stats"])
 
@@ -42,7 +45,10 @@ def hit(request, payload: HitIn):
         and robot(user_agent) is None
         and not counting.is_team(request.user)
     ):
-        counting.count_person(payload.path, payload.referrer, user_agent, request.get_host())
+        try:
+            counting.count_person(payload.path, payload.referrer, user_agent, request.get_host())
+        except DatabaseError:  # logged, not answered with a 500 that mails the maintainer for every page
+            logger.exception("a page view could not be counted")
     return Status(HTTPStatus.NO_CONTENT, None)
 
 
