@@ -66,10 +66,10 @@
 
 <h3 class="h6">{% trans "Popular pages" %}</h3>
 {% if people.pages %}
-<table class="table table-sm stats-table mb-4">
+<div class="table-responsive mb-4"><table class="table table-sm stats-table">
   <thead><tr><th>{% trans "Page" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
   <tbody>{% for row in people.pages %}<tr><td><a href="{{ row.path }}">{% firstof row.title row.path %}</a></td><td class="num">{{ row.views|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
-</table>
+</table></div>
 {% else %}
 <p class="text-muted mb-4">{% trans "Nothing counted for this period yet." %}</p>
 {% endif %}
@@ -88,10 +88,10 @@
   <div class="col-lg-6">
     <h3 class="h6">{% trans "Which robots" %}</h3>
     {% if robots %}
-    <table class="table table-sm stats-table">
+    <div class="table-responsive"><table class="table table-sm stats-table">
       <thead><tr><th>{% trans "Robot" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
       <tbody>{% for row in robots %}<tr><td>{{ row.name }}<div class="text-muted small">{{ row.kind_name }}</div></td><td class="num">{{ row.views|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
-    </table>
+    </table></div>
     {% else %}
     <p class="text-muted">{% trans "Nothing counted for this period yet." %}</p>
     {% endif %}
@@ -105,10 +105,10 @@
   <div class="stats-tile"><div class="stats-tile-value">{{ team.actions|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Changes made" %}</div></div>
 </div>
 {% include "stats/_chart.html" with chart=charts.team name="team" %}
-<table class="table table-sm stats-table mb-4">
+<div class="table-responsive mb-4"><table class="table table-sm stats-table">
   <thead><tr><th>{% trans "Member" %}</th><th class="num">{% trans "Pages opened" %}</th><th class="num">{% trans "Changes made" %}</th></tr></thead>
   <tbody>{% for row in team.members %}<tr><td>{{ row.name }}</td><td class="num">{{ row.views|floatformat:"0g" }}</td><td class="num">{{ row.actions|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
-</table>
+</table></div>
 
 <h2 class="h5">{% trans "On the site" %}</h2>
 <div class="stats-tiles mb-3">
@@ -124,10 +124,10 @@
 
 <h3 class="h6">{% trans "Who signed up" %}</h3>
 {% if site.newcomers %}
-<table class="table table-sm stats-table">
+<div class="table-responsive"><table class="table table-sm stats-table">
   <thead><tr><th>{% trans "Member" %}</th><th>{% trans "Signed up" %}</th></tr></thead>
   <tbody>{% for row in site.newcomers %}<tr><td>{{ row.name }}</td><td>{{ row.joined|date:"d.m.Y H:i" }}</td></tr>{% endfor %}</tbody>
-</table>
+</table></div>
 {% else %}
 <p class="text-muted">{% trans "Nobody signed up in this period." %}</p>
 {% endif %}

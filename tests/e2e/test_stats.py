@@ -30,8 +30,10 @@ def test_a_page_a_person_opens_counts_itself(page: Page, live_server):
     assert pages == {"/ru/calendar/": 1}
 
 
+# 360 px is the phone the site is made for; at 320 px nothing may only spill over (the interface skill).
+@pytest.mark.parametrize("width", [360, 320])
 @pytest.mark.django_db(transaction=True)
-def test_the_statistics_fit_a_phone_and_draw_their_charts(page: Page, live_server):
+def test_the_statistics_fit_a_phone_and_draw_their_charts(page: Page, live_server, width):
     owner = User.objects.create_user(username="owner@example.com", email="owner@example.com", role=User.Role.OWNER)
     today = counting.now().date()
     for back, views in enumerate((12, 30, 7)):
@@ -40,14 +42,14 @@ def test_the_statistics_fit_a_phone_and_draw_their_charts(page: Page, live_serve
         Tally.objects.create(day=day, dimension=Tally.Dimension.BOT, key="search:Googlebot", count=views * 3)
     errors: list[str] = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.set_viewport_size({"width": 360, "height": 800})
+    page.set_viewport_size({"width": width, "height": 800})
     inject_session(page, live_server, owner)
 
     page.goto(f"{live_server.url}/kk/stats/?period=week")
 
     page.wait_for_function("[...document.querySelectorAll('canvas[data-chart]')].every(c => Chart.getChart(c))")
     assert page.locator("canvas[data-chart]").count() == 3
-    assert page.evaluate("document.documentElement.scrollWidth") <= 360
+    assert page.evaluate("document.documentElement.scrollWidth") <= width
     assert errors == []
 
 
