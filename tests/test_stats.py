@@ -271,6 +271,7 @@ class ReportTests(TestCase):
         )
 
     def test_robots_are_summed_by_kind(self):
+        self._tally(self.today, Tally.Dimension.VIEWS, Tally.Audience.BOTS, 11)
         self._tally(self.today, Tally.Dimension.BOT, "search:Googlebot", 5)
         self._tally(self.today, Tally.Dimension.BOT, "search:YandexBot", 2)
         self._tally(self.today, Tally.Dimension.BOT, "seo:AhrefsBot", 4)
@@ -278,6 +279,15 @@ class ReportTests(TestCase):
         self.assertEqual(bots["views"], 11)
         self.assertEqual(bots["kinds"], [{"kind": "search", "views": 7}, {"kind": "seo", "views": 4}])
         self.assertEqual(bots["names"][0], {"kind": "search", "name": "Googlebot", "views": 5})
+
+    def test_the_robots_total_counts_those_past_the_days_names(self):
+        with mock.patch.object(counting, "DAILY_KEYS", 1), _at(f"{self.today.isoformat()}T12:00:00+05:00"):
+            for robot_name in ("Googlebot", "YandexBot"):
+                counting.add(
+                    (Tally.Dimension.VIEWS, Tally.Audience.BOTS), (Tally.Dimension.BOT, f"search:{robot_name}")
+                )
+        bots = self._build("week")["bots"]
+        self.assertEqual((bots["views"], len(bots["names"])), (2, 1))
 
     def test_the_team_is_every_admin_and_owner_with_their_pages_and_changes(self):
         admin = _member("admin", User.Role.ADMIN)
