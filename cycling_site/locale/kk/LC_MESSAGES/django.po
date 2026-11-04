@@ -4758,3 +4758,212 @@ msgstr "%(title)s — %(tail)s"
 #: calendar_app/listing_seo.py
 msgid "%(calendar)s: %(sports)s"
 msgstr "%(calendar)s: %(sports)s"
+
+#: cycling_site/templates/base.html
+msgid "Statistics"
+msgstr "Статистика"
+
+#: stats/templates/stats/_bars.html
+msgid "Nothing counted for this period yet."
+msgstr "Бұл кезеңде әлі ештеңе есептелмеді."
+
+#: stats/templates/stats/_chart.html
+msgid "As a table"
+msgstr "Кесте түрінде"
+
+#: stats/templates/stats/_chart.html
+msgid "When"
+msgstr "Қашан"
+
+#: stats/templates/stats/dashboard.html
+msgid "Period"
+msgstr "Кезең"
+
+#: stats/templates/stats/dashboard.html
+msgid "People"
+msgstr "Адамдар"
+
+#: stats/templates/stats/dashboard.html
+msgid "Counted by the page itself; robots and the team are not here."
+msgstr "Беттің өзі санайды; роботтар мен команда мұнда жоқ."
+
+#: stats/templates/stats/dashboard.html
+msgid "Visits"
+msgstr "Келулер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Page views"
+msgstr "Бет қаралымдары"
+
+#: stats/templates/stats/dashboard.html
+msgid "Pages per visit"
+msgstr "Бір келудегі беттер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Where people came from"
+msgstr "Қайдан келді"
+
+#: stats/templates/stats/dashboard.html
+msgid "Phones and computers"
+msgstr "Телефондар мен компьютерлер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Languages"
+msgstr "Тілдер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Popular pages"
+msgstr "Танымал беттер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Robots"
+msgstr "Роботтар"
+
+#: stats/templates/stats/dashboard.html
+msgid "Search engines, AI services, link previews, monitoring."
+msgstr "Іздеу жүйелері, ЖИ қызметтері, сілтеме көріністері, мониторинг."
+
+#: stats/templates/stats/dashboard.html
+msgid "By kind"
+msgstr "Түрлері бойынша"
+
+#: stats/templates/stats/dashboard.html
+msgid "Which robots"
+msgstr "Қандай роботтар"
+
+#: stats/templates/stats/dashboard.html
+msgid "Robot"
+msgstr "Робот"
+
+
+#: stats/templates/stats/dashboard.html
+msgid "The team"
+msgstr "Команда"
+
+#: stats/templates/stats/dashboard.html
+msgid "Owners and admins: pages opened and changes made."
+msgstr "Иелер мен әкімшілер: ашылған беттер мен енгізілген өзгерістер."
+
+#: stats/templates/stats/dashboard.html
+msgid "Pages opened"
+msgstr "Ашылған беттер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Changes made"
+msgstr "Енгізілген өзгерістер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Member"
+msgstr "Қатысушы"
+
+#: stats/templates/stats/dashboard.html
+msgid "On the site"
+msgstr "Сайтта"
+
+#: stats/templates/stats/dashboard.html
+msgid "Members: new / all"
+msgstr "Қатысушылар: жаңа / барлығы"
+
+#: stats/templates/stats/dashboard.html
+msgid "Members who signed in"
+msgstr "Сайтқа кіргендер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Strava connected: new / all"
+msgstr "Strava қосқандар: жаңа / барлығы"
+
+#: stats/templates/stats/dashboard.html
+msgid "Registrations for events"
+msgstr "Іс-шараларға тіркелулер"
+
+#: stats/templates/stats/dashboard.html
+msgid "Events added"
+msgstr "Қосылған іс-шаралар"
+
+#: stats/templates/stats/dashboard.html
+msgid "Events approved"
+msgstr "Бекітілген іс-шаралар"
+
+#: stats/templates/stats/dashboard.html
+msgid "Waiting for review now"
+msgstr "Қазір қарастырылуда"
+
+#: stats/templates/stats/dashboard.html
+msgid "Who signed up"
+msgstr "Кім тіркелді"
+
+#: stats/templates/stats/dashboard.html
+msgid "Signed up"
+msgstr "Тіркелген уақыты"
+
+#: stats/templates/stats/dashboard.html
+msgid "Nobody signed up in this period."
+msgstr "Бұл кезеңде ешкім тіркелмеді."
+
+#: stats/views.py
+msgid "30 days"
+msgstr "30 күн"
+
+#: stats/views.py
+msgid "90 days"
+msgstr "90 күн"
+
+#: stats/views.py
+msgid "Since the start of the year"
+msgstr "Жыл басынан бері"
+
+#: stats/views.py
+msgid "All time"
+msgstr "Барлық уақыт"
+
+#: stats/views.py
+msgid "AI assistants opening a page for a person"
+msgstr "Адамның өтініші бойынша ЖИ көмекшілері"
+
+#: stats/views.py
+msgid "AI search"
+msgstr "ЖИ іздеу"
+
+#: stats/views.py
+msgid "Search engines"
+msgstr "Іздеу жүйелері"
+
+#: stats/views.py
+msgid "AI training"
+msgstr "ЖИ оқыту"
+
+#: stats/views.py
+msgid "Link previews in messengers"
+msgstr "Мессенджерлердегі сілтеме көріністері"
+
+#: stats/views.py
+msgid "Marketing services (SEO)"
+msgstr "Маркетинг қызметтері (SEO)"
+
+#: stats/views.py
+msgid "Monitoring and scripts"
+msgstr "Мониторинг және скрипттер"
+
+#: stats/views.py
+msgid "Our own scripts"
+msgstr "Өз скрипттеріміз"
+
+#: stats/views.py
+msgid "Other robots"
+msgstr "Басқа роботтар"
+
+#: stats/views.py
+msgid "Phone"
+msgstr "Телефон"
+
+#: stats/views.py
+msgid "Computer"
+msgstr "Компьютер"
+
+#: stats/views.py
+msgid "Direct, with no link"
+msgstr "Тікелей, сілтемесіз"
+
+#: stats/templates/stats/dashboard.html
+msgid "Views"
+msgstr "Қаралымдар"

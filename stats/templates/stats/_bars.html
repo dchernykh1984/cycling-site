@@ -1,0 +1,11 @@
+{% load i18n %}
+{% comment %}A ranked list: each row's name and number, with a bar as long as its share of the first.{% endcomment %}
+{% if rows %}
+<ul class="list-unstyled stats-bars mb-0">
+  {% for row in rows %}
+  <li><span class="name">{{ row.name }}</span><span class="value">{{ row.value }}</span><span class="track" aria-hidden="true"><span class="fill" style="width: {{ row.width }}%"></span></span></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-muted">{% trans "Nothing counted for this period yet." %}</p>
+{% endif %}

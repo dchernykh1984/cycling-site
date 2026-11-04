@@ -1,13 +1,18 @@
-"""The site's own statistics over the API (issue #184): a person's browser saying it opened a page."""
+"""The site's own statistics over the API (issue #184): a person's browser saying it opened a page,
+and the owners reading what the statistics page shows."""
 
 from http import HTTPStatus
 from urllib.parse import urlsplit
 
 from ninja import Field, Router, Schema, Status
+from ninja.errors import HttpError
 
-from stats import counting
+from accounts import roles
+from api.auth import ApiTokenAuth
+from stats import counting, report
 from stats.robots import robot
 
+auth = ApiTokenAuth()
 router = Router(tags=["stats"])
 
 
@@ -39,3 +44,11 @@ def hit(request, payload: HitIn):
     ):
         counting.count_person(payload.path, payload.referrer, user_agent, request.get_host())
     return Status(HTTPStatus.NO_CONTENT, None)
+
+
+@router.get("/", auth=auth, summary="What the owners' statistics page shows")
+def statistics(request, period: str = report.DEFAULT_PERIOD):
+    """The numbers of the statistics page for a period: today, week, month, quarter, ytd, year or all."""
+    if not roles.at_least(request.auth, roles.SEE_SITE_STATS):
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only the site's owners read its statistics")
+    return report.build(period)

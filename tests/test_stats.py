@@ -11,7 +11,10 @@ from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import User
-from stats import counting
+from audit.models import AuditLog
+from calendar_app.models import Competition
+from locations.models import Location
+from stats import counting, report
 from stats.models import KEY_LENGTH, Tally
 from stats.robots import OTHER, is_phone, robot
 
@@ -202,3 +205,144 @@ class HitTests(TestCase):
         organizer.force_login(_member("organizer", User.Role.ORGANIZER))
         self._hit(organizer)
         self.assertEqual(_tallies(Tally.Dimension.VIEWS), {Tally.Audience.PEOPLE: 1})
+
+
+class ReportTests(TestCase):
+    today = datetime.date(2026, 11, 4)
+
+    def _tally(self, day, dimension, key, count):
+        Tally.objects.create(day=day, dimension=dimension, key=key, count=count)
+
+    def _build(self, period):
+        with _at(f"{self.today.isoformat()}T12:00:00+05:00"):
+            return report.build(period)
+
+    def test_each_period_ends_today(self):
+        self._tally(datetime.date(2024, 3, 1), Tally.Dimension.VIEWS, Tally.Audience.PEOPLE, 1)
+        spans = {period: (self._build(period)["start"], self._build(period)["bucket"]) for period in report.PERIODS}
+        self.assertEqual(
+            spans,
+            {
+                "today": (self.today, "hour"),
+                "week": (datetime.date(2026, 10, 29), "day"),
+                "month": (datetime.date(2026, 10, 6), "day"),
+                "quarter": (datetime.date(2026, 8, 7), "day"),
+                "ytd": (datetime.date(2026, 1, 1), "week"),
+                "year": (datetime.date(2025, 11, 5), "week"),
+                "all": (datetime.date(2024, 3, 1), "month"),
+            },
+        )
+        self.assertEqual(self._build("all")["end"], self.today)
+
+    def test_an_unknown_period_reads_as_the_default(self):
+        self.assertEqual(self._build("decade")["period"], report.DEFAULT_PERIOD)
+
+    def test_a_period_sums_its_days_and_shows_the_empty_ones_as_zero(self):
+        self._tally(self.today, Tally.Dimension.VIEWS, Tally.Audience.PEOPLE, 5)
+        self._tally(self.today, Tally.Dimension.VISITS, Tally.Audience.PEOPLE, 2)
+        self._tally(self.today - datetime.timedelta(days=6), Tally.Dimension.VIEWS, Tally.Audience.PEOPLE, 3)
+        self._tally(self.today - datetime.timedelta(days=7), Tally.Dimension.VIEWS, Tally.Audience.PEOPLE, 100)
+        self._tally(self.today, Tally.Dimension.VIEWS, Tally.Audience.BOTS, 40)
+        people = self._build("week")["people"]
+        self.assertEqual((people["views"], people["visits"], people["views_per_visit"]), (8, 2, 4.0))
+        self.assertEqual([point["views"] for point in people["series"]], [3, 0, 0, 0, 0, 0, 5])
+
+    def test_today_is_drawn_by_the_hour(self):
+        self._tally(self.today, Tally.Dimension.HOUR, "09", 4)
+        series = self._build("today")["people"]["series"]
+        self.assertEqual(len(series), 24)
+        self.assertEqual(series[9], {"at": "09:00", "views": 4})
+
+    def test_a_page_is_listed_by_the_title_of_what_it_shows(self):
+        country = Location.add_root(name_ru="Testland", name_en="Testland")
+        venue = country.add_child(name_ru="R").add_child(name_ru="C").add_child(name_ru="V")
+        event = Competition.objects.create(
+            title_ru="Race", status=Competition.Status.APPROVED, date_start=self.today, location=venue
+        )
+        self._tally(self.today, Tally.Dimension.PAGE, f"/ru/calendar/{event.pk}/", 3)
+        self._tally(self.today, Tally.Dimension.PAGE, "/ru/calendar/", 7)
+        pages = self._build("week")["people"]["pages"]
+        self.assertEqual(
+            pages,
+            [
+                {"path": "/ru/calendar/", "title": "", "views": 7},
+                {"path": f"/ru/calendar/{event.pk}/", "title": "Race", "views": 3},
+            ],
+        )
+
+    def test_robots_are_summed_by_kind(self):
+        self._tally(self.today, Tally.Dimension.BOT, "search:Googlebot", 5)
+        self._tally(self.today, Tally.Dimension.BOT, "search:YandexBot", 2)
+        self._tally(self.today, Tally.Dimension.BOT, "seo:AhrefsBot", 4)
+        bots = self._build("week")["bots"]
+        self.assertEqual(bots["views"], 11)
+        self.assertEqual(bots["kinds"], [{"kind": "search", "views": 7}, {"kind": "seo", "views": 4}])
+        self.assertEqual(bots["names"][0], {"kind": "search", "name": "Googlebot", "views": 5})
+
+    def test_the_team_is_every_admin_and_owner_with_their_pages_and_changes(self):
+        admin = _member("admin", User.Role.ADMIN)
+        owner = _member("owner", User.Role.OWNER)
+        _member("organizer", User.Role.ORGANIZER)
+        self._tally(self.today, Tally.Dimension.TEAM, str(admin.pk), 6)
+        with _at(f"{self.today.isoformat()}T12:00:00+05:00"):
+            AuditLog.objects.create(
+                user=owner, action=AuditLog.ACTION_UPDATED, object_type="competition", object_id="1", object_repr="x"
+            )
+            team = report.build("week")["team"]
+        self.assertEqual(
+            team["members"],
+            [
+                {"name": "admin@example.com", "views": 6, "actions": 0},
+                {"name": "owner@example.com", "views": 0, "actions": 1},
+            ],
+        )
+        self.assertEqual((team["views"], team["actions"]), (6, 1))
+
+    def test_newcomers_are_the_members_who_joined_in_the_period(self):
+        joined = _member("newcomer", User.Role.PARTICIPANT)
+        old = _member("old", User.Role.PARTICIPANT)
+        User.objects.filter(pk=old.pk).update(date_joined=datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC))
+        User.objects.filter(pk=joined.pk).update(date_joined=datetime.datetime(2026, 11, 3, tzinfo=datetime.UTC))
+        site = self._build("week")["site"]
+        self.assertEqual((site["members"], site["new_members"]), (2, 1))
+        self.assertEqual([row["name"] for row in site["newcomers"]], ["newcomer@example.com"])
+
+
+@override_settings(ALLOWED_HOSTS=[HOST])
+class DashboardTests(TestCase):
+    def test_an_owner_sees_the_period_they_chose(self):
+        self.client.force_login(_member("owner", User.Role.OWNER))
+        Tally.objects.create(day=counting.now().date(), dimension=Tally.Dimension.VIEWS, key="people", count=3)
+        page = self.client.get("/en/stats/?period=week")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, '<option value="week" selected>')
+        charts = page.context["charts"]
+        self.assertEqual(charts["people"]["names"], ["Visits", "Page views"])
+        self.assertEqual(charts["people"]["points"][-1]["values"], [0, 3])
+
+    def test_nobody_below_an_owner_opens_it(self):
+        self.client.force_login(_member("admin", User.Role.ADMIN))
+        self.assertEqual(self.client.get("/en/stats/").status_code, 403)
+
+    def test_a_visitor_is_asked_to_sign_in(self):
+        self.assertEqual(self.client.get("/en/stats/").status_code, 302)
+
+
+class StatisticsApiTests(TestCase):
+    def _get(self, person=None, query=""):
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {person.api_token}"} if person else {}
+        return self.client.get(f"/api/v1/stats/{query}", **headers)
+
+    def test_an_owner_reads_the_numbers_of_the_page(self):
+        answer = self._get(_member("owner", User.Role.OWNER), "?period=today")
+        self.assertEqual(answer.status_code, 200)
+        body = answer.json()
+        self.assertEqual((body["period"], body["bucket"]), ("today", "hour"))
+        self.assertEqual(set(body), {"period", "start", "end", "bucket", "people", "bots", "team", "site"})
+
+    def test_an_admin_does_not(self):
+        answer = self._get(_member("admin", User.Role.ADMIN))
+        self.assertEqual(answer.status_code, 403)
+
+    def test_nobody_without_a_token_does(self):
+        self.assertEqual(self._get().status_code, 401)

@@ -1,0 +1,15 @@
+{% load i18n %}
+{% comment %}A chart of the period (stats/static/stats/dashboard.js draws it) and the same numbers as a
+table. A period of one point -- today's robots, a first day -- has nothing to draw: its tile says it.{% endcomment %}
+{% if chart.points|length > 1 %}
+<div class="stats-chart mb-2"><canvas data-chart="{{ name }}" role="img" aria-label="{{ chart.names|join:', ' }}"></canvas></div>
+<details class="mb-4">
+  <summary>{% trans "As a table" %}</summary>
+  <div class="table-responsive">
+    <table class="table table-sm stats-table">
+      <thead><tr><th>{% trans "When" %}</th>{% for line in chart.names %}<th class="num">{{ line }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for point in chart.points %}<tr><td>{{ point.at }}</td>{% for value in point.values %}<td class="num">{{ value }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</details>
+{% endif %}
