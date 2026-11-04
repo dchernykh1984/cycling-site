@@ -36,11 +36,12 @@ def _full_menu():
 def test_the_account_menu_stays_on_screen(page: Page, live_server, wagtail_home_page, width):
     if settings.DEFAULT_SKIN in KNOWN_OVERFLOW:
         pytest.skip(f"the {settings.DEFAULT_SKIN} navbar is kept as it is")
-    # A long address, as real ones are: the button that shows it is what used to fall off the edge.
+    # A long address, as real ones are: the button that shows it is what used to fall off the edge. An
+    # owner's menu is the longest one: it carries Statistics too.
     member = User.objects.create_user(
         username="navbar.width.check.long@example.com",
         email="navbar.width.check.long@example.com",
-        role=User.Role.ADMIN,
+        role=User.Role.OWNER,
     )
     _full_menu()
     page.set_viewport_size({"width": width, "height": 900})

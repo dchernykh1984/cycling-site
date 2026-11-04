@@ -30,6 +30,7 @@ from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPa
 from locations.models import Location, LocationsMapPage
 from news.models import NewsArticle, NewsIndexPage, NewsPage
 from registrations.wagtail_hooks import TeamViewSet
+from stats.counting import is_team
 
 KINDS = ("visitor", "guest", "participant", "organizer", "admin", "owner", "superuser")
 
@@ -99,6 +100,15 @@ PLACES_HOME_ACCOUNTS = {
     "user admin: privileges":       "n       n     n         n         n       y       y",
     "teams in the admin":           "n       n     n         n         y       y       y",
     "API assistant on news":        "401     403   403       403       201     201     201",
+}
+
+STATISTICS = {
+    #                                visitor guest particip. organizer admin   owner   superuser
+    "statistics page":              "302     403   403       403       403     200     200",
+    "menu: statistics":             "n       n     n         n         n       y       y",
+    "API statistics":               "401     403   403       403       403     200     200",
+    # the pages they open are the team's work, counted apart from readers' visits
+    "counted with the team":        "n       n     n         n         y       y       y",
 }
 # fmt: on
 
@@ -361,6 +371,25 @@ def api_assistant_on_news(site, v):
     return str(v.post_json("/api/v1/assistant/conversations", {"kind": "news"}).status_code)
 
 
+# -- statistics --------------------------------------------------------------------------------------
+
+
+def statistics_page(site, v):
+    return str(v.browser.get("/en/stats/").status_code)
+
+
+def statistics_menu(site, v):
+    return _yn('href="/en/stats/"' in v.browser.get("/en/calendar/").content.decode())
+
+
+def api_statistics(site, v):
+    return str(v.program.get("/api/v1/stats/", **v.headers).status_code)
+
+
+def counted_with_the_team(site, v):
+    return _yn(is_team(v.user))
+
+
 @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
 class RoleMatrixTests(TestCase):
     people: dict[str, User]
@@ -488,4 +517,15 @@ class RoleMatrixTests(TestCase):
                 "API assistant on news": api_assistant_on_news,
             },
             PLACES_HOME_ACCOUNTS,
+        )
+
+    def test_statistics(self):
+        self._check(
+            {
+                "statistics page": statistics_page,
+                "menu: statistics": statistics_menu,
+                "API statistics": api_statistics,
+                "counted with the team": counted_with_the_team,
+            },
+            STATISTICS,
         )
