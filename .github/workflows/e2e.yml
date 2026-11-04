@@ -12,7 +12,8 @@ concurrency:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.60 installs no browser on Ubuntu 26.04, which ubuntu-latest became in November 2026.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -116,7 +117,7 @@ jobs:
 
   e2e-skin:
     needs: skins
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # as the e2e job above
     strategy:
       fail-fast: false
       matrix:
