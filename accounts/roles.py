@@ -43,6 +43,10 @@ PROPOSE_PLACES = Role.PARTICIPANT
 MANAGE_GALLERY = Role.ADMIN
 EDIT_HOME_PAGE = Role.OWNER
 
+# The site's own statistics (stats/, issue #184). The pages the people who run the site open are their
+# work, not readers' visits: counted apart, as the team's activity.
+COUNTED_AS_TEAM = Role.ADMIN
+
 
 def rank(user) -> int:
     """Where ``user`` stands in ``User.ROLE_HIERARCHY``: -1 for a visitor, or for whatever is not a
