@@ -8,12 +8,13 @@ from unittest import mock
 from django.conf import settings
 from django.db import DatabaseError
 from django.test import Client, TestCase, override_settings
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from audit.models import AuditLog
 from calendar_app.models import Competition
 from locations.models import Location
+from news.models import NewsArticle
 from stats import counting, report
 from stats.models import KEY_LENGTH, Tally
 from stats.robots import KINDS, OTHER, is_phone, robot
@@ -270,16 +271,20 @@ class ReportTests(TestCase):
         event = Competition.objects.create(
             title_ru="Race", status=Competition.Status.APPROVED, date_start=self.today, location=venue
         )
+        news = NewsArticle.objects.create(title_ru="News")
         self._tally(self.today, Tally.Dimension.PAGE, f"/ru/calendar/{event.pk}/", 3)
         self._tally(self.today, Tally.Dimension.PAGE, "/ru/calendar/", 7)
+        self._tally(self.today, Tally.Dimension.PAGE, f"/ru/news/articles/{news.pk}/", 2)
         # A language's code need not be two letters.
         self._tally(self.today, Tally.Dimension.PAGE, f"/pt-br/calendar/{event.pk}/", 1)
-        pages = self._build("week")["people"]["pages"]
+        with translation.override("ru"):
+            pages = self._build("week")["people"]["pages"]
         self.assertEqual(
             pages,
             [
                 {"path": "/ru/calendar/", "title": "", "views": 7},
                 {"path": f"/ru/calendar/{event.pk}/", "title": "Race", "views": 3},
+                {"path": f"/ru/news/articles/{news.pk}/", "title": "News", "views": 2},
                 {"path": f"/pt-br/calendar/{event.pk}/", "title": "Race", "views": 1},
             ],
         )

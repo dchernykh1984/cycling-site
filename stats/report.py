@@ -22,6 +22,7 @@ TOP = 20
 # Behind a language's prefix, whatever languages the site has.
 _EVENT = re.compile(r"^/[\w-]+/calendar/(\d+)/$")
 _ARTICLE = re.compile(r"^/[\w-]+/knowledge/([\w-]+)/$")
+_NEWS = re.compile(r"^/[\w-]+/news/articles/(\d+)/$")
 
 
 def _span(period: str, today: datetime.date) -> tuple[datetime.date, datetime.date]:
@@ -94,16 +95,21 @@ def _moments(start: datetime.date, end: datetime.date) -> tuple[datetime.datetim
 
 
 def _titles(paths: list[str]) -> dict[str, str]:
-    """An event's or an article's title for its page, so a list of addresses reads as a list of things."""
+    """An event's, an article's or a news item's title for its page, so a list of addresses reads as a list
+    of things."""
     from calendar_app.models import Competition
     from knowledge.models import KnowledgeArticle
+    from news.models import NewsArticle
 
-    events = {path: int(m.group(1)) for path in paths if (m := _EVENT.match(path))}
-    articles = {path: m.group(1) for path in paths if (m := _ARTICLE.match(path))}
-    named = dict(Competition.objects.filter(pk__in=events.values()).values_list("pk", "title"))
-    slugs = dict(KnowledgeArticle.objects.filter(slug__in=articles.values()).values_list("slug", "title"))
-    titles = {path: named[pk] for path, pk in events.items() if pk in named}
-    titles.update({path: slugs[slug] for path, slug in articles.items() if slug in slugs})
+    titles = {}
+    for pattern, query, field, value_of in (
+        (_EVENT, Competition.objects, "pk", int),
+        (_ARTICLE, KnowledgeArticle.objects, "slug", str),
+        (_NEWS, NewsArticle.objects, "pk", int),
+    ):
+        found = {path: value_of(m.group(1)) for path in paths if (m := pattern.match(path))}
+        named = dict(query.filter(**{f"{field}__in": found.values()}).values_list(field, "title"))
+        titles.update({path: named[value] for path, value in found.items() if value in named})
     return titles
 
 
