@@ -4744,3 +4744,12 @@ msgstr "Бұл нөмірді қатысушының өзі көрсеткен, 
 #: event_photos/templates/event_photos/declared_album.html
 msgid "No photos with this bib yet."
 msgstr "Бұл нөмір бар фото әзірге жоқ."
+
+#: calendar_app/listing_seo.py
+msgid "Competition calendar"
+msgstr "Жарыстар күнтізбесі"
+
+#, python-format
+#: calendar_app/listing_seo.py
+msgid "%(title)s -- %(tail)s"
+msgstr "%(title)s — %(tail)s"

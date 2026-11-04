@@ -733,16 +733,19 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         context["is_manager"] = is_manager
         # A filtered list is a page about a city or a discipline; say so, instead of leaving every
         # combination sharing one title and one site-wide description.
-        meta_title, meta_description = describe_filters(
+        meta_title, heading, meta_description = describe_filters(
             locations={loc.pk for loc in deepest_chosen(_parse_int_ids(self.request.GET.getlist("location")))},
             disciplines=_parse_int_ids(self.request.GET.getlist("discipline")),
+            directions=chosen["discipline_category"],
             event_types=_parse_int_ids(self.request.GET.getlist("event_type")),
             count=page.paginator.count,
+            competitions=qs,
             date_from=date_from,
             date_to=date_to,
         )
         if meta_title:
             context["meta_title"] = meta_title
+            context["list_heading"] = heading
             context["meta_description"] = meta_description
         self.index_context(context, count=page.paginator.count, page_number=page.number)
         return context

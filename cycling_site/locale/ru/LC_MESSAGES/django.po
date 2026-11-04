@@ -4746,3 +4746,12 @@ msgstr "Этот номер указал сам участник, в старт�
 #: event_photos/templates/event_photos/declared_album.html
 msgid "No photos with this bib yet."
 msgstr "Фото с этим номером пока нет."
+
+#: calendar_app/listing_seo.py
+msgid "Competition calendar"
+msgstr "Календарь соревнований"
+
+#, python-format
+#: calendar_app/listing_seo.py
+msgid "%(title)s -- %(tail)s"
+msgstr "%(title)s — %(tail)s"

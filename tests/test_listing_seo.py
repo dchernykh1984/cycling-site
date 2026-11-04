@@ -37,8 +37,10 @@ class FilteredListMetaTests(TestCase):
         region = add_location_child(country, name="Almaty region", name_ru="Almaty region")
         cls.city = add_location_child(region, name="Almaty", name_ru="Almaty", name_en="Almaty")
         venue = add_location_child(cls.city, name="Republic Square", name_ru="Republic Square")
-        category = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", order=1)
-        cls.discipline = Discipline.objects.create(name_ru="Criterium", name_en="Criterium", category=category, order=1)
+        cls.category = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", order=1)
+        cls.discipline = Discipline.objects.create(
+            name_ru="Criterium", name_en="Criterium", category=cls.category, order=1
+        )
         comp = Competition.objects.create(
             title_ru="City race", date_start=FIRST, status=Competition.Status.APPROVED, location=venue
         )
@@ -64,6 +66,29 @@ class FilteredListMetaTests(TestCase):
         by_city = _description(self._get(location=self.city.pk))
         by_discipline = _description(self._get(discipline=self.discipline.pk))
         self.assertNotEqual(by_city, by_discipline)
+
+    def test_a_city_page_is_a_competition_calendar_of_the_city_its_country_and_its_sports(self):
+        html = self._get(location=self.city.pk)
+        title = _title(html)
+        # the words people search with, read from the data: no city or sport is written into the code
+        for words in ("Competition calendar", "Almaty, Kazakhstan", "Road"):
+            self.assertIn(words, title)
+        self.assertIn(title.split(" - ")[0], _description(html))
+        heading = re.sub(r"\s+", " ", re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)).strip()
+        self.assertEqual(heading, "Competition calendar in Almaty")
+
+    def test_a_direction_page_names_the_direction_as_a_competition_calendar(self):
+        title = _title(self._get(discipline_category=self.category.pk))
+        self.assertIn("Road", title)
+        self.assertIn("Competition calendar", title)
+
+    def test_the_title_is_in_the_pages_language(self):
+        from django.utils import translation
+
+        with translation.override("ru"):
+            calendar = translation.gettext("Competition calendar")
+        html = self.client.get(in_language(reverse("calendar_list"), "ru"), {**SPAN, "location": self.city.pk})
+        self.assertIn(calendar, _title(html.content.decode()))
 
     def test_an_unfiltered_list_keeps_the_site_wide_text(self):
         """Nothing of its own to say, so it must not invent something."""

@@ -26,32 +26,62 @@ def _names(model, ids, limit=3):
     return [row.name for row in rows]
 
 
-def describe_filters(*, locations, disciplines, event_types, count, date_from=None, date_to=None):
-    """A title and a description for the filters in force, or empty strings when there are none.
+def _sports(competitions, limit=3):
+    """The directions the listed events belong to, the most common first: what a city's page is about."""
+    from django.db.models import Count
+
+    from calendar_app.models import DisciplineCategory
+
+    rows = (
+        DisciplineCategory.objects.filter(disciplines__competitions__in=competitions.order_by().values("pk"))
+        .annotate(events=Count("disciplines__competitions", distinct=True))
+        .order_by("-events", "order", "pk")[:limit]
+    )
+    return [row.name for row in rows]
+
+
+def _with_country(location) -> str:
+    """A place as people search for it: "Almaty, Kazakhstan", the country being the top of the tree."""
+    country = location.get_root()
+    return location.name if country.pk == location.pk else f"{location.name}, {country.name}"
+
+
+def describe_filters(
+    *, locations, disciplines, directions, event_types, count, competitions, date_from=None, date_to=None
+):
+    """A title, a heading and a description for the filters in force, or empty strings when there are none.
 
     Empty is deliberate: an unfiltered list has nothing of its own to say, and inventing a
     description for it would put the same words on it as on the site's other pages.
+
+    The title carries what people search for -- "competition calendar", the place with its country,
+    the sports the place's events belong to -- all read from the data; the heading is its short form.
     """
-    from calendar_app.models import Discipline, EventType
+    from calendar_app.models import Discipline, DisciplineCategory, EventType
     from locations.models import Location
 
-    places = _names(Location, locations)
-    kinds = _names(Discipline, disciplines)
+    places = list(Location.objects.filter(pk__in=list(locations)[:3])) if locations else []
+    kinds = _names(Discipline, disciplines) or _names(DisciplineCategory, directions)
     types = _names(EventType, event_types)
-
-    subject = ", ".join(kinds) if kinds else (", ".join(types) if types else _("Events"))
-    title = subject
-    if places:
-        title = _("%(subject)s in %(place)s") % {"subject": subject, "place": ", ".join(places)}
-
     if not (places or kinds or types):
-        return "", ""
+        return "", "", ""
+
+    calendar = _("Competition calendar")
+    subject = ", ".join(kinds or types)
+    heading = title = subject or calendar
+    if places:
+        heading = _("%(subject)s in %(place)s") % {"subject": heading, "place": ", ".join(p.name for p in places)}
+        title = _("%(subject)s in %(place)s") % {"subject": title, "place": ", ".join(map(_with_country, places))}
+    # A page about a sport says it is a calendar; a page about a place says which sports it holds.
+    tail = calendar if subject else ", ".join(_sports(competitions))
+    if tail:
+        title = _("%(title)s -- %(tail)s") % {"title": title, "tail": tail}
 
     parts = [_("%(count)s events in the calendar.") % {"count": count}]
     if date_from and date_to:
         parts.append(_("From %(start)s to %(end)s.") % {"start": date_from, "end": date_to})
     parts.append(_("Dates, start points and results on the Universal Bicycle Team calendar."))
-    return title, " ".join([f"{title}.", *parts])
+    return title, heading, " ".join([f"{title}.", *parts])
 
 
 def _by_weight(queryset, counts, limit):
