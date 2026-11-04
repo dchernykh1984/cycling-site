@@ -156,20 +156,56 @@ def landing_filters(limit_places=60, limit_kinds=40, limit_regions=30):
     return regions, places, kinds
 
 
-#: The filters a list page is about. One of them, with one value, is a page of its own: a city, a
-#: region or a discipline, the pages the sitemap offers (CalendarFilterSitemap).
-FACETS = ("location", "discipline")
+def direction_pages(limit_pairs=200):
+    """The directions that hold upcoming events, and the cities holding each, busiest first: the
+    pages "road races in Almaty" lands on. Only what the page behind the link will show, read the way
+    landing_filters reads it; the catch-all city is no place anybody searches for."""
+    from django.utils import timezone
+
+    from locations.models import Level, Location
+
+    from .models import DisciplineCategory
+    from .visibility import public_events
+
+    rows = set(
+        public_events()
+        .filter(date_start__gte=timezone.localdate(), disciplines__isnull=False)
+        .values_list("pk", "location__path", "disciplines__category_id")
+    )
+    city = Location.steplen * Level.CITY
+    # An event in two disciplines of one direction counts once for it.
+    directions = Counter(category for _pk, category in {(pk, category) for pk, _path, category in rows})
+    in_cities = {(pk, path[:city], category) for pk, path, category in rows if path and len(path) >= city}
+    pairs = Counter((path, category) for _pk, path, category in in_cities)
+    kinds = DisciplineCategory.objects.in_bulk(list(directions))
+    cities = {
+        node.path: node
+        for node in Location.objects.filter(
+            depth=Level.CITY, path__in={path for path, _ in pairs}, is_deleted=False, is_hidden=False
+        )
+    }
+    busiest = sorted(pairs, key=lambda pair: (-pairs[pair], pair))
+    ranked = [(cities[path], kinds[c]) for path, c in busiest if path in cities and c in kinds]
+    return [kinds[c] for c in sorted(directions, key=lambda c: (-directions[c], c)) if c in kinds], ranked[:limit_pairs]
+
+
+#: The filters a list page is about, in the order its address names them. One of them, or a place
+#: with a direction ("road races in Almaty", the shape of the query people type), each with one
+#: value, is a page of its own -- the pages the sitemap offers (CalendarFilterSitemap).
+FACETS = ("location", "discipline_category", "discipline")
+PAGES = ({"location"}, {"discipline_category"}, {"discipline"}, {"location", "discipline_category"})
 
 
 def index_policy(request, *, is_list: bool, count: int | None = None, page_number: int = 1) -> tuple[str | None, bool]:
     """What a search engine should do with a calendar page: ``(canonical path, noindex)``.
 
-    The plain page is itself. A list about one city, region or discipline is itself too, whatever
-    window of dates it was opened on -- the dates are where a reader happened to be, not another
-    page. Every other combination of parameters (dates on the grid or the map, several filters,
-    favourites, reset) is a view of a page rather than a page, and an empty list is not a page about
-    anything: those stay out of the index, while their links are still followed. Without this each
-    combination named itself canonical, and the engine was offered an endless supply of duplicates.
+    The plain page is itself. A list about one city, region, direction or discipline, or about a
+    place and a direction, is itself too, whatever window of dates it was opened on -- the dates are
+    where a reader happened to be, not another page. Every other combination of parameters (dates on
+    the grid or the map, several filters, favourites, reset) is a view of a page rather than a page,
+    and an empty list is not a page about anything: those stay out of the index, while their links
+    are still followed. Without this each combination named itself canonical, and the engine was
+    offered an endless supply of duplicates.
 
     ``page_number`` is the page of the list actually shown, which is not always the one asked for:
     "?page=999" of a three-page list shows the third.
@@ -182,17 +218,15 @@ def index_policy(request, *, is_list: bool, count: int | None = None, page_numbe
     if count == 0:
         return None, True
     rest = set(params) - {"page"}
-    facet = next((key for key in FACETS if key in rest), None)
+    facets = rest - {"date_from", "date_to"}
     if (
         is_list
-        and facet
-        and rest - {facet} <= {"date_from", "date_to"}
-        and len(params[facet]) == 1
+        and facets in PAGES
         # isdecimal, not isdigit: a superscript two is a digit, and int() refuses it.
-        and params[facet][0].isdecimal()
+        and all(len(params[key]) == 1 and params[key][0].isdecimal() for key in facets)
     ):
-        # As a number, the form the sitemap writes it in: "?location=012" is the same page as "?location=12".
-        query = f"{facet}={int(params[facet][0])}"
+        # As numbers, the form the sitemap writes them in: "?location=012" is the same page as "?location=12".
+        query = "&".join(f"{key}={int(params[key][0])}" for key in FACETS if key in facets)
         if page_number > 1 and not rest & {"date_from", "date_to"}:
             query += f"&page={page_number}"
         return f"{request.path}?{query}", False
