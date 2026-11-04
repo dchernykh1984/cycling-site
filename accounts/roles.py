@@ -13,6 +13,8 @@ In a template: ``{% load roles %}`` and ``user|at_least:ROLES.MODERATE_EVENTS`` 
 
 from __future__ import annotations
 
+from django.db.models import Q
+
 from accounts.models import User
 
 Role = User.Role
@@ -43,8 +45,9 @@ PROPOSE_PLACES = Role.PARTICIPANT
 MANAGE_GALLERY = Role.ADMIN
 EDIT_HOME_PAGE = Role.OWNER
 
-# The site's own statistics (stats/, issue #184). The pages the people who run the site open are their
-# work, not readers' visits: counted apart, as the team's activity.
+# The site's own statistics (stats/, issue #184): the owners read them. The pages the people who run
+# the site open are their work, not readers' visits: counted apart, as the team's activity.
+SEE_SITE_STATS = Role.OWNER
 COUNTED_AS_TEAM = Role.ADMIN
 
 
@@ -64,6 +67,11 @@ def role_at_least(user, role: str) -> bool:
 def at_least(user, role: str) -> bool:
     """Whether ``user`` holds ``role`` or above; a superuser holds every role."""
     return bool(getattr(user, "is_superuser", False)) or role_at_least(user, role)
+
+
+def holding(role: str) -> Q:
+    """The members ``at_least`` says hold ``role``, as a filter for a query of users."""
+    return Q(role__in=User.ROLE_HIERARCHY[User.ROLE_HIERARCHY.index(role) :]) | Q(is_superuser=True)
 
 
 def can_assign_role(editor, role: str) -> bool:

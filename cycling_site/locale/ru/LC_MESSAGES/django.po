@@ -4760,3 +4760,212 @@ msgstr "%(title)s — %(tail)s"
 #: calendar_app/listing_seo.py
 msgid "%(calendar)s: %(sports)s"
 msgstr "%(calendar)s: %(sports)s"
+
+#: cycling_site/templates/base.html
+msgid "Statistics"
+msgstr "Статистика"
+
+#: stats/templates/stats/_bars.html
+msgid "Nothing counted for this period yet."
+msgstr "За этот период пока ничего не посчитано."
+
+#: stats/templates/stats/_chart.html
+msgid "As a table"
+msgstr "Таблицей"
+
+#: stats/templates/stats/_chart.html
+msgid "When"
+msgstr "Когда"
+
+#: stats/templates/stats/dashboard.html
+msgid "Period"
+msgstr "Период"
+
+#: stats/templates/stats/dashboard.html
+msgid "People"
+msgstr "Люди"
+
+#: stats/templates/stats/dashboard.html
+msgid "Counted by the page itself; robots and the team are not here."
+msgstr "Считает сама страница; роботов и команды здесь нет."
+
+#: stats/templates/stats/dashboard.html
+msgid "Visits"
+msgstr "Визиты"
+
+#: stats/templates/stats/dashboard.html
+msgid "Page views"
+msgstr "Просмотры страниц"
+
+#: stats/templates/stats/dashboard.html
+msgid "Pages per visit"
+msgstr "Страниц за визит"
+
+#: stats/templates/stats/dashboard.html
+msgid "Where people came from"
+msgstr "Откуда пришли"
+
+#: stats/templates/stats/dashboard.html
+msgid "Phones and computers"
+msgstr "Телефоны и компьютеры"
+
+#: stats/templates/stats/dashboard.html
+msgid "Languages"
+msgstr "Языки"
+
+#: stats/templates/stats/dashboard.html
+msgid "Popular pages"
+msgstr "Популярные страницы"
+
+#: stats/templates/stats/dashboard.html
+msgid "Robots"
+msgstr "Роботы"
+
+#: stats/templates/stats/dashboard.html
+msgid "Search engines, AI services, link previews, monitoring."
+msgstr "Поисковые системы, сервисы ИИ, превью ссылок, мониторинг."
+
+#: stats/templates/stats/dashboard.html
+msgid "By kind"
+msgstr "По видам"
+
+#: stats/templates/stats/dashboard.html
+msgid "Which robots"
+msgstr "Какие роботы"
+
+#: stats/templates/stats/dashboard.html
+msgid "Robot"
+msgstr "Робот"
+
+
+#: stats/templates/stats/dashboard.html
+msgid "The team"
+msgstr "Команда"
+
+#: stats/templates/stats/dashboard.html
+msgid "Owners and admins: pages opened and changes made."
+msgstr "Владельцы и администраторы: открытые страницы и внесённые изменения."
+
+#: stats/templates/stats/dashboard.html
+msgid "Pages opened"
+msgstr "Открыто страниц"
+
+#: stats/templates/stats/dashboard.html
+msgid "Changes made"
+msgstr "Внесено изменений"
+
+#: stats/templates/stats/dashboard.html
+msgid "Member"
+msgstr "Участник"
+
+#: stats/templates/stats/dashboard.html
+msgid "On the site"
+msgstr "На сайте"
+
+#: stats/templates/stats/dashboard.html
+msgid "Members: new / all"
+msgstr "Участники: новые / все"
+
+#: stats/templates/stats/dashboard.html
+msgid "Members who signed in"
+msgstr "Входили на сайт"
+
+#: stats/templates/stats/dashboard.html
+msgid "Strava connected: new / all"
+msgstr "Подключили Strava: новые / все"
+
+#: stats/templates/stats/dashboard.html
+msgid "Registrations for events"
+msgstr "Регистрации на мероприятия"
+
+#: stats/templates/stats/dashboard.html
+msgid "Events added"
+msgstr "Добавлено мероприятий"
+
+#: stats/templates/stats/dashboard.html
+msgid "Events approved"
+msgstr "Одобрено мероприятий"
+
+#: stats/templates/stats/dashboard.html
+msgid "Waiting for review now"
+msgstr "Ждут проверки сейчас"
+
+#: stats/templates/stats/dashboard.html
+msgid "Who signed up"
+msgstr "Кто зарегистрировался"
+
+#: stats/templates/stats/dashboard.html
+msgid "Signed up"
+msgstr "Дата регистрации"
+
+#: stats/templates/stats/dashboard.html
+msgid "Nobody signed up in this period."
+msgstr "За этот период никто не зарегистрировался."
+
+#: stats/views.py
+msgid "30 days"
+msgstr "30 дней"
+
+#: stats/views.py
+msgid "90 days"
+msgstr "90 дней"
+
+#: stats/views.py
+msgid "Since the start of the year"
+msgstr "С начала года"
+
+#: stats/views.py
+msgid "All time"
+msgstr "Всё время"
+
+#: stats/views.py
+msgid "AI assistants opening a page for a person"
+msgstr "ИИ-ассистенты по просьбе человека"
+
+#: stats/views.py
+msgid "AI search"
+msgstr "ИИ-поиск"
+
+#: stats/views.py
+msgid "Search engines"
+msgstr "Поисковые системы"
+
+#: stats/views.py
+msgid "AI training"
+msgstr "Обучение ИИ"
+
+#: stats/views.py
+msgid "Link previews in messengers"
+msgstr "Превью ссылок в мессенджерах"
+
+#: stats/views.py
+msgid "Marketing services (SEO)"
+msgstr "Маркетинговые сервисы (SEO)"
+
+#: stats/views.py
+msgid "Monitoring and scripts"
+msgstr "Мониторинг и скрипты"
+
+#: stats/views.py
+msgid "Our own scripts"
+msgstr "Наши скрипты"
+
+#: stats/views.py
+msgid "Other robots"
+msgstr "Другие роботы"
+
+#: stats/views.py
+msgid "Phone"
+msgstr "Телефон"
+
+#: stats/views.py
+msgid "Computer"
+msgstr "Компьютер"
+
+#: stats/views.py
+msgid "Direct, with no link"
+msgstr "Напрямую, без ссылки"
+
+#: stats/templates/stats/dashboard.html
+msgid "Views"
+msgstr "Просмотры"

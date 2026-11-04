@@ -154,6 +154,7 @@ urlpatterns += i18n_patterns(
     path("calendar/", include("calendar_app.urls")),
     path("gallery/", include("gallery.urls")),
     path("virtual-ride/", include("trainer.urls")),
+    path("stats/", include("stats.urls")),
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),

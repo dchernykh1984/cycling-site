@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block extra_css %}
+<style>
+  /* The look is the skin's: every colour here is one of its variables. */
+  .stats-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  @media (min-width: 992px) { .stats-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .stats-tile { border: 1px solid var(--bs-border-color); border-radius: var(--bs-border-radius); padding: .75rem; }
+  .stats-tile-value { font-size: 1.75rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .stats-tile-label { color: var(--bs-secondary-color); font-size: .875rem; }
+  .stats-period .form-select, .stats-period .btn { min-height: 2.75rem; }
+  .stats-chart { position: relative; height: 16rem; }
+  .stats-bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .25rem .75rem; margin-bottom: .5rem; }
+  .stats-bars .name, .stats-table td { overflow-wrap: anywhere; }
+  .stats-bars .value, .stats-table .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .stats-bars .track { grid-column: 1 / -1; height: .5rem; }
+  /* On the page's own background, in the colour of links, which every skin keeps readable on it
+     (stats/dashboard.js); a track of another grey under it fell below 3:1 in the dark skin. */
+  .stats-bars .fill { display: block; height: 100%; border-radius: .25rem; background: var(--bs-link-color); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% with people=data.people bots=data.bots team=data.team site=data.site %}
+<h1 class="h3 mb-3">{% trans "Statistics" %}</h1>
+
+<form method="get" class="stats-period d-flex flex-wrap align-items-end gap-2 mb-2">
+  <div>
+    <label for="stats-period" class="form-label mb-1">{% trans "Period" %}</label>
+    <select id="stats-period" name="period" class="form-select">
+      {% for key, name in periods %}
+      <option value="{{ key }}"{% if key == data.period %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <noscript><button type="submit" class="btn btn-outline-primary">{% trans "Show" %}</button></noscript>
+</form>
+<p class="text-muted small mb-4">{{ data.start|date:"d.m.Y" }}{% if data.end != data.start %} &ndash; {{ data.end|date:"d.m.Y" }}{% endif %}</p>
+
+<h2 class="h5">{% trans "People" %}</h2>
+<p class="text-muted small">{% trans "Counted by the page itself; robots and the team are not here." %}</p>
+<div class="stats-tiles mb-3">
+  <div class="stats-tile"><div class="stats-tile-value">{{ people.visits }}</div><div class="stats-tile-label">{% trans "Visits" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ people.views }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{% if people.views_per_visit %}{{ people.views_per_visit }}{% else %}&ndash;{% endif %}</div><div class="stats-tile-label">{% trans "Pages per visit" %}</div></div>
+</div>
+{% include "stats/_chart.html" with chart=charts.people name="people" %}
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <h3 class="h6">{% trans "Where people came from" %}</h3>
+    {% include "stats/_bars.html" with rows=sources %}
+  </div>
+  <div class="col-lg-3 col-6">
+    <h3 class="h6">{% trans "Phones and computers" %}</h3>
+    {% include "stats/_bars.html" with rows=devices %}
+  </div>
+  <div class="col-lg-3 col-6">
+    <h3 class="h6">{% trans "Languages" %}</h3>
+    {% include "stats/_bars.html" with rows=languages %}
+  </div>
+</div>
+
+<h3 class="h6">{% trans "Popular pages" %}</h3>
+{% if people.pages %}
+<table class="table table-sm stats-table mb-4">
+  <thead><tr><th>{% trans "Page" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
+  <tbody>{% for row in people.pages %}<tr><td><a href="{{ row.path }}">{% firstof row.title row.path %}</a></td><td class="num">{{ row.views }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}
+<p class="text-muted mb-4">{% trans "Nothing counted for this period yet." %}</p>
+{% endif %}
+
+<h2 class="h5">{% trans "Robots" %}</h2>
+<p class="text-muted small">{% trans "Search engines, AI services, link previews, monitoring." %}</p>
+<div class="stats-tiles mb-3">
+  <div class="stats-tile"><div class="stats-tile-value">{{ bots.views }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
+</div>
+{% include "stats/_chart.html" with chart=charts.bots name="bots" %}
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <h3 class="h6">{% trans "By kind" %}</h3>
+    {% include "stats/_bars.html" with rows=kinds %}
+  </div>
+  <div class="col-lg-6">
+    <h3 class="h6">{% trans "Which robots" %}</h3>
+    {% if robots %}
+    <table class="table table-sm stats-table">
+      <thead><tr><th>{% trans "Robot" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
+      <tbody>{% for row in robots %}<tr><td>{{ row.name }}<div class="text-muted small">{{ row.kind_name }}</div></td><td class="num">{{ row.views }}</td></tr>{% endfor %}</tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">{% trans "Nothing counted for this period yet." %}</p>
+    {% endif %}
+  </div>
+</div>
+
+<h2 class="h5">{% trans "The team" %}</h2>
+<p class="text-muted small">{% trans "Owners and admins: pages opened and changes made." %}</p>
+<div class="stats-tiles mb-3">
+  <div class="stats-tile"><div class="stats-tile-value">{{ team.views }}</div><div class="stats-tile-label">{% trans "Pages opened" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ team.actions }}</div><div class="stats-tile-label">{% trans "Changes made" %}</div></div>
+</div>
+{% include "stats/_chart.html" with chart=charts.team name="team" %}
+<table class="table table-sm stats-table mb-4">
+  <thead><tr><th>{% trans "Member" %}</th><th class="num">{% trans "Pages opened" %}</th><th class="num">{% trans "Changes made" %}</th></tr></thead>
+  <tbody>{% for row in team.members %}<tr><td>{{ row.name }}</td><td class="num">{{ row.views }}</td><td class="num">{{ row.actions }}</td></tr>{% endfor %}</tbody>
+</table>
+
+<h2 class="h5">{% trans "On the site" %}</h2>
+<div class="stats-tiles mb-3">
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_members }} / {{ site.members }}</div><div class="stats-tile-label">{% trans "Members: new / all" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.signed_in }}</div><div class="stats-tile-label">{% trans "Members who signed in" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_strava }} / {{ site.strava }}</div><div class="stats-tile-label">{% trans "Strava connected: new / all" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.registrations }}</div><div class="stats-tile-label">{% trans "Registrations for events" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_added }}</div><div class="stats-tile-label">{% trans "Events added" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_approved }}</div><div class="stats-tile-label">{% trans "Events approved" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_pending }}</div><div class="stats-tile-label">{% trans "Waiting for review now" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.rides }}</div><div class="stats-tile-label">{% trans "Virtual rides" %}</div></div>
+</div>
+
+<h3 class="h6">{% trans "Who signed up" %}</h3>
+{% if site.newcomers %}
+<table class="table table-sm stats-table">
+  <thead><tr><th>{% trans "Member" %}</th><th>{% trans "Signed up" %}</th></tr></thead>
+  <tbody>{% for row in site.newcomers %}<tr><td>{{ row.name }}</td><td>{{ row.joined|date:"d.m.Y H:i" }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}
+<p class="text-muted">{% trans "Nobody signed up in this period." %}</p>
+{% endif %}
+{{ charts|json_script:"stats-charts" }}
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'stats/dashboard.js' %}"></script>
+{% endblock %}
