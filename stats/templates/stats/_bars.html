@@ -3,7 +3,7 @@
 {% if rows %}
 <ul class="list-unstyled stats-bars mb-0">
   {% for row in rows %}
-  <li><span class="name">{{ row.name }}</span><span class="value">{{ row.value }}</span><span class="track" aria-hidden="true"><span class="fill" style="width: {{ row.width }}%"></span></span></li>
+  <li><span class="name">{{ row.name }}</span><span class="value">{{ row.value|floatformat:"0g" }}</span><span class="track" aria-hidden="true"><span class="fill" style="width: {{ row.width }}%"></span></span></li>
   {% endfor %}
 </ul>
 {% else %}

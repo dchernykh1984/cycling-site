@@ -329,13 +329,16 @@ class ReportTests(TestCase):
 class DashboardTests(TestCase):
     def test_an_owner_sees_the_period_they_chose(self):
         self.client.force_login(_member("owner", User.Role.OWNER))
-        Tally.objects.create(day=counting.now().date(), dimension=Tally.Dimension.VIEWS, key="people", count=3)
+        Tally.objects.create(day=counting.now().date(), dimension=Tally.Dimension.VIEWS, key="people", count=12345)
         page = self.client.get("/en/stats/?period=week")
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, '<option value="week" selected>')
         charts = page.context["charts"]
         self.assertEqual(charts["people"]["names"], ["Visits", "Page views"])
-        self.assertEqual(charts["people"]["points"][-1]["values"], [0, 3])
+        self.assertEqual(charts["people"]["points"][-1]["values"], [0, 12345])
+        # Thousands grouped as the language groups them, to be read at a glance.
+        self.assertContains(page, '<div class="stats-tile-value">12,345</div>')
+        self.assertContains(self.client.get("/ru/stats/?period=week"), '<div class="stats-tile-value">12\xa0345</div>')
 
     def test_every_period_and_every_kind_of_robot_has_a_name(self):
         self.assertEqual(set(PERIOD_NAMES), set(report.PERIODS))
