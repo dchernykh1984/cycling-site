@@ -206,6 +206,10 @@ class HitTests(TestCase):
             self.assertEqual(answer.status_code, 204)
         self.assertFalse(Tally.objects.exists())
 
+    def test_a_failed_count_is_no_error_to_answer(self):
+        with mock.patch.object(counting, "count_person", side_effect=DatabaseError("down")):
+            self.assertEqual(self._hit().status_code, 204)
+
     def test_a_signed_in_reader_below_the_team_is_counted_with_no_csrf_token(self):
         # The page sends no token, and the test client skips the check unless it is asked to make it.
         organizer = Client(enforce_csrf_checks=True)
