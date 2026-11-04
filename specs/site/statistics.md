@@ -109,3 +109,6 @@ The site counts this itself, with no third party, and keeps only daily sums.
   visits, and people are not counted as unique.
 - A browser with scripts off is not counted; a robot that runs scripts and calls itself a browser is
   counted as a person.
+- The ping is open, as a page's own script needs it to be: a script that sends it again and again
+  inflates the numbers. It cannot fill the database (the day's limit of new keys), and nothing stops
+  it yet.
