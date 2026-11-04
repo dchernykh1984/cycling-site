@@ -1,8 +1,5 @@
 (function () {
-    // The owners' statistics page (stats/templates/stats/dashboard.html, issue #184).
-    var period = document.getElementById('stats-period');
-    // A new period opens at once; without scripts the page shows a button for it instead.
-    period.addEventListener('change', function () { period.form.submit(); });
+    // The charts of the owners' statistics page (stats/templates/stats/dashboard.html, issue #184).
     if (!window.Chart) return;
 
     // The colours are the skin's, read off the page. The first line is the one the chart is about, in

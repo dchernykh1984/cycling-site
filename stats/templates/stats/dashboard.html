@@ -34,7 +34,9 @@
       {% endfor %}
     </select>
   </div>
-  <noscript><button type="submit" class="btn btn-outline-primary">{% trans "Show" %}</button></noscript>
+  {% comment %}A button, not a jump on change: moving through the options with the arrow keys changes the
+  value at each press in some browsers, and the page must not reload under the reader (WCAG 3.2.2).{% endcomment %}
+  <button type="submit" class="btn btn-outline-primary">{% trans "Show" %}</button>
 </form>
 <p class="text-muted small mb-4">{{ data.start|date:"d.m.Y" }}{% if data.end != data.start %} &ndash; {{ data.end|date:"d.m.Y" }}{% endif %}</p>
 
