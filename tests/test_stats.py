@@ -16,7 +16,8 @@ from calendar_app.models import Competition
 from locations.models import Location
 from stats import counting, report
 from stats.models import KEY_LENGTH, Tally
-from stats.robots import OTHER, is_phone, robot
+from stats.robots import KINDS, OTHER, is_phone, robot
+from stats.views import KIND_NAMES, PERIOD_NAMES
 
 BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 PHONE = (
@@ -329,6 +330,10 @@ class DashboardTests(TestCase):
         charts = page.context["charts"]
         self.assertEqual(charts["people"]["names"], ["Visits", "Page views"])
         self.assertEqual(charts["people"]["points"][-1]["values"], [0, 3])
+
+    def test_every_period_and_every_kind_of_robot_has_a_name(self):
+        self.assertEqual(set(PERIOD_NAMES), set(report.PERIODS))
+        self.assertEqual(set(KIND_NAMES), {kind for kind, _names in KINDS} | {OTHER})
 
     def test_nobody_below_an_owner_opens_it(self):
         self.client.force_login(_member("admin", User.Role.ADMIN))
