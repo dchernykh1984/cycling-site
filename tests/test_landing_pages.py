@@ -11,7 +11,7 @@ import re
 from django.test import TestCase
 from django.urls import reverse
 
-from calendar_app.listing_seo import landing_filters
+from calendar_app.listing_seo import direction_pages, landing_filters
 from calendar_app.models import Competition, Discipline, DisciplineCategory
 from locations.models import add_location_child
 
@@ -28,9 +28,14 @@ class LandingFilterTests(TestCase):
         cls.empty_city = add_location_child(region, name="Talgar", name_ru="Talgar")
         add_location_child(cls.empty_city, name="Central square", name_ru="Central square")
 
-        category = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", order=1)
-        cls.discipline = Discipline.objects.create(name_ru="Criterium", name_en="Criterium", category=category, order=1)
-        cls.unused = Discipline.objects.create(name_ru="Bike polo", name_en="Bike polo", category=category, order=2)
+        cls.direction = DisciplineCategory.objects.create(name_ru="Road", name_en="Road", order=1)
+        cls.idle = DisciplineCategory.objects.create(name_ru="Skiing", name_en="Skiing", order=2)
+        cls.discipline = Discipline.objects.create(
+            name_ru="Criterium", name_en="Criterium", category=cls.direction, order=1
+        )
+        cls.unused = Discipline.objects.create(
+            name_ru="Bike polo", name_en="Bike polo", category=cls.direction, order=2
+        )
         competition = Competition.objects.create(
             title_ru="City race",
             date_start=SOON,
@@ -59,6 +64,15 @@ class LandingFilterTests(TestCase):
         body = self.client.get("/sitemap-calendar-filters.xml").content.decode()
         self.assertIn(f"location={self.city.pk}", body)
         self.assertIn(f"discipline={self.discipline.pk}", body)
+
+    def test_directions_and_the_places_holding_them_are_offered_only_where_events_are(self):
+        directions, pairs = direction_pages()
+        self.assertEqual(directions, [self.direction])
+        self.assertEqual(pairs, [(self.city, self.direction)])
+        body = self.client.get("/sitemap-calendar-filters.xml").content.decode()
+        self.assertIn(f"?discipline_category={self.direction.pk}<", body)
+        self.assertIn(f"?location={self.city.pk}&amp;discipline_category={self.direction.pk}<", body)
+        self.assertNotIn(f"discipline_category={self.idle.pk}", body)
 
     def test_the_index_names_the_section(self):
         self.assertIn("sitemap-calendar-filters.xml", self.client.get("/sitemap.xml").content.decode())

@@ -86,9 +86,11 @@ and an IndexNow notice whenever something is published.
    (`listing_seo.describe_filters`).
 2. **Given** the calendar, **Then** it links the places and disciplines that hold upcoming events,
    busiest first -- never a catch-all venue or a category's "other" bin, never one whose races are
-   over; the same pages reach the sitemap.
+   over; the same pages reach the sitemap, together with every direction that holds upcoming events
+   and every city with such a direction, busiest first (`listing_seo.direction_pages`).
 3. **Given** a calendar, list or map page, **Then** an engine indexes the page once: the plain page
-   and a list about one city, region or discipline name themselves canonical (a list opened on some
+   and a list about one city, region, direction or discipline, or about a place and one direction
+   (`?location=2&discipline_category=1`, in that order), name themselves canonical (a list opened on some
    dates names the dateless list, its hreflang alternates follow; a later page of it is itself), and
    every other combination of parameters -- dates on the grid or the map, several filters,
    favourites, `reset` -- and any empty filtered list answer `X-Robots-Tag: noindex`, their links

@@ -157,7 +157,8 @@ class CompetitionSitemap(LanguageSitemap):
 
 
 class CalendarFilterSitemap(LanguageSitemap):
-    """The filtered lists that are pages in their own right: a city, or a discipline.
+    """The filtered lists that are pages in their own right: a city, a direction, a discipline, or a
+    city and a direction.
 
     `/calendar/list/?location=2` has always been server-rendered -- it returns the matching events
     as plain HTML -- but nothing linked it and nothing listed it, so it existed only for someone
@@ -169,18 +170,20 @@ class CalendarFilterSitemap(LanguageSitemap):
     priority = 0.6
 
     def items(self):
-        from calendar_app.listing_seo import landing_filters
+        from calendar_app.listing_seo import direction_pages, landing_filters
 
         regions, places, kinds = landing_filters()
+        directions, pairs = direction_pages()
         return (
-            [("location", region.pk) for region in regions]
-            + [("location", place.pk) for place in places]
-            + [("discipline", kind.pk) for kind in kinds]
+            [f"location={region.pk}" for region in regions]
+            + [f"location={place.pk}" for place in places]
+            + [f"discipline={kind.pk}" for kind in kinds]
+            + [f"discipline_category={direction.pk}" for direction in directions]
+            + [f"location={place.pk}&discipline_category={direction.pk}" for place, direction in pairs]
         )
 
     def location(self, item):
-        parameter, pk = item
-        return f"{reverse('calendar_list')}?{parameter}={pk}"
+        return f"{reverse('calendar_list')}?{item}"
 
 
 class GalleryAlbumSitemap(LanguageSitemap):

@@ -11,7 +11,7 @@ import re
 from django.test import TestCase
 from django.utils import timezone
 
-from calendar_app.models import Competition
+from calendar_app.models import Competition, Discipline, DisciplineCategory
 from locations.models import Location
 
 
@@ -29,12 +29,14 @@ class ListingIndexTests(TestCase):
         country = Location.add_root(name_ru="Country", name_en="Country")
         self.city = country.add_child(name_ru="City", name_en="City")
         self.empty_city = country.add_child(name_ru="Quiet", name_en="Quiet")
-        Competition.objects.create(
+        race = Competition.objects.create(
             title_ru="Race",
             date_start=timezone.localdate() + datetime.timedelta(days=5),
             status=Competition.Status.APPROVED,
             location=self.city,
         )
+        self.direction = DisciplineCategory.objects.create(name_ru="Road", name_en="Road")
+        race.disciplines.set([Discipline.objects.create(name_ru="Criterium", category=self.direction)])
 
     def test_the_plain_pages_are_indexed_as_themselves(self):
         for path in ("/ru/calendar/", "/ru/calendar/list/", "/ru/calendar/map/"):
@@ -47,6 +49,20 @@ class ListingIndexTests(TestCase):
         response = self.client.get(f"/ru/calendar/list/?location={self.city.pk}")
         self.assertNotIn("X-Robots-Tag", response)
         self.assertEqual(_canonical(response), f"http://testserver/ru/calendar/list/?location={self.city.pk}")
+
+    def test_a_direction_and_a_place_with_a_direction_are_pages_of_their_own(self):
+        pair = f"location={self.city.pk}&discipline_category={self.direction.pk}"
+        for asked, canonical in (
+            (f"discipline_category={self.direction.pk}", f"discipline_category={self.direction.pk}"),
+            (pair, pair),
+            # named the way the sitemap names it, whichever order the filters came in
+            (f"discipline_category={self.direction.pk}&location={self.city.pk}", pair),
+            (f"{pair}&date_from={timezone.localdate()}", pair),
+        ):
+            with self.subTest(asked):
+                response = self.client.get(f"/ru/calendar/list/?{asked}")
+                self.assertNotIn("X-Robots-Tag", response)
+                self.assertEqual(_canonical(response), f"http://testserver/ru/calendar/list/?{canonical}")
 
     def test_the_dates_a_place_was_opened_on_are_not_another_page(self):
         today = timezone.localdate()
@@ -85,6 +101,8 @@ class ListingIndexTests(TestCase):
     def test_views_of_a_page_stay_out_of_the_index(self):
         for path in (
             f"/ru/calendar/list/?location={self.city.pk}&discipline=1",
+            f"/ru/calendar/list/?discipline_category={self.direction.pk}&discipline=1",
+            f"/ru/calendar/list/?location={self.city.pk}&discipline_category={self.direction.pk},{self.direction.pk}",
             f"/ru/calendar/list/?location={self.city.pk},{self.empty_city.pk}",
             "/ru/calendar/list/?date_from=2026-09-25&date_to=2026-10-26",
             "/ru/calendar/list/?reset=1",
