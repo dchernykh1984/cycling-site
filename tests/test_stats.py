@@ -68,6 +68,11 @@ class RobotTests(TestCase):
 
     def test_an_unknown_robot_is_named_by_what_it_calls_itself(self):
         self.assertEqual(robot("Mozilla/5.0 (compatible; SomeNewBot/2.0)"), (OTHER, "SomeNewBot"))
+        # Not "bots", from the address of its page.
+        agent = "Mozilla/5.0 (compatible; YandexImages/3.0; +http://yandex.com/bots)"
+        self.assertEqual(robot(agent), (OTHER, "YandexImages"))
+        agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36 SomeCrawler/2.1"
+        self.assertEqual(robot(agent), (OTHER, "SomeCrawler"))
         self.assertEqual(robot("Java/17.0.2"), (OTHER, "Java"))
 
     def test_a_browser_is_no_robot(self):

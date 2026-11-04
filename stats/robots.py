@@ -83,7 +83,9 @@ OTHER = "other"
 
 #: Words that give away a robot whose name is not in the table.
 _GIVEAWAYS = ("bot", "crawl", "spider", "slurp", "fetch", "scan", "monitor", "headless")
-#: The word a robot names itself by: "SomeBot" in "Mozilla/5.0 (compatible; SomeBot/1.0)".
+#: The name a robot gives itself: "SomeBot" in "Mozilla/5.0 (compatible; SomeBot/1.0; +https://...)".
+_COMPATIBLE = re.compile(r"compatible;\s*([^;/()]+)", re.IGNORECASE)
+#: Else the word that gave it away: "SomeCrawler" in "... Safari/537.36 SomeCrawler/2.1".
 _NAMED = re.compile(r"[\w.\-]*(?:" + "|".join(_GIVEAWAYS) + r")[\w.\-]*", re.IGNORECASE)
 
 
@@ -103,10 +105,11 @@ def robot(user_agent: str) -> tuple[str, str] | None:
 
 
 def _name(user_agent: str) -> str:
-    """The word a robot names itself by, else its User-Agent's first word ("Java/17" gives "Java")."""
-    found = _NAMED.search(user_agent)
+    """The name a robot gives itself, else the word that gave it away -- not "bots" from the address of
+    its page -- else its User-Agent's first word ("Java/17" gives "Java")."""
+    found = _COMPATIBLE.search(user_agent) or _NAMED.search(user_agent)
     if found:
-        return found.group(0)[:40]
+        return (found.group(found.lastindex or 0).strip() or "-")[:40]
     words = user_agent.split("/", 1)[0].split()
     return words[0][:40] if words else "-"
 
