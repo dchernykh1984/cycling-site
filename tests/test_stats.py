@@ -272,12 +272,15 @@ class ReportTests(TestCase):
         )
         self._tally(self.today, Tally.Dimension.PAGE, f"/ru/calendar/{event.pk}/", 3)
         self._tally(self.today, Tally.Dimension.PAGE, "/ru/calendar/", 7)
+        # A language's code need not be two letters.
+        self._tally(self.today, Tally.Dimension.PAGE, f"/pt-br/calendar/{event.pk}/", 1)
         pages = self._build("week")["people"]["pages"]
         self.assertEqual(
             pages,
             [
                 {"path": "/ru/calendar/", "title": "", "views": 7},
                 {"path": f"/ru/calendar/{event.pk}/", "title": "Race", "views": 3},
+                {"path": f"/pt-br/calendar/{event.pk}/", "title": "Race", "views": 1},
             ],
         )
 
