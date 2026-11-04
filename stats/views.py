@@ -71,7 +71,7 @@ def dashboard(request):
         "stats/dashboard.html",
         {
             "data": data,
-            "periods": PERIOD_NAMES.items(),
+            "periods": [(period, PERIOD_NAMES[period]) for period in report.PERIODS],
             "sources": _ranked(
                 people["sources"],
                 "visits",
