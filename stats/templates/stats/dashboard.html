@@ -43,8 +43,8 @@
 <h2 class="h5">{% trans "People" %}</h2>
 <p class="text-muted small">{% trans "Counted by the page itself; robots and the team are not here." %}</p>
 <div class="stats-tiles mb-3">
-  <div class="stats-tile"><div class="stats-tile-value">{{ people.visits }}</div><div class="stats-tile-label">{% trans "Visits" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ people.views }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ people.visits|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Visits" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ people.views|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
   <div class="stats-tile"><div class="stats-tile-value">{% if people.views_per_visit %}{{ people.views_per_visit }}{% else %}&ndash;{% endif %}</div><div class="stats-tile-label">{% trans "Pages per visit" %}</div></div>
 </div>
 {% include "stats/_chart.html" with chart=charts.people name="people" %}
@@ -68,7 +68,7 @@
 {% if people.pages %}
 <table class="table table-sm stats-table mb-4">
   <thead><tr><th>{% trans "Page" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
-  <tbody>{% for row in people.pages %}<tr><td><a href="{{ row.path }}">{% firstof row.title row.path %}</a></td><td class="num">{{ row.views }}</td></tr>{% endfor %}</tbody>
+  <tbody>{% for row in people.pages %}<tr><td><a href="{{ row.path }}">{% firstof row.title row.path %}</a></td><td class="num">{{ row.views|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
 </table>
 {% else %}
 <p class="text-muted mb-4">{% trans "Nothing counted for this period yet." %}</p>
@@ -77,7 +77,7 @@
 <h2 class="h5">{% trans "Robots" %}</h2>
 <p class="text-muted small">{% trans "Search engines, AI services, link previews, monitoring." %}</p>
 <div class="stats-tiles mb-3">
-  <div class="stats-tile"><div class="stats-tile-value">{{ bots.views }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ bots.views|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Page views" %}</div></div>
 </div>
 {% include "stats/_chart.html" with chart=charts.bots name="bots" %}
 <div class="row g-4 mb-4">
@@ -90,7 +90,7 @@
     {% if robots %}
     <table class="table table-sm stats-table">
       <thead><tr><th>{% trans "Robot" %}</th><th class="num">{% trans "Views" %}</th></tr></thead>
-      <tbody>{% for row in robots %}<tr><td>{{ row.name }}<div class="text-muted small">{{ row.kind_name }}</div></td><td class="num">{{ row.views }}</td></tr>{% endfor %}</tbody>
+      <tbody>{% for row in robots %}<tr><td>{{ row.name }}<div class="text-muted small">{{ row.kind_name }}</div></td><td class="num">{{ row.views|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
     </table>
     {% else %}
     <p class="text-muted">{% trans "Nothing counted for this period yet." %}</p>
@@ -101,25 +101,25 @@
 <h2 class="h5">{% trans "The team" %}</h2>
 <p class="text-muted small">{% trans "Owners and admins: pages opened and changes made." %}</p>
 <div class="stats-tiles mb-3">
-  <div class="stats-tile"><div class="stats-tile-value">{{ team.views }}</div><div class="stats-tile-label">{% trans "Pages opened" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ team.actions }}</div><div class="stats-tile-label">{% trans "Changes made" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ team.views|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Pages opened" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ team.actions|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Changes made" %}</div></div>
 </div>
 {% include "stats/_chart.html" with chart=charts.team name="team" %}
 <table class="table table-sm stats-table mb-4">
   <thead><tr><th>{% trans "Member" %}</th><th class="num">{% trans "Pages opened" %}</th><th class="num">{% trans "Changes made" %}</th></tr></thead>
-  <tbody>{% for row in team.members %}<tr><td>{{ row.name }}</td><td class="num">{{ row.views }}</td><td class="num">{{ row.actions }}</td></tr>{% endfor %}</tbody>
+  <tbody>{% for row in team.members %}<tr><td>{{ row.name }}</td><td class="num">{{ row.views|floatformat:"0g" }}</td><td class="num">{{ row.actions|floatformat:"0g" }}</td></tr>{% endfor %}</tbody>
 </table>
 
 <h2 class="h5">{% trans "On the site" %}</h2>
 <div class="stats-tiles mb-3">
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_members }} / {{ site.members }}</div><div class="stats-tile-label">{% trans "Members: new / all" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.signed_in }}</div><div class="stats-tile-label">{% trans "Members who signed in" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_strava }} / {{ site.strava }}</div><div class="stats-tile-label">{% trans "Strava connected: new / all" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.registrations }}</div><div class="stats-tile-label">{% trans "Registrations for events" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_added }}</div><div class="stats-tile-label">{% trans "Events added" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_approved }}</div><div class="stats-tile-label">{% trans "Events approved" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_pending }}</div><div class="stats-tile-label">{% trans "Waiting for review now" %}</div></div>
-  <div class="stats-tile"><div class="stats-tile-value">{{ site.rides }}</div><div class="stats-tile-label">{% trans "Virtual rides" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_members|floatformat:"0g" }} / {{ site.members|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Members: new / all" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.signed_in|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Members who signed in" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.new_strava|floatformat:"0g" }} / {{ site.strava|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Strava connected: new / all" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.registrations|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Registrations for events" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_added|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Events added" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_approved|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Events approved" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.events_pending|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Waiting for review now" %}</div></div>
+  <div class="stats-tile"><div class="stats-tile-value">{{ site.rides|floatformat:"0g" }}</div><div class="stats-tile-label">{% trans "Virtual rides" %}</div></div>
 </div>
 
 <h3 class="h6">{% trans "Who signed up" %}</h3>
