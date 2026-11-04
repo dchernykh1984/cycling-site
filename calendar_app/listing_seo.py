@@ -62,9 +62,10 @@ def describe_filters(
     from locations.models import Location
 
     places = list(Location.objects.filter(pk__in=list(locations)[:3])) if locations else []
-    kinds = _names(Discipline, disciplines) or _names(DisciplineCategory, directions)
+    kinds = _names(Discipline, disciplines)
     types = _names(EventType, event_types)
-    if not (places or kinds or types):
+    chosen_sports = _names(DisciplineCategory, directions)
+    if not (places or kinds or types or chosen_sports):
         return "", "", ""
 
     calendar = _("Competition calendar")
@@ -75,7 +76,8 @@ def describe_filters(
     if places:
         heading = _("%(subject)s in %(place)s") % {"subject": heading, "place": ", ".join(p.name for p in places)}
         title = _("%(subject)s in %(place)s") % {"subject": title, "place": ", ".join(map(_with_country, places))}
-    sports = [] if subject else _sports(competitions)
+    # The directions asked for, else -- on a page about a place -- the ones its events belong to.
+    sports = chosen_sports or ([] if subject else _sports(competitions))
     tail = _("%(calendar)s: %(sports)s") % {"calendar": calendar, "sports": ", ".join(sports)} if sports else calendar
     title = _("%(title)s -- %(tail)s") % {"title": title, "tail": tail}
 

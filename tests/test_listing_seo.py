@@ -78,9 +78,10 @@ class FilteredListMetaTests(TestCase):
         self.assertEqual(heading, "Events in Almaty")  # the page itself reads as it did
 
     def test_a_direction_page_names_the_direction_as_a_competition_calendar(self):
-        title = _title(self._get(discipline_category=self.category.pk))
-        self.assertIn("Road", title)
-        self.assertIn("Competition calendar", title)
+        html = self._get(discipline_category=self.category.pk)
+        self.assertIn("Competition calendar: Road", _title(html))
+        heading = re.sub(r"\s+", " ", re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S).group(1)).strip()
+        self.assertEqual(heading, "Events")  # the page itself reads as it did
 
     def test_the_title_is_in_the_pages_language(self):
         from django.utils import translation
