@@ -16,7 +16,8 @@ content, legal pages), `search/`
 ## Overview
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
-pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Search, the skin chooser, the three language buttons, sign-in or the member's
+pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
+([statistics](statistics.md)), Search, the skin chooser, the three language buttons, sign-in or the member's
 menu; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
 account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
 home page in its language), a banner of moderation tasks for moderators and one of requests waiting for a member's answer
@@ -170,7 +171,9 @@ default. Free rides can be finished from the pause menu. Record labels keep the 
   translated, linked from every footer; the privacy policy states what Strava data is used, what a
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
   how a guest's region is found from the network provider's location and that the location is not
-  stored ([calendar](calendar.md)), and links to the contact form.
+  stored ([calendar](calendar.md)), how the site counts its own visits -- daily sums only, no cookie,
+  address or identifier, the team's pages per member ([statistics](statistics.md)) -- and links to
+  the contact form.
 - **FR-SHL-003**: All rich text (home cards, articles, descriptions) goes through one sanitiser:
   scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
   size/float and text colour kept.

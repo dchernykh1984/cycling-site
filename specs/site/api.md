@@ -7,7 +7,7 @@ token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
 `tests/test_managing_api.py`, `assistant/tests/test_api.py`, `tests/test_home_cards.py`,
-`tests/test_route_track_api.py`,
+`tests/test_route_track_api.py`, `tests/test_stats.py`,
 `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
@@ -70,6 +70,10 @@ and protocols with the event's upload token. The API has no language prefix.
    their order (`GET /home/cards/`), and the owner adds one -- after the others, or at the `position`
    given, counted from 0 --, changes it, moves it (`position`) and deletes it; a card with no heading
    and no text in any language is refused with a 422, as on the site.
+10. **Given** the site's statistics ([statistics](statistics.md), issue #184), **Then** an owner's
+   token reads what the statistics page shows for a period (`GET /stats/?period=`): 401 without a
+   token, 403 for anybody below an owner. A page of the site says it was opened in a browser
+   (`POST /stats/hit`, no token, always 204): that is how people are counted.
 
 ### Story 2 -- The timing tools exchange race data (P1)
 
@@ -109,7 +113,7 @@ and protocols with the event's upload token. The API has no language prefix.
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/home/`, `/event-photos/`
   ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)),
-  `/assistant/` ([event assistant](assistant.md)). A
+  `/assistant/` ([event assistant](assistant.md)), `/stats/` ([statistics](statistics.md)). A
   start-list upload also records which registration got which bib, from the lines' trailing `r<id>`
   field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
