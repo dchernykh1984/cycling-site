@@ -33,7 +33,7 @@ The site counts this itself, with no third party, and keeps only daily sums.
    - **People**: visits, page views, pages per visit; a chart of both over time -- by the hour for
      today, by the day up to 92 days, by the week up to two years, by the month beyond -- with the same
      numbers as a table; where visits came from, phones and computers, languages; the 20 most
-     viewed pages, named by the event's or the article's title where the page is one;
+     viewed pages, named by the title of the event, the article or the news item where the page is one;
    - **Robots**: page views, a chart, the sums by kind, the 20 busiest robots with their kind;
    - **The team** (the admins and the owners): pages opened and changes made (the audit log), a
      chart, and each member's two numbers -- every member of the team listed, idle ones too;
