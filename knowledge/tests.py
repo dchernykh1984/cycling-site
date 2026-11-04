@@ -290,6 +290,19 @@ class KnowledgeForeignLocaleBannerTests(TestCase):
         self.assertContains(resp, "shown in its original language")
         self.assertContains(resp, reverse("search"))
 
+    def test_every_language_names_the_articles_own_address_and_no_translation(self):
+        import re
+
+        article = KnowledgeArticle.objects.create(title="Kazakh article", locale="kk", body="<p>Kazakh body</p>")
+        own = "http://testserver" + in_language(article.get_absolute_url(), "kk")
+        for language in ("ru", "kk", "en"):
+            with self.subTest(language):
+                html = self.client.get(in_language(article.get_absolute_url(), language)).content.decode()
+                self.assertEqual(re.findall(r'<link rel="canonical" href="([^"]*)"', html), [own])
+                self.assertEqual(
+                    re.findall(r'<link rel="alternate" hreflang="([^"]+)" href="([^"]*)"', html), [("kk", own)]
+                )
+
 
 # ---------------------------------------------------------------------------
 # DraftSubmission model + participant submit

@@ -25,6 +25,9 @@ def language_alternates(context):
         return []
     # A page may name another address as the one it is (canonical_path): its alternates follow it.
     current = context.get("canonical_path") or request.get_full_path()
+    # A page written in one language alone (a knowledge article) has no translation to name.
+    if context.get("own_language"):
+        return [(context["own_language"], request.build_absolute_uri(current))]
     alternates = []
     for code, _name in settings.LANGUAGES:
         translated = translate_url(current, code)

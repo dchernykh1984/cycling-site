@@ -27,7 +27,9 @@ member may submit a draft for review; members comment.
    e-mail).
 2. **Given** the knowledge index, **Then** articles are listed; an article is reached by an ASCII
    slug under the index of its own language (`/kk/knowledge/<slug>/` for a Kazakh one); opened at another language's address, it is served in its own language
-   with a banner saying so and a link to search.
+   with a banner saying so and a link to search. Every one of its three addresses names the one in its
+   own language as canonical and that language alone as `hreflang`: the other two are copies, not
+   translations.
 3. **Given** search, **Then** news and knowledge articles are found by their text.
 
 ### Story 2 -- Write and manage (P1)
