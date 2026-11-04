@@ -7,7 +7,7 @@ from unittest import mock
 
 from django.conf import settings
 from django.db import DatabaseError
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from accounts.models import User
@@ -167,3 +167,38 @@ class PageCountingTests(TestCase):
         with mock.patch.object(counting, "add", side_effect=DatabaseError("down")):
             response = self.client.get("/ru/calendar/", HTTP_USER_AGENT=GOOGLEBOT)
         self.assertEqual(response.status_code, 200)
+
+
+@override_settings(ALLOWED_HOSTS=[HOST])
+class HitTests(TestCase):
+    """POST /api/v1/stats/hit: a page of the site, opened in a person's browser, says so."""
+
+    def _hit(self, client=None, path="/ru/calendar/", **headers):
+        headers.setdefault("HTTP_USER_AGENT", BROWSER)
+        headers.setdefault("HTTP_SEC_FETCH_SITE", "same-origin")
+        return (client or self.client).post(
+            "/api/v1/stats/hit", {"path": path, "referrer": ""}, content_type="application/json", **headers
+        )
+
+    def test_a_persons_page_is_counted(self):
+        self.assertEqual(self._hit(HTTP_ORIGIN=f"http://{HOST}").status_code, 204)
+        self.assertEqual(_tallies(Tally.Dimension.VIEWS), {Tally.Audience.PEOPLE: 1})
+
+    def test_what_is_not_a_person_on_our_page_is_dropped_without_a_word(self):
+        admin = Client()
+        admin.force_login(_member("admin", User.Role.ADMIN))
+        for answer in (
+            self._hit(HTTP_SEC_FETCH_SITE="cross-site"),
+            self._hit(HTTP_ORIGIN="https://elsewhere.example"),
+            self._hit(HTTP_USER_AGENT=GOOGLEBOT),
+            self._hit(HTTP_USER_AGENT=""),
+            self._hit(admin),
+        ):
+            self.assertEqual(answer.status_code, 204)
+        self.assertFalse(Tally.objects.exists())
+
+    def test_a_member_below_the_team_is_a_reader(self):
+        organizer = Client()
+        organizer.force_login(_member("organizer", User.Role.ORGANIZER))
+        self._hit(organizer)
+        self.assertEqual(_tallies(Tally.Dimension.VIEWS), {Tally.Audience.PEOPLE: 1})
