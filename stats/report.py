@@ -19,8 +19,9 @@ PERIODS = ("today", "week", "month", "quarter", "ytd", "year", "all")
 DEFAULT_PERIOD = "month"
 #: How many lines a list of pages, sources or robots shows.
 TOP = 20
-_EVENT = re.compile(r"^/[a-z]{2}/calendar/(\d+)/$")
-_ARTICLE = re.compile(r"^/[a-z]{2}/knowledge/([\w-]+)/$")
+# Behind a language's prefix, whatever languages the site has.
+_EVENT = re.compile(r"^/[\w-]+/calendar/(\d+)/$")
+_ARTICLE = re.compile(r"^/[\w-]+/knowledge/([\w-]+)/$")
 
 
 def _span(period: str, today: datetime.date) -> tuple[datetime.date, datetime.date]:
