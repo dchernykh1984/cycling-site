@@ -156,7 +156,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
   - Every role check asks `accounts/roles.py`: `at_least`, where a superuser holds every role, or
     `role_at_least`, the role alone. A rule checked in more than one place has a name there
     (`MODERATE_EVENTS`, `MANAGE_NEWS`, `APPROVE_PLACES`, ...), so one line moves it; templates ask
-    the same through `{% load roles %}`, naming the constant (`ROLES.MODERATE_EVENTS`). Whose an
+    the same through `{% load roles %}`, naming the constant (`ROLES.MODERATE_EVENTS`), and a query
+    of the members who hold a role through `holding` (the team on the statistics page). Whose an
     object is stays with the object's area (`calendar_app/visibility.py`,
     `assistant/conversations.py`).
   - `tests/test_role_matrix.py` pins what a visitor, a guest, each role and a superuser whose role
