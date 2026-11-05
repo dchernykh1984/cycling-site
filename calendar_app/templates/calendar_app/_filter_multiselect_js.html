@@ -23,7 +23,7 @@ returns {effective(), effectivePks(), chosenPks(), levelPks(depth), select(chain
 select() replaces the whole selection with the given chains, as a page script sets it (issue #353).
 window.placeCascade(allLocations) gives a place cascade its nodesUnder() and chains(ids).
 {% endcomment %}
-{% cascade_context as cascade %}{{ cascade|json_script:"cascade-context" }}
+{% include "_search_words_js.html" %}
 <script>
 // Every id-valued filter travels as ONE comma-joined value ("location=1,2,3") rather than one
 // parameter per id. The server splits each value on commas already (it has to: same-name nodes are
@@ -34,27 +34,6 @@ window.appendIdsParam = window.appendIdsParam || function (params, name, ids) {
   var joined = (ids || []).join(',');
   if (joined) params.append(name, joined);
 };
-
-// The words of a name or a query as the site matches typed text (cycling_site/text_search.py): each
-// letter folded to Latin with the server's own table, then one spelling for what the two scripts write
-// differently -- the import agent's rule (agent/venues.py, fold_script) -- so that "Kompass" in
-// Cyrillic finds "Compass" and the other way round.
-window.cascadeSearchWords = window.cascadeSearchWords || (function () {
-  var spellings = [['kh', 'h'], ['ph', 'f'], ['dzh', 'j'], ['x', 'ks'], ['w', 'v'], ['q', 'k'], ['y', 'i']];
-  var table = null;
-  return function (text) {
-    if (table === null) table = JSON.parse(document.getElementById('cascade-context').textContent).fold;
-    var folded = '';
-    for (var i = 0; i < text.length; i++) {
-      folded += Object.prototype.hasOwnProperty.call(table, text[i]) ? table[text[i]] : text[i];
-    }
-    return (folded.toLowerCase().match(/[a-z0-9]+/g) || []).map(function (word) {
-      word = word.replace(/c(?=[eiy])/g, 's');
-      spellings.forEach(function (pair) { word = word.split(pair[0]).join(pair[1]); });
-      return word.replace(/c/g, 'k').replace(/(.)\1+/g, '$1');
-    });
-  };
-})();
 
 // The place tree's side of a cascade, shared by the calendar's place filter and the profile's
 // preferred places: what each level lists, and the ticks an address or a saved preference names.

@@ -1,0 +1,27 @@
+{% load calendar_tags %}
+{% comment %}The words of typed text as the site matches them, whatever the script, for a page that
+filters in the browser: the calendar's place and discipline menus, the people on a registration page
+and in the profile (issue #440). Included once per page.{% endcomment %}
+{% cascade_context as cascade %}{{ cascade|json_script:"cascade-context" }}
+<script>
+// The words of a name or a query as the site matches typed text (cycling_site/text_search.py): each
+// letter folded to Latin with the server's own table, then one spelling for what the two scripts write
+// differently -- the import agent's rule (agent/venues.py, fold_script) -- so that "Kompass" in
+// Cyrillic finds "Compass" and the other way round.
+window.cascadeSearchWords = window.cascadeSearchWords || (function () {
+  var spellings = [['kh', 'h'], ['ph', 'f'], ['dzh', 'j'], ['x', 'ks'], ['w', 'v'], ['q', 'k'], ['y', 'i']];
+  var table = null;
+  return function (text) {
+    if (table === null) table = JSON.parse(document.getElementById('cascade-context').textContent).fold;
+    var folded = '';
+    for (var i = 0; i < text.length; i++) {
+      folded += Object.prototype.hasOwnProperty.call(table, text[i]) ? table[text[i]] : text[i];
+    }
+    return (folded.toLowerCase().match(/[a-z0-9]+/g) || []).map(function (word) {
+      word = word.replace(/c(?=[eiy])/g, 's');
+      spellings.forEach(function (pair) { word = word.split(pair[0]).join(pair[1]); });
+      return word.replace(/c/g, 'k').replace(/(.)\1+/g, '$1');
+    });
+  };
+})();
+</script>
