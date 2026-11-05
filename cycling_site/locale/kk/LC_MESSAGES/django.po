@@ -4971,3 +4971,148 @@ msgstr "Тікелей, сілтемесіз"
 #: stats/templates/stats/dashboard.html
 msgid "Views"
 msgstr "Қаралымдар"
+
+#: accounts/forms.py
+msgid "I agree with the <a href=\"{}\" target=\"_blank\" rel=\"noopener\">privacy policy</a>"
+msgstr "<a href=\"{}\" target=\"_blank\" rel=\"noopener\">Құпиялылық саясатымен</a> келісемін"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "People without an account"
+msgstr "Тіркелгісі жоқ адамдар"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Here you can add people who have no account on the site -- the children of your section, your family -- register them for starts and look after their photos. You type in their names, gender and date of birth yourself, so first confirm that you may: you have their consent, or their legal representative's, to handle their personal data."
+msgstr "Мұнда сайтта тіркелгісі жоқ адамдарды — секцияңыздың балаларын, туыстарыңызды — қосып, оларды жарыстарға тіркеп, фотоларын қадағалай аласыз. Олардың аты-жөнін, жынысын және туған күнін өзіңіз енгізесіз, сондықтан алдымен бұған құқығыңыз бар екенін растаңыз: сізде бұл адамдардың немесе олардың заңды өкілдерінің дербес деректерін өңдеуге келісімі бар."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "I am authorized to handle their personal data"
+msgstr "Олардың дербес деректерін өңдеуге уәкілеттімін"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Added: %(counter)s person."
+msgid_plural "Added: %(counter)s people."
+msgstr[0] "Қосылғаны: %(counter)s адам."
+msgstr[1] "Қосылғаны: %(counter)s адам."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Added: %(counter)s of %(limit)s. Everybody else signs up and asks you to manage them through your link above."
+msgstr "Қосылғаны: %(counter)s / %(limit)s. Қалғандары өздері тіркеліп, жоғарыдағы сілтемеңіз арқылы өздерін басқаруды сұрайды."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Last or first name"
+msgstr "Тегі немесе аты"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "All teams"
+msgstr "Барлық командалар"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Born from"
+msgstr "Туған күні (бастап)"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Born to"
+msgstr "Туған күні (дейін)"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Shown: <span class=\"vm-shown\">%(all)s</span> of %(all)s"
+msgstr "Көрсетілгені: <span class=\"vm-shown\">%(all)s</span> / %(all)s"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Delete %(person)s? Their entries in races to come are cancelled; past races stay in the results."
+msgstr "%(person)s жойылсын ба? Алдағы жарыстарға өтінімдері күшін жояды; өткен жарыстар нәтижелерде қалады."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Add a person"
+msgstr "Адам қосу"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "You have added as many people as you may: %(limit)s."
+msgstr "Рұқсат етілгенінше адам қостыңыз: %(limit)s."
+
+#: accounts/templates/accounts/privacy_consent.html
+msgid "One question before you go on"
+msgstr "Жалғастырмас бұрын бір сұрақ"
+
+#: accounts/templates/accounts/privacy_consent.html
+msgid "Your account was made from your sign-in with another service, so the sign-up form never asked you this. To use the site, agree with its privacy policy: it says what the site keeps about you and why."
+msgstr "Тіркелгіңіз басқа сервис арқылы кірген кезде жасалды, сондықтан тіркеу формасы бұл туралы сұрамады. Сайтты пайдалану үшін оның құпиялылық саясатымен келісіңіз: онда сайт сіз туралы не сақтайтыны және не үшін екені айтылған."
+
+#: accounts/templates/accounts/privacy_consent.html
+msgid "Continue"
+msgstr "Жалғастыру"
+
+#: accounts/templates/accounts/virtual_member_edit.html
+msgid "Edit a person"
+msgstr "Адамды өзгерту"
+
+#: accounts/templates/accounts/virtual_member_edit.html
+msgid "A person without an account you added. What you change here goes into their entries from now on; entries already made keep what they were made with."
+msgstr "Сіз қосқан тіркелгісі жоқ адам. Мұнда өзгерткеніңіз бұдан былай оның өтінімдеріне енеді; бұрын берілген өтінімдер берілген күйінде қалады."
+
+#: accounts/views.py
+msgid "You have already added this person."
+msgstr "Бұл адамды сіз әлдеқашан қостыңыз."
+
+#: accounts/views.py
+#, python-format
+msgid "%(name)s is added."
+msgstr "%(name)s қосылды."
+
+#: accounts/views.py
+#, python-format
+msgid "%(name)s is deleted."
+msgstr "%(name)s жойылды."
+
+#: event_photos/templates/event_photos/_registration_cards.html
+msgid "named by you"
+msgstr "сіз көрсеткен"
+
+#: event_photos/templates/event_photos/event_photos.html
+msgid "A bib for a person without an account you added: their photos will be here and in your profile."
+msgstr "Сіз қосқан тіркелгісі жоқ адамның нөмірі: оның фотолары осында және сіздің профиліңізде болады."
+
+#: event_photos/templates/event_photos/event_photos.html
+msgid "Person"
+msgstr "Адам"
+
+#: event_photos/templates/event_photos/event_photos.html
+msgid "Bib"
+msgstr "Нөмір"
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Your agreement.</strong> Whoever creates an account agrees with this policy: on the sign-up form, or, for an account made from a sign-in with Google, GitHub or Strava, on a page shown once at the first sign-in. We keep when you agreed."
+msgstr "<strong>Сіздің келісіміңіз.</strong> Тіркелгі жасаған әркім осы саясатпен келіседі: тіркеу формасында немесе — тіркелгі Google, GitHub не Strava арқылы кіргенде жасалса — алғаш кірген кезде бір рет көрсетілетін бетте. Келісім берген уақытыңызды сақтаймыз."
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>People without an account.</strong> A member may add people who have no account on the site -- the children of their section, their family -- with their last name, first name, gender, date of birth, team and city, to register them for events and to look after their race photos. Before adding anyone the member confirms that they may handle these people's personal data: they have the consent of the people themselves or of their legal representatives, and they answer for having it. On the site only that member sees and changes these people's data; the organizer of an event sees what a registration for it holds, as for anyone registered, and start lists and results show them as they show everyone. When the member deletes such a person, their registrations for races to come are cancelled and past races keep them in the results; when the member's account is deleted, the people they added are deleted with it."
+msgstr "<strong>Тіркелгісі жоқ адамдар.</strong> Қатысушы сайтта тіркелгісі жоқ адамдарды — өз секциясының балаларын, туыстарын — тегімен, атымен, жынысымен, туған күнімен, командасымен және қаласымен қоса алады, оларды іс-шараларға тіркеу және жарыс фотоларын қадағалау үшін. Біреуді қоспас бұрын қатысушы бұл адамдардың дербес деректерін өңдеуге құқығы бар екенін растайды: оның адамдардың өздерінің немесе олардың заңды өкілдерінің келісімі бар және ол оның бар болуына жауап береді. Сайтта бұл адамдардың деректерін тек сол қатысушы көреді және өзгертеді; іс-шара ұйымдастырушысы кез келген тіркелген адамдағыдай, оған берілген өтінімдегіні көреді, ал старт және қорытынды хаттамалар оларды бәрі сияқты көрсетеді. Қатысушы мұндай адамды жойғанда, оның алдағы жарыстарға өтінімдері күшін жояды, ал өткен жарыстардың нәтижелері сақталады; қатысушының тіркелгісі жойылғанда, ол қосқан адамдар онымен бірге жойылады."
+
+#: registrations/templates/registrations/register_many.html
+msgid "Tick whom to register: each person is entered with their profile's data. Open their details to check them or to add what the event asks; what you add goes into the registration only."
+msgstr "Кімді тіркеу керегін белгілеңіз: әркім өз профилінің деректерімен жазылады. Тексеру немесе жарыс сұрайтынын қосу үшін адамның деректерін ашыңыз; қосқаныңыз тек өтінімге енеді."
+
+#: registrations/templates/registrations/register_many.html
+msgid "Ticked: {ticked}"
+msgstr "Белгіленгені: {ticked}"
+
+#: registrations/templates/registrations/register_many.html
+msgid "Ticked: {ticked}, of them hidden by the filters: {hidden}"
+msgstr "Белгіленгені: {ticked}, оның ішінде сүзгілер жасырғаны: {hidden}"
+
+#: registrations/templates/registrations/register_many.html
+msgid "no account"
+msgstr "тіркелгісіз"
+
+#: registrations/templates/registrations/register_many.html
+msgid "Show details"
+msgstr "Деректерді көрсету"
+
+#: registrations/templates/registrations/register_many.html
+msgid "Hide details"
+msgstr "Деректерді жасыру"
