@@ -1,17 +1,28 @@
 'use strict';
 /* ---- план во время заезда: подсказки и итоги (сам план выполняет заезд, js/ride.js) ---- */
+let planListIdx = -2; // the step the list on the left was last drawn for
 function updatePlanHUD(cad) {
   if (!Work.active || Work.idx < 0) return;
-  const i = Work.idx, s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60;
+  const i = Work.idx, s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60, n = Work.steps.length;
   const [ft, rt] = gearTeeth(s.f, s.r);
-  $('#wStep').textContent = t('plan.stepOf', { i: i + 1, n: Work.steps.length });
-  $('#wLeft').textContent = t('plan.left', { t: fmtTime(Math.ceil(left)) });
-  $('#wGear').textContent = gearLabel(s.f, s.r); $('#wTeeth').textContent = t('plan.teeth', { g: ft + '×' + rt });
-  $('#wCad').textContent = s.cad;
-  const a = Math.round(cad || 0), d = Math.abs(a - s.cad), act = $('#wAct');
-  act.textContent = a; act.className = 'v ' + (d <= 5 ? 'ok' : d <= 10 ? 'near' : 'off');
-  $('#wProg').style.width = clamp((dur - left) / dur * 100, 0, 100).toFixed(1) + '%';
-  $('#wNext').textContent = nx ? t('plan.next', { g: gearLabel(nx.f, nx.r), c: nx.cad, t: fmtTime(nx.min * 60) }) : t('plan.last');
+  // the step's target beside the power
+  $('#tTitle').textContent = t('plan.holdOn', { g: gearLabel(s.f, s.r), teeth: ft + '×' + rt });
+  $('#tVal').textContent = s.cad;
+  $('#tSub').textContent = nx ? t('plan.leftNext', { t: fmtTime(Math.ceil(left)), c: nx.cad }) : t('plan.leftLast', { t: fmtTime(Math.ceil(left)) });
+  $('#tProg').style.width = clamp((dur - left) / dur * 100, 0, 100).toFixed(1) + '%';
+  const d = Math.abs(Math.round(cad || 0) - s.cad); $('#vCad').className = d <= 5 ? 'act-ok' : d <= 10 ? 'act-near' : 'act-off';
+  // the steps on the left: three done, the current one, the next ones
+  if (planListIdx !== i) {
+    planListIdx = i;
+    const from = Math.max(0, i - 3);
+    $('#plItems').innerHTML = Work.steps.slice(from, from + 12).map((x, k) => { const idx = from + k; return '<li class="' + (idx < i ? 'done' : idx === i ? 'cur' : '') + '"><span class="ic"></span><span>' + fmtTime(x.min * 60) + ', ' + gearLabel(x.f, x.r) + '</span><span>' + x.cad + ' ' + t('u.rpm') + '</span></li>'; }).join('')
+      + (from + 12 < n ? '<li><span class="ic"></span><span>' + t('plan.more', { n: n - from - 12 }) + '</span><span></span></li>' : '');
+  }
+  const total = Work.total();
+  $('#plLeft').textContent = t('plan.toEnd', { t: fmtTime(Math.ceil(total - Work.t)) });
+  $('#plProg').style.width = clamp(Work.t / total * 100, 0, 100).toFixed(1) + '%';
+  const zt = Work.ss.reduce((a, x) => a + x.zone, 0), at = Work.ss.reduce((a, x) => a + x.time, 0);
+  $('#plFoot').textContent = t('plan.footer', { i: i + 1, n, p: at ? Math.round(zt / at * 100) : 0 });
 }
 Records.addWorkout = function (ride, powerLog) {
   const D = this.data, news = [], now = ride.date;

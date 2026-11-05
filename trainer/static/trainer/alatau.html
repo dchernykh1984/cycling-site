@@ -120,30 +120,44 @@
 <!-- ======== HUD ======== -->
 <div id="hud" class="hidden">
   <div id="tags" aria-hidden="true"></div>
-  <div class="hud" id="hudTL">
-    <div class="panel big"><div class="v" id="vSpeed">0</div><div class="u" id="uSpeed" data-t="u.kmh"></div></div>
-    <div class="stack">
-      <div class="panel mini"><div class="v" id="vPower">0</div><div class="u" id="uPower" data-t="u.w"></div></div>
-      <div class="panel mini"><div class="v" id="vCad">—</div><div class="u" data-t="u.rpm"></div></div>
+  <!-- top centre: the ride in one row, the power under it and, in a cadence plan, the step's target -->
+  <div class="hud" id="hudTop">
+    <div class="panel tbar">
+      <div class="m"><b id="vSpeed">0</b><span id="uSpeed" data-t="u.kmh"></span></div>
+      <div class="m"><b id="vDist">0</b><span id="uDist"></span></div>
+      <div class="m"><b id="vGain">0</b><span data-t="hud.gain"></span></div>
+      <div class="m"><b id="vTime">0:00</b><span data-t="hud.time"></span></div>
+      <div class="rprog" aria-hidden="true"><i id="vProg"></i></div>
     </div>
-    <div class="panel mini hidden" id="hrBox"><div class="v" id="vHR">—</div><div class="u" id="uHR" data-t="u.bpm"></div></div>
-    <div id="grade"><div class="v" id="vGrade">0%</div><div class="u" id="uGrade" data-t="hud.grade"></div></div>
+    <div class="prow">
+      <div class="panel target hidden" id="target">
+        <div class="t1" id="tTitle"></div>
+        <div class="t2"><b id="tVal">0</b><span data-t="u.rpm"></span></div>
+        <div class="t3" id="tSub"></div>
+        <div class="tb" aria-hidden="true"><i id="tProg"></i></div>
+      </div>
+      <div class="panel pbox">
+        <div class="pw"><b id="vPower">0</b><span id="uPower" data-t="u.w"></span></div>
+        <div class="side">
+          <div class="hr hidden" id="hrBox"><b id="vHR">—</b><span id="uHR" data-t="u.bpm"></span></div>
+          <div><b id="vCad">—</b><span data-t="u.rpm"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="avg" id="avgLine"></div>
   </div>
+  <!-- top right: one card, the grade over the map; the riders nearby under it -->
   <div class="hud" id="hudTR">
-    <canvas id="mini" class="panel" width="300" height="300" data-t-label="a11y.minimap"></canvas>
-    <div class="panel" id="raceInfo"><div class="v" id="vTime">0:00</div><div id="vDist"></div><div id="vEle"></div></div>
+    <div class="mapcard panel"><div id="grade"><b id="vGrade">0%</b><span id="uGrade" data-t="hud.grade"></span></div><canvas id="mini" width="300" height="300" data-t-label="a11y.minimap"></canvas></div>
+    <div class="panel hidden" id="board"><div class="bh" data-t="hud.near"></div><ol id="boardList"></ol></div>
   </div>
-  <div class="hud panel hidden" id="planBox">
-    <div class="ph"><span id="wStep"></span><span id="wLeft"></span></div>
-    <div class="pm">
-      <div><div class="v" id="wGear">1×1</div><div class="u" id="wTeeth" data-t="plan.gear"></div></div>
-      <div><div class="v" id="wCad">80</div><div class="u" data-t="plan.target"></div></div>
-      <div><div class="v" id="wAct">0</div><div class="u" data-t="plan.yours"></div></div>
-    </div>
-    <div class="pbar"><i id="wProg"></i></div>
-    <div class="pn" id="wNext"></div>
+  <!-- left: the steps of a cadence plan -->
+  <div class="hud panel hidden" id="planList">
+    <div class="plh"><b data-t="mode.plan"></b><span id="plLeft"></span></div>
+    <div class="plbar" aria-hidden="true"><i id="plProg"></i></div>
+    <ol id="plItems"></ol>
+    <div class="plf" id="plFoot"></div>
   </div>
-  <div class="hud panel" id="board"><ol id="boardList"></ol></div>
   <div class="hud" id="hudB">
     <canvas id="profile" class="panel" data-t-label="a11y.profile"></canvas>
     <div class="ctrls">

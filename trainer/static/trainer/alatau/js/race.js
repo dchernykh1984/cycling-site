@@ -85,7 +85,7 @@ function startRace() {
     Work.active = false;
     if (planMode) { Work.start(settings.plan.steps); gearF = settings.plan.steps[0].f; gearR = settings.plan.steps[0].r; }
     else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
-    $('#planBox').classList.toggle('hidden', !planMode); $('#board').classList.toggle('hidden', planMode || freeMode);
+    $('#planList').classList.toggle('hidden', !planMode); $('#target').classList.toggle('hidden', !planMode); planListIdx = -2;
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
     $('#pauseHint').textContent = freeMode ? t('pause.free') : planMode ? t('pause.plan') : t('pause.race');
     if (freeMode) setTimeout(() => toast(t('toast.free'), 5), 4500);
