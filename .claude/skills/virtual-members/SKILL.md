@@ -77,6 +77,8 @@ answer `{row, registration_id, errors}`: an entry refused says why and the next 
   `birth_date` or `birth_year` -- and is filled in from the person when left out, the first category
   they fit included. An event that takes only one's own data takes the names, gender and date of
   birth from the person, whatever the entry says.
+- An event with categories enters nobody without one: a person no open category takes is refused,
+  and `errors.category` says so -- tell the member, never pick another category for them.
 - 404 for an event the caller cannot see, 409 while its registration is closed or for a relay.
 
 `GET /api/v1/registrations/` lists the caller's entries and those of the people they enter

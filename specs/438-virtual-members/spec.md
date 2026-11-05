@@ -99,7 +99,8 @@ Taken with the maintainer on 2026-11-05.
 - **FR-438-005**: An entry for a person without an account keeps the person and the member who
   submitted it, never an account, and lets nobody into an invite-only event.
 - **FR-438-006**: The registration page's details open by a button of their own and stay folded;
-  those of a person a send refused open; without a script all stand open.
+  those of a person a send refused open; without a script all stand open. Folded, nothing on the
+  page stops a send without a category, so the server refuses one where the event has categories.
 - **FR-438-007**: From `registering.FILTERED_FROM` people the registration page offers filters that
   only change what is shown.
 - **FR-438-008**: `/api/v1/registrations/` follows the page's rules through the page's own forms and
