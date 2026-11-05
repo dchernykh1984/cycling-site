@@ -120,4 +120,9 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         if has_verified and user.role == user.Role.GUEST:
             user.role = user.Role.PARTICIPANT
             user.save(update_fields=["role"])
+        # A provider's account has no sign-up form to ask on: the first sign-in asks instead
+        # (accounts.middleware). allauth's form for a provider that left a gap asks it there, and
+        # its answer, saved right after this, clears the flag.
+        user.privacy_consent_pending = True
+        user.save(update_fields=["privacy_consent_pending"])
         return user

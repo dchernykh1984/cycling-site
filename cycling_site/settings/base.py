@@ -102,6 +102,8 @@ ACCOUNT_USER_DISPLAY = "accounts.adapters.user_display"
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+# The sign-up form's own question: the privacy policy (issue #438)
+ACCOUNT_SIGNUP_FORM_CLASS = "accounts.forms.SignupForm"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
@@ -169,6 +171,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "accounts.middleware.PrivacyConsentMiddleware",
     "cycling_site.skins.SkinMiddleware",
     "cycling_site.middleware.SignedOutMiddleware",
     "cycling_site.middleware.ReaderTimezoneMiddleware",

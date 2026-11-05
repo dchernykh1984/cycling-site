@@ -5,6 +5,7 @@ from accounts import views
 
 urlpatterns = [
     path("profile/", login_required(views.ProfileView.as_view()), name="account_profile"),
+    path("privacy-consent/", views.PrivacyConsentView.as_view(), name="account_privacy_consent"),
     path("profile/edit/", views.ProfileEditView.as_view(), name="account_profile_edit"),
     path("theme/", views.ThemeUpdateView.as_view(), name="account_theme"),
     path("api-token/regenerate/", views.ApiTokenRegenerateView.as_view(), name="account_api_token_regenerate"),

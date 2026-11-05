@@ -16,9 +16,10 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext, gettext_lazy
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import FormView, TemplateView
 
 from accounts import managing, roles, virtual_members
 from accounts.access import (
@@ -27,6 +28,7 @@ from accounts.access import (
     needs_email_confirmation,
     redirect_to_profile_for_email_confirmation,
 )
+from accounts.forms import PrivacyConsentForm
 from accounts.models import User, VirtualMember
 from cycling_site.skins import registry
 
@@ -726,6 +728,33 @@ class ManagingActionView(ParticipantRequiredMixin, View):
 
 def _to_virtual_members():
     return f"{reverse('account_profile')}#virtual-members"
+
+
+class PrivacyConsentView(LoginRequiredMixin, FormView):
+    """The sign-up form's question, for a member whose account Google, GitHub or Strava made (issue
+    #438): at the first sign-in, before any other page (accounts.middleware), and only once."""
+
+    template_name = "accounts/privacy_consent.html"
+    form_class = PrivacyConsentForm
+
+    def _next(self) -> str:
+        target = self.request.POST.get("next") or self.request.GET.get("next") or ""
+        safe = url_has_allowed_host_and_scheme(
+            target, allowed_hosts={self.request.get_host()}, require_https=self.request.is_secure()
+        )
+        return target if safe else reverse("account_profile")
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.privacy_consent_pending:
+            return redirect(self._next())
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(next=self._next(), **kwargs)
+
+    def form_valid(self, form):
+        self.request.user.accept_privacy()
+        return redirect(self._next())
 
 
 class VirtualMembersConsentView(ParticipantRequiredMixin, View):
