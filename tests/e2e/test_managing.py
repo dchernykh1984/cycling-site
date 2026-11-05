@@ -106,17 +106,29 @@ def test_the_link_goes_from_one_profile_to_the_other(page: Page, live_server, co
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ticking_a_person_shows_their_form_and_registers_them(page: Page, live_server, organizer, coach, anna):
+def test_a_tick_chooses_a_person_and_their_details_open_by_a_button_of_their_own(
+    page: Page, live_server, organizer, coach, anna
+):
+    """Issue #439: ticking leaves the details folded, the button opens and folds them whatever the tick
+    says, and a person ticked and never opened is entered with their profile's data."""
     _manage(coach, anna)
     comp = _event(organizer, registration_mode=Competition.RegistrationMode.SELF_ONLY)
     RegistrationCategory.objects.create(competition=comp, name="Open", male=True, female=True)
     _sign_in(page, live_server, coach)
     page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
     hers = page.locator(f"#person-{anna.pk}")
-    expect(hers.locator(".register-person-form")).to_be_hidden()
+    details, button = hers.locator(".register-person-form"), hers.get_by_role("button", name="Show details")
     hers.locator(".register-person-pick").click()
-    expect(hers.locator(".register-person-form")).to_be_visible()
+    expect(details).to_be_hidden()
+    expect(hers.locator(".register-person-category")).to_have_text("Open")
+    expect(button).to_have_attribute("aria-expanded", "false")
+    button.click()
+    expect(details).to_be_visible()
+    expect(hers.get_by_role("button", name="Hide details")).to_have_attribute("aria-expanded", "true")
     expect(hers.locator(f'input[name="p{anna.pk}-last_name"]')).to_have_value("Ivanova")
+    hers.get_by_role("button", name="Hide details").click()
+    expect(details).to_be_hidden()
+    expect(hers.locator(".register-person-check")).to_be_checked()
     page.locator("#registration-form > button[type='submit']").click()
     expect(page).to_have_url(re.compile(rf"/competitions/{comp.pk}/participants/"))
     registration = CompetitionRegistration.objects.get(competition=comp)
@@ -161,7 +173,10 @@ def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
     small = []
     for path, controls in (
         ("/accounts/profile/", ".managing .btn"),
-        (f"/competitions/{comp.pk}/register/", ".register-many > .btn, .register-many .register-person-pick"),
+        (
+            f"/competitions/{comp.pk}/register/",
+            ".register-many > .btn, .register-many .register-person-pick, .register-many .register-person-toggle",
+        ),
     ):
         page.goto(f"{live_server.url}/{lang}{path}")
         assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
@@ -177,7 +192,8 @@ def test_on_a_phone_every_button_takes_a_tap_and_nothing_scrolls_sideways(
 def test_after_someone_is_registered_the_others_forms_still_follow_their_gender(
     page: Page, live_server, organizer, coach, anna
 ):
-    """The page comes back with a card that has no fields left: the script carries on past it."""
+    """The page comes back with a card that has no fields left: the script carries on past it. The card
+    a send could not register comes back with its details open and the reason in them (issue #439)."""
     _manage(coach, anna)
     comp = _event(organizer, registration_mode=Competition.RegistrationMode.FREE)
     RegistrationCategory.objects.create(competition=comp, name="Boys", male=True, female=False)
@@ -186,11 +202,15 @@ def test_after_someone_is_registered_the_others_forms_still_follow_their_gender(
     page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
     for person in (coach, anna):
         page.locator(f"#person-{person.pk} .register-person-check").check()
+    page.locator(f"#person-{coach.pk} .register-person-toggle").click()
     page.locator(f"#person-{coach.pk} select").select_option(label="Boys")
+    page.locator(f"#person-{anna.pk} .register-person-toggle").click()
     page.locator(f'input[name="p{anna.pk}-last_name"]').fill("")
     page.locator("#registration-form > button[type='submit']").click()
     expect(page.locator(f"#person-{coach.pk}")).to_contain_text("Registration submitted")
     hers = page.locator(f"#person-{anna.pk}")
+    expect(hers.locator(".register-person-form")).to_be_visible()
+    expect(hers.get_by_role("button", name="Hide details")).to_have_attribute("aria-expanded", "true")
     hers.locator(f"#p{anna.pk}-gender_m").check()
     expect(hers.locator("select option", has_text="Boys")).to_have_count(1)
     expect(hers.locator("select option", has_text="Girls")).to_have_count(0)
@@ -205,7 +225,7 @@ def test_the_box_stands_level_with_the_name_and_can_be_seen(page: Page, live_ser
     _sign_in(page, live_server, coach)
     page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/register/")
     box = page.locator(f"#person-{anna.pk} .register-person-check")
-    name = page.locator(f"#person-{anna.pk} .register-person-pick span")
+    name = page.locator(f"#person-{anna.pk} .register-person-name")
     box_at, name_at = box.bounding_box(), name.bounding_box()
     assert box_at and name_at
     box_mid, name_mid = box_at["y"] + box_at["height"] / 2, name_at["y"] + name_at["height"] / 2

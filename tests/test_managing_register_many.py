@@ -6,10 +6,11 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 
-from accounts import managing
-from accounts.models import User
+from accounts import managing, virtual_members
+from accounts.models import User, VirtualMember
 from calendar_app.models import CompetitionInvite
 from calendar_app.visibility import can_see
+from registrations import registering
 from registrations.models import CompetitionRegistration
 from registrations.tests import (
     make_category,
@@ -170,6 +171,44 @@ class RegisterManyTests(TestCase):
         )
         self.assertContains(response, "Registration submitted", count=2)
         self.assertNotContains(response, f'name="person" value="{self.coach.pk}"')
+
+    def test_details_stay_folded_and_a_person_a_send_refused_comes_back_with_them_open(self):
+        """Issue #439: the tick chooses, a button of the person's own opens their details; after a send
+        the details of whoever it could not register stand open with the reason."""
+        page = self.client.get(self._url())
+        for person in (self.coach, self.anna, self.boris):
+            self.assertContains(page, f'id="p{person.pk}-form" hidden>')
+            self.assertContains(page, f'aria-controls="p{person.pk}-form" aria-expanded="false"')
+        men = make_category(self.comp, name="Men", female=False)
+        response = self.client.post(self._url(), {"person": [str(self.anna.pk)], **_fields(self.anna, category=men.pk)})
+        self.assertContains(response, f'id="p{self.anna.pk}-form">')
+        self.assertContains(response, f'aria-controls="p{self.anna.pk}-form" aria-expanded="true"')
+        self.assertContains(response, f'id="p{self.boris.pk}-form" hidden>')
+
+    def test_a_long_page_offers_filters_by_the_peoples_teams_and_the_events_open_categories(self):
+        """Issue #440: from FILTERED_FROM people on, each with the categories they fit."""
+        men = make_category(self.comp, name="Men", female=False)
+        make_category(self.comp, name="Gone", is_deleted=True)
+        self.assertIsNone(self.client.get(self._url()).context["filters"])
+        virtual_members.consent(self.coach)
+        for last_name, team in (("Kim", "eagles"), ("Li", "Snow Leopards"), ("Pak", "")):
+            VirtualMember.objects.create(
+                owner=self.coach,
+                last_name=last_name,
+                first_name="A",
+                gender="F",
+                birth_date=datetime.date(2012, 1, 1),
+                team=team,
+            )
+        page = self.client.get(self._url())
+        self.assertEqual(len(page.context["rows"]), registering.FILTERED_FROM)
+        filters = page.context["filters"]
+        self.assertEqual(filters["teams"], ["eagles", "Snow Leopards"])
+        self.assertEqual(filters["categories"], [{"pk": self.cat.pk, "name": "Elite"}, {"pk": men.pk, "name": "Men"}])
+        fits = {row.key: row.fits for row in page.context["rows"]}
+        self.assertEqual(fits[str(self.coach.pk)], (self.cat.pk, men.pk))
+        self.assertEqual(fits[str(self.anna.pk)], (self.cat.pk,))
+        self.assertContains(page, 'id="rf-categories-data"')
 
     def test_what_the_manager_adds_goes_into_the_registration_only(self):
         free = make_open_competition(submitted_by=self.organizer)

@@ -50,12 +50,19 @@ def cannot_fill(competition, person) -> bool:
     )
 
 
-def available_categories(competition, gender, birth_date) -> list[RegistrationCategory]:
-    """The open categories a person of this gender and birth date may enter; none without both."""
+def open_categories(competition) -> list[RegistrationCategory]:
+    """The event's categories still taking entries."""
+    return [c for c in RegistrationCategory.objects.filter(competition=competition, is_deleted=False) if c.is_open()]
+
+
+def available_categories(competition, gender, birth_date, offered=None) -> list[RegistrationCategory]:
+    """The open categories a person of this gender and birth date may enter; none without both.
+    ``offered``, when given, are the event's open categories, asked once for a page of many people."""
     if not (gender and birth_date):
         return []
-    categories = RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
-    return [c for c in categories if c.matches(gender, birth_date) and c.is_open()]
+    return [
+        c for c in (offered if offered is not None else open_categories(competition)) if c.matches(gender, birth_date)
+    ]
 
 
 def _form(competition, person, data=None, **kwargs) -> RegistrationForm:
@@ -67,14 +74,14 @@ def _offer(form, categories) -> None:
     cast(forms.ModelChoiceField, form.fields["category"]).queryset = categories
 
 
-def blank_form(competition, person, prefix=None) -> RegistrationForm:
+def blank_form(competition, person, prefix=None, offered=None) -> RegistrationForm:
     """The form as the page first shows it for ``person``: filled in from their profile; empty for
     nobody's, as for another person typed in where anyone may be entered."""
     if person is None:
         form = _form(competition, None, prefix=prefix)
         _offer(form, RegistrationCategory.objects.none())
         return form
-    categories = available_categories(competition, person.gender, person.birth_date)
+    categories = available_categories(competition, person.gender, person.birth_date, offered)
     initial = {
         "first_name": person.first_name,
         "last_name": person.last_name,
@@ -211,6 +218,11 @@ def already_entered(competition, person) -> bool:
     return check_duplicate(competition, person, person.first_name, person.last_name, person.birth_date)
 
 
+#: A page for this many people or more gets filters by name, team and category (issue #440): fewer
+#: are read through at a glance.
+FILTERED_FROM = 6
+
+
 @dataclass
 class Row:
     """One person on the page for several (issue #315), and how entering them went."""
@@ -223,6 +235,8 @@ class Row:
     checked: bool = False
     entered: bool = False
     virtual: bool = False  # a person without an account, added by the reader (issue #438)
+    team: str = ""  # the person's team, for the page's filter (issue #440)
+    fits: tuple[int, ...] = ()  # the open categories the person's gender and birth date fit, for the filter
 
     @property
     def prefix(self) -> str:
@@ -250,6 +264,7 @@ def rows_for(competition, user) -> list[Row] | None:
     if not members and not added:
         return None
     rows = []
+    offered = open_categories(competition)
     for person in [user, *members, *added]:
         if already_entered(competition, person):
             continue
@@ -263,6 +278,8 @@ def rows_for(competition, user) -> list[Row] | None:
             profile=person,
             virtual=virtual,
         )
+        row.team = person.team
+        row.fits = tuple(c.pk for c in available_categories(competition, person.gender, person.birth_date, offered))
         if cannot_fill(competition, person):
             row.blocked = (
                 gettext("Complete your profile to register: it lacks your name, gender or date of birth.")
@@ -270,7 +287,7 @@ def rows_for(competition, user) -> list[Row] | None:
                 else gettext("Their profile lacks a name, gender or date of birth: ask them to complete it.")
             )
         else:
-            row.form = blank_form(competition, person, prefix=row.prefix)
+            row.form = blank_form(competition, person, prefix=row.prefix, offered=offered)
         rows.append(row)
     if is_free(competition):
         rows.append(

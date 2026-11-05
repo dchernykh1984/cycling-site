@@ -80,8 +80,20 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "is_free": registering.is_free(competition),
                 "relay_enabled": False,
                 "all_categories_json": self._categories_json(competition),
+                "filters": self._filters(competition, rows),
             },
         )
+
+    @staticmethod
+    def _filters(competition, rows):
+        """What the filters of a long page offer (issue #440): the people's teams and the event's open
+        categories; none for a page short enough to read through."""
+        if len(rows) < registering.FILTERED_FROM:
+            return None
+        return {
+            "teams": sorted({row.team for row in rows if row.team}, key=str.casefold),
+            "categories": [{"pk": c.pk, "name": c.name} for c in registering.open_categories(competition)],
+        }
 
     def _post_many(self, request, competition, rows):
         """Enter whoever was ticked on the page for several, from the top; the page again if anyone

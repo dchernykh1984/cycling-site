@@ -792,11 +792,10 @@ main .event-photo-preview img { object-fit: contain; }
 .managing-table td.reg-actions::before {
     content: none;
 }
-/* Registering several people at once (issue #315): a person's form shows once they are ticked. The
-   box and the name are one label, in line, taking a tap across 44 px; the box is drawn with the skin's
-   secondary colour, since an empty one is all that tells the reader there is something to tick. The
-   page's buttons take 44 px too. */
-.register-many .register-person:has(.register-person-check:not(:checked)) .register-person-form { display: none; }
+/* Registering several people at once (issue #315): a person's form opens by its own button (issue #439),
+   not by the tick. The box and the name are one label, in line, taking a tap across 44 px; the box is
+   drawn with the skin's secondary colour, since an empty one is all that tells the reader there is
+   something to tick. The page's buttons take 44 px too. */
 .register-many .register-person-pick {
     display: flex;
     align-items: center;
@@ -810,8 +809,15 @@ main .event-photo-preview img { object-fit: contain; }
     margin: 0;
     border-color: var(--bs-secondary-color);
 }
-.register-many > .btn {
+.register-many > .btn,
+.register-many .register-person-toggle,
+.register-filters .btn {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
+}
+.register-filters .form-control,
+.register-filters .form-select,
+.register-filters .dropdown-item {
+    min-height: 2.75rem;
 }

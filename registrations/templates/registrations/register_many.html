@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% comment %}Registering several people at once (issue #315): the reader and the members whose registrations
-they manage, each with a checkbox and, once ticked, the event's form filled in from their profile.
-Those registered by a send lose the checkbox; those who could not be keep it, with the reason.{% endcomment %}
+{% comment %}Registering several people at once (issue #315): the reader, the members whose registrations
+they manage and the people without accounts they added (issue #438), each with a checkbox and the event's
+form filled in from their profile. Ticking chooses a person; their details open by a button of their
+own and stay folded otherwise (issue #439), except for a person a send could not register, whose details
+come back open with the reason. Filters by name, team and category narrow a long list (issue #440).{% endcomment %}
 
 {% block title %}{% trans "Register" %} — {{ competition.title }}{% endblock %}
 
@@ -20,7 +22,42 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
 <h1 class="mb-2">{% trans "Registration" %}: {{ competition.title }}</h1>
 
 {% if rows %}
-<p class="text-muted mb-4">{% trans "Tick whom to register. Each person gets the event's form, filled in from their profile; what you add goes into the registration only." %}</p>
+<p class="text-muted mb-3">{% trans "Tick whom to register: each person is entered with their profile's data. Open their details to check them or to add what the event asks; what you add goes into the registration only." %}</p>
+
+{% if filters %}
+{% comment %}Outside the form: the filters choose what is shown, never what is sent. The categories are
+the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endcomment %}
+<div class="register-filters row g-2 mb-1" role="search">
+  <div class="col-12 col-md-5">
+    <label for="rf-name" class="form-label small mb-1">{% trans "Last or first name" %}</label>
+    <input type="search" id="rf-name" class="form-control" autocomplete="off">
+  </div>
+  {% if filters.teams %}
+  <div class="col-6 col-md-3">
+    <label for="rf-team" class="form-label small mb-1">{% trans "Team" %}</label>
+    <select id="rf-team" class="form-select">
+      <option value="">{% trans "All teams" %}</option>
+      {% for team in filters.teams %}<option value="{{ team }}">{{ team }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  {% if filters.categories %}
+  <div class="col-6 col-md-4">
+    <label for="rf-categories" class="form-label small mb-1">{% trans "Categories" %}</label>
+    <div class="dropdown">
+      <button type="button" id="rf-categories" class="form-select text-start"
+              data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+        <span class="mf-text text-muted">{% trans "All" %}</span>
+      </button>
+      <ul class="dropdown-menu w-100 px-1" id="rf-categories-menu"></ul>
+    </div>
+  </div>
+  {{ filters.categories|json_script:"rf-categories-data" }}
+  {% endif %}
+</div>
+<p class="small text-muted mb-3" id="rf-summary" aria-live="polite"
+   data-ticked="{% trans 'Ticked: {ticked}' %}" data-hidden="{% trans 'Ticked: {ticked}, of them hidden by the filters: {hidden}' %}"></p>
+{% endif %}
 
 {% if nobody %}
 <div class="alert alert-danger" role="alert">{% trans "Tick at least one person." %}</div>
@@ -29,8 +66,9 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
 <form method="post" id="registration-form" class="register-many">
 {% csrf_token %}
 {% for row in rows %}
-<section class="register-person card mb-3" id="person-{{ row.key }}">
-  <div class="card-body">
+{% comment %}A person is what the filters narrow; "another person" typed in stays in sight.{% endcomment %}
+<section class="register-person card mb-2" id="person-{{ row.key }}"{% if row.profile %} data-name="{{ row.label }}" data-team="{{ row.team }}" data-fits="{{ row.fits|join:',' }}"{% endif %}>
+  <div class="card-body py-2">
     {% if row.entered %}
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="fw-semibold">{{ row.label }}</span>
@@ -40,13 +78,24 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
     <div class="fw-semibold">{{ row.label }}</div>
     <p class="small text-muted mb-0">{{ row.blocked }}{% if row.profile == request.user %} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a>{% endif %}</p>
     {% else %}
-    <label class="register-person-pick fw-semibold" for="{{ row.ids }}check">
-      <input class="form-check-input register-person-check" type="checkbox" name="person" value="{{ row.key }}"
-             id="{{ row.ids }}check"{% if row.checked %} checked{% endif %}>
-      <span>{{ row.label }}</span>
-    </label>
-    {% comment %}A fieldset named after the person: a screen reader says whose "Last name" it is.{% endcomment %}
-    <fieldset class="register-person-form mt-3">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <label class="register-person-pick fw-semibold" for="{{ row.ids }}check">
+        <input class="form-check-input register-person-check" type="checkbox" name="person" value="{{ row.key }}"
+               id="{{ row.ids }}check"{% if row.checked %} checked{% endif %}>
+        <span class="register-person-name">{{ row.label }}</span>
+        {% if row.virtual %}<span class="badge bg-secondary fw-normal">{% trans "no account" %}</span>{% endif %}
+        {% comment %}The category the person goes into, in sight while their details are folded.{% endcomment %}
+        <span class="register-person-category small fw-normal">{% for c in row.form.category.field.queryset %}{% if row.form.category.value|stringformat:"s" == c.pk|stringformat:"s" %}{{ c.name }}{% endif %}{% endfor %}</span>
+      </label>
+      {% with opened=row.form.errors %}
+      <button type="button" class="btn btn-sm btn-outline-primary register-person-toggle"
+              aria-controls="{{ row.ids }}form" aria-expanded="{% if opened %}true{% else %}false{% endif %}"
+              data-show="{% trans 'Show details' %}" data-hide="{% trans 'Hide details' %}">{% if opened %}{% trans "Hide details" %}{% else %}{% trans "Show details" %}{% endif %}</button>
+      {% endwith %}
+    </div>
+    {% comment %}A fieldset named after the person: a screen reader says whose "Last name" it is. Folded, its
+    fields are sent all the same, so a person ticked and never opened is entered with their profile's data.{% endcomment %}
+    <fieldset class="register-person-form mt-3" id="{{ row.ids }}form"{% if not row.form.errors %} hidden{% endif %}>
       <legend class="visually-hidden">{{ row.label }}</legend>
       {% include "registrations/_person_fields.html" with form=row.form p=row.ids required=False person=row.profile %}
       {% if row.form.non_field_errors %}
@@ -63,6 +112,78 @@ Those registered by a send lose the checkbox; those who could not be keep it, wi
 </form>
 
 {% include "registrations/_person_script.html" %}
+{% if filters %}{% include "calendar_app/_filter_multiselect_js.html" %}{% endif %}
+{% comment %}Without a script nothing would open the details: they all stand open, with no buttons.{% endcomment %}
+<noscript><style>
+.register-many .register-person-form[hidden] { display: block !important; }
+.register-many .register-person-toggle { display: none !important; }
+</style></noscript>
+<script>
+(function () {
+  // A person's details open and close by their own button, whatever their tick says (issue #439)
+  document.querySelectorAll('.register-person-toggle').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var details = document.getElementById(button.getAttribute('aria-controls'));
+      var opening = details.hidden;
+      details.hidden = !opening;
+      button.setAttribute('aria-expanded', opening ? 'true' : 'false');
+      button.textContent = opening ? button.dataset.hide : button.dataset.show;
+    });
+  });
+  // The category beside the name follows the person's list, which their gender and birth year rebuild
+  var form = document.getElementById('registration-form');
+  function categories() {
+    form.querySelectorAll('.register-person').forEach(function (card) {
+      var select = card.querySelector('.js-category'), shown = card.querySelector('.register-person-category');
+      if (!select || !shown) return;
+      var option = select.options[select.selectedIndex];
+      shown.textContent = option && option.value ? option.textContent.trim() : '';
+    });
+  }
+  form.addEventListener('change', categories);
+  form.addEventListener('input', categories);
+  categories();
+  // The filters (issue #440): a name typed in any script, a team, the categories a person fits. A person
+  // ticked and then hidden is still sent, so the line under the filters counts them.
+  var name = document.getElementById('rf-name');
+  if (!name) return;
+  var team = document.getElementById('rf-team');
+  var summary = document.getElementById('rf-summary');
+  var people = Array.prototype.slice.call(document.querySelectorAll('.register-person[data-name]'));
+  people.forEach(function (person) { person.searchWords = window.cascadeSearchWords(person.dataset.name).join(' '); });
+  var chosen = function () { return []; };
+  function apply() {
+    var words = window.cascadeSearchWords(name.value), picked = chosen();
+    var ticked = 0, hidden = 0;
+    people.forEach(function (person) {
+      var fits = words.every(function (word) { return person.searchWords.indexOf(word) >= 0; })
+        && (!team || !team.value || person.dataset.team === team.value)
+        && (!picked.length || person.dataset.fits.split(',').some(function (id) { return picked.indexOf(id) >= 0; }));
+      person.hidden = !fits;
+      var check = person.querySelector('.register-person-check');
+      if (check && check.checked) { ticked += 1; if (!fits) hidden += 1; }
+    });
+    summary.textContent = (hidden ? summary.dataset.hidden : summary.dataset.ticked)
+      .replace('{ticked}', ticked).replace('{hidden}', hidden);
+  }
+  var picker = document.getElementById('rf-categories');
+  if (picker) {
+    var offered = JSON.parse(document.getElementById('rf-categories-data').textContent);
+    var menu = window.MultiSelectCascade({
+      levels: [{ btn: picker, menu: document.getElementById('rf-categories-menu') }],
+      nodesUnder: function () { return offered; },
+      restoreChains: function () { return []; },
+      labels: { all: '{% filter escapejs %}{% trans "All" %}{% endfilter %}', selected: '{% filter escapejs %}{% trans "selected" %}{% endfilter %}', search: '' },
+      onChange: apply
+    });
+    chosen = function () { return menu.effectivePks().map(String); };
+  }
+  name.addEventListener('input', apply);
+  if (team) team.addEventListener('input', apply);
+  form.addEventListener('change', apply);
+  apply();
+})();
+</script>
 {% else %}
 <div class="alert alert-info">{% trans "Everyone you could register here is registered already." %}</div>
 <a href="{% url 'registrations:participant_list' competition.pk %}" class="btn btn-outline-secondary">{% trans "Participant list" %}</a>
