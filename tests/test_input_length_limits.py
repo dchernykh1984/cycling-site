@@ -114,6 +114,9 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
     "api.endpoints.locations.LocationPatchIn": Location,
+    "api.endpoints.virtual_members.VirtualMemberPatchIn": VirtualMember,
+    # A batch holds its rows and a flag; each row (VirtualMemberIn) bounds its own fields to the columns.
+    "api.endpoints.virtual_members.VirtualMembersIn": None,
     # A page's address and where it was opened from, as tally keys: stats.counting.add cuts a key to its
     # column, and the schema bounds the request.
     "api.endpoints.stats.HitIn": None,
