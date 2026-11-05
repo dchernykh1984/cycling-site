@@ -265,3 +265,104 @@ button{cursor:pointer}
 }
 @media (max-height:520px){ #board{display:none} }
 @media (prefers-reduced-motion: reduce){ #grade{transition:none} }
+
+/* ---------- HUD: the ride in one row on top, a big power figure, the step target, the plan on the left ---------- */
+#hudTop{top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:min(580px,calc(100% - 400px));min-width:300px}
+.tbar{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;padding:9px 12px 13px;overflow:hidden;border-radius:14px}
+.tbar .m{display:flex;align-items:baseline;justify-content:center;gap:5px;min-width:0;white-space:nowrap}
+.tbar b{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.tbar span{font-size:11.5px;color:var(--hud-dim);overflow:hidden;text-overflow:ellipsis}
+.rprog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.12)}
+.rprog i{display:block;height:100%;width:0;background:var(--amber);transition:width .4s}
+.prow{display:flex;gap:8px;align-items:stretch;justify-content:center}
+.target{border-left:4px solid #F2C14E;border-radius:14px;padding:8px 14px 9px;min-width:170px;display:flex;flex-direction:column;justify-content:center}
+.target .t1,.target .t3{font-size:12px;color:var(--hud-dim);white-space:nowrap}
+.target .t2{display:flex;align-items:baseline;gap:5px;margin:2px 0}
+.target .t2 b{font-family:var(--display);font-weight:700;font-size:36px;line-height:1;color:#F2C14E;font-variant-numeric:tabular-nums}
+.target .t2 span{font-size:12px;color:var(--hud-dim)}
+.target .tb{height:4px;border-radius:2px;background:rgba(255,255,255,.14);margin-top:6px;overflow:hidden}
+.target .tb i{display:block;height:100%;width:0;background:#F2C14E}
+.pbox{display:flex;align-items:center;gap:16px;padding:6px 18px 6px 20px;border-radius:14px}
+.pbox .pw{display:flex;align-items:baseline}
+.pbox .pw b{font-family:var(--display);font-weight:700;font-size:66px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.pbox .pw span{font-size:13px;color:var(--hud-dim);margin-left:5px;white-space:nowrap}
+.pbox .side{display:grid;gap:4px}
+.pbox .side b{font-family:var(--display);font-weight:500;font-size:21px;font-variant-numeric:tabular-nums;transition:color .3s}
+.pbox .side span{font-size:11px;color:var(--hud-dim);margin-left:4px}
+.pbox .hr b::before{content:'\2665';font-size:.7em;margin-right:4px}
+.act-ok{color:#8FD19E}.act-near{color:#F2C14E}.act-off{color:#FF7A6E}
+.avg{font-family:var(--display);font-weight:700;font-size:19px;text-shadow:0 2px 10px rgba(0,0,0,.7);min-height:1em;text-align:center}
+#hudTR{display:grid;gap:8px;justify-items:end}
+/* the map and the grade are one card: a coloured grade strip over the map */
+.mapcard{width:150px;border-radius:14px;overflow:hidden}
+#grade{position:static;display:flex;flex-direction:row;align-items:baseline;justify-content:space-between;gap:6px;min-width:0;padding:7px 10px 6px;border-radius:0;transition:background .4s}
+#grade b{font-family:var(--display);font-weight:700;font-size:22px;line-height:1}
+#grade span{font-size:11px;opacity:.9;white-space:nowrap;margin:0;overflow:hidden;text-overflow:ellipsis}
+.mapcard #mini{width:100%;height:auto;aspect-ratio:1;border-radius:0;background:none;display:block}
+@media (max-height:520px){ .mapcard{width:112px} #grade{padding:5px 8px 4px} #grade b{font-size:17px} #grade span{font-size:10px} }
+@media (max-width:640px){ .mapcard{width:104px} }
+#board{position:static;transform:none;min-width:0;width:190px;padding:6px 8px 8px}
+#board .bh{font-size:12px;color:var(--hud-dim);padding:0 4px 4px}
+#planList{left:calc(env(safe-area-inset-left,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);width:236px;padding:10px 0 8px;max-height:calc(100% - 130px);overflow:hidden;display:flex;flex-direction:column;border-radius:14px}
+.plh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 12px;font-size:13.5px}
+.plh span{color:var(--hud-dim);font-size:12px;white-space:nowrap}
+.plbar{height:4px;margin:7px 12px;background:rgba(255,255,255,.14);border-radius:2px;overflow:hidden}
+.plbar i{display:block;height:100%;width:0;background:var(--amber)}
+#plItems{list-style:none;margin:0;padding:0;overflow:hidden;font-size:12.5px;font-variant-numeric:tabular-nums}
+#plItems li{display:grid;grid-template-columns:14px 1fr auto;gap:6px;align-items:center;padding:4px 12px;color:#D5DEE7}
+#plItems li .ic{font-size:10px;color:var(--hud-dim)}
+#plItems li.done{opacity:.5}
+#plItems li.done .ic::before{content:'\2713'}
+#plItems li.cur{background:rgba(195,50,59,.88);color:#fff;font-weight:600}
+#plItems li.cur .ic::before{content:'\25B6';color:#fff}
+.plf{padding:7px 12px 0;font-size:12px;color:var(--hud-dim)}
+/* hints read as a coach's line: large, centred, over the road */
+#toast{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);transform:translateX(-50%);max-width:min(760px,82%);width:max-content;padding:0;border-radius:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;
+  font-family:var(--display);font-weight:700;font-size:clamp(17px,2.3vw,28px);line-height:1.25;text-align:center;text-wrap:balance;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.55);opacity:0;transition:opacity .35s}
+@media (max-width:980px){
+  #hudTop{width:min(540px,calc(100% - 230px))}
+  .tbar b{font-size:20px} .pbox .pw b{font-size:50px} .target .t2 b{font-size:28px}
+  #planList{width:200px}
+}
+@media (max-height:520px){
+  #hudTop{gap:5px;top:calc(env(safe-area-inset-top,0px) + 6px)}
+  .tbar{padding:5px 10px 9px} .tbar b{font-size:17px} .tbar span{font-size:10px}
+  .pbox{padding:3px 12px} .pbox .pw b{font-size:38px} .pbox .side b{font-size:16px}
+  .target{padding:5px 10px;min-width:130px} .target .t2 b{font-size:24px} .target .t3{display:none}
+  .avg{font-size:14px}
+  #hudTop{width:min(470px,calc(100% - 390px));min-width:250px}
+  #planList{width:176px;max-height:calc(100% - 90px)} #plItems li.done{display:none} #plItems{font-size:11.5px} #plItems li{padding:3px 10px;gap:4px} .plh{font-size:12px} .plf{display:none}
+  #mini{width:100px;height:100px} #grade b{font-size:17px}
+  #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 80px);font-size:16px}
+}
+@media (max-width:640px){
+  #hudTop{width:calc(100% - 24px);min-width:0}
+  #hudTR{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 86px)}
+  #mini{width:96px;height:96px} #board,#planList{display:none}
+}
+
+/* ---------- a phone held upright: one column on top, the map and the controls at the bottom ---------- */
+@media (max-width:640px) and (orientation:portrait){
+  #hudTop{top:calc(env(safe-area-inset-top,0px) + 8px);width:calc(100% - 16px);min-width:0;gap:6px}
+  .tbar{padding:7px 4px 11px}
+  .tbar .m{flex-direction:column;align-items:center;gap:2px}
+  .tbar b{font-size:19px}
+  .tbar span{font-size:10px;max-width:100%}
+  .prow{flex-direction:column;align-items:stretch;width:100%;gap:6px}
+  .pbox{justify-content:center;padding:4px 14px}
+  .pbox .pw b{font-size:52px}
+  .target{order:2;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:0 10px;padding:7px 12px;min-width:0}
+  .target .t1{flex:1 1 100%}
+  .target .t2{margin:2px 0 0}
+  .target .t2 b{font-size:26px}
+  .target .t3{display:block;flex:1;min-width:0;white-space:normal}
+  .target .tb{flex:1 1 100%;margin-top:5px}
+  .avg{font-size:14px}
+  #hudTR{top:auto;right:auto;left:calc(env(safe-area-inset-left,0px) + 12px);bottom:calc(env(safe-area-inset-bottom,0px) + 84px);justify-items:start}
+  .mapcard{width:118px}
+  #grade{padding:6px 8px 5px} #grade b{font-size:18px} #grade span{font-size:10px}
+  #demo{width:min(220px,calc(100% - 152px));bottom:calc(env(safe-area-inset-bottom,0px) + 84px)}
+  #gear{bottom:calc(env(safe-area-inset-bottom,0px) + 84px)}
+  #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 250px);font-size:18px;max-width:92%}
+  #profile{height:52px}
+}

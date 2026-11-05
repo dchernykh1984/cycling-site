@@ -46,24 +46,44 @@ function drawMini() {
   g.fillStyle = 'rgba(243,246,249,.6)'; g.font = '600 18px Golos Text, sans-serif'; g.fillText(t('map.north'), W - 26, 24);
 }
 function updateHUD(inp, grade) {
-  const T = world.T, spd = me.v * 3.6;
+  const spd = me.v * 3.6, st = me.stats, span = world.FIN - world.S0, done = clamp(me.s - world.S0, 0, span);
+  // the ride in one row: speed, distance, climbing, time; the bar under it is the route (or the plan) done
   $('#vSpeed').textContent = Math.round(spd);
   $('#uSpeed').textContent = inp.direct ? t('u.kmh') + ', ' + gearLabel(gearF, gearR) : t('u.kmh');
+  if (rideMode === 'race') { $('#vDist').textContent = fmt1(done / 1000); $('#uDist').textContent = t('hud.ofKm', { total: fmt1(span / 1000) }); }
+  else { $('#vDist').textContent = fmt1(st.dist / 1000); $('#uDist').textContent = t('hud.lapKm', { lap: me.lap + 1 }); }
+  $('#vGain').textContent = Math.round(st.gain || 0);
+  $('#vTime').textContent = fmtTime(raceT);
+  const prog = rideMode === 'plan' && Work.total() ? Work.t / Work.total() : rideMode === 'race' ? done / span : (st.dist % span) / span;
+  $('#vProg').style.width = clamp(prog * 100, 0, 100).toFixed(1) + '%';
+  // the power, big, with the heart rate and the cadence beside it
   $('#vPower').textContent = Math.round(inp.P);
   $('#vCad').textContent = inp.cad != null && inp.cad > 0 ? Math.round(inp.cad) : (inp.mode === 'speed' ? '—' : '0');
+  if (rideMode !== 'plan') $('#vCad').className = '';
+  const hr = Sensors.hr(), hb = $('#hrBox'); hb.classList.toggle('hidden', hr == null);
+  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); $('#vHR').style.color = ZONE_BG[z].replace(/,[\d.]+\)$/, ',1)'); }
+  // the grade strip over the map
   $('#vGrade').textContent = fmtPct(grade * 100);
   const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');
-  const hr = Sensors.hr(), hb = $('#hrBox'); hb.classList.toggle('hidden', hr == null);
-  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); hb.style.background = ZONE_BG[z]; }
   $('#grade').style.background = gradeColor(grade);
-  $('#vTime').textContent = fmtTime(raceT);
-  const done = clamp(me.s - world.S0, 0, world.FIN - world.S0);
-  $('#vDist').textContent = rideMode !== 'race' ? t('hud.lap', { d: fmt1(me.stats.dist / 1000), lap: me.lap + 1 }) : t('hud.of', { d: fmt1(done / 1000), total: fmt1((world.FIN - world.S0) / 1000) });
+  // under the power: the step's average cadence in a plan, the ride's average power otherwise
+  let avg = '';
+  if (rideMode === 'plan' && Work.active && Work.idx >= 0) { const x = Work.ss[Work.idx]; if (x && x.n > 3) avg = t('hud.avgCad', { c: Math.round(x.sumCad / x.n) }); }
+  else if (st.t > 10) avg = t('hud.avgPower', { w: Math.round(st.sumP / st.t) });
+  $('#avgLine').textContent = avg;
   if (rideMode === 'plan') updatePlanHUD(inp.cad);
-  $('#vEle').textContent = t('hud.ele', { m: Math.round(sampleAt(T, me.s, {}).y) });
-  const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
-  const lead = all[0];
-  $('#boardList').innerHTML = all.slice(0, 8).map((r, i) => { const gap = r === lead ? '' : '+' + Math.max(0, Math.round((lead.s - r.s) / Math.max(r.v, 3))) + ' ' + t('u.s'); const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0'); return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>'; }).join('');
+  // the riders nearby: this rider and up to six around them, with the gap in seconds
+  const board = $('#board'); board.classList.toggle('hidden', !bots.length);
+  if (bots.length) {
+    const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
+    const from = clamp(all.indexOf(me) - 3, 0, Math.max(0, all.length - 7));
+    $('#boardList').innerHTML = all.slice(from, from + 7).map(r => {
+      const dt = Math.round((r.s - me.s) / Math.max((r.v + me.v) / 2, 3));
+      const gap = r === me ? '' : (dt > 0 ? '+' : dt < 0 ? '−' : '') + Math.abs(dt) + ' ' + t('u.s');
+      const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0');
+      return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>';
+    }).join('');
+  }
   drawMini(); drawProfile();
   updateTagText();
 }
