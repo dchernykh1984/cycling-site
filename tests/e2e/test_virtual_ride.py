@@ -545,3 +545,29 @@ def test_a_cadence_plan_s_time_to_the_end_is_not_cut_off_on_a_phone_held_sideway
         "() => ['#plLeft', '#planList'].map(s => document.querySelector(s).getBoundingClientRect().right)"
     )
     assert left <= edge, (left, edge)
+
+
+def _luminance(rgb: str) -> float:
+    def linear(channel: int) -> float:
+        c = channel / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (linear(int(v)) for v in re.findall(r"\d+", rgb)[:3])
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+@pytest.mark.parametrize("state", ["act-ok", "act-near", "act-off"])
+@pytest.mark.django_db(transaction=True)
+def test_the_cadence_against_the_target_reads_over_a_light_sky(page: Page, live_server, state):
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    colour, weight, size = page.evaluate(
+        """state => { const cad = document.querySelector('#vCad'); cad.className = state;
+            const c = getComputedStyle(cad); return [c.color, c.fontWeight, parseFloat(c.fontSize)]; }""",
+        state,
+    )
+    # the HUD's panel, rgba(11,17,24,.58), over a light sky (170,205,235)
+    panel = "rgb(78, 96, 113)"
+    lighter, darker = sorted((_luminance(colour), _luminance(panel)), reverse=True)
+    # bold from 18.66 px is large text, which WCAG asks 3:1 of
+    assert int(weight) >= 700 and size >= 18.66, (weight, size)
+    assert (lighter + 0.05) / (darker + 0.05) >= 3, colour
