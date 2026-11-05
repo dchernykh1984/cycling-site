@@ -185,6 +185,26 @@ class RegisterManyTests(TestCase):
         self.assertContains(response, f'aria-controls="p{self.anna.pk}-form" aria-expanded="true"')
         self.assertContains(response, f'id="p{self.boris.pk}-form" hidden>')
 
+    def test_an_event_with_categories_enters_nobody_without_one_and_says_when_none_takes_them(self):
+        """Issue #439: details folded, nothing in the page stops a send with no category; the server
+        does, and the person comes back open with the reason. An event with no categories takes all."""
+        response = self.client.post(self._url(), {"person": [str(self.anna.pk)], **_fields(self.anna, category="")})
+        self.assertIn("category", response.context["rows"][1].form.errors)
+        self.assertContains(response, f'id="p{self.anna.pk}-form">')
+        self.cat.male = True
+        self.cat.female = False
+        self.cat.save(update_fields=["male", "female"])
+        response = self.client.post(self._url(), {"person": [str(self.anna.pk)], **_fields(self.anna, category="")})
+        with translation.override("en"):
+            self.assertEqual(
+                response.context["rows"][1].form.errors["category"],
+                ["No open category of this event takes this gender and year of birth."],
+            )
+        self.assertFalse(CompetitionRegistration.objects.exists())
+        bare = make_open_competition(submitted_by=self.organizer, registration_mode="self_only")
+        self.client.post(self._url(bare), {"person": [str(self.anna.pk)], **_fields(self.anna, category="")})
+        self.assertEqual(CompetitionRegistration.objects.get().category, None)
+
     def test_a_long_page_offers_filters_by_the_peoples_teams_and_the_events_open_categories(self):
         """Issue #440: from FILTERED_FROM people on, each with the categories they fit."""
         men = make_category(self.comp, name="Men", female=False)

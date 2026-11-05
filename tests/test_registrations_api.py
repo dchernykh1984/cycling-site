@@ -114,6 +114,18 @@ class EnteringTests(TestCase):
         self._enter({"person": f"member:{self.anna.pk}"}, {"person": f"virtual:{self.kid.pk}"})
         self.assertEqual(set(CompetitionInvite.objects.values_list("user", flat=True)), {self.coach.pk, self.anna.pk})
 
+    def test_a_person_no_category_takes_is_told_so_and_not_entered(self):
+        too_old = VirtualMember.objects.create(
+            owner=self.coach, last_name="Old", first_name="Ann", gender="F", birth_date=datetime.date(1950, 1, 1)
+        )
+        self.cat.birth_from = datetime.date(2000, 1, 1)
+        self.cat.save(update_fields=["birth_from"])
+        answer = self._enter({"person": f"virtual:{too_old.pk}"}).json()
+        with translation.override("ru"):
+            said = gettext("No open category of this event takes this gender and year of birth.")
+        self.assertEqual(answer[0], {"row": 0, "registration_id": None, "errors": {"category": [said]}})
+        self.assertFalse(CompetitionRegistration.objects.exists())
+
     def test_nobody_enters_without_a_token(self):
         body = {"competition_id": self.comp.pk, "entries": [{"person": "me"}]}
         answer = self.client.post("/api/v1/registrations/", body, content_type="application/json")

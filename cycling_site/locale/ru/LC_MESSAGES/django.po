@@ -5123,3 +5123,7 @@ msgstr "Скрыть данные"
 #: event_photos/permissions.py
 msgid "The start list already gives this person a bib at this event."
 msgstr "В стартовом протоколе у этого человека уже есть номер на этом старте."
+
+#: registrations/registering.py
+msgid "No open category of this event takes this gender and year of birth."
+msgstr "Ни одна открытая категория этого старта не принимает этот пол и год рождения."

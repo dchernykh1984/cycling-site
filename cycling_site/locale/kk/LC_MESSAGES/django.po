@@ -5120,3 +5120,7 @@ msgstr "Деректерді жасыру"
 #: event_photos/permissions.py
 msgid "The start list already gives this person a bib at this event."
 msgstr "Старт хаттамасында бұл адамның осы жарыстағы нөмірі бар."
+
+#: registrations/registering.py
+msgid "No open category of this event takes this gender and year of birth."
+msgstr "Бұл жарыстың ашық санаттарының ешқайсысы осы жыныс пен туған жылды қабылдамайды."
