@@ -3,6 +3,7 @@ many a member may add, what taking one off the site does to their entries, enter
 albums."""
 
 import datetime
+import uuid
 
 from django.test import TestCase
 from django.urls import reverse
@@ -23,6 +24,13 @@ def _added(owner, last="Ivanova", first="Dana", gender="F", born=datetime.date(2
     return VirtualMember.objects.create(
         owner=owner, last_name=last, first_name=first, gender=gender, birth_date=born, **more
     )
+
+
+def _bearer(user):
+    """A personal API token for ``user``, as the profile's card makes one, in a request's header."""
+    user.api_token = uuid.uuid4()
+    user.save(update_fields=["api_token"])
+    return {"HTTP_AUTHORIZATION": f"Bearer {user.api_token}"}
 
 
 def _days(n):
@@ -201,6 +209,21 @@ class PhotoTests(EventPhotosTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertFalse(DeclaredBib.objects.exists())
 
+    def test_the_api_names_takes_back_and_lists_a_bib_for_the_person_as_the_page_does(self):
+        url = f"/api/v1/event-photos/competitions/{self.race.pk}/my-bib"
+        auth = _bearer(self.coach)
+        named = self.client.put(url, {"bib": "7", "person": self.kid.pk}, content_type="application/json", **auth)
+        self.assertEqual(named.status_code, 200)
+        self.assertEqual(DeclaredBib.objects.get().virtual_member, self.kid)
+        cards = self.client.get("/api/v1/event-photos/me/declared-bibs", **auth).json()
+        self.assertEqual([(c["bib"], c["own"], c["person"], c["count"]) for c in cards], [("7", False, self.kid.pk, 1)])
+        foreign = self.client.put(
+            url, {"bib": "9", "person": self.kid.pk}, content_type="application/json", **_bearer(self.stranger)
+        )
+        self.assertEqual(foreign.status_code, 404)
+        self.assertEqual(self.client.delete(f"{url}?person={self.kid.pk}", **auth).status_code, 204)
+        self.assertFalse(DeclaredBib.objects.exists())
+
     def test_a_person_the_start_list_gives_a_bib_gets_none_named(self):
         entry = self._registration()
         entry.virtual_member = self.kid
@@ -285,9 +308,7 @@ class ApiTests(TestCase):
 
     def setUp(self):
         self.coach = make_user("coach")
-        self.coach.api_token = __import__("uuid").uuid4()
-        self.coach.save(update_fields=["api_token"])
-        self.auth = {"HTTP_AUTHORIZATION": f"Bearer {self.coach.api_token}"}
+        self.auth = _bearer(self.coach)
 
     def _post(self, path, body=None):
         return self.client.post(
@@ -304,9 +325,7 @@ class ApiTests(TestCase):
         self.assertEqual(self._post("consent").status_code, 204)
         self.assertEqual(self._post("", {"people": [self._row()]}).status_code, 200)
         guest = make_user("guest", role=User.Role.GUEST)
-        guest.api_token = __import__("uuid").uuid4()
-        guest.save(update_fields=["api_token"])
-        refused = self.client.post("/api/v1/virtual-members/consent", HTTP_AUTHORIZATION=f"Bearer {guest.api_token}")
+        refused = self.client.post("/api/v1/virtual-members/consent", **_bearer(guest))
         self.assertEqual(refused.status_code, 403)
 
     def test_a_batch_is_added_whole_and_a_second_send_adds_nobody_twice(self):
