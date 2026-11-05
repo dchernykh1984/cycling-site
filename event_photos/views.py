@@ -16,6 +16,7 @@ from django.utils.http import content_disposition_header
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from accounts import virtual_members
 from calendar_app.models import Competition
 from event_photos import actions
 from event_photos.archive import Archive, ArchiveBusyError, ArchiveTooBigError
@@ -72,8 +73,8 @@ def my_declared_bibs(user, competition):
     """The bibs named at this event whose albums ``user`` looks after, while the site still needs them."""
     if not user.is_authenticated:
         return DeclaredBib.objects.none()
-    named = DeclaredBib.objects.filter(looked_after(user), competition=competition).select_related("user")
-    return actions.declared_in_force(named)
+    named = DeclaredBib.objects.filter(looked_after(user), competition=competition)
+    return actions.declared_in_force(named.select_related("user", "virtual_member"))
 
 
 def _declare_form(user, competition, declared_cards) -> DeclaredBibForm | None:
@@ -82,6 +83,14 @@ def _declare_form(user, competition, declared_cards) -> DeclaredBibForm | None:
     if own is None and (not user.is_authenticated or declared_bib_refusal(user, competition)):
         return None
     return DeclaredBibForm(initial={"bib": own.bib} if own else None)
+
+
+def _added_people(user, competition) -> list:
+    """The people without accounts ``user`` added (issue #438), offered a named bib at an event with an
+    indexed album; nobody where there is none."""
+    if not user.is_authenticated or not actions.has_indexed_album(competition):
+        return []
+    return list(virtual_members.of(user))
 
 
 def _with_links(photos, competition):
@@ -169,6 +178,7 @@ def event_photos(request, pk):
             ],
             "declared_cards": declared_cards,
             "declare_form": _declare_form(request.user, competition, declared_cards),
+            "added_people": _added_people(request.user, competition),
             # The club's curated albums of this event are photo sources too, with their own rights.
             "gallery_albums": GalleryAlbum.objects.visible_to(request.user).filter(competition=competition),
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},
@@ -290,25 +300,31 @@ def bib_archive(request, pk):
 @login_required
 @require_POST
 def declare(request, pk):
-    """Name the member's own bib at the event, or take it back."""
+    """Name the member's own bib at the event -- or one for a person without an account they added
+    (``person``, issue #438) -- or take it back."""
     competition = _event(request, pk)
+    person = request.user
+    if request.POST.get("person"):
+        person = virtual_members.find(request.user, request.POST["person"])
+        if person is None:
+            raise Http404
     if request.POST.get("action") == "remove":
-        actions.forget_bib(request.user, competition)
+        actions.forget_bib(person, competition)
         return redirect("event_photos:event", competition.pk)
     form = DeclaredBibForm(request.POST)
-    refusal = declared_bib_refusal(request.user, competition)
+    refusal = declared_bib_refusal(person, competition)
     if refusal:
         messages.error(request, _(refusal))
     elif not form.is_valid():
         messages.error(request, " ".join(form.errors["bib"]))
     else:
-        actions.declare_bib(request.user, competition, form.cleaned_data["bib"])
+        actions.declare_bib(person, competition, form.cleaned_data["bib"])
     return redirect("event_photos:event", competition.pk)
 
 
 def _declared(request, pk, bib_pk):
     competition = _event(request, pk)
-    named = DeclaredBib.objects.filter(competition=competition).select_related("user")
+    named = DeclaredBib.objects.filter(competition=competition).select_related("user", "virtual_member")
     declared = get_object_or_404(actions.declared_in_force(named), pk=bib_pk)
     if not can_see_declared(request.user, declared):
         raise Http404
@@ -325,7 +341,7 @@ def declared_album(request, pk, bib_pk):
     confirmed = photos.filter(confirmed=True).count()
     title = (
         _("Photos with me: %(participant)s") if declared.user_id == request.user.pk else _("Photos of %(participant)s")
-    ) % {"participant": declared.user.public_display_name}
+    ) % {"participant": declared.display_name}
     return render(
         request,
         "event_photos/declared_album.html",

@@ -19,10 +19,10 @@ cover and counts, never the photographer's. Shared by the profile and the event 
         {% if card.bibs %}{% trans "bib" %} {{ card.bibs|join:", " }}{% endif %}{% if reg.category %} &middot; {{ reg.category.name }}{% endif %}
       </span>
       {% else %}
-      <span class="gallery-card-title">{% if with_event %}{{ declared.competition.title }}{% else %}{{ declared.user.public_display_name }}{% endif %}</span>
+      <span class="gallery-card-title">{% if with_event %}{{ declared.competition.title }}{% else %}{{ declared.display_name }}{% endif %}</span>
       <span class="gallery-card-date">
-        {% if with_event %}{{ declared.competition.date_start|date:"d.m.Y" }} &middot; {{ declared.user.public_display_name }} &middot; {% endif %}
-        {% trans "bib" %} {{ declared.bib }} &middot; {% trans "named by the participant" %}
+        {% if with_event %}{{ declared.competition.date_start|date:"d.m.Y" }} &middot; {{ declared.display_name }} &middot; {% endif %}
+        {% trans "bib" %} {{ declared.bib }} &middot; {% if declared.virtual_member_id %}{% trans "named by you" %}{% else %}{% trans "named by the participant" %}{% endif %}
       </span>
       {% endif %}
       <span class="gallery-card-date">

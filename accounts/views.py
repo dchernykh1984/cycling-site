@@ -20,7 +20,7 @@ from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import TemplateView
 
-from accounts import managing, roles
+from accounts import managing, roles, virtual_members
 from accounts.access import (
     EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
     ParticipantRequiredMixin,
@@ -210,8 +210,8 @@ class ProfileView(TemplateView):
 
     @staticmethod
     def _registrations_with_actions(user):
-        """The reader's own entries and their members' (issue #315), each carrying whether the reader
-        may still edit or cancel it.
+        """The reader's own entries, their members' (issue #315) and the people's without accounts they
+        added (issue #438), each carrying whether the reader may still edit or cancel it.
 
         The profile offers the same two buttons as the participant list, so it asks the same two
         questions the edit and delete views ask before they act -- rather than a second rule that
@@ -222,8 +222,11 @@ class ProfileView(TemplateView):
         from registrations.views import can_self_edit
 
         member_ids = managing.member_ids(user)
+        added_ids = set(virtual_members.of(user).values_list("pk", flat=True))
         rows = list(
-            CompetitionRegistration.objects.filter(Q(user=user) | Q(user_id__in=member_ids))
+            CompetitionRegistration.objects.filter(
+                Q(user=user) | Q(user_id__in=member_ids) | Q(virtual_member_id__in=added_ids)
+            )
             .filter(competition__is_deleted=False)
             # An organizer's rights are decided by the event's submitter, so that row travels with
             # the event -- otherwise the permission check fetches it once per registration.
@@ -233,7 +236,9 @@ class ProfileView(TemplateView):
             .order_by("-competition__date_start", "-registered_at")
         )
         for reg in rows:
-            reg.can_edit = manages(user, reg.competition) or can_self_edit(user, reg.competition, reg, member_ids)
+            reg.can_edit = manages(user, reg.competition) or can_self_edit(
+                user, reg.competition, reg, member_ids, added_ids
+            )
         return rows
 
 

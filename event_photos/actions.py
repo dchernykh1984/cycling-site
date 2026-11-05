@@ -13,6 +13,7 @@ from django.db.models import Count, Exists, IntegerField, OuterRef, Q, QuerySet,
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
+from accounts import virtual_members
 from event_photos import index as index_module
 from event_photos.dropbox import DropboxError, get_adapter, open_url
 from event_photos.models import (
@@ -333,16 +334,27 @@ def _bound_to_members(**where) -> QuerySet:
     return IssuedBib.objects.filter(registration__is_rejected=False, **where)
 
 
-def has_bound_bib(user, competition) -> bool:
-    """Whether the start lists bound a bib, even one in dispute, to the member's own registration at the
-    event: then the site has their bib, and they name none themselves."""
-    return _bound_to_members(competition=competition, registration__user=user).exists()
+def _whose_registration(person) -> dict:
+    """The registrations of ``person``, an account or a person without one (issue #438)."""
+    return {f"registration__{field}": value for field, value in virtual_members.who(person).items()}
+
+
+def has_bound_bib(person, competition) -> bool:
+    """Whether the start lists bound a bib, even one in dispute, to the person's own registration at the
+    event: then the site has their bib, and nobody names one for them."""
+    return _bound_to_members(competition=competition, **_whose_registration(person)).exists()
 
 
 def declared_in_force(declared: QuerySet) -> QuerySet:
-    """The named bibs that still stand: the start lists bound no bib to their members at those events."""
+    """The named bibs that still stand: the start lists bound no bib to their people at those events."""
     return declared.exclude(
         Exists(_bound_to_members(competition=OuterRef("competition"), registration__user=OuterRef("user")))
+    ).exclude(
+        Exists(
+            _bound_to_members(
+                competition=OuterRef("competition"), registration__virtual_member=OuterRef("virtual_member")
+            )
+        )
     )
 
 
@@ -351,14 +363,17 @@ def has_indexed_album(competition) -> bool:
     return ExternalAlbum.objects.filter(competition=competition, is_hidden=False, imported_at__isnull=False).exists()
 
 
-def declare_bib(user, competition, bib: str) -> DeclaredBib:
-    """The member's one bib at the event, in place of any they named before."""
-    declared, _created = DeclaredBib.objects.update_or_create(user=user, competition=competition, defaults={"bib": bib})
+def declare_bib(person, competition, bib: str) -> DeclaredBib:
+    """The person's one bib at the event -- the member's own, or a person's without an account they
+    added -- in place of any named before."""
+    declared, _created = DeclaredBib.objects.update_or_create(
+        **virtual_members.who(person), competition=competition, defaults={"bib": bib}
+    )
     return declared
 
 
-def forget_bib(user, competition) -> None:
-    DeclaredBib.objects.filter(user=user, competition=competition).delete()
+def forget_bib(person, competition) -> None:
+    DeclaredBib.objects.filter(**virtual_members.who(person), competition=competition).delete()
 
 
 def declared_photos(declared) -> QuerySet:
