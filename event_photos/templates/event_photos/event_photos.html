@@ -42,8 +42,8 @@
         </select>
       </div>
       <div>
-        <label for="added-bib" class="form-label mb-1">{% trans "Bib" %}</label>
-        <input type="text" id="added-bib" name="bib" maxlength="32" class="form-control" autocomplete="off">
+        <label for="{{ added_bib_form.bib.id_for_label }}" class="form-label mb-1">{% trans "Bib" %}</label>
+        {{ added_bib_form.bib }}
       </div>
       <button type="submit" name="action" value="save" class="btn btn-outline-primary">{% trans "Save" %}</button>
       <button type="submit" name="action" value="remove" formnovalidate class="btn btn-outline-primary">{% trans "Remove" %}</button>
