@@ -276,7 +276,7 @@ button{cursor:pointer}
 #board{position:static;transform:none;min-width:0;width:190px;padding:6px 8px 8px}
 #board .bh{font-size:12px;color:var(--hud-dim);padding:0 4px 4px}
 #planList{left:calc(env(safe-area-inset-left,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 12px);width:236px;padding:10px 0 8px;max-height:calc(100% - 130px);overflow:hidden;display:flex;flex-direction:column;border-radius:14px}
-.plh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 12px;font-size:13.5px}
+.plh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 8px;padding:0 12px;font-size:13.5px} /* the time to the end goes under the title rather than off the edge */
 .plh span{color:var(--hud-dim);font-size:12px;white-space:nowrap}
 .plbar{height:4px;margin:7px 12px;background:rgba(255,255,255,.14);border-radius:2px;overflow:hidden}
 .plbar i{display:block;height:100%;width:0;background:var(--amber)}

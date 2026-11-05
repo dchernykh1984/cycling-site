@@ -528,3 +528,20 @@ def test_the_hud_does_not_animate_for_a_reader_who_asked_for_less_motion(page: P
         "['#grade', '#vProg'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration)"
     )
     assert durations == ["0s", "0s"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_cadence_plan_s_time_to_the_end_is_not_cut_off_on_a_phone_held_sideways(page: Page, live_server):
+    page.set_viewport_size({"width": 844, "height": 390})
+    page.add_init_script(_FRAMES)
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=kk")  # the longest words
+    page.evaluate("drawFrame(16)")
+    if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
+        pytest.skip("this browser cannot draw 3D, so no ride starts in it")
+    page.evaluate("() => { settings.mode = 'plan'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")
+    left, edge = page.evaluate(
+        "() => ['#plLeft', '#planList'].map(s => document.querySelector(s).getBoundingClientRect().right)"
+    )
+    assert left <= edge, (left, edge)
