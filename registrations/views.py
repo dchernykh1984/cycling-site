@@ -426,15 +426,14 @@ class EditRegistrationView(LoginRequiredMixin, View):
         was_approved = reg.is_approved
         form = self._build_form(competition, reg, as_participant, data=request.POST)
         if form.is_valid():
-            obj = form.save(commit=False)
-            if "team_name" in form.fields:
-                team_name = form.cleaned_data.get("team_name", "").strip()
-                obj.team = Team.get_or_restore(team_name) if team_name else None
-            # A participant editing an already-approved entry sends it back to moderation, so
-            # the organiser re-checks the changed data instead of it going through silently.
-            if as_participant and competition.require_approval and was_approved and form.has_changed():
-                obj.is_approved = False
-            obj.save()
+            if as_participant:
+                registering.save_participant_change(form, competition, was_approved)
+            else:
+                obj = form.save(commit=False)
+                if "team_name" in form.fields:
+                    team_name = form.cleaned_data.get("team_name", "").strip()
+                    obj.team = Team.get_or_restore(team_name) if team_name else None
+                obj.save()
             return redirect("registrations:participant_list", pk=pk)
         return render(request, self.template_name, {"competition": competition, "registration": reg, "form": form})
 
