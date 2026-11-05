@@ -10,6 +10,7 @@ from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import Field
 
+from accounts import virtual_members
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
@@ -118,6 +119,8 @@ class RegistrationAlbumOut(Schema):
 
 class DeclaredBibIn(Schema):
     bib: str = Field(max_length=BIB_MAX_LENGTH)
+    # a person without an account the caller added (issue #438); left out, the caller's own bib
+    person: int | None = None
 
 
 class DeclaredBibOut(Schema):
@@ -131,8 +134,10 @@ class DeclaredAlbumOut(Schema):
     competition_id: int
     competition_title: str
     bib: str
-    # the caller's own bib, which they may change; otherwise one of a member whose photos they manage
+    # the caller's own bib, which they may change; otherwise one of a member whose photos they manage,
+    # or of a person without an account they added, which they change with that person's id
     own: bool
+    person: int | None  # the person without an account the bib is for, when it is for one
     count: int
     confirmed: int
     state: str
@@ -277,23 +282,38 @@ def my_albums(request):
     return [_registration_card(request, r) for r in regs if can_see_event(request.auth, r.competition)]
 
 
+def _bib_owner(user, person):
+    """Whose bib a call names: the caller's, or -- ``person`` -- a person without an account they added
+    (issue #438); 404 for anybody else's."""
+    if person is None:
+        return user
+    added = virtual_members.find(user, person)
+    if added is None:
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not a person you added")
+    return added
+
+
 @router.put("/competitions/{competition_id}/my-bib", response=DeclaredBibOut, auth=auth)
 def declare_bib(request, competition_id: int, payload: DeclaredBibIn):
-    """Name the caller's own bib at the event, in place of any named before: 409 while the event has
-    no indexed album or once the start lists bound a bib to the caller's registration there."""
+    """Name the caller's own bib at the event -- or one for a person without an account they added --
+    in place of any named before: 409 while the event has no indexed album or once the start lists
+    bound a bib to that person's registration there."""
     competition = _competition(request.auth, competition_id)
-    refusal = declared_bib_refusal(request.auth, competition)
+    person = _bib_owner(request.auth, payload.person)
+    refusal = declared_bib_refusal(person, competition)
     if refusal:
         raise HttpError(HTTPStatus.CONFLICT, refusal)
     form = DeclaredBibForm({"bib": payload.bib})
     if not form.is_valid():
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "bib: " + " ".join(str(e) for e in form.errors["bib"]))
-    return actions.declare_bib(request.auth, competition, form.cleaned_data["bib"])
+    return actions.declare_bib(person, competition, form.cleaned_data["bib"])
 
 
 @router.delete("/competitions/{competition_id}/my-bib", response={HTTPStatus.NO_CONTENT: None}, auth=auth)
-def forget_bib(request, competition_id: int):
-    actions.forget_bib(request.auth, _competition(request.auth, competition_id))
+def forget_bib(request, competition_id: int, person: int | None = None):
+    """Take back the bib named -- the caller's own, or ``person``'s, a person without an account."""
+    competition = _competition(request.auth, competition_id)
+    actions.forget_bib(_bib_owner(request.auth, person), competition)
     return Status(HTTPStatus.NO_CONTENT, None)
 
 
@@ -320,6 +340,7 @@ def _declared_card(request, declared) -> dict:
         "competition_title": declared.competition.title,
         "bib": declared.bib,
         "own": declared.user_id == request.auth.pk,
+        "person": declared.virtual_member_id,
         "count": summary["count"],
         "confirmed": summary["confirmed"],
         "state": summary["state"],
