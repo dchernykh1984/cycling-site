@@ -4984,7 +4984,7 @@ msgstr "Люди без аккаунта"
 
 #: accounts/templates/accounts/_virtual_members.html
 msgid "Here you can add people who have no account on the site -- the children of your section, your family -- register them for starts and look after their photos. You type in their names, gender and date of birth yourself, so first confirm that you may: you have their consent, or their legal representative's, to handle their personal data."
-msgstr "Здесь можно добавить людей, у которых нет аккаунта на сайте, — детей вашей секции, родных — регистрировать их на старты и следить за их фотографиями. Их имена, пол и дату рождения вы вводите сами, поэтому сначала подтвердите, что вправе это делать: у вас есть согласие этих людей или их законных представителей на обработку их персональных данных."
+msgstr "Здесь можно добавить людей без аккаунта на сайте — детей вашей секции, родных — и регистрировать их на старты и следить за их фото. Их имена, пол и дату рождения вы вводите сами, поэтому сначала подтвердите, что вправе это делать: у вас есть согласие этих людей или их законных представителей на обработку их персональных данных."
 
 #: accounts/templates/accounts/_virtual_members.html
 msgid "I am authorized to handle their personal data"
