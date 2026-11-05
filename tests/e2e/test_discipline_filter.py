@@ -222,11 +222,15 @@ def test_event_type_master_checkbox_selects_all(page: Page, live_server, race_ev
     page.goto(f"{live_server.url}/ru/calendar/list/")
     open_filter_panel(page)
     page.click("#et-btn-1")
+    # Every type the menu offers: the two made here, and on a fresh database the ones the migrations
+    # seed too, which the first transactional test on a worker still sees.
+    offered = set(page.locator("#et-menu-1 input.mf-item").evaluate_all("els => els.flatMap(e => e.value.split(','))"))
+    assert {str(race_event_type.pk), str(training_event_type.pk)} <= offered
     with page.expect_navigation():
         page.check("#et-menu-1 input.mf-all")
     # One comma-joined value per filter, not one parameter per id (see test_filter_url_length.py).
     selected = set(parse_qs(urlsplit(page.url).query)["event_type"][0].split(","))
-    assert selected == {str(race_event_type.pk), str(training_event_type.pk)}
+    assert selected == offered
 
 
 # --------------------------------------------------------------------------- #
