@@ -581,6 +581,7 @@ class RegistrationFlowTests(TestCase):
                 "email": "newuser@example.com",
                 "password1": "SuperPass123!",
                 "password2": "SuperPass123!",
+                "privacy": "on",
             },
         )
         self.assertIn(response.status_code, [200, 302])
@@ -593,7 +594,12 @@ class RegistrationFlowTests(TestCase):
         User.objects.create_user(username="exists@example.com", email="exists@example.com", password="SuperPass123!")
         response = self.client.post(
             reverse("account_signup"),
-            {"email": "exists@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+            {
+                "email": "exists@example.com",
+                "password1": "SuperPass123!",
+                "password2": "SuperPass123!",
+                "privacy": "on",
+            },
         )
         self.assertIn(response.status_code, [200, 302])
         self.assertNotIn(b"already registered", response.content)
@@ -608,6 +614,7 @@ class RegistrationFlowTests(TestCase):
                 "email": "confirm@example.com",
                 "password1": "SuperPass123!",
                 "password2": "SuperPass123!",
+                "privacy": "on",
             },
         )
         user = User.objects.get(email="confirm@example.com")
@@ -1508,7 +1515,12 @@ class OptionalEmailVerificationTests(TestCase):
     def test_signup_logs_in_unverified_user(self):
         self.client.post(
             reverse("account_signup"),
-            {"email": "opt_signup@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+            {
+                "email": "opt_signup@example.com",
+                "password1": "SuperPass123!",
+                "password2": "SuperPass123!",
+                "privacy": "on",
+            },
         )
         # optional verification logs the user in immediately (mandatory would not)
         self.assertEqual(self.client.get(reverse("account_profile")).status_code, 200)
@@ -1542,7 +1554,7 @@ class SignupConfirmationRateLimitTests(TestCase):
     def test_signup_stamps_last_mail_action_at(self):
         self.client.post(
             reverse("account_signup"),
-            {"email": "stamp@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+            {"email": "stamp@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!", "privacy": "on"},
         )
         user = User.objects.get(email="stamp@example.com")
         self.assertEqual(len(mail.outbox), 1)  # exactly one confirmation email at signup
@@ -1551,7 +1563,7 @@ class SignupConfirmationRateLimitTests(TestCase):
     def test_resend_right_after_signup_is_rate_limited(self):
         self.client.post(
             reverse("account_signup"),
-            {"email": "fresh@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!"},
+            {"email": "fresh@example.com", "password1": "SuperPass123!", "password2": "SuperPass123!", "privacy": "on"},
         )
         self.assertEqual(len(mail.outbox), 1)
         # The signup confirmation already stamped the cooldown, so an immediate resend is blocked.

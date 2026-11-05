@@ -72,7 +72,8 @@ class KazakhAccountPagesTests(TestCase):
 
     def test_a_sign_up_that_gets_everything_wrong(self):
         response = self.client.post(
-            "/kk/accounts/signup/", {"email": "not-an-address", "password1": "1234", "password2": "4321"}
+            "/kk/accounts/signup/",
+            {"email": "not-an-address", "password1": "1234", "password2": "4321", "privacy": "on"},
         )
         self.assert_speaks_kazakh(
             response,
@@ -84,7 +85,12 @@ class KazakhAccountPagesTests(TestCase):
     def test_two_passwords_that_differ(self):
         response = self.client.post(
             "/kk/accounts/signup/",
-            {"email": "kazakh.reader@example.com", "password1": "Strong-pass-2026", "password2": "Strong-pass-2027"},
+            {
+                "email": "kazakh.reader@example.com",
+                "password1": "Strong-pass-2026",
+                "password2": "Strong-pass-2027",
+                "privacy": "on",
+            },
         )
         self.assert_speaks_kazakh(response, "You must type the same password each time.")
 
@@ -92,14 +98,24 @@ class KazakhAccountPagesTests(TestCase):
         """The rule names the field it compared with, so the field's own name needs Kazakh too."""
         response = self.client.post(
             "/kk/accounts/signup/",
-            {"email": "kazakhreader@example.com", "password1": "kazakhreader1", "password2": "kazakhreader1"},
+            {
+                "email": "kazakhreader@example.com",
+                "password1": "kazakhreader1",
+                "password2": "kazakhreader1",
+                "privacy": "on",
+            },
         )
         self.assert_speaks_kazakh(response, "email address")
 
     def test_the_confirmation_mail_after_a_sign_up(self):
         self.client.post(
             "/kk/accounts/signup/",
-            {"email": "new.reader@example.com", "password1": "Strong-pass-2026", "password2": "Strong-pass-2026"},
+            {
+                "email": "new.reader@example.com",
+                "password1": "Strong-pass-2026",
+                "password2": "Strong-pass-2026",
+                "privacy": "on",
+            },
         )
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(_russian_in(mail.outbox[0].subject + "\n" + mail.outbox[0].body), [])

@@ -317,7 +317,7 @@ class RegisterForCompetitionViewTests(TestCase):
         signup_email = "unverified-registration@example.com"
         self.client.post(
             reverse("account_signup"),
-            {"email": signup_email, "password1": "SuperPass123!", "password2": "SuperPass123!"},
+            {"email": signup_email, "password1": "SuperPass123!", "password2": "SuperPass123!", "privacy": "on"},
         )
         user = User.objects.get(email=signup_email)
         self.assertEqual(user.role, User.Role.GUEST)

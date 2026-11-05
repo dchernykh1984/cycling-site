@@ -130,6 +130,13 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
 
         return bool(self.email) or EmailAddress.objects.filter(user=self).exists()
 
+    def accept_privacy(self) -> None:
+        """The member's yes to the privacy policy (issue #438): on the sign-up form, or at the first
+        sign-in of an account a provider made."""
+        self.privacy_accepted_at = timezone.now()
+        self.privacy_consent_pending = False
+        self.save(update_fields=["privacy_accepted_at", "privacy_consent_pending"])
+
     def can_sign_in_with_password(self) -> bool:
         """Whether this account can actually be signed in to with a password.
 
