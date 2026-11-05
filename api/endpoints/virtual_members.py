@@ -170,11 +170,14 @@ def add_people(request, payload: VirtualMembersIn):
             known[key] = person
             new.append(person)
     if refused:
-        return HTTPStatus.UNPROCESSABLE_ENTITY, BatchRefusalOut(detail="Nobody is added: fix these rows", rows=refused)
+        return Status(
+            HTTPStatus.UNPROCESSABLE_ENTITY, BatchRefusalOut(detail="Nobody is added: fix these rows", rows=refused)
+        )
     room = virtual_members.room(user)
     if room is not None and len(new) > room:
-        return HTTPStatus.UNPROCESSABLE_ENTITY, BatchRefusalOut(
-            detail=f"Nobody is added: {len(new)} new, and you may add {room} more", rows=[]
+        return Status(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            BatchRefusalOut(detail=f"Nobody is added: {len(new)} new, and you may add {room} more", rows=[]),
         )
     if not payload.dry_run:
         new = VirtualMember.objects.bulk_create(new)
