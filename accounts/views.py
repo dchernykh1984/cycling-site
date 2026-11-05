@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -27,7 +27,7 @@ from accounts.access import (
     needs_email_confirmation,
     redirect_to_profile_for_email_confirmation,
 )
-from accounts.models import User
+from accounts.models import User, VirtualMember
 from cycling_site.skins import registry
 
 # One minute. Long enough to stop a double click and a button that fires twice, short enough
@@ -147,6 +147,58 @@ def _managing_context(request, user):
     }
 
 
+class VirtualMemberForm(forms.ModelForm):
+    """A person without an account, as the member who adds them types them in (issue #438)."""
+
+    class Meta:
+        model = VirtualMember
+        fields = ("last_name", "first_name", "gender", "birth_date", "team", "city")
+        labels: ClassVar[dict] = {
+            "last_name": gettext_lazy("Last name"),
+            "first_name": gettext_lazy("First name"),
+            "gender": gettext_lazy("Gender"),
+            "birth_date": gettext_lazy("Date of birth"),
+            "team": gettext_lazy("Team"),
+            "city": gettext_lazy("City"),
+        }
+        widgets: ClassVar[dict] = {"birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
+
+    def __init__(self, *args, owner, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.owner = owner
+        for name, field in self.fields.items():
+            field.widget.attrs["class"] = "form-select" if name == "gender" else "form-control"
+
+    def clean(self):
+        cleaned = super().clean()
+        last, first, born = cleaned.get("last_name"), cleaned.get("first_name"), cleaned.get("birth_date")
+        if last and first and born:
+            same = virtual_members.key(last, first, born)
+            others = virtual_members.of(self.owner).filter(birth_date=born).exclude(pk=self.instance.pk)
+            if any(virtual_members.key(p.last_name, p.first_name, p.birth_date) == same for p in others):
+                raise forms.ValidationError(gettext("You have already added this person."))
+        return cleaned
+
+    def save(self, commit=True):
+        self.instance.owner = self.owner
+        return super().save(commit)
+
+
+def _virtual_context(user, form=None):
+    """The profile's card of the people without accounts the reader added (issue #438): only the
+    reader's word that they may handle these people's data until they give it, then the people."""
+    consented = virtual_members.consented(user)
+    people = list(virtual_members.of(user)) if consented else []
+    return {
+        "consented": consented,
+        "people": people,
+        "teams": sorted({person.team for person in people if person.team}, key=str.casefold),
+        "limit": roles.virtual_members_limit(user),
+        "room": virtual_members.room(user),
+        "form": form or VirtualMemberForm(owner=user),
+    }
+
+
 class ProfileView(TemplateView):
     template_name = "accounts/profile.html"
 
@@ -176,6 +228,7 @@ class ProfileView(TemplateView):
 
             context["virtual_ride"] = profile_context(user)
             context["managing"] = _managing_context(self.request, user)
+            context["virtual"] = _virtual_context(user)
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -669,3 +722,83 @@ class ManagingActionView(ParticipantRequiredMixin, View):
             "leave": lambda: managing.leave(user, person_id),
         }[self.action]()
         return redirect(f"{reverse('account_profile')}#{section}")
+
+
+def _to_virtual_members():
+    return f"{reverse('account_profile')}#virtual-members"
+
+
+class VirtualMembersConsentView(ParticipantRequiredMixin, View):
+    """The member's word that they may handle the personal data of the people without accounts they
+    add (issue #438): given once, never taken back, and only then may they add anyone."""
+
+    def post(self, request):
+        virtual_members.consent(request.user)
+        return redirect(_to_virtual_members())
+
+
+class VirtualMemberAddView(ParticipantRequiredMixin, ProfileView):
+    """Add a person without an account; a refused one comes back on the profile, as it was typed."""
+
+    http_method_names = ["post"]  # noqa: RUF012 -- View's own attribute, a list there too
+
+    def post(self, request):
+        user = request.user
+        if not virtual_members.consented(user):
+            return redirect(_to_virtual_members())
+        form = VirtualMemberForm(request.POST, owner=user)
+        if virtual_members.room(user) == 0:
+            form.add_error(
+                None,
+                gettext("You have added as many people as you may: %(limit)s.")
+                % {"limit": roles.virtual_members_limit(user)},
+            )
+        elif form.is_valid():
+            person = form.save()
+            messages.success(request, gettext("%(name)s is added.") % {"name": person})
+            return redirect(_to_virtual_members())
+        context = self.get_context_data()
+        context["virtual"] = _virtual_context(user, form)
+        return self.render_to_response(context)
+
+
+class VirtualMemberEditView(ParticipantRequiredMixin, View):
+    """Change a person the reader added; anybody else's is not there for them (404)."""
+
+    template_name = "accounts/virtual_member_edit.html"
+
+    def _person(self, request, pk):
+        person = virtual_members.find(request.user, pk)
+        if person is None:
+            raise Http404
+        return person
+
+    def get(self, request, pk):
+        person = self._person(request, pk)
+        return render(
+            request,
+            self.template_name,
+            {"person": person, "form": VirtualMemberForm(instance=person, owner=request.user)},
+        )
+
+    def post(self, request, pk):
+        person = self._person(request, pk)
+        form = VirtualMemberForm(request.POST, instance=person, owner=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect(_to_virtual_members())
+        return render(request, self.template_name, {"person": person, "form": form})
+
+
+class VirtualMemberDeleteView(ParticipantRequiredMixin, View):
+    """Take a person the reader added off the site: their past races stay in the results, and they are
+    entered in none to come."""
+
+    def post(self, request, pk):
+        person = virtual_members.find(request.user, pk)
+        if person is None:
+            raise Http404
+        name = str(person)
+        person.delete()
+        messages.success(request, gettext("%(name)s is deleted.") % {"name": name})
+        return redirect(_to_virtual_members())

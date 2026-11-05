@@ -27,6 +27,7 @@ from django.db.models import Field
 from django.test import SimpleTestCase
 from ninja import Schema
 
+from accounts.models import VirtualMember
 from calendar_app.models import Competition, CompetitionComment, CompetitionMaterial
 from event_photos.models import DeclaredBib, ExternalAlbum
 from gallery.models import Album, Photo
@@ -55,6 +56,7 @@ FORM_MODULES = (
 # has to hold: a filter, a search, a confirmation.
 FORM_TARGETS = {
     "accounts.views.ContactOwnersForm": None,
+    "accounts.views.VirtualMemberForm": VirtualMember,
     "accounts.views.ProfileEditForm": None,
     "accounts.views.RequestRoleForm": None,
     "calendar_app.forms.AddCompetitionCommentForm": CompetitionComment,
