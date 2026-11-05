@@ -260,7 +260,8 @@ button{cursor:pointer}
 .pbox .side{display:grid;gap:4px;white-space:nowrap}
 .pbox .side b{font-family:var(--display);font-weight:500;font-size:21px;font-variant-numeric:tabular-nums;transition:color .3s}
 .pbox .side span{font-size:11px;color:var(--hud-dim);margin-left:4px}
-.pbox .hr b::before{content:'\2665';font-size:.7em;margin-right:4px}
+/* the zone's colour on the heart alone: as text on the panel over a light sky it falls to 1.5:1, the figure stays white */
+.pbox .hr b::before{content:'\2665';font-size:.7em;margin-right:4px;color:var(--zone,currentColor)}
 .act-ok{color:#8FD19E}.act-near{color:#F2C14E}.act-off{color:#FF7A6E}
 .avg{font-family:var(--display);font-weight:700;font-size:19px;text-shadow:0 2px 10px rgba(0,0,0,.7);min-height:1em;text-align:center}
 #hudTR{display:grid;gap:8px;justify-items:end}
