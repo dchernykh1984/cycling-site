@@ -486,3 +486,28 @@ def test_a_cadence_plan_shows_its_first_step_during_the_countdown(page: Page, li
     first = page.evaluate("settings.plan.steps[0].cad")
     expect(page.locator("#tVal")).to_have_text(str(first))
     expect(page.locator("#plItems li.cur")).to_have_count(1)
+
+
+# The HUD's blocks: none may cover another.
+_OVERLAPS = """() => {
+    const boxes = ['#planList', '#hudTop .tbar', '#hudTop .prow', '#hudTR .mapcard']
+        .map(s => [s, document.querySelector(s).getBoundingClientRect()]);
+    const hits = [];
+    for (const [i, [a, p]] of boxes.entries()) for (const [b, q] of boxes.slice(i + 1)) {
+        const wide = Math.min(p.right, q.right) - Math.max(p.left, q.left);
+        const high = Math.min(p.bottom, q.bottom) - Math.max(p.top, q.top);
+        if (wide > 1 && high > 1) hits.push(a + ' / ' + b);
+    }
+    return hits;
+}"""
+
+
+@pytest.mark.parametrize("size", [(1024, 768), (900, 600), (768, 1024)])
+@pytest.mark.django_db(transaction=True)
+def test_on_a_tablet_the_hud_s_blocks_keep_apart_in_a_cadence_plan(page: Page, live_server, size):
+    page.set_viewport_size({"width": size[0], "height": size[1]})
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate("() => { settings.mode = 'plan'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")
+    assert page.evaluate(_OVERLAPS) == []

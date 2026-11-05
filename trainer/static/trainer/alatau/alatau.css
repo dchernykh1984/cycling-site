@@ -265,14 +265,17 @@ button{cursor:pointer}
 @media (prefers-reduced-motion: reduce){ #grade{transition:none} }
 
 /* ---------- HUD: the ride in one row on top, a big power figure, the step target, the plan on the left ---------- */
-#hudTop{top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:min(580px,calc(100% - 400px));min-width:300px}
+/* centred between the plan's list on the left (12 + 236 px) and the map card on the right, with room on both sides */
+#hudTop{top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;width:min(580px,calc(100% - 520px));min-width:300px}
 .tbar{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;padding:9px 12px 13px;overflow:hidden;border-radius:14px}
 .tbar .m{display:flex;align-items:baseline;justify-content:center;gap:5px;min-width:0;white-space:nowrap}
 .tbar b{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
 .tbar span{font-size:11.5px;color:var(--hud-dim);overflow:hidden;text-overflow:ellipsis}
 .rprog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.12)}
 .rprog i{display:block;height:100%;width:0;background:var(--amber);transition:width .4s}
-.prow{display:flex;gap:8px;align-items:stretch;justify-content:center}
+/* the target and the power never squeeze: when both do not fit side by side, the target goes over the power */
+.prow{display:flex;flex-wrap:wrap;max-width:100%;gap:8px;align-items:stretch;justify-content:center}
+.prow>.panel{flex-shrink:0}
 .target{border-left:4px solid #F2C14E;border-radius:14px;padding:8px 14px 9px;min-width:170px;display:flex;flex-direction:column;justify-content:center}
 .target .t1,.target .t3{font-size:12px;color:var(--hud-dim);white-space:nowrap}
 .target .t2{display:flex;align-items:baseline;gap:5px;margin:2px 0}
@@ -284,7 +287,7 @@ button{cursor:pointer}
 .pbox .pw{display:flex;align-items:baseline}
 .pbox .pw b{font-family:var(--display);font-weight:700;font-size:66px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .pbox .pw span{font-size:13px;color:var(--hud-dim);margin-left:5px;white-space:nowrap}
-.pbox .side{display:grid;gap:4px}
+.pbox .side{display:grid;gap:4px;white-space:nowrap}
 .pbox .side b{font-family:var(--display);font-weight:500;font-size:21px;font-variant-numeric:tabular-nums;transition:color .3s}
 .pbox .side span{font-size:11px;color:var(--hud-dim);margin-left:4px}
 .pbox .hr b::before{content:'\2665';font-size:.7em;margin-right:4px}
@@ -317,8 +320,10 @@ button{cursor:pointer}
 /* hints read as a coach's line: large, centred, over the road */
 #toast{left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);transform:translateX(-50%);max-width:min(760px,82%);width:max-content;padding:0;border-radius:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;
   font-family:var(--display);font-weight:700;font-size:clamp(17px,2.3vw,28px);line-height:1.25;text-align:center;text-wrap:balance;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 26px rgba(0,0,0,.55);opacity:0;transition:opacity .35s}
+@media (max-width:1100px){ #planList{width:200px} #hudTop{width:min(580px,calc(100% - 448px))} } /* the list is 200 px from here down */
+@media (max-width:1024px) and (min-width:641px) and (orientation:portrait){ .tbar .m{flex-direction:column;align-items:center;gap:2px} .tbar span{max-width:100%} }
 @media (max-width:980px){
-  #hudTop{width:min(540px,calc(100% - 230px))}
+  #hudTop{width:min(540px,calc(100% - 448px))}
   .tbar b{font-size:20px} .pbox .pw b{font-size:50px} .target .t2 b{font-size:28px}
   #planList{width:200px}
 }
