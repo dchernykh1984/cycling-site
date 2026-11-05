@@ -99,6 +99,12 @@ def _consented(user) -> None:
         )
 
 
+def _typed(data: dict) -> dict:
+    """What a request says of a person, without the spaces around its words, as the card's form keeps
+    it: a registration takes the names as they stand."""
+    return {field: value.strip() if isinstance(value, str) else value for field, value in data.items()}
+
+
 def _checked(person: VirtualMember) -> dict[str, list[str]]:
     """What is wrong with ``person`` as the model holds it -- names, gender, a date of birth from 1900 to
     today -- by field; nothing when they may be saved."""
@@ -153,7 +159,7 @@ def add_people(request, payload: VirtualMembersIn):
     known = {virtual_members.key(p.last_name, p.first_name, p.birth_date): p for p in virtual_members.of(user)}
     new, existing, refused = [], [], []
     for row, data in enumerate(payload.people):
-        person = VirtualMember(owner=user, **data.dict())
+        person = VirtualMember(owner=user, **_typed(data.dict()))
         errors = _checked(person)
         key = virtual_members.key(person.last_name, person.first_name, person.birth_date)
         if errors:
@@ -178,7 +184,7 @@ def add_people(request, payload: VirtualMembersIn):
 @router.patch("/{virtual_member_id}", response=VirtualMemberOut, auth=member_auth, summary="Change a person I added")
 def change_person(request, virtual_member_id: int, payload: VirtualMemberPatchIn):
     person = _person(request.auth, virtual_member_id)
-    for field, value in payload.dict(exclude_unset=True).items():
+    for field, value in _typed(payload.dict(exclude_unset=True)).items():
         if value is not None:
             setattr(person, field, value)
     errors = _checked(person)

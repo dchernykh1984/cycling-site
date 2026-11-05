@@ -349,6 +349,18 @@ class ApiTests(TestCase):
         self.assertEqual(too_many.status_code, 422)
         self.assertFalse(VirtualMember.objects.exists())
 
+    def test_the_names_are_kept_without_the_spaces_around_them_as_the_card_keeps_them(self):
+        virtual_members.consent(self.coach)
+        self._post("", {"people": [self._row(last_name="  Ivanova ", first_name=" Dana", team=" Junior ")]})
+        person = VirtualMember.objects.get()
+        self.assertEqual((person.last_name, person.first_name, person.team), ("Ivanova", "Dana", "Junior"))
+        changed = self.client.patch(
+            f"/api/v1/virtual-members/{person.pk}", {"city": " Taraz  "}, content_type="application/json", **self.auth
+        )
+        self.assertEqual(changed.json()["city"], "Taraz")
+        blank = self._post("", {"people": [self._row(first_name="   ")]})
+        self.assertEqual(blank.status_code, 422)
+
     def test_a_dry_run_says_what_it_would_add_and_saves_nothing(self):
         virtual_members.consent(self.coach)
         answer = self._post("", {"people": [self._row()], "dry_run": True}).json()
