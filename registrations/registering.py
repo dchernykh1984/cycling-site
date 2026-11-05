@@ -265,6 +265,9 @@ def rows_for(competition, user) -> list[Row] | None:
         return None
     rows = []
     offered = open_categories(competition)
+    # shortcut: two queries a person (whether they are entered, the categories their form offers):
+    # 300 people take about 0.5 s, the hundred a section usually has a fifth of that; ask both for
+    # everyone at once if members come to bring a thousand.
     for person in [user, *members, *added]:
         if already_entered(competition, person):
             continue
