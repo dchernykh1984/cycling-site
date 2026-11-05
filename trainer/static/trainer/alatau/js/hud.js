@@ -61,7 +61,7 @@ function updateHUD(inp, grade) {
   $('#vCad').textContent = inp.cad != null && inp.cad > 0 ? Math.round(inp.cad) : (inp.mode === 'speed' ? '—' : '0');
   if (rideMode !== 'plan') $('#vCad').className = '';
   const hr = Sensors.hr(), hb = $('#hrBox'); hb.classList.toggle('hidden', hr == null);
-  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); $('#vHR').style.color = ZONE_BG[z].replace(/,[\d.]+\)$/, ',1)'); }
+  if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); hb.style.setProperty('--zone', ZONE_BG[z].replace(/,[\d.]+\)$/, ',1)')); }
   // the grade strip over the map
   $('#vGrade').textContent = fmtPct(grade * 100);
   const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');

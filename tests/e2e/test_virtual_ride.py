@@ -475,6 +475,13 @@ def test_the_heart_rate_reads_on_one_line_like_the_cadence(page: Page, live_serv
     assert beats and unit
     # the unit beside the figure, not under it
     assert unit["x"] >= beats["x"] + beats["width"] and unit["y"] < beats["y"] + beats["height"], (beats, unit)
+    # the figure in the HUD's own ink, readable over a light sky; the zone's colour is the heart's
+    ink, figure, heart = page.evaluate(
+        """() => [getComputedStyle(document.querySelector('#hudTop')).color,
+            getComputedStyle(document.querySelector('#vHR')).color,
+            getComputedStyle(document.querySelector('#vHR'), '::before').color]"""
+    )
+    assert figure == ink and heart != ink, (ink, figure, heart)
 
 
 @pytest.mark.django_db(transaction=True)
