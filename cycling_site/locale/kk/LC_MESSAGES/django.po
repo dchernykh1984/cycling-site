@@ -5116,3 +5116,7 @@ msgstr "Деректерді көрсету"
 #: registrations/templates/registrations/register_many.html
 msgid "Hide details"
 msgstr "Деректерді жасыру"
+
+#: event_photos/permissions.py
+msgid "The start list already gives this person a bib at this event."
+msgstr "Старт хаттамасында бұл адамның осы жарыстағы нөмірі бар."

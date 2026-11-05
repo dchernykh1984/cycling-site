@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_noop
 
 from accounts import managing, virtual_members
+from accounts.models import VirtualMember
 from calendar_app.models import Competition
 from calendar_app.visibility import can_manage_or_own, can_see
 from event_photos import actions
@@ -71,5 +72,7 @@ def declared_bib_refusal(person, competition) -> str:
     if not actions.has_indexed_album(competition):
         return gettext_noop("This event has no indexed photo album yet.")
     if actions.has_bound_bib(person, competition):
+        if isinstance(person, VirtualMember):
+            return gettext_noop("The start list already gives this person a bib at this event.")
         return gettext_noop("The start list already gives you a bib at this event.")
     return ""
