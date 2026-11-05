@@ -197,6 +197,48 @@ def test_on_a_phone_the_card_and_the_filters_take_a_tap_and_nothing_scrolls_side
     assert not small, small
 
 
+# Whether a select shows its chosen option whole: the text in the select's own font against the room
+# between its paddings, the right one holding the arrow.
+SHOWS_ITS_CHOICE_WHOLE = """(el) => {
+  const style = getComputedStyle(el), probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap';
+  probe.style.font = style.font;
+  probe.textContent = el.options[el.selectedIndex].text;
+  document.body.appendChild(probe);
+  const needs = probe.getBoundingClientRect().width + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  probe.remove();
+  return needs <= el.clientWidth + 0.5;
+}"""
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [360, 1280])
+def test_the_filters_and_the_form_show_their_choices_whole_in_the_longest_language(
+    page: Page, live_server, organizer, coach, width
+):
+    """Kazakh's words are the longest: a team or a gender cut to a few letters, or a category's name
+    spilling past its button, is what three columns in a narrow card did."""
+    _section(coach)
+    comp = _event(organizer)
+    page.set_viewport_size({"width": width, "height": 900})
+    _sign_in(page, live_server, coach)
+    cut = []
+    for path, selects in (
+        ("/kk/accounts/profile/", "#vm-team, #id_gender"),
+        (f"/kk/competitions/{comp.pk}/register/", "#rf-team"),
+    ):
+        page.goto(f"{live_server.url}{path}")
+        for select in page.locator(selects).all():
+            if not select.evaluate(SHOWS_ITS_CHOICE_WHOLE):
+                cut.append((path, select.get_attribute("id")))
+    page.locator("#rf-categories").click()
+    page.locator("#rf-categories-menu label", has_text="Girls").click()
+    named = page.locator("#rf-categories .mf-text")
+    expect(named).to_have_text("Girls")
+    assert named.evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert not cut, cut
+
+
 @pytest.mark.django_db(transaction=True)
 def test_what_the_card_and_the_page_add_reads_in_this_skin(page: Page, live_server, organizer, coach):
     """Text at least 4.5:1 (3:1 large) in the skin the suite runs in, as test_skin_contrast asks of the

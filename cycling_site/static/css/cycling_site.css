@@ -798,6 +798,7 @@ main .event-photo-preview img { object-fit: contain; }
    something to tick. The page's buttons take 44 px too. */
 .register-many .register-person-pick {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     min-height: 2.75rem;
@@ -820,4 +821,12 @@ main .event-photo-preview img { object-fit: contain; }
 .register-filters .form-select,
 .register-filters .dropdown-item {
     min-height: 2.75rem;
+}
+/* The categories chosen name themselves on the menu's button: one line, cut short with an ellipsis
+   rather than a second line spilling past the button's frame. */
+.register-filters .mf-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

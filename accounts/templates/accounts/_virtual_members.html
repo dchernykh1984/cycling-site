@@ -20,12 +20,12 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
 
         {% if virtual.people %}
         <div class="row g-2 mb-2 virtual-filters">
-            <div class="col-12 col-md-4">
+            <div class="col-12">
                 <label for="vm-name" class="form-label small mb-1">{% trans "Last or first name" %}</label>
                 <input type="search" id="vm-name" class="form-control" autocomplete="off">
             </div>
             {% if virtual.teams %}
-            <div class="col-12 col-md-3">
+            <div class="col-12">
                 <label for="vm-team" class="form-label small mb-1">{% trans "Team" %}</label>
                 <select id="vm-team" class="form-select">
                     <option value="">{% trans "All teams" %}</option>
@@ -33,11 +33,11 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                 </select>
             </div>
             {% endif %}
-            <div class="col-6 col-md-auto">
+            <div class="col-12 col-sm-6">
                 <label for="vm-born-from" class="form-label small mb-1">{% trans "Born from" %}</label>
                 <input type="date" id="vm-born-from" class="form-control">
             </div>
-            <div class="col-6 col-md-auto">
+            <div class="col-12 col-sm-6">
                 <label for="vm-born-to" class="form-label small mb-1">{% trans "Born to" %}</label>
                 <input type="date" id="vm-born-to" class="form-control">
             </div>
@@ -45,7 +45,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
         <p class="small text-muted mb-2" aria-live="polite">{% blocktrans with all=virtual.people|length %}Shown: <span class="vm-shown">{{ all }}</span> of {{ all }}{% endblocktrans %}</p>
         <ul class="list-group mb-3 virtual-people">
             {% for person in virtual.people %}
-            <li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"
+            <li class="list-group-item d-flex flex-column align-items-start gap-2"
                 data-name="{{ person.last_name }} {{ person.first_name }}" data-team="{{ person.team }}" data-born="{{ person.birth_date|date:'Y-m-d' }}">
                 <span>
                     <span class="fw-semibold">{{ person.last_name }} {{ person.first_name }}</span>
@@ -73,8 +73,10 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
             <h2 class="h6">{% trans "Add a person" %}</h2>
             {% if virtual.form.non_field_errors %}<div class="alert alert-danger py-2">{{ virtual.form.non_field_errors|join:" " }}</div>{% endif %}
             <div class="row g-2">
+                {% comment %}One field a row: the profile's column is narrow at every width, and a select
+                shows its chosen option whole only with the column's full width in every skin.{% endcomment %}
                 {% for field in virtual.form %}
-                <div class="col-12 col-sm-6 col-lg-4">
+                <div class="col-12">
                     <label for="{{ field.id_for_label }}" class="form-label small mb-1">{{ field.label }}</label>
                     {{ field }}
                     {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
