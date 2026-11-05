@@ -17,9 +17,13 @@ def _privacy_field() -> forms.BooleanField:
         required=True,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         label_suffix="",
+        # In one element, so that a label laid out as a row keeps the space before the link
         label=format_html(
-            gettext('I agree with the <a href="{}" target="_blank" rel="noopener">privacy policy</a>'),
-            reverse("privacy_policy"),
+            "<span>{}</span>",
+            format_html(
+                gettext('I agree with the <a href="{}" target="_blank" rel="noopener">privacy policy</a>'),
+                reverse("privacy_policy"),
+            ),
         ),
     )
 
