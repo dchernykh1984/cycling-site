@@ -74,7 +74,9 @@ class EntryOut(Schema):
     id: int
     competition_id: int
     competition_title: str
-    person: str  # "me", "member:<id>" or "virtual:<id>", as an entry names it
+    # "member:<id>" or "virtual:<id>", as an entry names them, or "me" for an entry under the caller's
+    # own account -- theirs, or another person they typed in where anyone may be entered
+    person: str
     first_name: str
     last_name: str
     gender: str
