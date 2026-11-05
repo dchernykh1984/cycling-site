@@ -53,8 +53,11 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                 </span>
                 <span class="d-flex gap-2">
                     <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>
+                    {% comment %}The question in an attribute, as the page's text: a name with an apostrophe reads as
+                    typed, where escaping it once for HTML and again for a script string would show the code.{% endcomment %}
                     <form method="post" action="{% url 'account_virtual_delete' person.pk %}"
-                          onsubmit="return confirm('{% filter escapejs %}{% blocktrans %}Delete {{ person }}? Their entries in races to come are cancelled; past races stay in the results.{% endblocktrans %}{% endfilter %}')">
+                          data-confirm="{% blocktrans %}Delete {{ person }}? Their entries in races to come are cancelled; past races stay in the results.{% endblocktrans %}"
+                          onsubmit="return confirm(this.dataset.confirm)">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{% trans 'Delete' %}: {{ person }}">{% trans "Delete" %}</button>
                     </form>

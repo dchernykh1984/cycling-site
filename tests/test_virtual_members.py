@@ -295,6 +295,13 @@ class ProfileCardTests(TestCase):
         self.assertIn("as many people as you may", " ".join(refused.context["virtual"]["form"].non_field_errors()))
         self.assertEqual(VirtualMember.objects.count(), 10)
 
+    def test_the_deletion_question_names_the_person_as_typed(self):
+        virtual_members.consent(self.coach)
+        _added(self.coach, last="O'Brien")
+        page = self.client.get(self._url("account_profile"))
+        self.assertContains(page, 'data-confirm="Delete O&#x27;Brien Dana? ')
+        self.assertContains(page, 'onsubmit="return confirm(this.dataset.confirm)"')
+
     def test_a_member_changes_and_deletes_their_own_people_and_nobody_elses(self):
         mine = _added(self.coach)
         theirs = _added(make_user("other"), first="Zoe")
