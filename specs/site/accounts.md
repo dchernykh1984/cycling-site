@@ -2,16 +2,19 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29; the role checks in one module
-against branch `roles-in-one-module` on 2026-10-31
+against branch `roles-in-one-module` on 2026-10-31; people without accounts and the privacy question (issue #438)
+against branch `438-virtual-members` on 2026-11-05
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
-`api/endpoints/managing.py`
+`api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/forms.py`, `accounts/middleware.py`,
+`api/endpoints/virtual_members.py`
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
 `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
-`tests/test_roles.py`, `tests/test_role_matrix.py`
+`tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
+`tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -38,6 +41,13 @@ once; confirming the address unlocks everything that writes.
    once; an unverified or missing e-mail leaves them a guest.
 5. **Given** a guest asks for the confirmation again, **Then** one mail goes out at most once a
    minute; a failed send frees the slot again.
+6. **Given** a visitor signs up with an e-mail (issue #438), **Then** the form asks last "I agree
+   with the privacy policy", the policy opening in a tab of its own; without the tick no account is
+   made, and with it the account keeps when it was given (`privacy_accepted_at`).
+7. **Given** a provider makes a new account, **Then** no form asked the question, so its first
+   sign-in opens a page asking it before any other page (`accounts.middleware`), and the page asked
+   for opens after the answer; the policy, the terms, signing out, the API, the admin and files stay
+   open meanwhile. Members from before the question are never asked.
 
 ### Story 2 -- Keep the data registration needs (P1)
 
@@ -134,6 +144,35 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 7. Rights never pass along a chain (A manages B and B manages C: A has nothing of C's); two members
    may manage each other; nobody manages themselves. No mail is sent anywhere in this.
 
+### Story 8 -- People without an account (P2)
+
+A coach or a parent enters people who have no account -- the children of a section, a family -- for
+races and looks after their race photos (issue #438). They exist only in the member's profile and in
+`/api/v1/virtual-members/`, and never become an account.
+
+1. **Given** a confirmed member, **Then** the profile shows a card "People without an account" after
+   the managing card; it folds by its header, and once folded stays folded in that browser.
+2. **Given** the member has not given their word, **Then** the card holds only what it is for and
+   the button "I am authorized to handle their personal data"; the word is given once, by the button
+   or through the API, and is never taken back. A role that may add nobody (a guest) cannot give it.
+3. **Given** the word, **Then** the card counts the people added -- against the limit, where the role
+   has one: an admin or an owner adds any number, an organizer 1000, a participant 10
+   (`roles.virtual_members_limit`) -- lists them with "Edit" and "Delete", and has a form to add one
+   more: last name, first name, gender, date of birth, team, city. The same names and date of birth
+   (letters' case aside) are refused as a person added already.
+4. **Given** people in the card, **Then** filters narrow the list: a last or first name typed in any
+   script, a team, and a span of dates of birth from and to; a line counts those shown.
+5. **Given** the API (`/api/v1/virtual-members/`), **Then** a member lists the people with their
+   word, limit and room, gives the word, adds up to 1000 people a request -- whole or not at all,
+   each row's mistakes named, somebody added already left as they are, `dry_run` saving nothing --
+   and changes or deletes one. The `virtual-members` skill tells an agent how to add a list.
+6. **Given** a person is deleted, **Then** their entries in races to come are cancelled and those in
+   past races stay, with the names they were made with; a member's account deleted takes the people
+   they added with it. Changing a person changes their entries from then on, never one made already.
+7. **Given** a person added, **Then** the member enters them for races ([registrations](registrations.md))
+   and looks after their photos and names their bib ([event photos](event-photos.md)), as for a
+   member they manage.
+
 ### Edge Cases
 
 - An unverified member (guest) can open the profile, but sees a minimal cabinet: profile data, the
@@ -195,12 +234,26 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
   made; a request (`ManagedMember`) waits until the manager accepts it and gives rights only then
   (`accounts.managing.acts_for`); rejecting it, or either side ending an accepted one, deletes it.
   Every rule lives in `accounts/managing.py`, which the pages and `/api/v1/managing/` share.
+- **FR-ACC-012**: People without accounts (issue #438): each belongs to one member and is reached
+  only through them (`accounts.virtual_members.of`, `find`); adding one takes the member's word
+  (`virtual_members_consent_at`) and room under the role's limit; a person is one per last name,
+  first name and date of birth for a member (`virtual_members.key`). The pages, the registration
+  page and the photos share `accounts/virtual_members.py` (`who` tells an account from a person
+  without one), and so does `/api/v1/virtual-members/`.
+- **FR-ACC-013**: The privacy question (issue #438): the sign-up form's last field
+  (`accounts.forms.SignupForm`, `ACCOUNT_SIGNUP_FORM_CLASS`) or, for an account a provider made, the
+  page `account_privacy_consent` that `accounts.middleware.PrivacyConsentMiddleware` sends its first
+  sign-in to while `privacy_consent_pending`; a `next` to another site leads to the profile instead.
 
 ## Key Entities
 
 - **User**: role, profile data (names, gender, birth date, team, city, Strava link), preferred
   locations / directions / disciplines / event types, autosave flag, skin (`theme`), preferred
-  language, API token, dismissed setup hints, time of the last mail sent on their behalf.
+  language, API token, dismissed setup hints, time of the last mail sent on their behalf; when they
+  agreed to the privacy policy and whether a provider's account still waits to be asked; when they
+  gave their word for the people without accounts they add.
+- **Person without an account** (`accounts.VirtualMember`): the member who added them, last name,
+  first name, gender, date of birth, team, city; deleted with that member's account.
 - **E-mail address / social account** (allauth): the ways a member signs in.
 - **Virtual ride** (`trainer.VirtualRide`): one finished ride with its route key and name, kind
   (race, cadence plan, free ride), times, distance, power and its source, place, peak powers; the
@@ -226,7 +279,8 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 
 - Editing the profile (names, gender, birth date, team, city, Strava link).
 - Asking for another role and writing to the owners.
-- **Exception**: signing up, signing in, confirming the address, connecting sign-in providers,
+- **Exception**: signing up -- the privacy question at a provider's first sign-in included --,
+  signing in, confirming the address, connecting sign-in providers,
   connecting Strava for uploads (a browser round trip through Strava) and generating the API token. They establish who an API caller is, so they come before the API
   rather than through it.
 - **Exception**: the skin, saved calendar filters and dismissed setup hints. They only change how

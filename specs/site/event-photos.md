@@ -8,12 +8,14 @@ it never decodes camera formats or rewrites originals.
 **Status**: Baseline -- describes the first slice of issue #349 as built
 **Verified against**: branch fix/event-photo-gallery on 2026-10-27; a member's manager (issue #315) against
 branch `315-managing-registrations` on 2026-10-28; a bib a member names themselves against branch
-`own-bib-and-trainer-drag` on 2026-11-03
+`own-bib-and-trainer-drag` on 2026-11-03; the people without accounts a member added (issue #438)
+against branch `438-virtual-members` on 2026-11-05
 **Code**: `event_photos/` (models, index, dropbox, bindings, actions, permissions, forms, views,
 templates, template tags), `api/endpoints/event_photos.py`, `api/endpoints/start_list.py` (bindings on
 upload), `cycling_site/urls.py` (`serve_media` refuses the private prefix),
 `calendar_app/templates/calendar_app/detail.html`, `accounts/templates/accounts/profile.html`
-**Tests**: `tests/test_event_photos.py`, `tests/e2e/test_event_photos.py`, `tests/test_input_length_limits.py`
+**Tests**: `tests/test_event_photos.py`, `tests/e2e/test_event_photos.py`, `tests/test_input_length_limits.py`,
+`tests/test_virtual_members.py`
 **Related**: [gallery](gallery.md), [registrations](registrations.md), [protocols](protocols.md), [api](api.md);
 feature design in `specs/349-external-photo-albums/`
 
@@ -71,6 +73,9 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
    name and bib; they open the member's albums ("Photos of ...") and mark the photos as the member
    would (`can_represent`). The member sees and marks only their own; once the link ends, the former
    manager gets a 404, as any stranger does.
+7. **Given** a member who added people without accounts ([accounts](accounts.md), issue #438),
+   **Then** those people's entries appear among the member's as a managed member's do, titled with
+   the person's name, and the member marks their photos; nobody else sees them.
 
 ### Story 4 -- A member names their own bib (P2)
 
@@ -90,6 +95,10 @@ start list's bib: marks still do.
 4. **Given** a bib the start lists bound to the member's own registration at the event -- active, under
    review or in dispute -- **Then** no bib is named there and one named before is not shown, until the
    binding goes. The bib search stays open to everybody as it was.
+5. **Given** a member who added people without accounts, **Then** the overview offers them a bib for
+   each such person too, on the same terms, and its card says the member named it; the API takes the
+   person's id (`person`) on `PUT` and `DELETE .../my-bib`, and `GET /me/declared-bibs` says whose
+   each one is.
 
 ## Functional Requirements
 
@@ -162,7 +171,8 @@ start list's bib: marks still do.
 - **IndexedPhoto** / **BibObservation**: a photo of the index and the bibs on it.
 - **IssuedBib** / **IssuedBibEvent**: a bib a start list gave a registration, and its history.
 - **PhotoDecision** / **PhotoDecisionEvent**: a registration's mark on a photo, and every change.
-- **DeclaredBib**: the bib a member named for themselves at an event; a preference, never a right.
+- **DeclaredBib**: the bib a member named at an event, for themselves or for a person without an
+  account they added -- one of the two, never both; a preference, never a right.
 
 ## Local assumptions
 

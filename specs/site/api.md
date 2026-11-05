@@ -1,14 +1,14 @@
 # Site Specification: The API
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21; `/managing/` (issue #315) against branch `315-managing-registrations` on 2026-10-28
+**Verified against**: `main` on 2026-10-21; `/managing/` (issue #315) against branch `315-managing-registrations` on 2026-10-28; `/virtual-members/` and `/registrations/` (issue #438) against branch `438-virtual-members` on 2026-11-05
 **Code**: `api/` (`router.py`, `auth.py` -- the token, and `member_auth`: a confirmed member's session or
 token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
 `tests/test_managing_api.py`, `assistant/tests/test_api.py`, `tests/test_home_cards.py`,
-`tests/test_route_track_api.py`, `tests/test_stats.py`,
-`tests/e2e/test_api_to_front.py`
+`tests/test_route_track_api.py`, `tests/test_stats.py`, `tests/test_virtual_members.py`,
+`tests/test_registrations_api.py`, `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
 [gallery](gallery.md)
@@ -74,6 +74,18 @@ and protocols with the event's upload token. The API has no language prefix.
    token reads what the statistics page shows for a period (`GET /stats/?period=`): 401 without a
    token, 403 for anybody below an owner. A page of the site says it was opened in a browser
    (`POST /stats/hit`, no token, always 204): that is how people are counted.
+11. **Given** the people without accounts a member adds ([accounts](accounts.md), issue #438),
+   **Then** a confirmed member (session or token) reads them with their word, limit and room
+   (`GET /virtual-members/`), gives the word (`POST /virtual-members/consent`: 403 for a role that
+   adds nobody), adds up to 1000 a request whole or not at all (`POST /virtual-members/`: a 422 names
+   every row's mistakes or the room short, `dry_run` saves nothing, somebody added already comes back
+   in `existing`), and changes (409 for a copy of somebody added) or deletes one. An id reaches only
+   the caller's own people: anything else is a 404.
+12. **Given** entries for races ([registrations](registrations.md)), **Then** a confirmed member
+   enters themselves, the members they manage and the people they added (`POST /registrations/`,
+   one answer per entry), lists those entries (`GET /registrations/`), and changes or cancels one
+   (`PATCH`, `DELETE /registrations/{id}`) while registration is open: 404 for an event or an entry
+   the caller cannot reach, 409 while registration is closed, for a relay, or for an entry rejected.
 
 ### Story 2 -- The timing tools exchange race data (P1)
 

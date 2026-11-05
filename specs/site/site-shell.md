@@ -179,8 +179,11 @@ who asked for less motion (issue #434). Record labels keep the date and demo mar
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
   how a guest's region is found from the network provider's location and that the location is not
   stored ([calendar](calendar.md)), how the site counts its own visits -- daily sums only, no cookie,
-  address or identifier, the team's pages per member ([statistics](statistics.md)) -- and links to
-  the contact form.
+  address or identifier, the team's pages per member ([statistics](statistics.md)) --, that every
+  new member agrees with it on the sign-up form or at a provider's first sign-in, and that a member
+  who adds people without accounts answers for having their consent, who sees those people's data
+  and what deleting them takes away ([accounts](accounts.md), issue #438) -- and links to the
+  contact form.
 - **FR-SHL-003**: All rich text (home cards, articles, descriptions) goes through one sanitiser:
   scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
   size/float and text colour kept.

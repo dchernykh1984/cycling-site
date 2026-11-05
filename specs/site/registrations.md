@@ -1,15 +1,17 @@
 # Site Specification: Registration and the participant list
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21; a member's manager (issue #315) against branch `315-managing-registrations` on 2026-10-28
-**Code**: `registrations/` (models, forms, registering, views), registration settings on `calendar_app.Competition`
+**Verified against**: `main` on 2026-10-21; a member's manager (issue #315) against branch `315-managing-registrations` on 2026-10-28; people without accounts, the folded details and the filters of the page for several, and the entries API (issues #438-#440) against branch `438-virtual-members` on 2026-11-05
+**Code**: `registrations/` (models, forms, registering, views), registration settings on `calendar_app.Competition`,
+`api/endpoints/registrations.py`
 **Tests**: `registrations/tests.py`, `tests/test_profile_registration_actions.py`,
 `tests/test_bib_numbers.py`, `tests/test_additional_info_label.py`,
 `tests/test_list_site_registration.py`, `calendar_app/tests.py` (registration open/limits),
 `calendar_app/test_timezones.py`,
 `tests/e2e/test_participant_list.py`, `test_relay_registration.py`, `test_profile_registrations.py`,
 `test_registration_category_filter.py`, `tests/test_managing_registrations.py`,
-`tests/test_managing_register_many.py`, `tests/e2e/test_managing.py`
+`tests/test_managing_register_many.py`, `tests/e2e/test_managing.py`, `tests/test_virtual_members.py`,
+`tests/test_registrations_api.py`, `tests/e2e/test_virtual_members.py`
 **Related**: [events](events.md), [accounts](accounts.md), [API](api.md) (participants for the
 timing apps)
 
@@ -48,6 +50,28 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    own profile data in a self-only event. In an invite-only event a manager who was let in may enter
    a member, who is then let in as though they had opened the invitation. With no members, or in a
    relay, the page is the page for one.
+7. **Given** a member who added people without accounts ([accounts](accounts.md), issue #438),
+   **Then** the page for several lists them after the members, each marked "no account", and enters
+   them as it enters a member -- in a self-only event too, from their own names, gender and date of
+   birth; the entry keeps the person (`virtual_member`) and, as who submitted it (`registered_by`),
+   the member -- no account of its own -- and lets nobody into an invite-only event.
+8. **Given** the page for several (issue #439), **Then** a tick only chooses a person: their details
+   stay folded under a button of their own ("Show details", `aria-expanded`), and a person ticked and
+   never opened is entered with their profile's data; the category they go into stands beside the
+   name and follows their list. After a send, the details of whoever could not be entered come back
+   open with the reason; without a script every person's details stand open.
+9. **Given** six people or more on that page (`registering.FILTERED_FROM`, issue #440), **Then**
+   filters above the list narrow it: a last or first name typed in any script
+   (`window.cascadeSearchWords`), a team, and the event's open categories as the calendar's menu of
+   boxes (a person shows when they fit any one ticked). The filters change what is shown, never what
+   is sent: a line counts the people ticked and, of them, those the filters hide.
+10. **Given** a member's own token, **Then** `/api/v1/registrations/` does what the page for several
+   does: `POST` enters a list of people (`me`, `member:<id>`, `virtual:<id>`, or `other` where anyone
+   may be entered) one after another, each with its own answer, filling in what an entry leaves out
+   from the person, the first category they fit included; `GET` lists the member's entries and those
+   of the people they enter; `PATCH` changes an entry's own data as the participant's form does, and
+   `DELETE` cancels it, while registration is open. 404 for an event the member cannot see, 409 while
+   registration is closed or for a relay.
 
 ### Story 2 -- Change or withdraw an entry (P2)
 
@@ -100,8 +124,10 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   birth year, a relay team keeps the members typed in; the reason is in the page's language.
 - A member's manager sees the member's entry in the participant list even where the event hides
   entries until approved or paid, as the member does.
-- On the page for several, a box ticked for anyone other than the reader, their members, or another
-  person where anyone may be entered is refused whole (403).
+- On the page for several, a box ticked for anyone other than the reader, their members, the people
+  without accounts they added, or another person where anyone may be entered is refused whole (403).
+- A person without an account deleted by the member who added them takes their entries in races to
+  come with them; entries in past races stay, with the names they were made with.
 
 ## Functional Requirements
 
@@ -129,7 +155,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 
 ## Key Entities
 
-- **CompetitionRegistration**: event, user (optional in free mode), registered-by (who submitted it:
+- **CompetitionRegistration**: event, user (optional in free mode), the person without an account it
+  is for (issue #438; empty once that person is deleted), registered-by (who submitted it:
   the participant, their manager, or an organizer adding it by hand), names or relay
   member names/years/cities, birth date, gender, category, team, city, additional info, approved /
   paid / rejected flags and rejection note, registration time.
@@ -146,8 +173,6 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 
 ## API gaps
 
-- Entering a race, editing or cancelling one's own entry, and listing one's own entries -- and doing
-  so for the members whose registrations one manages (issue #315).
 - Running the field: approving, rejecting, marking paid, deleting, adding and editing entries, and
   exporting the list. `/participants/` serves the timing tools with the event's upload token, not a
   manager with their own token.
