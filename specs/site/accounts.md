@@ -14,7 +14,7 @@ against branch `438-virtual-members` on 2026-11-05
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
 `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
-`tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`
+`tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
