@@ -77,7 +77,14 @@ on the same route, each page reports its position about once a second and draws 
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
 fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
-default. Free rides can be finished from the pause menu. Record labels keep the date and demo marker distinct. Tests:
+default. Free rides can be finished from the pause menu. During a ride the HUD shows, in one row on top, the speed,
+the distance, the metres climbed and the time over a bar of the route (or the plan, or the lap) done; under it the
+power, large, with the heart rate (the zone's colour on its heart, the figure white) and the cadence, and the ride's
+average power; in a cadence plan, from the countdown on, the step's target beside the power, the cadence coloured by
+how far it is from it, the step's average cadence and the list of steps on the left; on the right the grade over the
+minimap and, when there are other riders, those nearby with the gaps in seconds; hints read as a large line over
+the road. A phone held upright gets one column, a tablet keeps the blocks apart, and nothing animates for a reader
+who asked for less motion (issue #434). Record labels keep the date and demo marker distinct. Tests:
 `tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/test_static_storage.py`,
 `tests/e2e/test_virtual_ride.py`.
 
