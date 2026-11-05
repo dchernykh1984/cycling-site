@@ -301,7 +301,7 @@ class ParticipantListView(TemplateView):
         # The reader's own entries, those of the members they manage (issue #315) and of the people
         # without accounts they added (issue #438)
         owned = {user.id} | managing.member_ids(user) if user.is_authenticated else set()
-        added = set(virtual_members.of(user).values_list("pk", flat=True)) if user.is_authenticated else set()
+        added = virtual_members.ids(user)
         if is_manager:
             registrations = list(competition.registrations.select_related("category", "team", "user", "registered_by"))
         else:

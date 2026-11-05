@@ -333,7 +333,7 @@ def ticks_allowed(competition, user, data) -> bool:
     allowed = {
         str(user.pk),
         *(str(pk) for pk in managing.member_ids(user)),
-        *(f"v{pk}" for pk in virtual_members.of(user).values_list("pk", flat=True)),
+        *(f"v{pk}" for pk in virtual_members.ids(user)),
     }
     if is_free(competition):
         allowed.add("other")

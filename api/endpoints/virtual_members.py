@@ -193,9 +193,7 @@ def change_person(request, virtual_member_id: int, payload: VirtualMemberPatchIn
     errors = _checked(person)
     if errors:
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "; ".join(f"{k}: {' '.join(v)}" for k, v in errors.items()))
-    same = virtual_members.key(person.last_name, person.first_name, person.birth_date)
-    others = virtual_members.of(request.auth).filter(birth_date=person.birth_date).exclude(pk=person.pk)
-    if any(virtual_members.key(p.last_name, p.first_name, p.birth_date) == same for p in others):
+    if virtual_members.copy_of(request.auth, person.last_name, person.first_name, person.birth_date, but=person.pk):
         raise HttpError(HTTPStatus.CONFLICT, "You have already added this person")
     person.save()
     return _out(person)
