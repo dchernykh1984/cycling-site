@@ -231,7 +231,9 @@ class PhotoTests(EventPhotosTestCase):
         entry.virtual_member = self.kid
         entry.save(update_fields=["virtual_member"])
         IssuedBib.objects.create(competition=self.race, registration=entry, bib="9")
-        self.assertTrue(declared_bib_refusal(self.kid, self.race))
+        self.assertEqual(
+            declared_bib_refusal(self.kid, self.race), "The start list already gives this person a bib at this event."
+        )
         self._declare(self.kid.pk, "7")
         self.assertFalse(DeclaredBib.objects.exists())
 

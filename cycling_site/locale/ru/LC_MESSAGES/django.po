@@ -5119,3 +5119,7 @@ msgstr "Показать данные"
 #: registrations/templates/registrations/register_many.html
 msgid "Hide details"
 msgstr "Скрыть данные"
+
+#: event_photos/permissions.py
+msgid "The start list already gives this person a bib at this event."
+msgstr "В стартовом протоколе у этого человека уже есть номер на этом старте."
