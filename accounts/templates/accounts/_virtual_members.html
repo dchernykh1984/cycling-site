@@ -1,0 +1,118 @@
+{% load i18n %}
+{% comment %}People without accounts the reader enters for starts and looks after the photos of (issue #438).
+A card that folds away and stays folded for this browser. Until the reader confirms they may handle
+these people's personal data it holds that question alone; then the people, with filters by name in
+any script, by team and by dates of birth, and a form to add one more.{% endcomment %}
+<details class="card mb-4 virtual-members" id="virtual-members" open>
+    <summary class="card-header">{% trans "People without an account" %}{% if virtual.people %} <span class="badge bg-secondary">{{ virtual.people|length }}</span>{% endif %}</summary>
+    <div class="card-body">
+        {% if not virtual.consented %}
+        <p>{% blocktrans %}Here you can add people who have no account on the site -- the children of your section, your family -- register them for starts and look after their photos. You type in their names, gender and date of birth yourself, so first confirm that you may: you have their consent, or their legal representative's, to handle their personal data.{% endblocktrans %}</p>
+        <form method="post" action="{% url 'account_virtual_consent' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">{% trans "I am authorized to handle their personal data" %}</button>
+        </form>
+        {% else %}
+        <p class="small text-muted">
+            {% if virtual.limit is None %}{% blocktrans count counter=virtual.people|length %}Added: {{ counter }} person.{% plural %}Added: {{ counter }} people.{% endblocktrans %}
+            {% else %}{% blocktrans with counter=virtual.people|length limit=virtual.limit %}Added: {{ counter }} of {{ limit }}. Everybody else signs up and asks you to manage them through your link above.{% endblocktrans %}{% endif %}
+        </p>
+
+        {% if virtual.people %}
+        <div class="row g-2 mb-2 virtual-filters">
+            <div class="col-12 col-md-4">
+                <label for="vm-name" class="form-label small mb-1">{% trans "Last or first name" %}</label>
+                <input type="search" id="vm-name" class="form-control" autocomplete="off">
+            </div>
+            <div class="col-12 col-md-3">
+                <label for="vm-team" class="form-label small mb-1">{% trans "Team" %}</label>
+                <select id="vm-team" class="form-select">
+                    <option value="">{% trans "All teams" %}</option>
+                    {% for team in virtual.teams %}<option value="{{ team }}">{{ team }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-auto">
+                <label for="vm-born-from" class="form-label small mb-1">{% trans "Born from" %}</label>
+                <input type="date" id="vm-born-from" class="form-control">
+            </div>
+            <div class="col-6 col-md-auto">
+                <label for="vm-born-to" class="form-label small mb-1">{% trans "Born to" %}</label>
+                <input type="date" id="vm-born-to" class="form-control">
+            </div>
+        </div>
+        <p class="small text-muted mb-2" aria-live="polite">{% blocktrans with all=virtual.people|length %}Shown: <span class="vm-shown">{{ all }}</span> of {{ all }}{% endblocktrans %}</p>
+        <ul class="list-group mb-3 virtual-people">
+            {% for person in virtual.people %}
+            <li class="list-group-item d-flex justify-content-between align-items-center gap-2 flex-wrap"
+                data-name="{{ person.last_name }} {{ person.first_name }}" data-team="{{ person.team }}" data-born="{{ person.birth_date|date:'Y-m-d' }}">
+                <span>
+                    <span class="fw-semibold">{{ person.last_name }} {{ person.first_name }}</span>
+                    <span class="text-muted small d-block">{{ person.birth_date|date:"d.m.Y" }} &middot; {{ person.get_gender_display }}{% if person.team %} &middot; {{ person.team }}{% endif %}{% if person.city %} &middot; {{ person.city }}{% endif %}</span>
+                </span>
+                <span class="d-flex gap-2">
+                    <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-secondary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>
+                    <form method="post" action="{% url 'account_virtual_delete' person.pk %}"
+                          onsubmit="return confirm('{% filter escapejs %}{% blocktrans %}Delete {{ person }}? Their entries in races to come are cancelled; past races stay in the results.{% endblocktrans %}{% endfilter %}')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{% trans 'Delete' %}: {{ person }}">{% trans "Delete" %}</button>
+                    </form>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if virtual.room != 0 %}
+        <form method="post" action="{% url 'account_virtual_add' %}" class="virtual-add border-top pt-3" novalidate>
+            {% csrf_token %}
+            <h2 class="h6">{% trans "Add a person" %}</h2>
+            {% if virtual.form.non_field_errors %}<div class="alert alert-danger py-2">{{ virtual.form.non_field_errors|join:" " }}</div>{% endif %}
+            <div class="row g-2">
+                {% for field in virtual.form %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <label for="{{ field.id_for_label }}" class="form-label small mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-outline-primary mt-3">{% trans "Add" %}</button>
+        </form>
+        {% else %}
+        <p class="small text-muted mb-0">{% blocktrans with limit=virtual.limit %}You have added as many people as you may: {{ limit }}.{% endblocktrans %}</p>
+        {% endif %}
+        {% endif %}
+    </div>
+</details>
+{% if virtual.people %}
+{% include "_search_words_js.html" %}
+<script>
+(function () {
+  // Remembered for this browser: folded once, the card stays folded.
+  var card = document.getElementById('virtual-members');
+  try { if (localStorage.getItem('virtual-members-folded') === '1') card.open = false; } catch (e) { /* no storage */ }
+  card.addEventListener('toggle', function () {
+    try { localStorage.setItem('virtual-members-folded', card.open ? '0' : '1'); } catch (e) { /* no storage */ }
+  });
+  // The filters: a name typed in any script, a team, a span of dates of birth (ISO dates compare as text)
+  var rows = Array.prototype.slice.call(card.querySelectorAll('.virtual-people > li'));
+  rows.forEach(function (row) { row.searchWords = window.cascadeSearchWords(row.dataset.name).join(' '); });
+  var name = card.querySelector('#vm-name'), team = card.querySelector('#vm-team');
+  var from = card.querySelector('#vm-born-from'), to = card.querySelector('#vm-born-to');
+  var shown = card.querySelector('.vm-shown');
+  function apply() {
+    var words = window.cascadeSearchWords(name.value), count = 0;
+    rows.forEach(function (row) {
+      var fits = words.every(function (word) { return row.searchWords.indexOf(word) >= 0; })
+        && (!team.value || row.dataset.team === team.value)
+        && (!from.value || row.dataset.born >= from.value)
+        && (!to.value || row.dataset.born <= to.value);
+      row.classList.toggle('d-none', !fits);
+      if (fits) count += 1;
+    });
+    shown.textContent = count;
+  }
+  [name, team, from, to].forEach(function (input) { input.addEventListener('input', apply); });
+})();
+</script>
+{% endif %}

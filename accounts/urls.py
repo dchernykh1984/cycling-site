@@ -46,4 +46,9 @@ urlpatterns = [
         views.ManagingActionView.as_view(action="leave"),
         name="account_managing_leave",
     ),
+    # People without accounts the member enters for starts (issue #438)
+    path("virtual-members/consent/", views.VirtualMembersConsentView.as_view(), name="account_virtual_consent"),
+    path("virtual-members/add/", views.VirtualMemberAddView.as_view(), name="account_virtual_add"),
+    path("virtual-members/<int:pk>/edit/", views.VirtualMemberEditView.as_view(), name="account_virtual_edit"),
+    path("virtual-members/<int:pk>/delete/", views.VirtualMemberDeleteView.as_view(), name="account_virtual_delete"),
 ]

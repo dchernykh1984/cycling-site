@@ -149,6 +149,7 @@
         </div>
 
         {% if managing %}{% include "accounts/_managing.html" %}{% endif %}
+        {% if virtual %}{% include "accounts/_virtual_members.html" %}{% endif %}
 
         {% comment %}
         The whole ladder, not just the rung the reader is on: "Role: Participant" says nothing

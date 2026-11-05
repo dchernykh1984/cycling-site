@@ -209,3 +209,72 @@ class PhotoTests(EventPhotosTestCase):
         self.assertTrue(declared_bib_refusal(self.kid, self.race))
         self._declare(self.kid.pk, "7")
         self.assertFalse(DeclaredBib.objects.exists())
+
+
+class ProfileCardTests(TestCase):
+    """The profile's card: only the question until the member confirms they may handle these people's
+    data, then the people, a form to add one, and each one's own page to change them."""
+
+    def setUp(self):
+        self.coach = make_user("coach")
+        self.client.force_login(self.coach)
+
+    def _url(self, name, *args):
+        with translation.override("en"):
+            return reverse(name, args=args)
+
+    def _card(self):
+        return self.client.get(self._url("account_profile")).context["virtual"]
+
+    def _add(self, **over):
+        data = {
+            "last_name": "Ivanova",
+            "first_name": "Dana",
+            "gender": "F",
+            "birth_date": "2012-03-04",
+            "team": "Junior",
+        }
+        data.update(over)
+        return self.client.post(self._url("account_virtual_add"), data)
+
+    def test_nobody_is_added_before_the_member_confirms_they_may_handle_the_data(self):
+        self.assertFalse(self._card()["consented"])
+        self._add()
+        self.assertFalse(VirtualMember.objects.exists())
+        self.client.post(self._url("account_virtual_consent"))
+        self.assertTrue(self._card()["consented"])
+        self._add()
+        self.assertEqual(list(VirtualMember.objects.values_list("owner", "last_name")), [(self.coach.pk, "Ivanova")])
+
+    def test_the_same_person_twice_and_one_past_the_limit_come_back_with_the_reason(self):
+        virtual_members.consent(self.coach)
+        self._add()
+        again = self._add(last_name="IVANOVA", first_name=" dana ")
+        self.assertEqual(again.status_code, 200)
+        self.assertTrue(again.context["virtual"]["form"].errors)
+        for n in range(9):
+            _added(self.coach, first=f"Kid{n}")
+        refused = self._add(first_name="Eleventh")
+        self.assertIn("as many people as you may", " ".join(refused.context["virtual"]["form"].non_field_errors()))
+        self.assertEqual(VirtualMember.objects.count(), 10)
+
+    def test_a_member_changes_and_deletes_their_own_people_and_nobody_elses(self):
+        mine = _added(self.coach)
+        theirs = _added(make_user("other"), first="Zoe")
+        self.assertEqual(self.client.get(self._url("account_virtual_edit", theirs.pk)).status_code, 404)
+        self.assertEqual(self.client.post(self._url("account_virtual_delete", theirs.pk)).status_code, 404)
+        self.client.post(
+            self._url("account_virtual_edit", mine.pk),
+            {"last_name": "Ivanova", "first_name": "Daria", "gender": "F", "birth_date": "2012-03-04"},
+        )
+        mine.refresh_from_db()
+        self.assertEqual(mine.first_name, "Daria")
+        self.client.post(self._url("account_virtual_delete", mine.pk))
+        self.assertEqual(list(VirtualMember.objects.all()), [theirs])
+
+    def test_a_guest_whose_address_is_not_confirmed_gets_no_card(self):
+        guest = make_user("guest", role=User.Role.GUEST)
+        self.client.force_login(guest)
+        self.assertNotIn("virtual", self.client.get(self._url("account_profile")).context)
+        self.client.post(self._url("account_virtual_consent"))
+        self.assertIsNone(User.objects.get(pk=guest.pk).virtual_members_consent_at)
