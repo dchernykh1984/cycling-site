@@ -24,6 +24,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                 <label for="vm-name" class="form-label small mb-1">{% trans "Last or first name" %}</label>
                 <input type="search" id="vm-name" class="form-control" autocomplete="off">
             </div>
+            {% if virtual.teams %}
             <div class="col-12 col-md-3">
                 <label for="vm-team" class="form-label small mb-1">{% trans "Team" %}</label>
                 <select id="vm-team" class="form-select">
@@ -31,6 +32,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                     {% for team in virtual.teams %}<option value="{{ team }}">{{ team }}</option>{% endfor %}
                 </select>
             </div>
+            {% endif %}
             <div class="col-6 col-md-auto">
                 <label for="vm-born-from" class="form-label small mb-1">{% trans "Born from" %}</label>
                 <input type="date" id="vm-born-from" class="form-control">
@@ -50,7 +52,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                     <span class="text-muted small d-block">{{ person.birth_date|date:"d.m.Y" }} &middot; {{ person.get_gender_display }}{% if person.team %} &middot; {{ person.team }}{% endif %}{% if person.city %} &middot; {{ person.city }}{% endif %}</span>
                 </span>
                 <span class="d-flex gap-2">
-                    <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-secondary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>
+                    <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>
                     <form method="post" action="{% url 'account_virtual_delete' person.pk %}"
                           onsubmit="return confirm('{% filter escapejs %}{% blocktrans %}Delete {{ person }}? Their entries in races to come are cancelled; past races stay in the results.{% endblocktrans %}{% endfilter %}')">
                         {% csrf_token %}
@@ -84,17 +86,22 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
         {% endif %}
     </div>
 </details>
-{% if virtual.people %}
-{% include "_search_words_js.html" %}
 <script>
 (function () {
-  // Remembered for this browser: folded once, the card stays folded.
+  // Remembered for this browser: folded once, the card stays folded, people or none.
   var card = document.getElementById('virtual-members');
   try { if (localStorage.getItem('virtual-members-folded') === '1') card.open = false; } catch (e) { /* no storage */ }
   card.addEventListener('toggle', function () {
     try { localStorage.setItem('virtual-members-folded', card.open ? '0' : '1'); } catch (e) { /* no storage */ }
   });
+})();
+</script>
+{% if virtual.people %}
+{% include "_search_words_js.html" %}
+<script>
+(function () {
   // The filters: a name typed in any script, a team, a span of dates of birth (ISO dates compare as text)
+  var card = document.getElementById('virtual-members');
   var rows = Array.prototype.slice.call(card.querySelectorAll('.virtual-people > li'));
   rows.forEach(function (row) { row.searchWords = window.cascadeSearchWords(row.dataset.name).join(' '); });
   var name = card.querySelector('#vm-name'), team = card.querySelector('#vm-team');
@@ -104,7 +111,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
     var words = window.cascadeSearchWords(name.value), count = 0;
     rows.forEach(function (row) {
       var fits = words.every(function (word) { return row.searchWords.indexOf(word) >= 0; })
-        && (!team.value || row.dataset.team === team.value)
+        && (!team || !team.value || row.dataset.team === team.value)
         && (!from.value || row.dataset.born >= from.value)
         && (!to.value || row.dataset.born <= to.value);
       row.classList.toggle('d-none', !fits);
@@ -112,7 +119,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
     });
     shown.textContent = count;
   }
-  [name, team, from, to].forEach(function (input) { input.addEventListener('input', apply); });
+  [name, team, from, to].forEach(function (input) { if (input) input.addEventListener('input', apply); });
 })();
 </script>
 {% endif %}
