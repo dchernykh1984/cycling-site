@@ -810,6 +810,11 @@ main .event-photo-preview img { object-fit: contain; }
     margin: 0;
     border-color: var(--bs-secondary-color);
 }
+/* The privacy question at a provider's first sign-in (issue #438): its one box is the page's whole
+   point, so it is drawn as the registration page draws its boxes, in the skin's secondary colour. */
+.privacy-consent .form-check-input {
+    border-color: var(--bs-secondary-color);
+}
 .register-many > .btn,
 .register-many .register-person-toggle,
 .register-filters .btn {
