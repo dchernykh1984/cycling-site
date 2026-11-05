@@ -12,7 +12,8 @@ class AccountsConfig(AppConfig):
     def ready(self):
         from django.db.models.signals import post_migrate
 
-        import accounts.signals  # noqa: F401
+        import accounts.signals
+        import accounts.virtual_members  # noqa: F401 -- its receivers
 
         post_migrate.connect(
             _setup_group_permissions,

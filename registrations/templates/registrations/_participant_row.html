@@ -56,7 +56,7 @@
   </td>
   {% elif show_owner_actions %}
   <td class="reg-actions">
-    {% if reg.user_id in owned_ids %}
+    {% if reg.pk in own_entries %}
     <div class="d-flex gap-1 flex-wrap">
       <a href="{% url 'registrations:edit_registration' competition.pk reg.pk %}" class="btn btn-xs btn-outline-secondary btn-sm py-0">{% trans "Edit" %}</a>
       <form method="post" action="{% url 'registrations:delete_registration' competition.pk reg.pk %}"

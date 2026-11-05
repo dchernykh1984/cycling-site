@@ -106,6 +106,14 @@ class CompetitionRegistration(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
+    # The entry of a person without an account, made by the member who added them (issue #438)
+    virtual_member = models.ForeignKey(
+        "accounts.VirtualMember",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="registrations",
+    )
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
     participant_names = models.TextField(blank=True, default="")
@@ -162,7 +170,8 @@ class CompetitionRegistration(models.Model):
             return
         if not (self.competition_id and self.first_name and self.last_name and self.birth_date):
             return
-        if check_duplicate(self.competition, self.user, self.first_name, self.last_name, self.birth_date):
+        person = self.virtual_member or self.user
+        if check_duplicate(self.competition, person, self.first_name, self.last_name, self.birth_date):
             raise ValidationError("A duplicate registration already exists.")
 
 
@@ -201,9 +210,14 @@ def counted_q() -> Q:
     )
 
 
-def check_duplicate(competition, user, first_name: str, last_name: str, birth_date: datetime.date) -> bool:
-    if competition.registration_mode == competition.RegistrationMode.SELF_ONLY and user:
-        return CompetitionRegistration.objects.filter(competition=competition, user=user).exists()
+def check_duplicate(competition, person, first_name: str, last_name: str, birth_date: datetime.date) -> bool:
+    """Whether the event already holds an entry it would refuse a second of: where it takes only one's
+    own data, the same person's -- an account's, or a person's without one (issue #438); else the same
+    names and year of birth, unless it takes several from one person."""
+    if competition.registration_mode == competition.RegistrationMode.SELF_ONLY and person:
+        from accounts.virtual_members import who
+
+        return CompetitionRegistration.objects.filter(competition=competition, **who(person)).exists()
     if competition.allow_multiple_registrations:
         return False
     return CompetitionRegistration.objects.filter(

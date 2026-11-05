@@ -1,7 +1,9 @@
 """Entering one person for an event: what the registration page does for each person it enters.
 
-The page enters the reader and, since issue #315, the members they manage, one form each; every
-entry goes through ``register_one``, so one rule decides with what data a person is entered.
+The page enters the reader and, since issue #315, the members they manage, one form each -- and,
+since issue #438, the people without accounts they added; every entry goes through ``register_one``,
+so one rule decides with what data a person is entered. A "person" here is an account or a person
+without one: both carry what the form takes from a profile, under the same names.
 """
 
 import datetime
@@ -12,7 +14,8 @@ from django import forms
 from django.db import transaction
 from django.utils.translation import gettext
 
-from accounts import managing
+from accounts import managing, virtual_members
+from accounts.models import VirtualMember
 from calendar_app.models import Competition
 
 from .forms import RegistrationForm
@@ -159,7 +162,7 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
 
         registration = CompetitionRegistration.objects.create(
             competition=competition,
-            user=person,
+            **virtual_members.who(person),
             registered_by=registered_by,
             first_name=first_name,
             last_name=last_name,
@@ -188,7 +191,7 @@ def lock_registration_mode(competition) -> None:
 def already_entered(competition, person) -> bool:
     """Whether ``person`` holds an entry the event would refuse them a second of."""
     if not is_free(competition):
-        return CompetitionRegistration.objects.filter(competition=competition, user=person).exists()
+        return CompetitionRegistration.objects.filter(competition=competition, **virtual_members.who(person)).exists()
     if competition.allow_multiple_registrations or not person.birth_date:
         return False
     return check_duplicate(competition, person, person.first_name, person.last_name, person.birth_date)
@@ -198,13 +201,14 @@ def already_entered(competition, person) -> bool:
 class Row:
     """One person on the page for several (issue #315), and how entering them went."""
 
-    key: str  # what the person's checkbox sends: their account's id, or "other"
+    key: str  # what the person's checkbox sends: their account's id, "v" and a virtual member's id, or "other"
     label: str
     form: RegistrationForm | None = None
     profile: object = None  # whose profile fills the form in: none for another person typed in
     blocked: str = ""  # why the person has no checkbox
     checked: bool = False
     entered: bool = False
+    virtual: bool = False  # a person without an account, added by the reader (issue #438)
 
     @property
     def prefix(self) -> str:
@@ -219,27 +223,31 @@ class Row:
 def rows_for(competition, user) -> list[Row] | None:
     """The people the page for several offers, top to bottom; None when it is the page for one.
 
-    The reader first, then the members they manage by name, leaving out whoever is entered already
-    unless the event takes several entries from one person; where anyone may be entered, one more
-    for another person typed in. A person whose profile cannot fill an event that takes only one's
-    own data is listed without a checkbox, with the reason.
+    The reader first, then the members they manage by name and the people without accounts they added
+    (issue #438), leaving out whoever is entered already unless the event takes several entries from
+    one person; where anyone may be entered, one more for another person typed in. A person whose
+    profile cannot fill an event that takes only one's own data is listed without a checkbox, with
+    the reason.
     """
     if competition.relay_enabled:
         return None
     members = [row.member for row in managing.members(user)]
-    if not members:
+    added = list(virtual_members.of(user))
+    if not members and not added:
         return None
     rows = []
-    for person in [user, *members]:
+    for person in [user, *members, *added]:
         if already_entered(competition, person):
             continue
         is_reader = person == user
+        virtual = isinstance(person, VirtualMember)
         row = Row(
-            key=str(person.pk),
+            key=f"v{person.pk}" if virtual else str(person.pk),
             label=gettext("%(name)s (you)") % {"name": person.public_display_name}
             if is_reader
             else f"{person.last_name} {person.first_name}".strip() or person.public_display_name,
             profile=person,
+            virtual=virtual,
         )
         if cannot_fill(competition, person):
             row.blocked = (
@@ -277,7 +285,7 @@ def enter_rows(competition, rows, user, data) -> bool:
         row.form = bound_form(competition, account, data, prefix=row.prefix)
         if row.form.is_valid() and register_one(competition, row.form, account, registered_by=user):
             row.entered = True
-            if competition.invite_only and account != user:
+            if competition.invite_only and account != user and not row.virtual:
                 CompetitionInvite.objects.get_or_create(competition=competition, user=account)
         else:
             everyone = False
@@ -286,8 +294,13 @@ def enter_rows(competition, rows, user, data) -> bool:
 
 def ticks_allowed(competition, user, data) -> bool:
     """Whether every box ticked in ``data`` is one the page may offer ``user``: themselves, a member
-    they manage, or another person where anyone may be entered. Anything else is a forged request."""
-    allowed = {str(user.pk), *(str(pk) for pk in managing.member_ids(user))}
+    they manage, a person without an account they added, or another person where anyone may be
+    entered. Anything else is a forged request."""
+    allowed = {
+        str(user.pk),
+        *(str(pk) for pk in managing.member_ids(user)),
+        *(f"v{pk}" for pk in virtual_members.of(user).values_list("pk", flat=True)),
+    }
     if is_free(competition):
         allowed.add("other")
     return set(data.getlist("person")) <= allowed

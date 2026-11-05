@@ -7,11 +7,14 @@ can erase them. Which registration got which bib comes from the start list Start
 (``IssuedBib``), never from names.
 """
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+if TYPE_CHECKING:
+    from accounts.models import User
 
 THUMBNAIL_LIMIT_BYTES = 20 * 1024 * 1024
 
@@ -163,21 +166,45 @@ class IssuedBibEvent(models.Model):
 
 class DeclaredBib(models.Model):
     """The bib a member names for themselves at an event where the start lists give them none, one per
-    member and event. A preference that finds them that bib's photos, not a right: nobody marks them,
-    and no registration's album or bib search reads it."""
+    member and event -- or for a person without an account they added (issue #438). A preference that
+    finds that bib's photos, not a right: nobody marks them, and no registration's album or bib search
+    reads it."""
 
     competition = models.ForeignKey("calendar_app.Competition", on_delete=models.CASCADE, related_name="declared_bibs")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="declared_bibs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="declared_bibs"
+    )
+    virtual_member = models.ForeignKey(
+        "accounts.VirtualMember", null=True, blank=True, on_delete=models.CASCADE, related_name="declared_bibs"
+    )
     bib = models.CharField(max_length=BIB_MAX_LENGTH)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints: ClassVar[list] = [
-            models.UniqueConstraint(fields=["competition", "user"], name="declared_bib_unique")
+            models.UniqueConstraint(fields=["competition", "user"], name="declared_bib_unique"),
+            models.UniqueConstraint(fields=["competition", "virtual_member"], name="declared_bib_virtual_unique"),
+            # Somebody's bib: a member's or a person's without an account, never both or neither
+            models.CheckConstraint(
+                condition=models.Q(user__isnull=True) ^ models.Q(virtual_member__isnull=True),
+                name="declared_bib_of_one_person",
+            ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.bib} u{self.user_id}"
+        return f"{self.bib} " + (f"v{self.virtual_member_id}" if self.virtual_member_id else f"u{self.user_id}")
+
+    @property
+    def person(self):
+        """Whose bib it is: the member's, or the person's without an account."""
+        return self.virtual_member if self.virtual_member_id else self.user
+
+    @property
+    def display_name(self) -> str:
+        """The name of whose bib it is, as a card and an album's title show it."""
+        if self.virtual_member_id:
+            return str(self.virtual_member)
+        return cast("User", self.user).public_display_name  # one of the two, as the constraint holds
 
 
 class PhotoDecision(models.Model):

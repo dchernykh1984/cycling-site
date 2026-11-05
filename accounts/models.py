@@ -97,6 +97,14 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     # Timestamp of the last rate-limited outgoing mail action (confirmation email at
     # signup/resend and the contact-owners message). Shared cooldown across all of them.
     last_mail_action_at = models.DateTimeField(null=True, blank=True)
+    # When the member agreed to the privacy policy: on the sign-up form, or -- an account a provider
+    # made (Google, GitHub, Strava) has no form -- on the page its first sign-in is sent to while
+    # ``privacy_consent_pending`` (issue #438). Members from before the question were never asked.
+    privacy_accepted_at = models.DateTimeField(null=True, blank=True)
+    privacy_consent_pending = models.BooleanField(default=False)
+    # When the member confirmed they may handle the personal data of the people without accounts they
+    # add (issue #438): once, never taken back; until then they add nobody.
+    virtual_members_consent_at = models.DateTimeField(null=True, blank=True)
 
     ROLE_HIERARCHY: ClassVar[list[str]] = [
         Role.GUEST,
@@ -193,3 +201,34 @@ class ManagedMember(models.Model):
 
     def __str__(self) -> str:
         return f"{self.manager_id} manages {self.member_id}" + ("" if self.accepted_at else " (waiting)")
+
+
+#: A person's name as a registration stores it: a person without an account is entered under it.
+VIRTUAL_NAME_LENGTH = 100
+
+
+class VirtualMember(models.Model):
+    """A person a member enters for starts and looks after the event photos of, without an account of
+    their own (issue #438): a coach's section, a parent's children.
+
+    They exist in their manager's profile alone, nobody else sees them, and they go with the manager's
+    account. They carry what a registration form takes from a profile, under the profile's own names,
+    so that the form fills itself in from either.
+    """
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="virtual_members")
+    last_name = models.CharField(max_length=VIRTUAL_NAME_LENGTH)
+    first_name = models.CharField(max_length=VIRTUAL_NAME_LENGTH)
+    gender = models.CharField(max_length=1, choices=User.Gender.choices)
+    birth_date = models.DateField(validators=[validate_birth_date])
+    team = models.CharField(max_length=100, blank=True, default="")
+    city = models.CharField(max_length=100, blank=True, default="")
+
+    # A form that asks for a Strava link fills it in from a profile; nobody without an account has one
+    strava_link = ""
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["last_name", "first_name", "pk"]
+
+    def __str__(self) -> str:
+        return f"{self.last_name} {self.first_name}".strip()

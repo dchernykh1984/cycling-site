@@ -50,6 +50,12 @@ EDIT_HOME_PAGE = Role.OWNER
 SEE_SITE_STATS = Role.OWNER
 COUNTED_AS_TEAM = Role.ADMIN
 
+# People without accounts a member adds and enters for starts (issue #438), at most this many by the
+# member's role; from admins up, any number. A member below the least role here adds nobody, and the
+# people beyond a limit sign up and ask to be managed through the member's link.
+VIRTUAL_MEMBERS_UNLIMITED = Role.ADMIN
+VIRTUAL_MEMBER_LIMITS = ((Role.ORGANIZER, 1000), (Role.PARTICIPANT, 10))
+
 
 def rank(user) -> int:
     """Where ``user`` stands in ``User.ROLE_HIERARCHY``: -1 for a visitor, or for whatever is not a
@@ -72,6 +78,13 @@ def at_least(user, role: str) -> bool:
 def holding(role: str) -> Q:
     """The members ``at_least`` says hold ``role``, as a filter for a query of users."""
     return Q(role__in=User.ROLE_HIERARCHY[User.ROLE_HIERARCHY.index(role) :]) | Q(is_superuser=True)
+
+
+def virtual_members_limit(user) -> int | None:
+    """How many people without accounts ``user`` may add: None for any number, 0 for nobody."""
+    if at_least(user, VIRTUAL_MEMBERS_UNLIMITED):
+        return None
+    return next((limit for role, limit in VIRTUAL_MEMBER_LIMITS if role_at_least(user, role)), 0)
 
 
 def can_assign_role(editor, role: str) -> bool:

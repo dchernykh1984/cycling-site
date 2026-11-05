@@ -28,6 +28,28 @@
   </form>
   {% endif %}
   {% endif %}
+  {% if added_people %}
+  {% comment %}A bib for one of the people without accounts the reader added (issue #438): their photos
+  are found by it and show among the reader's cards, unmarked, as a member's own named bib.{% endcomment %}
+  <form method="post" action="{% url 'event_photos:declare' competition.pk %}" class="event-photos-added-bib mb-4">
+    {% csrf_token %}
+    <p class="mb-2">{% trans "A bib for a person without an account you added: their photos will be here and in your profile." %}</p>
+    <div class="d-flex flex-wrap gap-2 align-items-end">
+      <div>
+        <label for="added-person" class="form-label mb-1">{% trans "Person" %}</label>
+        <select id="added-person" name="person" class="form-select">
+          {% for person in added_people %}<option value="{{ person.pk }}">{{ person }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="added-bib" class="form-label mb-1">{% trans "Bib" %}</label>
+        <input type="text" id="added-bib" name="bib" maxlength="32" class="form-control" autocomplete="off">
+      </div>
+      <button type="submit" name="action" value="save" class="btn btn-outline-primary">{% trans "Save" %}</button>
+      <button type="submit" name="action" value="remove" formnovalidate class="btn btn-outline-primary">{% trans "Remove" %}</button>
+    </div>
+  </form>
+  {% endif %}
 
   <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4" role="search">
     <div>

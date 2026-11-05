@@ -307,7 +307,7 @@ def my_declared_albums(request):
     )
     return [
         _declared_card(request, declared)
-        for declared in named.distinct().select_related("competition", "user")
+        for declared in named.distinct().select_related("competition", "user", "virtual_member")
         if can_see_event(request.auth, declared.competition)
     ]
 
@@ -324,12 +324,12 @@ def _declared_card(request, declared) -> dict:
         "confirmed": summary["confirmed"],
         "state": summary["state"],
         "cover_thumbnail_url": _thumbnail_url(request, summary["cover"]),
-        "participant": declared.user.public_display_name,
+        "participant": declared.display_name,
     }
 
 
 def _declared(user, declared_bib_id) -> DeclaredBib:
-    named = DeclaredBib.objects.select_related("competition", "user")
+    named = DeclaredBib.objects.select_related("competition", "user", "virtual_member")
     declared = get_object_or_404(actions.declared_in_force(named), pk=declared_bib_id)
     if not can_see_event(user, declared.competition) or not can_see_declared(user, declared):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
