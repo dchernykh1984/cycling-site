@@ -15,6 +15,7 @@ def _privacy_field() -> forms.BooleanField:
     so the form keeps what was typed; built per form, so its words are the page's language."""
     return forms.BooleanField(
         required=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         label_suffix="",
         label=format_html(
             gettext('I agree with the <a href="{}" target="_blank" rel="noopener">privacy policy</a>'),

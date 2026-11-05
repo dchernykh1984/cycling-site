@@ -815,6 +815,26 @@ main .event-photo-preview img { object-fit: contain; }
 .privacy-consent .form-check-input {
     border-color: var(--bs-secondary-color);
 }
+/* The same question on the sign-up form, which allauth writes as a paragraph with the words before
+   the box: the box comes first, drawn the same way, and the words answer a tap across 44 px. */
+form p:has(> #id_privacy) {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+}
+form p:has(> #id_privacy) > label {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    margin: 0;
+}
+#id_privacy {
+    flex: none;
+    margin: 0;
+    border-color: var(--bs-secondary-color);
+}
 .register-many > .btn,
 .register-many .register-person-toggle,
 .register-filters .btn {
