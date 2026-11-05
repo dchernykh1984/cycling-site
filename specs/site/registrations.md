@@ -126,8 +126,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   entries until approved or paid, as the member does.
 - On the page for several, a box ticked for anyone other than the reader, their members, the people
   without accounts they added, or another person where anyone may be entered is refused whole (403).
-- A person without an account deleted by the member who added them takes their entries in races to
-  come with them; entries in past races stay, with the names they were made with.
+- A person without an account deleted by the member who added them takes their entries in races that
+  have not started with them; the others -- a race run today or under way included -- stay, with the
+  names they were made with.
 
 ## Functional Requirements
 

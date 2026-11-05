@@ -166,8 +166,9 @@ races and looks after their race photos (issue #438). They exist only in the mem
    word, limit and room, gives the word, adds up to 1000 people a request -- whole or not at all,
    each row's mistakes named, somebody added already left as they are, `dry_run` saving nothing --
    and changes or deletes one. The `virtual-members` skill tells an agent how to add a list.
-6. **Given** a person is deleted, **Then** their entries in races to come are cancelled and those in
-   past races stay, with the names they were made with; a member's account deleted takes the people
+6. **Given** a person is deleted, **Then** their entries in races that have not started are cancelled
+   and the others -- past races, a race run today, a stage race under way -- stay, with the names they
+   were made with; a member's account deleted takes the people
    they added with it. Changing a person changes their entries from then on, never one made already.
 7. **Given** a person added, **Then** the member enters them for races ([registrations](registrations.md))
    and looks after their photos and names their bib ([event photos](event-photos.md)), as for a

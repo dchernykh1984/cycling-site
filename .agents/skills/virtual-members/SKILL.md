@@ -60,7 +60,8 @@ curl -s -X POST "$SITE/api/v1/virtual-members/" -H "Authorization: Bearer $TOKEN
 
 `PATCH /api/v1/virtual-members/{id}` changes a person (409 when the change makes them a copy of
 somebody already added); `DELETE /api/v1/virtual-members/{id}` deletes one: their entries in races
-to come are cancelled, past races keep them in the results. Deleting the member's account deletes
+that have not started are cancelled, while past races, a race run today and a stage race under way
+keep them. Deleting the member's account deletes
 the people they added.
 
 ## Entering them for a race
