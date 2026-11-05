@@ -726,10 +726,22 @@ main .event-photo-preview img { object-fit: contain; }
 }
 /* Managing registrations and photos (issue #315): the profile's buttons and the link's page are tapped
    on phones -- 44 px whatever height the skin gives a button. */
-.managing .btn, .managing-join .btn {
+.managing .btn, .managing-join .btn,
+.virtual-members .btn {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
+}
+/* The people without accounts (issue #438): the card folds by its header, which is tapped as the
+   buttons are, and its filters take a finger too. The header stays a list item: its triangle is what
+   says the card folds. */
+.virtual-members > summary {
+    min-height: 2.75rem;
+    cursor: pointer;
+}
+.virtual-filters .form-control,
+.virtual-filters .form-select {
+    min-height: 2.75rem;
 }
 /* The owner's list of the home page's cards is tapped on phones too: 44 px whatever height the skin
    gives a button. */
