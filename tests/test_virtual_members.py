@@ -278,3 +278,81 @@ class ProfileCardTests(TestCase):
         self.assertNotIn("virtual", self.client.get(self._url("account_profile")).context)
         self.client.post(self._url("account_virtual_consent"))
         self.assertIsNone(User.objects.get(pk=guest.pk).virtual_members_consent_at)
+
+
+class ApiTests(TestCase):
+    """/api/v1/virtual-members/: the profile's card over the API, with batches of many people."""
+
+    def setUp(self):
+        self.coach = make_user("coach")
+        self.coach.api_token = __import__("uuid").uuid4()
+        self.coach.save(update_fields=["api_token"])
+        self.auth = {"HTTP_AUTHORIZATION": f"Bearer {self.coach.api_token}"}
+
+    def _post(self, path, body=None):
+        return self.client.post(
+            f"/api/v1/virtual-members/{path}", body or {}, content_type="application/json", **self.auth
+        )
+
+    def _row(self, n=0, **over):
+        row = {"last_name": "Ivanova", "first_name": f"Kid{n}", "gender": "F", "birth_date": "2012-03-04"}
+        row.update(over)
+        return row
+
+    def test_nobody_is_added_before_the_members_word_and_a_guest_cannot_give_it(self):
+        self.assertEqual(self._post("", {"people": [self._row()]}).status_code, 403)
+        self.assertEqual(self._post("consent").status_code, 204)
+        self.assertEqual(self._post("", {"people": [self._row()]}).status_code, 200)
+        guest = make_user("guest", role=User.Role.GUEST)
+        guest.api_token = __import__("uuid").uuid4()
+        guest.save(update_fields=["api_token"])
+        refused = self.client.post("/api/v1/virtual-members/consent", HTTP_AUTHORIZATION=f"Bearer {guest.api_token}")
+        self.assertEqual(refused.status_code, 403)
+
+    def test_a_batch_is_added_whole_and_a_second_send_adds_nobody_twice(self):
+        virtual_members.consent(self.coach)
+        batch = {"people": [self._row(n) for n in range(3)]}
+        first = self._post("", batch).json()
+        self.assertEqual((len(first["created"]), len(first["existing"])), (3, 0))
+        again = self._post("", {"people": [self._row(0, last_name="IVANOVA"), self._row(5)]}).json()
+        self.assertEqual(([p["first_name"] for p in again["created"]], len(again["existing"])), (["Kid5"], 1))
+        self.assertEqual(VirtualMember.objects.count(), 4)
+
+    def test_a_row_with_a_mistake_or_one_past_the_limit_saves_nobody(self):
+        virtual_members.consent(self.coach)
+        future = (timezone.localdate() + datetime.timedelta(days=1)).isoformat()
+        wrong = self._post("", {"people": [self._row(0), self._row(1, birth_date=future)]})
+        self.assertEqual(wrong.status_code, 422)
+        self.assertEqual([row["row"] for row in wrong.json()["rows"]], [1])
+        too_many = self._post("", {"people": [self._row(n) for n in range(11)]})
+        self.assertEqual(too_many.status_code, 422)
+        self.assertFalse(VirtualMember.objects.exists())
+
+    def test_a_dry_run_says_what_it_would_add_and_saves_nothing(self):
+        virtual_members.consent(self.coach)
+        answer = self._post("", {"people": [self._row()], "dry_run": True}).json()
+        self.assertEqual((answer["dry_run"], len(answer["created"])), (True, 1))
+        self.assertFalse(VirtualMember.objects.exists())
+
+    def test_the_list_says_the_limit_and_the_room_left(self):
+        virtual_members.consent(self.coach)
+        _added(self.coach)
+        listed = self.client.get("/api/v1/virtual-members/", **self.auth).json()
+        self.assertEqual((listed["consented"], listed["limit"], listed["room"]), (True, 10, 9))
+        self.assertEqual([p["last_name"] for p in listed["people"]], ["Ivanova"])
+
+    def test_a_member_changes_and_deletes_their_own_people_only(self):
+        mine, other = _added(self.coach), _added(make_user("other"), first="Zoe")
+        twin = _added(self.coach, first="Twin")
+        url = "/api/v1/virtual-members/{}"
+        changed = self.client.patch(
+            url.format(mine.pk), {"city": "Taraz"}, content_type="application/json", **self.auth
+        )
+        self.assertEqual(changed.json()["city"], "Taraz")
+        clash = self.client.patch(
+            url.format(twin.pk), {"first_name": "dana"}, content_type="application/json", **self.auth
+        )
+        self.assertEqual(clash.status_code, 409)
+        self.assertEqual(self.client.delete(url.format(other.pk), **self.auth).status_code, 404)
+        self.assertEqual(self.client.delete(url.format(mine.pk), **self.auth).status_code, 204)
+        self.assertEqual(set(VirtualMember.objects.all()), {other, twin})
