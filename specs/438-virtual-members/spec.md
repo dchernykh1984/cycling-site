@@ -93,8 +93,9 @@ Taken with the maintainer on 2026-11-05.
   of birth for a member, letters' case aside.
 - **FR-438-003**: A batch is checked whole before anything is saved: a row with a mistake, or more
   new people than the room, saves nobody and names every row's errors.
-- **FR-438-004**: Deleting a person cancels their entries in races to come; the member's account
-  deleted deletes the people they added.
+- **FR-438-004**: Deleting a person cancels their entries in races that have not started; a race run
+  today or a stage race under way keeps them, as past races do. The member's account deleted deletes
+  the people they added.
 - **FR-438-005**: An entry for a person without an account keeps the person and the member who
   submitted it, never an account, and lets nobody into an invite-only event.
 - **FR-438-006**: The registration page's details open by a button of their own and stay folded;

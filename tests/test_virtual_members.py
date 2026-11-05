@@ -70,28 +70,30 @@ class LimitTests(TestCase):
 
 
 class TakingSomebodyOffTests(TestCase):
-    """A person taken off the site is entered in no race to come; their past races stay in the results."""
+    """A person taken off the site is entered in no race to come; their past races stay in the results,
+    and so does a race run today or a stage race under way, whose start lists may already hold them."""
 
     def setUp(self):
         self.coach = make_user("coach")
         self.kid = _added(self.coach)
         self.past = make_registration(make_open_competition(date_start=_days(-20)), virtual_member=self.kid)
-        self.today = make_registration(
-            make_open_competition(date_start=_days(-1), date_end=_days(0)), virtual_member=self.kid
+        self.under_way = make_registration(
+            make_open_competition(date_start=_days(-1), date_end=_days(1)), virtual_member=self.kid
         )
-        self.to_come = make_registration(make_open_competition(date_start=_days(15)), virtual_member=self.kid)
+        self.today = make_registration(make_open_competition(date_start=_days(0)), virtual_member=self.kid)
+        self.to_come = make_registration(make_open_competition(date_start=_days(1)), virtual_member=self.kid)
 
     def _left(self):
         return set(CompetitionRegistration.objects.values_list("pk", "virtual_member_id"))
 
-    def test_deleting_a_person_withdraws_them_from_races_to_come_and_keeps_the_past(self):
+    def test_deleting_a_person_withdraws_them_from_races_to_come_and_keeps_the_rest(self):
         self.kid.delete()
-        self.assertEqual(self._left(), {(self.past.pk, None)})
+        self.assertEqual(self._left(), {(self.past.pk, None), (self.under_way.pk, None), (self.today.pk, None)})
 
     def test_deleting_the_members_account_takes_their_people_off_too(self):
         self.coach.delete()
         self.assertFalse(VirtualMember.objects.exists())
-        self.assertEqual(self._left(), {(self.past.pk, None)})
+        self.assertEqual(self._left(), {(self.past.pk, None), (self.under_way.pk, None), (self.today.pk, None)})
 
 
 class EnteringTests(TestCase):

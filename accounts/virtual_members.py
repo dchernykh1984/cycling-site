@@ -63,11 +63,9 @@ def key(last_name: str, first_name: str, birth_date) -> tuple:
 
 
 def races_to_come() -> Q:
-    """Entries in events whose last day has not passed, from a registration's side."""
-    today = timezone.localdate()
-    return Q(competition__date_end__gte=today) | Q(
-        competition__date_end__isnull=True, competition__date_start__gte=today
-    )
+    """Entries in events that have not started yet, from a registration's side. A race run today, or a
+    stage race under way, keeps its entries: its start lists and results may already hold them."""
+    return Q(competition__date_start__gt=timezone.localdate())
 
 
 @receiver(pre_delete, sender=VirtualMember)
