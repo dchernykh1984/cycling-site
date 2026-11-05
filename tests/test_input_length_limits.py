@@ -115,6 +115,9 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
     "api.endpoints.locations.LocationPatchIn": Location,
     "api.endpoints.virtual_members.VirtualMemberPatchIn": VirtualMember,
+    "api.endpoints.registrations.EntryPatchIn": CompetitionRegistration,
+    # Entries name an event and hold their rows; each row (EntryIn) bounds its own fields to the columns.
+    "api.endpoints.registrations.EntriesIn": None,
     # A batch holds its rows and a flag; each row (VirtualMemberIn) bounds its own fields to the columns.
     "api.endpoints.virtual_members.VirtualMembersIn": None,
     # A page's address and where it was opened from, as tally keys: stats.counting.add cuts a key to its

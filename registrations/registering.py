@@ -183,6 +183,20 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
     return registration
 
 
+def save_participant_change(form, competition, was_approved) -> CompetitionRegistration:
+    """Save the entry a participant -- or whoever enters them -- changed through the participant's form:
+    the team by its name, and an approved entry sent back to moderation when anything changed, so the
+    organiser re-checks the data rather than it going through silently."""
+    entry = form.save(commit=False)
+    if "team_name" in form.fields:
+        team_name = form.cleaned_data.get("team_name", "").strip()
+        entry.team = Team.get_or_restore(team_name) if team_name else None
+    if competition.require_approval and was_approved and form.has_changed():
+        entry.is_approved = False
+    entry.save()
+    return entry
+
+
 def lock_registration_mode(competition) -> None:
     """Fix who may be entered once somebody is in: the mode does not change under an entry."""
     Competition.objects.filter(pk=competition.pk, registration_mode_locked=False).update(registration_mode_locked=True)
