@@ -434,21 +434,27 @@ def test_the_ride_keeps_real_time_on_a_device_that_draws_a_few_frames_a_second(p
     assert slow == pytest.approx(fast, rel=0.005), ridden
 
 
-@pytest.mark.django_db(transaction=True)
-def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
-    page.add_init_script(
-        """(() => {
-            let now = 1000; const frames = [];
-            performance.now = () => now;
-            window.requestAnimationFrame = callback => frames.push(callback);
-            window.drawFrame = ms => { now += ms; frames.splice(0).forEach(callback => callback(now)); };
-            window.takeTime = ms => { now += ms; };
-        })()"""
-    )
+# The page's clock and frames in the test's hands: drawFrame(ms) draws one frame ms later.
+_FRAMES = """(() => {
+    let now = 1000; const frames = [];
+    performance.now = () => now;
+    window.requestAnimationFrame = callback => frames.push(callback);
+    window.drawFrame = ms => { now += ms; frames.splice(0).forEach(callback => callback(now)); };
+    window.takeTime = ms => { now += ms; };
+})()"""
+
+
+def _trainer_in_its_menu(page: Page, live_server) -> None:
+    page.add_init_script(_FRAMES)
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
     page.evaluate("drawFrame(16)")
     if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
         pytest.skip("this browser cannot draw 3D, so no ride starts in it")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
     page.evaluate(
         "() => { const build = buildWorld; buildWorld = route => { build(route); takeTime(2000); }; startRace(); }"
     )
@@ -457,3 +463,15 @@ def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Pa
     # a slow phone takes two seconds to build the course: none of them comes off the countdown, which a
     # group race starts at the server's time
     assert page.evaluate("cdT") > 3.9
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_heart_rate_reads_on_one_line_like_the_cadence(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate("() => { Sensors.hr = () => 142; settings.mode = 'free'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")  # the HUD is drawn every tenth of a second
+    beats, unit = (page.locator(s).bounding_box() for s in ("#vHR", "#uHR"))
+    assert beats and unit
+    # the unit beside the figure, not under it
+    assert unit["x"] >= beats["x"] + beats["width"] and unit["y"] < beats["y"] + beats["height"], (beats, unit)
