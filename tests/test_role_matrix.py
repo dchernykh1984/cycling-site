@@ -20,6 +20,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.utils import timezone, translation
 
+from accounts import roles
 from accounts.access import needs_email_confirmation
 from accounts.admin import UserAdmin
 from accounts.models import User
@@ -100,6 +101,17 @@ PLACES_HOME_ACCOUNTS = {
     "user admin: privileges":       "n       n     n         n         n       y       y",
     "teams in the admin":           "n       n     n         n         y       y       y",
     "API assistant on news":        "401     403   403       403       201     201     201",
+}
+
+PEOPLE_WITHOUT_ACCOUNTS = {
+    #                                visitor guest particip. organizer admin   owner   superuser
+    # how many people without accounts one may add (issue #438)
+    "limit":                        "-       0     10        1000      any     any     any",
+    # shown with the managing card, to whoever needs no address confirmed
+    "profile: their card":          "302     200:n 200:y     200:y     200:y   200:y   200:y",
+    "API: the word":                "401     403   204       204       204     204     204",
+    # and whether a person is added once the word is given
+    "API: add a person":            "401     403   200       200       200     200     200",
 }
 
 STATISTICS = {
@@ -371,6 +383,31 @@ def api_assistant_on_news(site, v):
     return str(v.post_json("/api/v1/assistant/conversations", {"kind": "news"}).status_code)
 
 
+# -- people without accounts -------------------------------------------------------------------------
+
+
+def people_limit(site, v):
+    if not v.user.is_authenticated:
+        return "-"
+    limit = roles.virtual_members_limit(v.user)
+    return "any" if limit is None else str(limit)
+
+
+def people_card(site, v):
+    page = v.browser.get("/en/accounts/profile/")
+    return _with(page, page.status_code == 200 and "virtual" in page.context)
+
+
+def api_people_word(site, v):
+    return str(v.post_json("/api/v1/virtual-members/consent", {}).status_code)
+
+
+def api_add_person(site, v):
+    v.post_json("/api/v1/virtual-members/consent", {})
+    person = {"last_name": "Kim", "first_name": "Dana", "gender": "F", "birth_date": "2012-03-04"}
+    return str(v.post_json("/api/v1/virtual-members/", {"people": [person]}).status_code)
+
+
 # -- statistics --------------------------------------------------------------------------------------
 
 
@@ -517,6 +554,17 @@ class RoleMatrixTests(TestCase):
                 "API assistant on news": api_assistant_on_news,
             },
             PLACES_HOME_ACCOUNTS,
+        )
+
+    def test_people_without_accounts(self):
+        self._check(
+            {
+                "limit": people_limit,
+                "profile: their card": people_card,
+                "API: the word": api_people_word,
+                "API: add a person": api_add_person,
+            },
+            PEOPLE_WITHOUT_ACCOUNTS,
         )
 
     def test_statistics(self):
