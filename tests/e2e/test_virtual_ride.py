@@ -475,3 +475,14 @@ def test_the_heart_rate_reads_on_one_line_like_the_cadence(page: Page, live_serv
     assert beats and unit
     # the unit beside the figure, not under it
     assert unit["x"] >= beats["x"] + beats["width"] and unit["y"] < beats["y"] + beats["height"], (beats, unit)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_cadence_plan_shows_its_first_step_during_the_countdown(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate("() => { settings.mode = 'plan'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")
+    first = page.evaluate("settings.plan.steps[0].cad")
+    expect(page.locator("#tVal")).to_have_text(str(first))
+    expect(page.locator("#plItems li.cur")).to_have_count(1)
