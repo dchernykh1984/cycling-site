@@ -13,11 +13,12 @@
   <form method="post" class="privacy-consent">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
-    <div class="form-check mb-3">
+    {% comment %}The box and its words are one label, in a row taking a tap across 44 px.{% endcomment %}
+    <label class="privacy-consent-pick mb-3" for="id_privacy">
       <input class="form-check-input{% if form.privacy.errors %} is-invalid{% endif %}" type="checkbox" name="privacy" id="id_privacy" required>
-      <label class="form-check-label" for="id_privacy">{{ form.privacy.label }}</label>
-      {% for error in form.privacy.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
-    </div>
+      {{ form.privacy.label }}
+    </label>
+    {% for error in form.privacy.errors %}<div class="text-danger small mb-3">{{ error }}</div>{% endfor %}
     <button type="submit" class="btn btn-primary">{% trans "Continue" %}</button>
   </form>
 </div>
