@@ -41,3 +41,18 @@ def test_the_box_can_be_seen_in_this_skin(page: Page, live_server, newcomer):
     box = page.locator(".privacy-consent .form-check-input")
     frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
     assert ratio(frame, drawn(box, "fill-beneath")) >= 3
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_on_the_sign_up_form_the_box_comes_first_takes_a_tap_and_can_be_seen(page: Page, live_server, lang):
+    page.set_viewport_size({"width": 360, "height": 800})
+    page.goto(f"{live_server.url}/{lang}/accounts/signup/")
+    box, words = page.locator("#id_privacy"), page.locator('label[for="id_privacy"]')
+    box_at, words_at = box.bounding_box(), words.bounding_box()
+    assert box_at and words_at
+    assert box_at["x"] < words_at["x"]
+    assert round(words_at["height"], 1) >= 44
+    assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
+    frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
+    assert ratio(frame, drawn(box, "fill-beneath")) >= 3
