@@ -109,6 +109,24 @@ def bound_form(competition, person, data, prefix=None) -> RegistrationForm:
     return form
 
 
+def _category_refusal(competition, form, category, gender, birth_date, relay_enabled) -> str:
+    """Why the entry cannot go into ``category``; empty when it can.
+
+    An event with categories puts every entry in one. The page for one asks it of the browser; a person
+    folded away on the page for several (issue #439), or entered through the API, is held to the same
+    here, and told when no category takes them at all. A relay is checked by gender alone: its birth
+    years span several age groups.
+    """
+    if category is None:
+        if not competition.registration_categories.filter(is_deleted=False).exists():
+            return ""
+        if relay_enabled or available_categories(competition, gender, birth_date):
+            return str(form.fields["category"].error_messages["required"])
+        return gettext("No open category of this event takes this gender and year of birth.")
+    fits = category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date)
+    return "" if category.is_open() and fits else gettext("This category is not available.")
+
+
 def register_one(competition, form, person, registered_by, relay=None) -> CompetitionRegistration | None:
     """Enter ``person`` from the valid ``form``, submitted by ``registered_by``.
 
@@ -150,13 +168,9 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             return None
 
         category = cleaned.get("category")
-        # For relay only check gender; birth years span multiple age groups
-        cat_ok = not category or (
-            category.is_open()
-            and (category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date))
-        )
-        if not cat_ok:
-            form.add_error("category", gettext("This category is not available."))
+        refusal = _category_refusal(competition, form, category, gender, birth_date, relay_enabled)
+        if refusal:
+            form.add_error("category", refusal)
             return None
 
         if not competition.is_registration_open():
