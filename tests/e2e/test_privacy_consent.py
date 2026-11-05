@@ -8,6 +8,25 @@ from accounts.models import User
 from tests.e2e.conftest import inject_session
 from tests.e2e.contrast import drawn, ratio
 
+# How far the link stands from the words beside it on the same line, in pixels: about a space when the
+# space is drawn, nothing when a row layout swallowed it. The words come before the link in Russian
+# and English, after it in Kazakh; on another line there is nothing to measure.
+SPACE_BESIDE_THE_LINK = """(label) => {
+  const link = label.querySelector('a'), lines = link.getClientRects(), range = document.createRange();
+  const before = link.previousSibling, after = link.nextSibling;
+  if (before && before.textContent.trim()) {
+    range.setStart(before, 0);
+    range.setEnd(before, before.textContent.replace(/\\s+$/, '').length);
+    const words = range.getClientRects(), last = words[words.length - 1], start = lines[0];
+    return Math.abs(last.top - start.top) > 2 ? 99 : start.left - last.right;
+  }
+  const lead = after.textContent.length - after.textContent.replace(/^\\s+/, '').length;
+  range.setStart(after, lead);
+  range.setEnd(after, after.textContent.length);
+  const first = range.getClientRects()[0], end = lines[lines.length - 1];
+  return Math.abs(first.top - end.top) > 2 ? 99 : first.left - end.right;
+}"""
+
 
 @pytest.fixture
 def newcomer(db):
@@ -52,6 +71,7 @@ def test_on_the_sign_up_form_the_box_comes_first_takes_a_tap_and_can_be_seen(pag
     box_at, words_at = box.bounding_box(), words.bounding_box()
     assert box_at and words_at
     assert box_at["x"] < words_at["x"]
+    assert words.evaluate(SPACE_BESIDE_THE_LINK) >= 2
     assert round(words_at["height"], 1) >= 44
     assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
     frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
