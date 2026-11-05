@@ -233,7 +233,6 @@ button{cursor:pointer}
   .ib{width:44px;height:44px}
 }
 @media (max-height:520px){ #board{display:none} }
-@media (prefers-reduced-motion: reduce){ #grade{transition:none} }
 
 /* ---------- HUD: the ride in one row on top, a big power figure, the step target, the plan on the left ---------- */
 /* centred between the plan's list on the left (12 + 236 px) and the map card on the right, with room on both sides */
@@ -340,3 +339,6 @@ button{cursor:pointer}
   #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 250px);font-size:18px;max-width:92%}
   #profile{height:52px}
 }
+
+/* last, so that no rule above brings an animation back for a reader who asked for less motion */
+@media (prefers-reduced-motion: reduce){ #grade, .rprog i{transition:none} }

@@ -511,3 +511,13 @@ def test_on_a_tablet_the_hud_s_blocks_keep_apart_in_a_cadence_plan(page: Page, l
     page.wait_for_function("phase === 'countdown'", polling=100)
     page.evaluate("drawFrame(200)")
     assert page.evaluate(_OVERLAPS) == []
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_hud_does_not_animate_for_a_reader_who_asked_for_less_motion(page: Page, live_server):
+    page.emulate_media(reduced_motion="reduce")
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    durations = page.evaluate(
+        "['#grade', '#vProg'].map(s => getComputedStyle(document.querySelector(s)).transitionDuration)"
+    )
+    assert durations == ["0s", "0s"]
