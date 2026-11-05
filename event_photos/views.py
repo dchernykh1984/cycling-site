@@ -179,6 +179,8 @@ def event_photos(request, pk):
             "declared_cards": declared_cards,
             "declare_form": _declare_form(request.user, competition, declared_cards),
             "added_people": _added_people(request.user, competition),
+            # the same field as the member's own bib's, under ids of its own beside it
+            "added_bib_form": DeclaredBibForm(auto_id="added-%s"),
             # The club's curated albums of this event are photo sources too, with their own rights.
             "gallery_albums": GalleryAlbum.objects.visible_to(request.user).filter(competition=competition),
             "meta_title": _("Photos: %(event)s") % {"event": competition.title},

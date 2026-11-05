@@ -3,6 +3,7 @@ many a member may add, what taking one off the site does to their entries, enter
 albums."""
 
 import datetime
+import re
 import uuid
 
 from django.test import TestCase
@@ -13,7 +14,7 @@ from accounts import roles, virtual_members
 from accounts.models import User, VirtualMember
 from calendar_app.models import CompetitionInvite
 from event_photos import actions
-from event_photos.models import DeclaredBib, IssuedBib
+from event_photos.models import BIB_MAX_LENGTH, DeclaredBib, IssuedBib
 from event_photos.permissions import can_mark, can_represent, can_see_registration, declared_bib_refusal
 from registrations.models import CompetitionRegistration
 from registrations.tests import make_category, make_open_competition, make_registration, make_user
@@ -205,6 +206,15 @@ class PhotoTests(EventPhotosTestCase):
         self.assertEqual(actions.declared_photos(declared).count(), 1)
         self._declare(self.kid.pk, "", action="remove")
         self.assertFalse(DeclaredBib.objects.exists())
+
+    def test_the_page_offers_a_bib_for_each_person_added_with_the_bib_fields_own_bounds(self):
+        self.client.force_login(self.coach)
+        with translation.override("en"):
+            page = self.client.get(reverse("event_photos:event", args=[self.race.pk]))
+        self.assertContains(page, f'<option value="{self.kid.pk}">Ivanova Dana</option>', html=True)
+        field = re.search(r'<input[^>]*id="added-bib"[^>]*>', page.content.decode())
+        self.assertIsNotNone(field)
+        self.assertIn(f'maxlength="{BIB_MAX_LENGTH}"', field.group(0))
 
     def test_nobody_names_a_bib_for_somebody_elses_person(self):
         response = self._declare(self.kid.pk, "7", user=self.stranger)
