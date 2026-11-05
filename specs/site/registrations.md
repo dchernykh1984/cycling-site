@@ -153,6 +153,10 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 - **FR-REG-007**: The organizer's manual add page and the edit page name every field and the
   gender choices in the page's language, as the registration page does
   (`registrations/tests.py::FormLabelsInThePageLanguageTests`).
+- **FR-REG-008**: An event with categories puts every entry in one. The page for one asks it of the
+  browser; `registering.register_one` refuses an entry without one whatever sent it -- a person
+  folded on the page for several, the API -- and says when no open category takes the person's
+  gender and birth (issue #439). An event without categories takes every entry without one.
 
 ## Key Entities
 
