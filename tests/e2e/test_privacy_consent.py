@@ -60,6 +60,10 @@ def test_the_box_can_be_seen_in_this_skin(page: Page, live_server, newcomer):
     box = page.locator(".privacy-consent .form-check-input")
     frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
     assert ratio(frame, drawn(box, "fill-beneath")) >= 3
+    words = page.locator(".privacy-consent-pick")
+    words_at = words.bounding_box()
+    assert words_at and round(words_at["height"], 1) >= 44
+    assert words.evaluate(SPACE_BESIDE_THE_LINK) >= 2
 
 
 @pytest.mark.django_db(transaction=True)

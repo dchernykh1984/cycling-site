@@ -812,7 +812,16 @@ main .event-photo-preview img { object-fit: contain; }
 }
 /* The privacy question at a provider's first sign-in (issue #438): its one box is the page's whole
    point, so it is drawn as the registration page draws its boxes, in the skin's secondary colour. */
+.privacy-consent-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+}
 .privacy-consent .form-check-input {
+    flex: none;
+    margin: 0;
     border-color: var(--bs-secondary-color);
 }
 /* The same question on the sign-up form, which allauth writes as a paragraph with the words before
