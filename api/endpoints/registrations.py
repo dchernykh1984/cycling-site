@@ -99,7 +99,7 @@ def _mine(user, member_ids, added_ids) -> Q:
 
 
 def _scope(user):
-    return managing.member_ids(user), set(virtual_members.of(user).values_list("pk", flat=True))
+    return managing.member_ids(user), virtual_members.ids(user)
 
 
 def _entry_out(user, entry, member_ids, added_ids) -> EntryOut:

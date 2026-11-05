@@ -174,11 +174,8 @@ class VirtualMemberForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         last, first, born = cleaned.get("last_name"), cleaned.get("first_name"), cleaned.get("birth_date")
-        if last and first and born:
-            same = virtual_members.key(last, first, born)
-            others = virtual_members.of(self.owner).filter(birth_date=born).exclude(pk=self.instance.pk)
-            if any(virtual_members.key(p.last_name, p.first_name, p.birth_date) == same for p in others):
-                raise forms.ValidationError(gettext("You have already added this person."))
+        if last and first and born and virtual_members.copy_of(self.owner, last, first, born, but=self.instance.pk):
+            raise forms.ValidationError(gettext("You have already added this person."))
         return cleaned
 
     def save(self, commit=True):
@@ -277,7 +274,7 @@ class ProfileView(TemplateView):
         from registrations.views import can_self_edit
 
         member_ids = managing.member_ids(user)
-        added_ids = set(virtual_members.of(user).values_list("pk", flat=True))
+        added_ids = virtual_members.ids(user)
         rows = list(
             CompetitionRegistration.objects.filter(
                 Q(user=user) | Q(user_id__in=member_ids) | Q(virtual_member_id__in=added_ids)

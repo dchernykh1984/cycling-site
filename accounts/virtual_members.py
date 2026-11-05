@@ -33,6 +33,22 @@ def of(owner):
     return VirtualMember.objects.filter(owner=owner)
 
 
+def ids(owner) -> set[int]:
+    """The ids of the people ``owner`` added -- one query, for pages that ask about many rows; none for
+    a visitor, as ``managing.member_ids`` answers."""
+    if not owner.is_authenticated:
+        return set()
+    return set(of(owner).values_list("pk", flat=True))
+
+
+def copy_of(owner, last_name: str, first_name: str, birth_date, but=None) -> bool:
+    """Whether ``owner`` added somebody with these names and date of birth already -- other than the
+    person ``but`` (an id), whom a change is being made to."""
+    same = key(last_name, first_name, birth_date)
+    others = of(owner).filter(birth_date=birth_date).exclude(pk=but)
+    return any(key(p.last_name, p.first_name, p.birth_date) == same for p in others)
+
+
 def room(owner) -> int | None:
     """How many more people ``owner`` may add: None for any number."""
     limit = roles.virtual_members_limit(owner)
