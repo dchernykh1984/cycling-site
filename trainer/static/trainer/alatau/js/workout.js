@@ -2,8 +2,9 @@
 /* ---- план во время заезда: подсказки и итоги (сам план выполняет заезд, js/ride.js) ---- */
 let planListIdx = -2; // the step the list on the left was last drawn for
 function updatePlanHUD(cad) {
-  if (!Work.active || Work.idx < 0) return;
-  const i = Work.idx, s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60, n = Work.steps.length;
+  if (!Work.active) return;
+  // during the countdown the first step, as Work.cur() gives it: the target and the list are there from the start
+  const i = Math.max(Work.idx, 0), s = Work.steps[i], nx = Work.steps[i + 1], left = Work.ends[i] - Work.t, dur = s.min * 60, n = Work.steps.length;
   const [ft, rt] = gearTeeth(s.f, s.r);
   // the step's target beside the power
   $('#tTitle').textContent = t('plan.holdOn', { g: gearLabel(s.f, s.r), teeth: ft + '×' + rt });
