@@ -16,7 +16,7 @@ against branch `438-virtual-members` on 2026-11-05
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`
-**Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
+**Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
 

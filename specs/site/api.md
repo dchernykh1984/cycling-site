@@ -85,7 +85,12 @@ and protocols with the event's upload token. The API has no language prefix.
    `transfer`, and the request that came through it), `POST /virtual-members/transfers/claim` asks
    through it (404 for a link not valid, run out or used, 409 for one's own person), and
    `POST /virtual-members/{id}/transfer/confirm` or `/reject` answers (404 when no request waits).
-12. **Given** entries for races ([registrations](registrations.md)), **Then** a confirmed member
+12. **Given** the ratings ([ratings](ratings.md), issue #436), **Then** a member lists the events they
+   may rate (`GET /ratings/pending`), rates one (`POST /ratings/events/{id}/review`) or refuses
+   (`.../decline`); anybody reads the organizers' ratings (`GET /ratings/organizers`); who edits an
+   event reads and writes its digest (`GET`/`POST /ratings/events/{id}/summary`); an owner marks the
+   agents' account (`/service-accounts/`).
+13. **Given** entries for races ([registrations](registrations.md)), **Then** a confirmed member
    enters themselves, the members they manage and the people they added (`POST /registrations/`,
    one answer per entry), lists those entries (`GET /registrations/`), and changes or cancels one
    (`PATCH`, `DELETE /registrations/{id}`) while registration is open: 404 for an event or an entry

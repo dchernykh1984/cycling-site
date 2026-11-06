@@ -16,11 +16,11 @@ content, legal pages), `search/`
 ## Overview
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
-pages exist, Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
+pages exist, Ratings ([ratings](ratings.md), right after Calendar), Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
 ([statistics](statistics.md)), Search, the skin chooser, the three language buttons, sign-in or the member's
 menu; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
 account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
-home page in its language), a banner of moderation tasks for moderators and one of requests waiting for a member's answer
+home page in its language), a banner of moderation tasks for moderators, one of requests waiting for a member's answer, one of the events they took part in to rate and, for the owners while none is marked, one asking to mark the agents' account ([ratings](ratings.md))
 ([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to
 report a bug. The menu's and the footer's links stay in the page's language: a Wagtail page (the
 home page, Map, Knowledge Base) is addressed under its own language's prefix
