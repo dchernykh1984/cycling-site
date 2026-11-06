@@ -5125,3 +5125,8 @@ msgstr "Спорттық жетістіктер"
 #: accounts/templates/accounts/profile_edit.html
 msgid "A sports rank or category, or the like"
 msgstr "Спорттық разряд/санат немесе баламалары"
+
+#: assistant/templatetags/assistant.py
+#, python-format
+msgid "The event's form takes only these files: %(formats)s."
+msgstr "Іс-шара формасы тек мына файлдарды қабылдайды: %(formats)s."
