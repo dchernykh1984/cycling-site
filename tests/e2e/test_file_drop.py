@@ -108,3 +108,23 @@ def test_the_mark_of_a_field_a_file_is_over_can_be_seen_in_this_skin(page: Page,
     zone.evaluate("el => el.classList.add('file-drop-over')")
     frame = drawn(zone, "colour:" + zone.evaluate("el => getComputedStyle(el).outlineColor"))
     assert ratio(frame, drawn(zone, "fill-beneath")) >= 3
+
+
+@pytest.mark.django_db(transaction=True)
+def test_on_a_phone_the_documents_heading_stands_above_its_first_field_as_the_fields_stand_apart(
+    page: Page, live_server, organizer
+):
+    """The hint is for a computer: hidden on a phone, it leaves the heading where it stood before it came."""
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    if _desktop(page):
+        pytest.skip("a computer shows the hint under the heading")
+    gap, spacing = page.evaluate(
+        """() => {
+      const heading = [...document.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Documents');
+      const first = document.getElementById('id_url_announcement').closest('.mb-3');
+      return [first.getBoundingClientRect().top - heading.getBoundingClientRect().bottom,
+              parseFloat(getComputedStyle(first).marginBottom)];
+    }"""
+    )
+    assert gap == pytest.approx(spacing, abs=0.5)
