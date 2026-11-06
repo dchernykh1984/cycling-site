@@ -2,10 +2,11 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21
-**Code**: `news/`, `knowledge/` (models, views, forms), `cycling_site/richtext.py`
+**Code**: `news/`, `knowledge/` (models, views, forms), `cycling_site/richtext.py`, `cycling_site/contents.py`
 **Tests**: `news/tests.py`, `knowledge/tests.py`, `tests/test_article_meta.py`,
 `tests/test_slug_ascii.py`, `tests/e2e/test_news_editor.py`, `tests/e2e/test_knowledge_editor.py`,
-`tests/e2e/test_article_measure.py`,
+`tests/e2e/test_article_measure.py`, `tests/test_article_contents.py`, `tests/e2e/test_article_contents.py`,
+`tests/e2e/test_article_pictures.py`,
 `tests/test_moderation_banner.py` (news submissions), `assistant/tests/test_chat.py` (the news chat)
 **Related**: [site shell](site-shell.md) (search), [search visibility](search-visibility.md) (feeds,
 sitemap), [API](api.md) (content endpoints); the `site-content` skill covers publishing on the live
@@ -31,6 +32,15 @@ member may submit a draft for review; members comment.
    own language as canonical and that language alone as `hreflang`: the other two are copies, not
    translations.
 3. **Given** search, **Then** news and knowledge articles are found by their text.
+4. **Given** an article or a news item, **Then** every `h2` and `h3` of its body is drawn with an
+   anchor made of its words (`section-` and the slug, Cyrillic kept; a repeat numbered), so a link
+   leads to a section and stops it below the sticky menu; a paragraph holding `[toc]` alone becomes
+   its contents -- links to the `h2`, their `h3` under them, titled in the page's language, each line
+   a 44px row on a phone. Nothing stored changes, a summary never reads the marker, and an article
+   without it shows no contents (maintainer, 2026-11-06).
+5. **Given** a picture floated beside the text, **Then** it sits beside it from 768px up and stands
+   alone, centred, as wide as its author made it and the column allows, below that; a section
+   starts below the pictures of the one before.
 
 ### Story 2 -- Write and manage (P1)
 
