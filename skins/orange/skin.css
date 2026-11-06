@@ -1152,3 +1152,8 @@ main h1.gallery-title::after { display: none; }
     .navbar .ubt-nav .nav-link .ubt-icon { display: none; }
     .navbar .ubt-nav .nav-link { padding: 0.5rem 0.55rem !important; font-size: 0.92rem; }
 }
+/* Eight sections since the ratings: from 1400px, with the icons, the links sit as close as below it, so
+   that the search stays on their line in Russian. */
+@media (min-width: 1400px) {
+    .navbar .ubt-nav .nav-link { padding: 0.5rem 0.6rem !important; }
+}
