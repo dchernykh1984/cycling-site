@@ -5237,3 +5237,7 @@ msgstr "<strong>Адамды тапсыру.</strong> Осылай қосылғ�
 #: accounts/transfers.py
 msgid "Add your first and last name to your profile first: whoever opens the link must see who hands the person over."
 msgstr "Алдымен профиліңізге атыңыз бен тегіңізді қосыңыз: сілтемені ашқан адам деректерді кім беретінін көруі керек."
+
+#: cycling_site/contents.py
+msgid "Contents"
+msgstr "Мазмұны"

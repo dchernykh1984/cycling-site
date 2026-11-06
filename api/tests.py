@@ -1280,7 +1280,7 @@ class NewsArticleCrudTest(TestCase, ApiTestMixin):
         # Detail page renders the rich HTML body unescaped.
         detail = self.client.get(in_language(f"/ru/news/articles/{pk}/", "en"), HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(detail.status_code, 200)
-        self.assertContains(detail, "<h2>Section</h2>")
+        self.assertContains(detail, '<h2 id="section-section">Section</h2>')  # with its anchor
         self.assertContains(detail, "Body text")
 
     def test_participant_cannot_create_article(self):

@@ -10,6 +10,8 @@ import re
 from django.utils.html import strip_tags
 from django.utils.text import Truncator
 
+from cycling_site.contents import without_marker
+
 # A data URI can be tens of thousands of characters and carries no words at all.
 _IMG = re.compile(r"<img[^>]*>", re.IGNORECASE)
 _WHITESPACE = re.compile(r"\s+")
@@ -22,7 +24,7 @@ def summarize(*sources: str | None, limit: int = MAX_DESCRIPTION_CHARS) -> str:
     for source in sources:
         if not source:
             continue
-        text = _WHITESPACE.sub(" ", strip_tags(_IMG.sub(" ", source))).strip()
+        text = _WHITESPACE.sub(" ", strip_tags(_IMG.sub(" ", without_marker(source)))).strip()
         if text:
             return Truncator(text).chars(limit, truncate="...")
     return ""

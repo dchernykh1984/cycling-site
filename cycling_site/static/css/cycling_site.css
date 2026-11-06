@@ -898,3 +898,40 @@ form p:has(> #id_privacy) > .helptext {
         display: none !important;
     }
 }
+
+/* An article's contents, where its text asks for them (cycling_site/contents.py): a box of links, one a
+   line, h3 under their h2. A line is a row to tap: 44px tall on a phone, closer together under a mouse. */
+.article-body .article-toc {
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0 1.5rem;
+}
+.article-body .article-toc-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.article-body .article-toc ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+.article-body .article-toc ul ul {
+    padding-left: 1.25rem;
+}
+.article-body .article-toc a {
+    display: block;
+    min-height: 2.75rem;
+    padding: 0.5rem 0;
+}
+@media (hover: hover) and (pointer: fine) {
+    .article-body .article-toc a {
+        min-height: 0;
+        padding: 0.15rem 0;
+    }
+}
+/* A heading the contents lead to stops below the sticky menu, not under it. */
+.article-body h2[id],
+.article-body h3[id] {
+    scroll-margin-top: 6rem;
+}
