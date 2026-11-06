@@ -26,8 +26,9 @@ def knowledge_index(db, wagtail_home_page):
 @pytest.mark.django_db(transaction=True)
 def test_a_line_of_the_contents_brings_its_section_into_view_below_the_menu(page: Page, live_server, knowledge_index):
     sections = "".join(f"<h2>Part {n}</h2>{PARAGRAPH}<h3>Detail {n}</h3>{PARAGRAPH}" for n in range(1, 6))
+    # Russian: its menu is the tallest, 180px in light and dark on a computer
     article = KnowledgeArticle.objects.create(
-        title="Contents", locale="en", body=f"<p>The lead.</p><p>[toc]</p>{sections}"
+        title="Contents", locale="ru", body=f"<p>The lead.</p><p>[toc]</p>{sections}"
     )
     page.goto(f"{live_server.url}{article.get_absolute_url()}")
     contents = page.locator("nav.article-toc")
@@ -43,6 +44,15 @@ def test_a_line_of_the_contents_brings_its_section_into_view_below_the_menu(page
     expect(page).to_have_url(re.compile(r"#section-detail-4$"))
     heading = page.locator("#section-detail-4")
     expect(heading).to_be_in_viewport()
+    _below_the_menu(page, heading)
+    # opened at the anchor, from a link elsewhere, the page lands there too
+    page.goto(f"{live_server.url}{article.get_absolute_url()}#section-part-5")
+    heading = page.locator("#section-part-5")
+    expect(heading).to_be_in_viewport()
+    _below_the_menu(page, heading)
+
+
+def _below_the_menu(page, heading):
     menu_bottom = page.locator("nav.navbar").evaluate("nav => nav.getBoundingClientRect().bottom")
     box = heading.bounding_box()
     assert box is not None

@@ -41,9 +41,11 @@ body > main {
 }
 
 /* Offset scrollIntoView and anchor jumps by the sticky navbar height so elements
-   never land hidden underneath it. Applied to the scroll container (viewport). */
+   never land hidden underneath it. Applied to the scroll container (viewport). The height is the
+   menu's as drawn -- skins and languages make it 65 to 180px on a computer --, measured by
+   static/js/cycling_site.js; 70px until it is. */
 html {
-    scroll-padding-top: 70px;
+    scroll-padding-top: calc(var(--sticky-menu-height, 70px) + 0.5rem);
 }
 
 /* Richtext content */
@@ -929,11 +931,6 @@ form p:has(> #id_privacy) > .helptext {
         min-height: 0;
         padding: 0.15rem 0;
     }
-}
-/* A heading the contents lead to stops below the sticky menu, not under it. */
-.article-body h2[id],
-.article-body h3[id] {
-    scroll-margin-top: 6rem;
 }
 
 /* A picture floated beside an article's text -- by the editor's alignment, or a style the API sent --

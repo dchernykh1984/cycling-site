@@ -250,3 +250,23 @@
         count();
     }
 }());
+
+(function () {
+    // The sticky menu's height as it is drawn, for the page's scroll padding (cycling_site.css, html):
+    // an anchor scrolled to stops below the menu, not behind it, in every skin and language.
+    var menu = document.querySelector('nav.navbar.sticky-top');
+    if (!menu) return;
+    var root = document.documentElement;
+    function measure() {
+        root.style.setProperty('--sticky-menu-height', menu.getBoundingClientRect().height + 'px');
+    }
+    measure();
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(menu);
+    else window.addEventListener('resize', measure);
+    // A page opened at an anchor was scrolled to it before the height was known: once more, now it is
+    if (location.hash.length > 1) {
+        var target = null;
+        try { target = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch (e) { /* a bad escape */ }
+        if (target) target.scrollIntoView();
+    }
+}());
