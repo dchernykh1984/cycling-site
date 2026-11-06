@@ -93,6 +93,24 @@ def _breaks(found):
     return [item for item in found if f"{skin}|{item}" not in KNOWN or (item.startswith(COLOURS) and not maintainers)]
 
 
+_FACES_OF_THE_HEADER = """
+async (selector) => {
+  const loads = [];
+  for (const el of document.querySelectorAll(selector.split(',').map(s => s + ', ' + s + ' *').join(','))) {
+    const texts = [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE);
+    const words = texts.map(node => node.textContent).join('');
+    if (!words.trim()) continue;
+    const style = getComputedStyle(el);
+    const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    loads.push(document.fonts.load(font, words));
+  }
+  await Promise.all(loads);
+  await document.fonts.ready;
+  await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+}
+"""
+
+
 def _open(page: Page, live_server, viewport, lang, tab, query=""):
     page.set_viewport_size(SIZES[viewport])
     page.goto(f"{live_server.url}/{lang}{TABS[tab]}{query}")
@@ -102,7 +120,10 @@ def _open(page: Page, live_server, viewport, lang, tab, query=""):
         expect(page.locator(".fc-view")).to_be_visible()
     page.wait_for_load_state("networkidle")
     # A skin's font arrives with font-display: swap; a label measured before it has the fallback's width.
-    page.evaluate("() => document.fonts.ready")
+    # document.fonts.ready alone is not enough: the period's words are written by the page's script, and
+    # a letter outside the font's first subset -- a Kazakh one, U+049A in November's name -- sends for its
+    # own subset, which may start after ready has settled. The header asks for the faces its words need.
+    page.evaluate(_FACES_OF_THE_HEADER, HEADER)
     # What the tests measure must be there: a header region gone would leave them measuring nothing,
     # and passing (#384).
     for region in ("#period-nav", "#period-hint", "#filter-chips"):
