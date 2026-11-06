@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}What the participants think of an event (issue #436), for the people who edit it: the figures and
+the digest the language model writes, both from a few reviews up, so that one person's score and words are
+never read alone. Nobody reads a review as it was written.{% endcomment %}
+
+{% block title %}{% trans "What the participants think" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center rating-summary">
+  <div class="col-lg-8">
+    <h1 class="h3 mb-2">{% trans "What the participants think" %}</h1>
+    <p class="mb-2"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a>, {{ competition.last_day|date:"d.m.Y" }}</p>
+    <p class="small text-muted">{% trans "Only the people who edit the event see this page. The reviews are anonymous, and nobody reads them as they were written: the language model sums them up." %}</p>
+    <p class="mb-2">{% blocktrans with count=figures.reviews %}Reviews: {{ count }}{% endblocktrans %}</p>
+    {% if figures.shown %}
+    <p class="fs-5 mb-1">{% trans "Average score" %}: <strong>{{ figures.average|floatformat:1 }}</strong></p>
+    <ul class="list-unstyled small rating-spread mb-4">
+      {% for value, count in figures.spread %}<li>{% blocktrans %}Score {{ value }}: {{ count }}{% endblocktrans %}</li>{% endfor %}
+    </ul>
+    <h2 class="h5">{% trans "Digest" %}</h2>
+    {% if summary %}
+    <div class="rating-digest mb-2">{{ summary.text|linebreaksbr }}</div>
+    <p class="small text-muted">{% blocktrans with count=summary.reviews %}Written from reviews: {{ count }}.{% endblocktrans %}</p>
+    {% endif %}
+    {% if outdated %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">{% if summary %}{% trans "Write the digest again" %}{% else %}{% trans "Write the digest" %}{% endif %}</button>
+    </form>
+    {% endif %}
+    {% else %}
+    <p>{% blocktrans with count=digest_from %}The figures and the digest show from {{ count }} reviews up, so that nobody's score is read alone.{% endblocktrans %}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

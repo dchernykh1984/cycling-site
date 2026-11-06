@@ -39,3 +39,24 @@ class Review(models.Model):
 
     def __str__(self) -> str:
         return f"review of c{self.competition_id}"
+
+
+class ReviewSummary(models.Model):
+    """The digest of an event's reviews the language model wrote, in one language, for the people who edit
+    the event; written again only once more reviews came than it was written from."""
+
+    competition = models.ForeignKey(
+        "calendar_app.Competition", on_delete=models.CASCADE, related_name="review_summaries"
+    )
+    language = models.CharField(max_length=8)
+    reviews = models.PositiveIntegerField()  # how many reviews it was written from
+    text = models.TextField()
+    written_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(fields=["competition", "language"], name="review_summary_per_language"),
+        ]
+
+    def __str__(self) -> str:
+        return f"digest of c{self.competition_id} ({self.language})"

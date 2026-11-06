@@ -5375,3 +5375,55 @@ msgstr[2] "%(counter)s мероприятий"
 #: ratings/templates/ratings/index.html
 msgid "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in."
 msgstr "Пока ни у одного организатора нет нужного числа оценок. Рейтинг заполнится, когда участники оценят мероприятия, в которых участвовали."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "What the participants think"
+msgstr "Что думают участники"
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>The digest of reviews.</strong> For the people who edit an event -- its author, the site's admins and owners --, the scores and the words of its reviews, shuffled and with nothing that names their authors, go to the language model provider the site's assistant uses, which sums them up. The site keeps that digest and shows it to them alone, from two reviews up."
+msgstr "<strong>Выжимка из отзывов.</strong> Для тех, кто правит мероприятие, — его автора, администраторов и владельцев сайта — оценки и тексты его отзывов, перемешанные и без всего, что называет авторов, уходят провайдеру языковой модели, которой пользуется ассистент сайта, и она составляет из них выжимку. Сайт хранит эту выжимку и показывает её только им, начиная с двух отзывов."
+
+#: ratings/templates/ratings/summary.html
+msgid "Only the people who edit the event see this page. The reviews are anonymous, and nobody reads them as they were written: the language model sums them up."
+msgstr "Эту страницу видят только те, кто правит мероприятие. Отзывы анонимные, и никто не читает их в том виде, в каком их написали: языковая модель составляет из них выжимку."
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Reviews: %(count)s"
+msgstr "Отзывов: %(count)s"
+
+#: ratings/templates/ratings/summary.html
+msgid "Average score"
+msgstr "Средняя оценка"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Score %(value)s: %(count)s"
+msgstr "Оценка %(value)s: %(count)s"
+
+#: ratings/templates/ratings/summary.html
+msgid "Digest"
+msgstr "Выжимка"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Written from reviews: %(count)s."
+msgstr "Составлена по отзывам: %(count)s."
+
+#: ratings/templates/ratings/summary.html
+msgid "Write the digest again"
+msgstr "Составить выжимку заново"
+
+#: ratings/templates/ratings/summary.html
+msgid "Write the digest"
+msgstr "Составить выжимку"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "The figures and the digest show from %(count)s reviews up, so that nobody's score is read alone."
+msgstr "Цифры и выжимка появляются, когда отзывов не меньше %(count)s: так ничью оценку нельзя прочитать отдельно."
+
+#: ratings/views.py
+msgid "The digest could not be written now: the language model did not answer. Try again later."
+msgstr "Выжимку сейчас составить не удалось: языковая модель не ответила. Попробуйте позже."
