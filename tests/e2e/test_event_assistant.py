@@ -129,7 +129,7 @@ def test_the_chat_fills_the_form_and_saving_links_it(page: Page, live_server, pe
     expect(page.locator("#assistant-text")).to_have_value("")
     # On a phone the open chat covers the form's button: it is hidden first, as a person would.
     page.click("#assistant-hide")
-    page.locator("form button[type='submit']", has_text="Submit").click()
+    page.locator("form button[type='submit']", has_text="Save").click()
     page.wait_for_url(re.compile(r"/calendar/list/"))
     event = Competition.objects.get(title_en="Coffee ride")
     assert event.submitted_by == author
@@ -308,7 +308,7 @@ def test_a_refused_form_comes_back_with_its_conversation(page: Page, live_server
     # No date: the server refuses the form, which the browser would otherwise stop before sending.
     page.evaluate("document.getElementById('id_date_start').form.noValidate = true")
     page.click("#assistant-hide")
-    page.locator("form button[type='submit']", has_text="Submit").click()
+    page.locator("form button[type='submit']", has_text="Save").click()
     expect(page.locator("#id_title_en")).to_have_value("Coffee")
     page.click("#assistant-toggle")
     said = page.locator("#assistant-log .assistant-msg")

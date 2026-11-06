@@ -200,8 +200,10 @@
       </div>
       {% endif %}
 
+      {% comment %}The button says what happens to the event: an organizer's is published as it is saved,
+      anybody else's waits for a moderator.{% endcomment %}
       <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
+        <button type="submit" class="btn btn-primary">{% if is_organizer_plus %}{% trans "Save" %}{% else %}{% trans "Submit for review" %}{% endif %}</button>
         <a href="{% url 'calendar_list' %}" class="btn btn-outline-secondary">{% trans "Cancel" %}</a>
       </div>
     </form>
