@@ -239,7 +239,9 @@ inside a form is not HTML.
   if (cfg.attach) window.fileDrop(panel, function (files) { take(files[0]); });
   else document.getElementById('assistant-drop-hint').hidden = true;
   function take(file) {
-    if (!file || busy) return;
+    if (!file) return;
+    // the button waits for the reply; a file dragged in meanwhile would have no turn to go with either
+    if (busy) { say('assistant', words.wait, 'note'); return; }
     var ext = file.name.toLowerCase().split('.').pop();
     var kind = cfg.trackExtensions.indexOf(ext) >= 0 ? 'route' : (cfg.documentExtensions.indexOf(ext) >= 0 ? 'regulations' : '');
     if (!kind) { say('assistant', words.wrongFile, 'note'); return; }
@@ -251,6 +253,8 @@ inside a form is not HTML.
     var item = { kind: kind, name: file.name, start: null };
     var ready = Promise.resolve();
     if (kind === 'route') {
+      // nothing else is taken while the track's start is read for the turn it goes with
+      busy = true; send.disabled = true; attach.disabled = true;
       var data = new FormData();
       data.append('file', file);
       ready = request(cfg.trackStart, data, false).then(function (p) { item.start = [p.lat, p.lng]; }, function () {});
