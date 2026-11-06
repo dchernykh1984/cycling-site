@@ -119,6 +119,7 @@ def test_on_a_phone_every_control_takes_a_tap_and_nothing_scrolls_sideways(
         (owner, "/calendar/", ".service-account-missing .btn"),
         (owner, "/accounts/profile/", ".service-accounts .btn, .service-account-pick"),
         (organizer, f"/ratings/events/{event.pk}/summary/", ".rating-summary .btn"),
+        (organizer, "/ratings/", ".own-digests .list-group-item"),
     ):
         _sign_in(page, live_server, user)
         page.goto(f"{live_server.url}/{lang}{path}")
@@ -171,3 +172,24 @@ def test_the_chosen_score_stands_out_from_the_others_in_this_skin(page: Page, li
     frame = ratio(_frame(chosen) or drawn(chosen, "fill"), _frame(other) or drawn(other, "fill"))
     assert max(fill, frame) >= 3, f"fill {fill:.2f}, frame {frame:.2f}"
     assert legibility(chosen) >= 4.5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_organizers_own_events_under_the_ratings_read_in_this_skin(page: Page, live_server, organizer, rider):
+    """Each of the organizer's events under the ratings reads 4.5:1, at rest, under the pointer and in focus."""
+    event = _took_part(organizer, rider)
+    for score in (4, 5):
+        Review.objects.create(competition=event, form=form.VERSION, answers={form.RATED: score})
+    _sign_in(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/ratings/")
+    page.add_style_tag(content=NO_FADES)
+    rows = page.locator(".own-digests .list-group-item")
+    expect(rows).to_have_count(1)
+    shortfalls = []
+    for state in ("rest", "hover", "focus"):
+        _in_state(page, rows.first, state)
+        for part in rows.first.locator("span").all():
+            value = legibility(part)
+            if value < (3 if is_large(part) else 4.5):
+                shortfalls.append(f"{part.inner_text()!r} ({state}): {value:.2f}")
+    assert not shortfalls, shortfalls

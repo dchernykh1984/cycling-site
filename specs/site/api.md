@@ -88,7 +88,8 @@ and protocols with the event's upload token. The API has no language prefix.
 12. **Given** the ratings ([ratings](ratings.md), issue #436), **Then** a member lists the events they
    may rate (`GET /ratings/pending`), rates one (`POST /ratings/events/{id}/review`) or refuses
    (`.../decline`); anybody reads the organizers' ratings (`GET /ratings/organizers`); who edits an
-   event reads and writes its digest (`GET`/`POST /ratings/events/{id}/summary`); an owner marks the
+   event reads and writes its digest (`GET`/`POST /ratings/events/{id}/summary`) and lists their own
+   events with reviews enough for one (`GET /ratings/mine`); an owner marks the
    agents' account (`/service-accounts/`).
 13. **Given** entries for races ([registrations](registrations.md)), **Then** a confirmed member
    enters themselves, the members they manage and the people they added (`POST /registrations/`,

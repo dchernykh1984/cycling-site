@@ -125,3 +125,53 @@ class DigestTests(TestCase):
         self.assertEqual((written["digest"], written["digest_reviews"]), ("- Fine", 2))
         Review.objects.filter(competition=self.event).first().delete()
         self.assertEqual(self.client.post(url, **auth).status_code, HTTPStatus.CONFLICT)
+
+
+class OwnDigestsTests(TestCase):
+    """Under the organizers' ratings, the reader's own events with reviews enough for a digest: what the
+    participants think is found without remembering every event one posted. Only one's own, whatever the
+    role: an admin edits every event, and a list of all of them would bury their own."""
+
+    def setUp(self):
+        self.organizer = make_user("org", role=User.Role.ORGANIZER)
+        self.ready = make_competition(title="Duathlon", submitted_by=self.organizer)
+        _reviewed(self.ready, (4, "A"), (5, "B"))
+        self.single = make_competition(title="Night run", submitted_by=self.organizer)
+        _reviewed(self.single, (3, "C"))
+        other = make_user("other", role=User.Role.ORGANIZER)
+        _reviewed(make_competition(title="Somebody else's race", submitted_by=other), (5, "D"), (5, "E"))
+        self.page = _url("ratings:index")
+
+    def test_an_organizer_finds_under_the_ratings_their_events_with_reviews_enough_for_a_digest(self):
+        self.client.force_login(self.organizer)
+        page = self.client.get(self.page).content.decode()
+        self.assertIn(_url("ratings:summary", pk=self.ready.pk), page)
+        self.assertNotIn(_url("ratings:summary", pk=self.single.pk), page)  # one review: nothing to sum up
+        self.assertNotIn("Somebody else", page)
+        self.assertLess(page.index("organizer-ratings"), page.index("own-digests"))  # under the ratings
+
+    def test_admins_and_owners_get_only_their_own_events_there_and_nobody_else_any(self):
+        for role in (User.Role.ADMIN, User.Role.OWNER, User.Role.PARTICIPANT):
+            with self.subTest(role):
+                self.client.force_login(make_user(f"m-{role}", role=role))
+                self.assertNotContains(self.client.get(self.page), "own-digests")
+        self.client.logout()
+        self.assertNotContains(self.client.get(self.page), "own-digests")
+
+    def test_each_says_whether_its_digest_is_still_to_be_written(self):
+        self.client.force_login(self.organizer)
+        self.assertContains(self.client.get(self.page), "No digest yet")
+        with mock.patch("assistant.llm.complete", return_value={"summary": "- Fine"}):
+            self.client.post(_url("ratings:summary", pk=self.ready.pk))
+        page = self.client.get(self.page)
+        self.assertNotContains(page, "No digest yet")
+        self.assertNotContains(page, "New reviews since the digest")
+        _reviewed(self.ready, (2, "F"))
+        self.assertContains(self.client.get(self.page), "New reviews since the digest")
+
+    def test_through_the_api_as_on_the_page(self):
+        rows = self.client.get("/api/v1/ratings/mine?language=en", **_bearer(self.organizer)).json()
+        self.assertEqual(
+            [(row["competition_id"], row["reviews"], row["digest_reviews"]) for row in rows], [(self.ready.pk, 2, None)]
+        )
+        self.assertEqual(self.client.get("/api/v1/ratings/mine", **_bearer(make_user("rider"))).json(), [])

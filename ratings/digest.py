@@ -10,9 +10,12 @@ import json
 import random
 
 from django.conf import settings
+from django.db.models import Count
+from django.db.models.functions import Coalesce
 from django.utils.translation import get_language
 
 from assistant import llm
+from calendar_app.models import Competition
 from ratings import form
 from ratings.models import Review, ReviewSummary
 
@@ -50,6 +53,26 @@ def figures(competition) -> dict:
 def language_code() -> str:
     code = (get_language() or settings.LANGUAGE_CODE).split("-")[0]
     return code if code in _LANGUAGE_NAMES else settings.LANGUAGE_CODE
+
+
+def of_author(user) -> list[dict]:
+    """The events ``user`` posted with DIGEST_FROM reviews or more, the latest first: each with its number of
+    reviews and how many the digest in the page's language was written from (None while there is none).
+    Only one's own, whatever the role: an admin may edit any event, and all of them would bury their own."""
+    if not getattr(user, "is_authenticated", False):
+        return []
+    events = list(
+        Competition.objects.filter(submitted_by=user, is_deleted=False)
+        .annotate(review_count=Count("reviews"))
+        .filter(review_count__gte=DIGEST_FROM)
+        .order_by(Coalesce("date_end", "date_start").desc(), "-pk")
+    )
+    written = dict(
+        ReviewSummary.objects.filter(competition__in=events, language=language_code()).values_list(
+            "competition_id", "reviews"
+        )
+    )
+    return [{"competition": event, "reviews": event.review_count, "written": written.get(event.pk)} for event in events]
 
 
 def kept(competition) -> ReviewSummary | None:

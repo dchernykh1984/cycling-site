@@ -83,7 +83,12 @@ class RatingsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(
-            organizers=scores.organizers(), public_from=scores.PUBLIC_FROM, meta_title=gettext("Ratings"), **kwargs
+            organizers=scores.organizers(),
+            public_from=scores.PUBLIC_FROM,
+            own_digests=digest.of_author(self.request.user),
+            digest_from=digest.DIGEST_FROM,
+            meta_title=gettext("Ratings"),
+            **kwargs,
         )
 
 

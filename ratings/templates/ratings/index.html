@@ -26,5 +26,21 @@ list.{% endcomment %}
   {% else %}
   <p>{% trans "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in." %}</p>
   {% endif %}
+  {% comment %}Under the ratings, for whoever posted events with reviews enough for a digest: their own, whatever
+  their role, each opening what its participants think, so that nobody has to remember every event they ran.{% endcomment %}
+  {% if own_digests %}
+  <section class="mt-5 own-digests" aria-labelledby="own-digests-title">
+    <h2 class="h5" id="own-digests-title">{% trans "Your events: what the participants think" %}</h2>
+    <p class="text-muted small">{% blocktrans count counter=digest_from %}Your events with {{ counter }} review or more: open one to read or write its digest.{% plural %}Your events with {{ counter }} reviews or more: open one to read or write its digest.{% endblocktrans %}</p>
+    <div class="list-group">
+      {% for row in own_digests %}
+      <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start flex-wrap gap-2" href="{% url 'ratings:summary' row.competition.pk %}">
+        <span><span class="fw-semibold">{{ row.competition.title }}</span> <span class="small text-nowrap">{{ row.competition.last_day|date:"d.m.Y" }}</span></span>
+        <span class="small">{% blocktrans with count=row.reviews %}Reviews: {{ count }}{% endblocktrans %}{% if row.written is None %}, {% trans "No digest yet" %}{% elif row.written < row.reviews %}, {% trans "New reviews since the digest" %}{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}

@@ -64,6 +64,10 @@ Nothing keeps who wrote a review.
    that does not answer leaves a message and nothing kept.
 3. **Given** the API, **Then** `GET` and `POST /ratings/events/{id}/summary?language=` give and write
    it (403 for anyone else, 409 below two reviews, 503 when the model does not answer).
+4. **Given** a member who posted events with two reviews or more, **Then** under the organizers'
+   ratings the Ratings tab lists those events, the latest first, each with its number of reviews, a
+   note when it has no digest yet or reviews came since, and a link to what its participants think;
+   only one's own events, whatever the role. `GET /ratings/mine?language=` gives the same list.
 
 ### Story 4 -- The agents' account (P2)
 

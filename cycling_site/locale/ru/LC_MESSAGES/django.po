@@ -5427,3 +5427,23 @@ msgstr "Цифры и выжимка появляются, когда отзыв
 #: ratings/views.py
 msgid "The digest could not be written now: the language model did not answer. Try again later."
 msgstr "Выжимку сейчас составить не удалось: языковая модель не ответила. Попробуйте позже."
+
+#: ratings/templates/ratings/index.html
+msgid "Your events: what the participants think"
+msgstr "Ваши мероприятия: что думают участники"
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "Your events with %(counter)s review or more: open one to read or write its digest."
+msgid_plural "Your events with %(counter)s reviews or more: open one to read or write its digest."
+msgstr[0] "Ваши мероприятия, у которых %(counter)s отзыв и больше: откройте мероприятие, чтобы прочитать или составить выжимку."
+msgstr[1] "Ваши мероприятия, у которых %(counter)s отзыва и больше: откройте мероприятие, чтобы прочитать или составить выжимку."
+msgstr[2] "Ваши мероприятия, у которых %(counter)s отзывов и больше: откройте мероприятие, чтобы прочитать или составить выжимку."
+
+#: ratings/templates/ratings/index.html
+msgid "No digest yet"
+msgstr "Выжимки ещё нет"
+
+#: ratings/templates/ratings/index.html
+msgid "New reviews since the digest"
+msgstr "После выжимки пришли новые отзывы"
