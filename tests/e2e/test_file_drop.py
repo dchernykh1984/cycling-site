@@ -149,3 +149,29 @@ def test_a_file_dropped_while_the_assistant_answers_is_left_out_and_the_chat_ask
     assert page.evaluate(DROP, ["#assistant-panel", None, "rules.pdf", "application/pdf"])
     expect(page.locator("#assistant-log")).to_contain_text("Wait for the assistant's reply, then attach the file.")
     assert page.eval_on_selector("#id_file_regulations", "i => i.files.length") == 0
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_the_chats_hint_to_drag_takes_one_line_and_leaves_every_button_whole(
+    page: Page, live_server, admin_user, chat_on, lang
+):
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/{lang}/calendar/submit/")
+    if not _desktop(page):
+        pytest.skip("a phone has nothing to drag")
+    page.click("#assistant-toggle")
+    lines, whole = page.evaluate(
+        """() => {
+      const hint = document.getElementById('assistant-drop-hint'), panel = document.getElementById('assistant-panel');
+      const edge = panel.getBoundingClientRect();
+      const inside = b => {
+        const box = b.getBoundingClientRect();
+        return box.left >= edge.left - 0.5 && box.right <= edge.right + 0.5;
+      };
+      return [Math.round(hint.getBoundingClientRect().height / parseFloat(getComputedStyle(hint).lineHeight)),
+              [...panel.querySelectorAll('button')].every(inside)];
+    }"""
+    )
+    assert lines == 1
+    assert whole

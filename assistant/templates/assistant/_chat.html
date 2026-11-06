@@ -20,11 +20,11 @@ inside a form is not HTML.
     <textarea class="form-control" id="assistant-text" rows="2" maxlength="10000"
               placeholder="{% trans 'Write to the assistant' %}"></textarea>
     <input type="file" id="assistant-file" accept="{{ accept }}" hidden>
-    <div class="d-flex gap-2 mt-2 align-items-center">
+    <div class="d-flex gap-2 mt-2">
       <button type="button" class="btn btn-outline-secondary" id="assistant-attach">{% trans "Attach a file" %}</button>
-      <span class="small text-muted file-drop-hint" id="assistant-drop-hint">{% trans "or drag it here" %}</span>
       <button type="submit" class="btn btn-primary ms-auto" id="assistant-send">{% trans "Send" %}</button>
     </div>
+    <p class="small text-muted file-drop-hint mt-1 mb-0" id="assistant-drop-hint">{% trans "A file can also be dragged here." %}</p>
   </form>
 </section>
 {% include "_file_drop_js.html" %}
