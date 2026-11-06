@@ -52,3 +52,25 @@ def test_the_account_menu_stays_on_screen(page: Page, live_server, wagtail_home_
     box = account.bounding_box()
     assert box is not None and box["x"] + box["width"] <= width, box
     assert page.evaluate("document.documentElement.scrollWidth") <= width
+
+
+@pytest.mark.parametrize("width", [1200, 1400])
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+@pytest.mark.django_db(transaction=True)
+def test_a_members_sections_stay_on_one_line(page: Page, live_server, wagtail_home_page, lang, width):
+    """Every section and the search on one line on a desktop, in every language, for a member: an owner's
+    Statistics is one more, and in Russian it folds them already."""
+    if settings.DEFAULT_SKIN in KNOWN_OVERFLOW:
+        pytest.skip(f"the {settings.DEFAULT_SKIN} navbar is kept as it is")
+    member = User.objects.create_user(
+        username="navbar.line.check@example.com", email="navbar.line.check@example.com", role=User.Role.PARTICIPANT
+    )
+    _full_menu()
+    page.set_viewport_size({"width": width, "height": 900})
+    inject_session(page, live_server, member)
+    page.goto(f"{live_server.url}/{lang}/calendar/")
+    tops = page.evaluate(
+        "[...document.querySelector('nav.navbar .navbar-nav').children]"
+        ".map(item => Math.round(item.getBoundingClientRect().top))"
+    )
+    assert len(set(tops)) == 1, tops
