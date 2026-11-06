@@ -824,20 +824,32 @@ main .event-photo-preview img { object-fit: contain; }
     margin: 0;
     border-color: var(--bs-secondary-color);
 }
+/* What saying no means stands under the words, in line with them. */
+.privacy-consent-hint {
+    margin-left: calc(1em + 0.5rem);
+}
 /* The same question on the sign-up form, which allauth writes as a paragraph with the words before
-   the box: the box comes first, drawn the same way, and the words answer a tap across 44 px. */
+   the box and the hint after it: the box comes first, drawn the same way, the words answer a tap
+   across 44 px, and the hint goes under them. */
 form p:has(> #id_privacy) {
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 0.5rem;
+    column-gap: 0.5rem;
+}
+form p:has(> #id_privacy) > #id_privacy {
+    grid-area: 1 / 1;
 }
 form p:has(> #id_privacy) > label {
+    grid-area: 1 / 2;
     display: flex;
     align-items: center;
     min-height: 2.75rem;
     margin: 0;
+}
+form p:has(> #id_privacy) > .helptext {
+    grid-area: 2 / 2;
+    font-size: 0.875em;
 }
 #id_privacy {
     flex: none;

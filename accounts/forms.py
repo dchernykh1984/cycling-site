@@ -16,6 +16,8 @@ def _privacy_field() -> forms.BooleanField:
     return forms.BooleanField(
         required=True,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        # Under the box, as sign-up forms say it: no yes, no account (the maintainer, 2026-11-06)
+        help_text=gettext("Without agreeing to the privacy policy you cannot sign up."),
         label_suffix="",
         # In one element, so that a label laid out as a row keeps the space before the link
         label=format_html(

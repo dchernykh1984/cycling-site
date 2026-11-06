@@ -42,12 +42,14 @@ once; confirming the address unlocks everything that writes.
 5. **Given** a guest asks for the confirmation again, **Then** one mail goes out at most once a
    minute; a failed send frees the slot again.
 6. **Given** a visitor signs up with an e-mail (issue #438), **Then** the form asks last "I agree
-   with the privacy policy", the policy opening in a tab of its own; without the tick no account is
-   made, and with it the account keeps when it was given (`privacy_accepted_at`).
+   with the privacy policy", the policy opening in a tab of its own, and says under the box that
+   without the yes there is no signing up; without the tick no account is made, and with it the
+   account keeps when it was given (`privacy_accepted_at`).
 7. **Given** a provider makes a new account, **Then** no form asked the question, so its first
-   sign-in opens a page asking it before any other page (`accounts.middleware`), and the page asked
-   for opens after the answer; the policy, the terms, signing out, the API, the admin and files stay
-   open meanwhile. Members from before the question are never asked.
+   sign-in opens a page asking it, with the same line under the box, before any other page
+   (`accounts.middleware`), and the page asked for opens after the answer; the policy, the terms,
+   signing out, the API, the admin and files stay open meanwhile. Whoever does not agree goes no
+   further; the page offers no other way. Members from before the question are never asked.
 
 ### Story 2 -- Keep the data registration needs (P1)
 

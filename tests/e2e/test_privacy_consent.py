@@ -28,6 +28,15 @@ SPACE_BESIDE_THE_LINK = """(label) => {
 }"""
 
 
+def _hint_under_the_words(hint, words):
+    """What saying no means stands under the question's words, starting where they start."""
+    expect(hint).to_be_visible()
+    hint_at, words_at = hint.bounding_box(), words.bounding_box()
+    assert hint_at and words_at
+    assert hint_at["y"] >= words_at["y"] + words_at["height"] - 1, (hint_at, words_at)
+    assert abs(hint_at["x"] - words_at["x"]) <= 2, (hint_at, words_at)
+
+
 @pytest.fixture
 def newcomer(db):
     user = User.objects.create_user(
@@ -64,6 +73,7 @@ def test_the_box_can_be_seen_in_this_skin(page: Page, live_server, newcomer):
     words_at = words.bounding_box()
     assert words_at and round(words_at["height"], 1) >= 44
     assert words.evaluate(SPACE_BESIDE_THE_LINK) >= 2
+    _hint_under_the_words(page.locator("#id_privacy_helptext"), words.locator("span").first)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -77,6 +87,7 @@ def test_on_the_sign_up_form_the_box_comes_first_takes_a_tap_and_can_be_seen(pag
     assert box_at["x"] < words_at["x"]
     assert words.evaluate(SPACE_BESIDE_THE_LINK) >= 2
     assert round(words_at["height"], 1) >= 44
+    _hint_under_the_words(page.locator("#id_privacy_helptext"), words.locator("span").first)
     assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth")
     frame = drawn(box, "colour:" + box.evaluate("el => getComputedStyle(el).borderTopColor"))
     assert ratio(frame, drawn(box, "fill-beneath")) >= 3

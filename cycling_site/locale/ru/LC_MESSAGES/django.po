@@ -5127,3 +5127,7 @@ msgstr "В стартовом протоколе у этого человека 
 #: registrations/registering.py
 msgid "No open category of this event takes this gender and year of birth."
 msgstr "Ни одна открытая категория этого старта не принимает этот пол и год рождения."
+
+#: accounts/forms.py
+msgid "Without agreeing to the privacy policy you cannot sign up."
+msgstr "Без согласия с политикой конфиденциальности регистрация невозможна."

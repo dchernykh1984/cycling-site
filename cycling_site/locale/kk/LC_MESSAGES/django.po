@@ -5124,3 +5124,7 @@ msgstr "Старт хаттамасында бұл адамның осы жар�
 #: registrations/registering.py
 msgid "No open category of this event takes this gender and year of birth."
 msgstr "Бұл жарыстың ашық санаттарының ешқайсысы осы жыныс пен туған жылды қабылдамайды."
+
+#: accounts/forms.py
+msgid "Without agreeing to the privacy policy you cannot sign up."
+msgstr "Құпиялылық саясатымен келіспей тіркелу мүмкін емес."
