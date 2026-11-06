@@ -884,3 +884,16 @@ form p:has(> #id_privacy) > .helptext {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* A file dragged over the block that takes it, on a computer; a phone, which has nothing to drag, is not
+   told it may (cycling_site/templates/_file_drop_js.html). */
+.file-drop-over {
+    outline: 2px dashed var(--bs-primary);
+    outline-offset: 4px;
+    border-radius: var(--bs-border-radius);
+}
+@media (hover: none), (pointer: coarse) {
+    .file-drop-hint {
+        display: none !important;
+    }
+}

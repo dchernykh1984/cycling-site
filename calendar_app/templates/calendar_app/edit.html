@@ -118,7 +118,8 @@
       {% endif %}
 
       <hr class="my-4">
-      <h2 class="mb-3 h5">{% trans "Documents" %}</h2>
+      <h2 class="mb-1 h5">{% trans "Documents" %}</h2>
+      <p class="form-text mt-0 mb-3 file-drop-hint">{% trans "A file can also be dragged onto its field." %}</p>
 
       <div class="mb-3">
         <label class="form-label fw-semibold">{% trans "Announcement" %}</label>
@@ -277,6 +278,14 @@
 {% assistant_chat %}
 {% endblock %}
 {% block extra_js %}{{ block.super }}
+{% include "_file_drop_js.html" %}
+<script>
+// on a computer a file may be dragged onto its field's block, and is taken as one picked by its button
+['id_file_announcement', 'id_file_route', 'id_file_regulations', 'id_file_results', 'id_preview_image'].forEach(function (id) {
+  var input = document.getElementById(id);
+  if (input) window.fileDropInto(input, input.closest('.mb-3'));
+});
+</script>
 {{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
 {{ form.description_kk.value|default:""|json_script:"init-desc-kk" }}
 {{ form.description_en.value|default:""|json_script:"init-desc-en" }}
