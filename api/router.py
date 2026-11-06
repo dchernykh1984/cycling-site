@@ -70,6 +70,7 @@ def _register_routers() -> None:
     from api.endpoints.participants import router as participants_router
     from api.endpoints.protocols import router as protocols_router
     from api.endpoints.registrations import router as registrations_router
+    from api.endpoints.service_accounts import router as service_accounts_router
     from api.endpoints.start_list import router as start_list_router
     from api.endpoints.stats import router as stats_router
     from api.endpoints.timings import (
@@ -103,6 +104,7 @@ def _register_routers() -> None:
     api.add_router("/registrations/", registrations_router)
     api.add_router("/assistant/", assistant_router)
     api.add_router("/stats/", stats_router)
+    api.add_router("/service-accounts/", service_accounts_router)
 
 
 _register_routers()

@@ -49,6 +49,7 @@ urlpatterns = [
     ),
     # People without accounts the member enters for starts (issue #438)
     path("virtual-members/consent/", views.VirtualMembersConsentView.as_view(), name="account_virtual_consent"),
+    path("service-accounts/", views.ServiceAccountsView.as_view(), name="account_service_accounts"),
     path("virtual-members/add/", views.VirtualMemberAddView.as_view(), name="account_virtual_add"),
     path("virtual-members/<int:pk>/edit/", views.VirtualMemberEditView.as_view(), name="account_virtual_edit"),
     path("virtual-members/<int:pk>/delete/", views.VirtualMemberDeleteView.as_view(), name="account_virtual_delete"),

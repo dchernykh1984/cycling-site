@@ -115,6 +115,19 @@ def managing_waiting(request):
     return {"managing_waiting": count}
 
 
+def service_account_missing(request):
+    """Asks the owners, on every page, to mark the account the site's agents post through while none is
+    (issue #436): until then the agents' events would count as somebody's work in the organizers' ratings."""
+    user = getattr(request, "user", None)
+    if user is None:
+        return {}
+    from accounts import roles, service_accounts
+
+    if not roles.at_least(user, roles.MARK_SERVICE_ACCOUNTS):
+        return {}
+    return {"service_account_missing": not service_accounts.marked().exists()}
+
+
 def _knowledge_index_url() -> str:
     """URL of the knowledge index page (where pending article submissions surface for review)."""
     from knowledge.models import KnowledgeIndexPage

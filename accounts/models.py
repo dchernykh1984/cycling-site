@@ -73,6 +73,9 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     strava_link = models.URLField(max_length=100, blank=True, default="")
     # A sports rank or category, or the like, in the member's own words; no registration form takes it
     sports_achievements = models.CharField(max_length=200, blank=True, default="")
+    # The account the site's own agents post through (issue #436), marked by an owner: what it posts is
+    # nobody's work to judge -- its events carry no organizer's rating
+    is_service_account = models.BooleanField(default=False)
     # Saved calendar-filter preferences: exactly the same three filter dimensions the calendar uses,
     # so an opened calendar/list/map defaults to what this user cares about (issue #229). Left empty
     # for everyone by default -- the user opts in from their profile; the free-text ``city`` above is

@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -21,7 +21,7 @@ from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import FormView, TemplateView
 
-from accounts import managing, roles, transfers, virtual_members
+from accounts import managing, roles, service_accounts, transfers, virtual_members
 from accounts.access import (
     EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
     ParticipantRequiredMixin,
@@ -253,6 +253,8 @@ class ProfileView(TemplateView):
             context["virtual_ride"] = profile_context(user)
             context["managing"] = _managing_context(self.request, user)
             context["virtual"] = _virtual_context(self.request)
+            if roles.at_least(user, roles.MARK_SERVICE_ACCOUNTS):
+                context["service_accounts"] = list(service_accounts.candidates())
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -928,3 +930,15 @@ class VirtualMemberClaimView(LoginRequiredMixin, View):
         name = link.person.owner.public_display_name
         messages.success(request, gettext("Your request is waiting for %(name)s to accept it.") % {"name": name})
         return redirect("account_profile")
+
+
+class ServiceAccountsView(LoginRequiredMixin, View):
+    """An owner marks the accounts the site's own agents post through (issue #436): exactly the ones
+    ticked, among the accounts the card offers."""
+
+    def post(self, request):
+        if not roles.at_least(request.user, roles.MARK_SERVICE_ACCOUNTS):
+            return HttpResponseForbidden()
+        service_accounts.mark([int(value) for value in request.POST.getlist("account") if value.isdecimal()])
+        messages.success(request, gettext("Saved."))
+        return redirect(f"{reverse('account_profile')}#service-accounts")
