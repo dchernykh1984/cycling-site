@@ -174,6 +174,33 @@ def test_the_registration_filters_narrow_the_list_and_a_hidden_tick_is_still_sen
 
 
 @pytest.mark.django_db(transaction=True)
+def test_all_ticks_and_clears_everyone_shown_and_is_half_ticked_for_some(page: Page, live_server, organizer, coach):
+    people = _section(coach)
+    comp = _event(organizer)
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
+    everyone = page.locator("#register-all")
+    boxes = page.locator(".register-person[data-name] .register-person-check")
+    summary = page.locator("#rf-summary")
+    everyone.check()
+    expect(summary).to_have_text("Ticked: 7")
+    page.locator(f"#person-v{people['kim'].pk} .register-person-check").uncheck()
+    assert everyone.evaluate("el => el.indeterminate && !el.checked")
+    everyone.check()
+    expect(summary).to_have_text("Ticked: 7")
+    everyone.uncheck()
+    expect(summary).to_have_text("Ticked: 0")
+    assert boxes.evaluate_all("els => els.every(el => !el.checked)")
+    # with a filter on, only the people shown
+    page.locator("#rf-team").select_option("Eagles")
+    expect(everyone).not_to_be_checked()
+    everyone.check()
+    expect(summary).to_have_text("Ticked: 3")
+    page.locator("#rf-team").select_option("")
+    assert everyone.evaluate("el => el.indeterminate")
+
+
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
 def test_on_a_phone_the_card_and_the_filters_take_a_tap_and_nothing_scrolls_sideways(
     page: Page, live_server, organizer, coach, lang

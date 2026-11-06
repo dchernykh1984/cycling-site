@@ -65,6 +65,18 @@ the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endco
 
 <form method="post" id="registration-form" class="register-many">
 {% csrf_token %}
+{% if tick_all %}
+{% comment %}One box for everyone the page shows -- the filters' choice, when they narrow it -- but
+"another person", whose form is empty until typed in. It sends nothing itself.{% endcomment %}
+<div class="register-person-all card mb-2">
+  <div class="card-body py-2">
+    <label class="register-person-pick fw-semibold" for="register-all">
+      <input class="form-check-input" type="checkbox" id="register-all">
+      <span>{% trans "All" %}</span>
+    </label>
+  </div>
+</div>
+{% endif %}
 {% for row in rows %}
 {% comment %}A person is what the filters narrow; "another person" typed in stays in sight.{% endcomment %}
 <section class="register-person card mb-2" id="person-{{ row.key }}"{% if row.profile %} data-name="{{ row.label }}" data-team="{{ row.team }}" data-fits="{{ row.fits|join:',' }}"{% endif %}>
@@ -120,6 +132,32 @@ the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endco
 </style></noscript>
 <script>
 (function () {
+  // "All" ticks or clears everyone shown, and is half ticked while only some of them are
+  var everyone = document.getElementById('register-all');
+  var ticks = document.getElementById('registration-form');
+  if (everyone) {
+    var shownBoxes = function () {
+      return Array.prototype.slice.call(
+        document.querySelectorAll('.register-person[data-name]:not([hidden]) .register-person-check'));
+    };
+    var mirror = function () {
+      var boxes = shownBoxes(), ticked = boxes.filter(function (box) { return box.checked; }).length;
+      everyone.checked = boxes.length > 0 && ticked === boxes.length;
+      everyone.indeterminate = ticked > 0 && ticked < boxes.length;
+    };
+    // its own change goes on to the form, where the line under the filters counts the ticks again
+    everyone.addEventListener('change', function () {
+      shownBoxes().forEach(function (box) { box.checked = everyone.checked; });
+    });
+    ticks.addEventListener('change', function (event) { if (event.target !== everyone) mirror(); });
+    // after the filters have shown and hidden people, whichever of their controls moved
+    ['input', 'change'].forEach(function (kind) {
+      document.addEventListener(kind, function (event) {
+        if (event.target.closest && event.target.closest('.register-filters')) setTimeout(mirror, 0);
+      });
+    });
+    mirror();
+  }
   // A person's details open and close by their own button, whatever their tick says (issue #439)
   document.querySelectorAll('.register-person-toggle').forEach(function (button) {
     button.addEventListener('click', function () {

@@ -205,6 +205,14 @@ class RegisterManyTests(TestCase):
         self.client.post(self._url(bare), {"person": [str(self.anna.pk)], **_fields(self.anna, category="")})
         self.assertEqual(CompetitionRegistration.objects.get().category, None)
 
+    def test_a_box_for_everyone_heads_the_page_while_two_people_or_more_may_be_ticked(self):
+        self.assertContains(self.client.get(self._url()), 'id="register-all"')
+        make_registration(self.comp, user=self.anna)
+        make_registration(self.comp, user=self.boris)
+        page = self.client.get(self._url())
+        self.assertEqual([row.key for row in page.context["rows"]], [str(self.coach.pk)])
+        self.assertNotContains(page, 'id="register-all"')
+
     def test_a_long_page_offers_filters_by_the_peoples_teams_and_the_events_open_categories(self):
         """Issue #440: from FILTERED_FROM people on, each with the categories they fit."""
         men = make_category(self.comp, name="Men", female=False)
