@@ -54,7 +54,9 @@ once; confirming the address unlocks everything that writes.
 ### Story 2 -- Keep the data registration needs (P1)
 
 1. **Given** a member edits their profile, **Then** first and last name, gender, birth date, team,
-   city and Strava link are saved and shown on the profile.
+   city, Strava link and sports achievements (a rank or category, or the like, in their own words) are
+   saved and shown on the profile. No registration form takes the achievements (the maintainer,
+   2026-11-06).
 2. **Given** a member signed up with Strava, **Then** their Strava profile link is filled from the
    athlete id, unless they already set one.
 3. **Given** the page is Russian, **Then** the birth date field is still prefilled in ISO form.
@@ -251,7 +253,7 @@ races and looks after their race photos (issue #438). They exist only in the mem
 
 ## Key Entities
 
-- **User**: role, profile data (names, gender, birth date, team, city, Strava link), preferred
+- **User**: role, profile data (names, gender, birth date, team, city, Strava link, sports achievements), preferred
   locations / directions / disciplines / event types, autosave flag, skin (`theme`), preferred
   language, API token, dismissed setup hints, time of the last mail sent on their behalf; when they
   agreed to the privacy policy and whether a provider's account still waits to be asked; when they

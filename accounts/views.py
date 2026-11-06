@@ -102,6 +102,7 @@ class ProfileEditForm(forms.ModelForm):
             "team",
             "city",
             "strava_link",
+            "sports_achievements",
             # Saved calendar-filter preferences (issue #229). The cascade pickers in the template
             # post the chosen ids as hidden inputs of these names; the widgets are not rendered by
             # Django (MultipleHiddenInput just declares them optional so an empty pick clears them).

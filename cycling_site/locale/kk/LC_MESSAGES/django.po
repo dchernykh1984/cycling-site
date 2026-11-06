@@ -2565,19 +2565,8 @@ msgid "What we collect"
 msgstr "Біз қандай деректерді жинаймыз"
 
 #: home/templates/home/privacy_page.html:18
-msgid ""
-"<strong>Account data.</strong> When you register we store your email address"
-" and a cryptographic hash of your password (never the password itself). You "
-"may optionally add your name, date of birth, gender, city, team, a link to "
-"your Strava profile, and your preferred sports and locations, so that forms "
-"are pre-filled for you."
-msgstr ""
-"<strong>Тіркелгі деректері.</strong> Тіркелген кезде біз сіздің электрондық "
-"пошта мекенжайыңызды және құпиясөздің криптографиялық хэшін сақтаймыз "
-"(құпиясөздің өзі ешқашан сақталмайды). Қаласаңыз, атыңызды, туған күніңізді,"
-" жынысыңызды, қалаңызды, командаңызды, Strava профиліне сілтемені, сондай-ақ"
-" таңдаулы спорт түрлері мен локацияларды қоса аласыз — формалар автоматты "
-"толтырылуы үшін."
+msgid "<strong>Account data.</strong> When you register we store your email address and a cryptographic hash of your password (never the password itself). You may optionally add your name, date of birth, gender, city, team, a link to your Strava profile, and your preferred sports and locations, so that forms are pre-filled for you, and your sports achievements, such as a rank or category."
+msgstr "<strong>Тіркелгі деректері.</strong> Тіркелген кезде біз сіздің электрондық пошта мекенжайыңызды және құпиясөздің криптографиялық хэшін сақтаймыз (құпиясөздің өзі ешқашан сақталмайды). Қаласаңыз, атыңызды, туған күніңізді, жынысыңызды, қалаңызды, командаңызды, Strava профиліне сілтемені, сондай-ақ таңдаулы спорт түрлері мен локацияларды — формалар автоматты толтырылуы үшін — және спорттық жетістіктеріңізді, мысалы, разряд немесе санатты қоса аласыз."
 
 #: home/templates/home/privacy_page.html:19
 msgid ""
@@ -5128,3 +5117,11 @@ msgstr "Бұл жарыстың ашық санаттарының ешқайсы
 #: accounts/forms.py
 msgid "Without agreeing to the privacy policy you cannot sign up."
 msgstr "Құпиялылық саясатымен келіспей тіркелу мүмкін емес."
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "Sports achievements"
+msgstr "Спорттық жетістіктер"
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "A sports rank or category, or the like"
+msgstr "Спорттық разряд/санат немесе баламалары"
