@@ -14,7 +14,7 @@ from ninja.errors import HttpError
 
 from api.auth import member_auth
 from calendar_app.models import Competition
-from ratings import form, rules
+from ratings import form, rules, scores
 
 router = Router(tags=["ratings"])
 
@@ -61,3 +61,28 @@ def decline(request, competition_id: int):
     if not rules.answer(request.auth, competition):
         raise HttpError(HTTPStatus.CONFLICT, "You may not rate this event, or you have answered already")
     return Status(HTTPStatus.NO_CONTENT, None)
+
+
+class OrganizerOut(Schema):
+    user_id: int
+    name: str
+    average: float  # of the overall scores, from 1 to 5
+    reviews: int
+    events: int
+
+
+@router.get(
+    "/organizers", response=list[OrganizerOut], auth=None, summary="The organizers rated by their events' participants"
+)
+def organizers(request):
+    """The best first; an organizer shows from ``ratings.scores.PUBLIC_FROM`` scores."""
+    return [
+        OrganizerOut(
+            user_id=row["organizer"].pk,
+            name=row["organizer"].public_display_name,
+            average=round(row["average"], 2),
+            reviews=row["reviews"],
+            events=row["events"],
+        )
+        for row in scores.organizers()
+    ]

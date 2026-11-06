@@ -5335,3 +5335,43 @@ msgstr "Спасибо! Никто не узнает, что этот отзыв
 #: ratings/views.py
 msgid "This event cannot be rated, or you have answered already."
 msgstr "Это мероприятие нельзя оценить, или вы уже ответили."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Organizer's rating"
+msgstr "Рейтинг организатора"
+
+#: calendar_app/templates/calendar_app/detail.html
+#, python-format
+msgid "%(counter)s score"
+msgid_plural "%(counter)s scores"
+msgstr[0] "%(counter)s оценка"
+msgstr[1] "%(counter)s оценки"
+msgstr[2] "%(counter)s оценок"
+
+#: cycling_site/templates/base.html
+msgid "Ratings"
+msgstr "Рейтинги"
+
+#: ratings/templates/ratings/index.html
+msgid "Organizers"
+msgstr "Организаторы"
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from %(counter)s score."
+msgid_plural "An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from %(counter)s scores."
+msgstr[0] "Рейтинг организатора — средняя общая оценка, которую поставили участники его мероприятий, от 1 до 5. Он показывается начиная с %(counter)s оценки."
+msgstr[1] "Рейтинг организатора — средняя общая оценка, которую поставили участники его мероприятий, от 1 до 5. Он показывается начиная с %(counter)s оценок."
+msgstr[2] "Рейтинг организатора — средняя общая оценка, которую поставили участники его мероприятий, от 1 до 5. Он показывается начиная с %(counter)s оценок."
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "%(counter)s event"
+msgid_plural "%(counter)s events"
+msgstr[0] "%(counter)s мероприятие"
+msgstr[1] "%(counter)s мероприятия"
+msgstr[2] "%(counter)s мероприятий"
+
+#: ratings/templates/ratings/index.html
+msgid "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in."
+msgstr "Пока ни у одного организатора нет нужного числа оценок. Рейтинг заполнится, когда участники оценят мероприятия, в которых участвовали."

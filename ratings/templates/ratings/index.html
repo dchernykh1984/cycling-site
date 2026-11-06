@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}The Ratings tab (issue #436): the organizers the participants of their events rated, the best
+first, each with the number of scores behind the average. One a row on every width: a phone reads it as a
+list.{% endcomment %}
+
+{% block title %}{% trans "Ratings" %}{% endblock %}
+
+{% block content %}
+<div class="ratings-page">
+  <h1 class="mb-3">{% trans "Ratings" %}</h1>
+  <h2 class="h5">{% trans "Organizers" %}</h2>
+  <p class="text-muted small">{% blocktrans count counter=public_from %}An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from {{ counter }} score.{% plural %}An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from {{ counter }} scores.{% endblocktrans %}</p>
+  {% if organizers %}
+  <ol class="list-group list-group-numbered organizer-ratings">
+    {% for row in organizers %}
+    <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
+      <div class="ms-2 me-auto">
+        <div class="fw-semibold">{{ row.organizer.public_display_name }}</div>
+        <div class="small text-muted">{% blocktrans count counter=row.reviews %}{{ counter }} score{% plural %}{{ counter }} scores{% endblocktrans %}, {% blocktrans count counter=row.events %}{{ counter }} event{% plural %}{{ counter }} events{% endblocktrans %}</div>
+      </div>
+      <span class="fs-5 fw-semibold">{{ row.average|floatformat:1 }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p>{% trans "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in." %}</p>
+  {% endif %}
+</div>
+{% endblock %}

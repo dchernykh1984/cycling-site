@@ -1,4 +1,4 @@
-"""The pages of the ratings (issue #436): a participant's review of an event they took part in."""
+"""The pages of the ratings (issue #436): the organizers' ratings, and a participant's review of an event."""
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,9 +7,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext
 from django.views import View
+from django.views.generic import TemplateView
 
 from calendar_app.models import Competition
-from ratings import form, rules
+from ratings import form, rules, scores
 
 
 def _back(request, competition) -> str:
@@ -69,3 +70,14 @@ class ReviewView(LoginRequiredMixin, View):
         else:
             messages.error(request, gettext("This event cannot be rated, or you have answered already."))
         return redirect(target)
+
+
+class RatingsView(TemplateView):
+    """The Ratings tab: the organizers rated by the participants of their events, the best first."""
+
+    template_name = "ratings/index.html"
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(
+            organizers=scores.organizers(), public_from=scores.PUBLIC_FROM, meta_title=gettext("Ratings"), **kwargs
+        )
