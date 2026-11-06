@@ -28,6 +28,10 @@ def _birth_date_info(form) -> str:
     competition = form.competition
     if not (value and competition and competition.additional_info_is_birth_date):
         return value
+    if form.fields["additional_info"].disabled:
+        # the entry's own value, which the participant cannot change: what an entry made before the
+        # field asked for a date holds stays, and the rest of the entry still takes their changes
+        return value
     try:
         born = datetime.date.fromisoformat(value.strip())
     except ValueError:

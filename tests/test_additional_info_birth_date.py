@@ -120,6 +120,15 @@ class BirthDateModeTests(TestCase):
         self.assertEqual(answer.json()[0]["errors"], {})
         self.assertEqual(CompetitionRegistration.objects.get().additional_info, "2012-03-04")
 
+    def test_an_entry_from_before_the_field_asked_for_a_date_still_takes_its_participants_changes(self):
+        """The organizer may turn the field into the date of birth once entries hold free text: the
+        participant, who cannot change the field there, still changes the rest of their entry."""
+        comp = self._event()
+        entry = make_registration(comp, user=self.member, additional_info="road bike")
+        form = EditRegistrationForm({"city": "Taraz"}, instance=entry, competition=comp, participant_fields_only=True)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["additional_info"], "road bike")
+
     def test_editing_ones_entry_leaves_the_accounts_date_where_the_event_takes_only_ones_own_data(self):
         comp = self._event()
         entry = make_registration(comp, user=self.member, additional_info=BORN.isoformat())
