@@ -235,6 +235,8 @@ class VirtualMember(models.Model):
 
     # What a form asking for a Strava link fills itself in from, as a member's profile has it
     strava_link = models.URLField(max_length=100, blank=True, default="")
+    # A sports rank or category, or the like, as a member's profile has it; no form takes it
+    sports_achievements = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
         ordering: ClassVar[list[str]] = ["last_name", "first_name", "pk"]

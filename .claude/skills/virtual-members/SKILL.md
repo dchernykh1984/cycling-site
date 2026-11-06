@@ -35,7 +35,8 @@ guest none. `GET /api/v1/virtual-members/` answers `consented`, `limit` (null fo
 
 `POST /api/v1/virtual-members/` takes `{"people": [...], "dry_run": false}`, up to 1000 rows a
 request. Each row: `last_name`, `first_name`, `gender` (`M` or `F`), `birth_date` (`YYYY-MM-DD`),
-optional `team`, `city` and `strava_link` (a profile's URL, filled into an event that asks for one).
+optional `team`, `city`, `strava_link` (a profile's URL, filled into an event that asks for one)
+and `sports_achievements` (a sports rank or category, or the like, as the source writes it).
 
 - **Whole or not at all.** Every row is checked first. A row with a mistake, or more new people
   than `room`, saves nobody: 422 with `detail` and `rows: [{row, errors}]`, rows counted from 0.

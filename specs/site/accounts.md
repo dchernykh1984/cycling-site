@@ -163,7 +163,8 @@ races and looks after their race photos (issue #438). They exist only in the mem
    has one: an admin or an owner adds any number, an organizer 1000, a participant 10
    (`roles.virtual_members_limit`) -- lists them with "Edit" and "Delete", and has a form to add one
    more, folded under its button "Add a person" and open again when sent back with a mistake: last
-   name, first name, gender, date of birth, team, city, Strava link. The same names and date of birth
+   name, first name, gender, date of birth, team, city, Strava link, sports achievements. The same names
+   and date of birth
    (letters' case aside) are refused as a person added already.
 4. **Given** people in the card, **Then** filters narrow the list: a last or first name typed in any
    script, a team, and a span of dates of birth from and to; a line counts those shown.
@@ -259,7 +260,7 @@ races and looks after their race photos (issue #438). They exist only in the mem
   agreed to the privacy policy and whether a provider's account still waits to be asked; when they
   gave their word for the people without accounts they add.
 - **Person without an account** (`accounts.VirtualMember`): the member who added them, last name,
-  first name, gender, date of birth, team, city, Strava link; deleted with that member's account.
+  first name, gender, date of birth, team, city, Strava link, sports achievements; deleted with that member's account.
 - **E-mail address / social account** (allauth): the ways a member signs in.
 - **Virtual ride** (`trainer.VirtualRide`): one finished ride with its route key and name, kind
   (race, cadence plan, free ride), times, distance, power and its source, place, peak powers; the
