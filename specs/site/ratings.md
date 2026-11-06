@@ -31,9 +31,10 @@ Nothing keeps who wrote a review.
 2. **Given** "Rate", **Then** a page asks an overall score from 1 to 5 (required) and a comment
    (optional), says the review is anonymous and so cannot be changed or deleted, and sends it or
    refuses; refusing is as final as a review and leaves the same mark.
-3. **Given** the event's author, an event the site's agents posted, an event with HTML protocols
-   only, a `dns`, a rejected entry or a bib in conflict, **Then** nobody is asked; for people without
-   an account, the member who added them is asked once for the event, however many of them started.
+3. **Given** an event the site's agents posted, an event with HTML protocols only, a `dns`, a
+   rejected entry or a bib in conflict, **Then** nobody is asked; for people without an account, the
+   member who added them is asked once for the event, however many of them started. The event's
+   author who entered it and started is asked as anyone else.
 4. **Given** the API, **Then** `GET /ratings/pending` lists the events the caller may rate,
    `POST /ratings/events/{id}/review` takes `{"answers": {"overall": 1-5, "comment": ""}}` (422 for
    a wrong score, 409 when not allowed or answered) and `POST .../decline` refuses.

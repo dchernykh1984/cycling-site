@@ -6,8 +6,8 @@ account has none to answer with -- a child, or one who never signed up -- so the
 entered them answers instead: once for the event, however many of them started, weighing as one
 participant. The protocol data is what the timing programs send beside the HTML; an event with HTML alone
 asks nobody. They are asked from the day after the event's last day by its own place's calendar -- not on
-the day, in the heat of it -- until they review or refuse, once. Nobody reviews their own event, nor one
-the site's agents posted.
+the day, in the heat of it -- until they review or refuse, once. An organizer who took part in their own
+event reviews it as anyone else; nobody reviews one the site's agents posted.
 """
 
 import datetime
@@ -90,7 +90,6 @@ def reviewable(user, competition=None) -> list:
             competition__is_hidden=False,
             competition__submitted_by__isnull=False,
         )
-        .exclude(competition__submitted_by=user)
         .exclude(competition__submitted_by__is_service_account=True)
         .exclude(competition__review_marks__user=user)
         .annotate(last_day=Coalesce("competition__date_end", "competition__date_start"))
