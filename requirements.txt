@@ -8,7 +8,7 @@ brotli==1.2.1
 certifi==2026.10.19
 cffi==2.0.0 ; platform_python_implementation != 'PyPy'
 charset-normalizer==3.4.7
-cryptography==50.0.0
+cryptography==50.0.2
 defusedxml==0.7.1
 dj-database-url==3.1.2
 django==6.1.2
