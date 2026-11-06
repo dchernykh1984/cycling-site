@@ -5420,3 +5420,22 @@ msgstr "Сандар мен қысқаша мазмұн пікірлер кем�
 #: ratings/views.py
 msgid "The digest could not be written now: the language model did not answer. Try again later."
 msgstr "Қысқаша мазмұнды қазір құрастыру мүмкін болмады: тілдік модель жауап бермеді. Кейінірек көріңіз."
+
+#: ratings/templates/ratings/index.html
+msgid "Your events: what the participants think"
+msgstr "Сіздің іс-шараларыңыз: қатысушылар не ойлайды"
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "Your events with %(counter)s review or more: open one to read or write its digest."
+msgid_plural "Your events with %(counter)s reviews or more: open one to read or write its digest."
+msgstr[0] "%(counter)s және одан көп пікірі бар іс-шараларыңыз: қысқаша мазмұнды оқу немесе құрастыру үшін іс-шараны ашыңыз."
+msgstr[1] "%(counter)s және одан көп пікірі бар іс-шараларыңыз: қысқаша мазмұнды оқу немесе құрастыру үшін іс-шараны ашыңыз."
+
+#: ratings/templates/ratings/index.html
+msgid "No digest yet"
+msgstr "Қысқаша мазмұн әлі жоқ"
+
+#: ratings/templates/ratings/index.html
+msgid "New reviews since the digest"
+msgstr "Қысқаша мазмұннан кейін жаңа пікірлер келді"

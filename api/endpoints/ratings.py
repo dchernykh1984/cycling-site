@@ -71,6 +71,35 @@ def decline(request, competition_id: int):
     return Status(HTTPStatus.NO_CONTENT, None)
 
 
+class OwnDigestOut(Schema):
+    competition_id: int
+    title: str
+    last_day: datetime.date
+    reviews: int
+    digest_reviews: int | None  # how many reviews the digest in the language was written from; None: not written
+
+
+@router.get(
+    "/mine",
+    response=list[OwnDigestOut],
+    auth=member_auth,
+    summary="The events I posted with reviews enough for a digest, the latest first",
+)
+def mine(request, language: str = ""):
+    """``language`` -- ru, kk or en -- picks the titles and the digest; the request's otherwise."""
+    with translation.override(language or translation.get_language()):
+        return [
+            OwnDigestOut(
+                competition_id=row["competition"].pk,
+                title=row["competition"].title,
+                last_day=row["competition"].last_day,
+                reviews=row["reviews"],
+                digest_reviews=row["written"],
+            )
+            for row in digest.of_author(request.auth)
+        ]
+
+
 class OrganizerOut(Schema):
     user_id: int
     name: str

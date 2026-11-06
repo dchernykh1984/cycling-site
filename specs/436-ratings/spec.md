@@ -51,6 +51,10 @@ are a later piece of work and are not described here.
 10. **No split by sport** for the organizers: the questions are about the organization, and smaller
     cells would make an author easier to guess. Each review keeps its event, so a split by direction
     can be added later as a filter.
+11. **Finding the digests** (the maintainer, 2026-11-06): under the organizers' ratings, whoever posted
+    events with reviews enough for a digest (two) sees those events, each linking to what its
+    participants think. Only one's own events, admins and owners included: they may edit every event,
+    and all of them would bury their own.
 
 ## Not built
 
