@@ -71,6 +71,23 @@ class ReviewTests(TestCase):
         _protocol(today, [_row("7")])
         self.assertEqual(rules.reviewable(self.rider), [self.event])  # not on the day itself
 
+    def test_the_banner_asks_about_two_events_at_a_time_the_latest_first(self):
+        """The rest wait their turn, none dropped: each answer brings the next one up."""
+        for days, title in ((3, "Spring Cup"), (2, "Summer Cup")):
+            event = make_competition(
+                title=title, date_start=TODAY - datetime.timedelta(days=days), submitted_by=self.organizer
+            )
+            self._enter(event, self.rider, "7")
+            _protocol(event, [_row("7")])
+        self.client.force_login(self.rider)
+        banner = self.client.get(_url("news_index")).content.decode()
+        self.assertIn("Rate: Autumn Cup", banner)
+        self.assertIn("Rate: Summer Cup", banner)
+        self.assertNotIn("Rate: Spring Cup", banner)
+        self.assertEqual(len(rules.reviewable(self.rider)), 3)
+        rules.answer(self.rider, self.event)
+        self.assertIn("Rate: Spring Cup", self.client.get(_url("news_index")).content.decode())
+
     def test_nobody_is_asked_who_did_not_start_or_is_its_organizer_or_whose_event_the_agents_posted(self):
         cases = {
             "did not start": ("8", {}),

@@ -29,7 +29,8 @@ are a later piece of work and are not described here.
    other members' accounts is not asked for them: they have accounts to answer with.
 4. **When.** From the day after the event's last day, by the calendar of the event's own place --
    not on the day, in the heat of it -- and then on every page, with no end, until the member rates
-   or refuses. The early events, held long ago, are wanted too.
+   or refuses. The early events, held long ago, are wanted too. The banner asks about two events at a
+   time, the latest first, the one remembered best; the others come up as these are answered.
 5. **What a review is.** An overall score from 1 to 5, required, and a comment, optional. The form
    is one versioned list of questions (`ratings/form.py`); a review keeps its answers by key with the
    version, so a score for another parameter can be added later without touching earlier reviews.
