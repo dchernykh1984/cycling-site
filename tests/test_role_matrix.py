@@ -122,6 +122,16 @@ STATISTICS = {
     # the pages they open are the team's work, counted apart from readers' visits
     "counted with the team":        "n       n     n         n         y       y       y",
 }
+
+SERVICE_ACCOUNTS = {
+    #                                visitor guest particip. organizer admin   owner   superuser
+    # the accounts the site's agents post through, which the organizers' ratings leave out (issue #436)
+    "profile: their card":          "302     200:n 200:n     200:n     200:n   200:y   200:y",
+    "banner: none marked yet":      "n       n     n         n         n       y       y",
+    # an owner's 302 takes them back to the card
+    "mark them":                    "302     403   403       403       403     302     302",
+    "API: the list":                "401     403   403       403       403     200     200",
+}
 # fmt: on
 
 
@@ -427,6 +437,27 @@ def counted_with_the_team(site, v):
     return _yn(is_team(v.user))
 
 
+# -- service accounts --------------------------------------------------------------------------------
+
+
+def service_accounts_card(site, v):
+    page = v.browser.get("/en/accounts/profile/")
+    return _with(page, page.status_code == 200 and page.context.get("service_accounts") is not None)
+
+
+def service_account_banner(site, v):
+    return _yn("service-account-missing" in v.browser.get("/en/calendar/").content.decode())
+
+
+def mark_service_accounts(site, v):
+    # Nothing ticked: the answer tells who may mark, and nobody gets marked for the probes after it
+    return str(v.browser.post("/en/accounts/service-accounts/", {}).status_code)
+
+
+def api_service_accounts(site, v):
+    return str(v.program.get("/api/v1/service-accounts/", **v.headers).status_code)
+
+
 @override_settings(ASSISTANT_LLM_API_KEY="sk-test")
 class RoleMatrixTests(TestCase):
     people: dict[str, User]
@@ -576,4 +607,15 @@ class RoleMatrixTests(TestCase):
                 "counted with the team": counted_with_the_team,
             },
             STATISTICS,
+        )
+
+    def test_service_accounts(self):
+        self._check(
+            {
+                "profile: their card": service_accounts_card,
+                "banner: none marked yet": service_account_banner,
+                "mark them": mark_service_accounts,
+                "API: the list": api_service_accounts,
+            },
+            SERVICE_ACCOUNTS,
         )
