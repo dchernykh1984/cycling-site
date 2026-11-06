@@ -71,6 +71,9 @@
                 <p class="mb-1"><strong>{% trans "Strava link" %}:</strong>
                     <a href="{{ user.strava_link }}" target="_blank" rel="noopener">{{ user.strava_link }}</a></p>
                 {% endif %}
+                {% if user.sports_achievements %}
+                <p class="mb-1"><strong>{% trans "Sports achievements" %}:</strong> {{ user.sports_achievements }}</p>
+                {% endif %}
                 {% with dirs=user.preferred_directions.all discs=user.preferred_disciplines.all %}
                 {% if dirs or discs %}
                 <p class="mb-1"><strong>{% trans "Preferred directions and disciplines" %}:</strong>

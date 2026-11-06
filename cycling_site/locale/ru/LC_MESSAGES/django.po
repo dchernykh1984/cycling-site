@@ -2570,18 +2570,8 @@ msgid "What we collect"
 msgstr "Какие данные мы собираем"
 
 #: home/templates/home/privacy_page.html:18
-msgid ""
-"<strong>Account data.</strong> When you register we store your email address"
-" and a cryptographic hash of your password (never the password itself). You "
-"may optionally add your name, date of birth, gender, city, team, a link to "
-"your Strava profile, and your preferred sports and locations, so that forms "
-"are pre-filled for you."
-msgstr ""
-"<strong>Данные аккаунта.</strong> При регистрации мы сохраняем ваш адрес "
-"электронной почты и криптографический хэш пароля (сам пароль не хранится "
-"никогда). По желанию вы можете добавить имя, дату рождения, пол, город, "
-"команду, ссылку на профиль в Strava, а также предпочитаемые виды спорта и "
-"локации — чтобы формы заполнялись автоматически."
+msgid "<strong>Account data.</strong> When you register we store your email address and a cryptographic hash of your password (never the password itself). You may optionally add your name, date of birth, gender, city, team, a link to your Strava profile, and your preferred sports and locations, so that forms are pre-filled for you, and your sports achievements, such as a rank or category."
+msgstr "<strong>Данные аккаунта.</strong> При регистрации мы сохраняем ваш адрес электронной почты и криптографический хэш пароля (сам пароль не хранится никогда). По желанию вы можете добавить имя, дату рождения, пол, город, команду, ссылку на профиль в Strava, а также предпочитаемые виды спорта и локации — чтобы формы заполнялись автоматически, — и свои спортивные достижения, например разряд или категорию."
 
 #: home/templates/home/privacy_page.html:19
 msgid ""
@@ -5131,3 +5121,11 @@ msgstr "Ни одна открытая категория этого старт�
 #: accounts/forms.py
 msgid "Without agreeing to the privacy policy you cannot sign up."
 msgstr "Без согласия с политикой конфиденциальности регистрация невозможна."
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "Sports achievements"
+msgstr "Спортивные достижения"
+
+#: accounts/templates/accounts/profile_edit.html
+msgid "A sports rank or category, or the like"
+msgstr "Спортивный разряд/категория или аналоги"
