@@ -108,7 +108,7 @@ def test_on_a_phone_every_control_takes_a_tap_and_nothing_scrolls_sideways(
     page: Page, live_server, organizer, owner, rider, lang
 ):
     event = _took_part(organizer, rider)
-    for score in (4, 5):  # the digest is offered from two reviews
+    for score in (3, 4, 5):  # the digest is offered from two reviews, the organizer rated from three
         Review.objects.create(competition=event, form=form.VERSION, answers={form.RATED: score})
     User.objects.create_user(username="agent", email="agent@test.local", password="x", api_token=uuid.uuid4())
     page.set_viewport_size({"width": 360, "height": 800})
@@ -119,7 +119,7 @@ def test_on_a_phone_every_control_takes_a_tap_and_nothing_scrolls_sideways(
         (owner, "/calendar/", ".service-account-missing .btn"),
         (owner, "/accounts/profile/", ".service-accounts .btn, .service-account-pick"),
         (organizer, f"/ratings/events/{event.pk}/summary/", ".rating-summary .btn"),
-        (organizer, "/ratings/", ".own-digests .list-group-item"),
+        (organizer, "/ratings/", ".own-digests .list-group-item, .organizer-ratings .list-group-item"),
     ):
         _sign_in(page, live_server, user)
         page.goto(f"{live_server.url}/{lang}{path}")
