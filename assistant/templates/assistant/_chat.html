@@ -20,12 +20,14 @@ inside a form is not HTML.
     <textarea class="form-control" id="assistant-text" rows="2" maxlength="10000"
               placeholder="{% trans 'Write to the assistant' %}"></textarea>
     <input type="file" id="assistant-file" accept="{{ accept }}" hidden>
-    <div class="d-flex gap-2 mt-2">
+    <div class="d-flex gap-2 mt-2 align-items-center">
       <button type="button" class="btn btn-outline-secondary" id="assistant-attach">{% trans "Attach a file" %}</button>
+      <span class="small text-muted file-drop-hint" id="assistant-drop-hint">{% trans "or drag it here" %}</span>
       <button type="submit" class="btn btn-primary ms-auto" id="assistant-send">{% trans "Send" %}</button>
     </div>
   </form>
 </section>
+{% include "_file_drop_js.html" %}
 {{ history|json_script:"assistant-history" }}
 {{ config|json_script:"assistant-config" }}
 <style>
@@ -231,6 +233,12 @@ inside a form is not HTML.
   picker.addEventListener('change', function () {
     var file = picker.files[0];
     picker.value = '';
+    take(file);
+  });
+  // on a computer a file may also be dragged onto the chat, and is taken as one picked by the button
+  if (cfg.attach) window.fileDrop(panel, function (files) { take(files[0]); });
+  else document.getElementById('assistant-drop-hint').hidden = true;
+  function take(file) {
     if (!file || busy) return;
     var ext = file.name.toLowerCase().split('.').pop();
     var kind = cfg.trackExtensions.indexOf(ext) >= 0 ? 'route' : (cfg.documentExtensions.indexOf(ext) >= 0 ? 'regulations' : '');
@@ -248,7 +256,7 @@ inside a form is not HTML.
     }
     var line = (kind === 'route' ? words.attachedRoute : words.attachedRegulations).replace('%(name)s', file.name);
     ready.then(function () { turn(line, [item]); });
-  });
+  }
 }());
 </script>
 {% endif %}

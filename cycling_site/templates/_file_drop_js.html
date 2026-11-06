@@ -1,0 +1,48 @@
+{% comment %}A file dragged onto a field instead of picked by its button, on a computer: a phone has nothing to
+drag. window.fileDrop(zone, take) marks the zone while a file is over it and hands take() the files let go
+there; window.fileDropInto(input, zone) puts them into the input as though they had been picked. A file let
+go anywhere else on the page is not opened in its place, which would lose what was typed. Defined once
+however many times a page includes it.{% endcomment %}
+<script>
+(function () {
+  if (window.fileDrop) return;
+  var canDrag = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  function carriesFiles(event) {
+    return !!event.dataTransfer && Array.prototype.indexOf.call(event.dataTransfer.types || [], 'Files') >= 0;
+  }
+  window.fileDrop = function (zone, take) {
+    if (!canDrag || !zone) return;
+    var over = 0;
+    zone.addEventListener('dragenter', function (event) {
+      if (!carriesFiles(event)) return;
+      event.preventDefault(); over += 1; zone.classList.add('file-drop-over');
+    });
+    zone.addEventListener('dragover', function (event) {
+      if (!carriesFiles(event)) return;
+      event.preventDefault(); event.dataTransfer.dropEffect = 'copy';
+    });
+    zone.addEventListener('dragleave', function () {
+      over = Math.max(0, over - 1);
+      if (!over) zone.classList.remove('file-drop-over');
+    });
+    zone.addEventListener('drop', function (event) {
+      if (!carriesFiles(event)) return;
+      event.preventDefault(); event.stopPropagation(); over = 0; zone.classList.remove('file-drop-over');
+      if (event.dataTransfer.files.length) take(event.dataTransfer.files);
+    });
+  };
+  window.fileDropInto = function (input, zone) {
+    window.fileDrop(zone || input, function (files) {
+      var holder = new DataTransfer();
+      Array.prototype.slice.call(files, 0, input.multiple ? files.length : 1).forEach(function (file) { holder.items.add(file); });
+      input.files = holder.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+  if (canDrag) {
+    ['dragover', 'drop'].forEach(function (kind) {
+      window.addEventListener(kind, function (event) { if (carriesFiles(event)) event.preventDefault(); });
+    });
+  }
+})();
+</script>
