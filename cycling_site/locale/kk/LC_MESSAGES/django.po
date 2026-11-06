@@ -5131,9 +5131,9 @@ msgstr "Спорттық разряд/санат немесе баламалар
 msgid "The event's form takes only these files: %(formats)s."
 msgstr "Іс-шара формасы тек мына файлдарды қабылдайды: %(formats)s."
 
-#: cycling_site/templates/_file_drop_js.html
-msgid "or drag it here"
-msgstr "немесе оны осында сүйреп әкеліңіз"
+#: assistant/templates/assistant/_chat.html
+msgid "A file can also be dragged here."
+msgstr "Файлды осында сүйреп әкелуге де болады."
 
 #: cycling_site/templates/_file_drop_js.html
 msgid "A file can also be dragged onto its field."

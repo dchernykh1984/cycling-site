@@ -5135,9 +5135,9 @@ msgstr "Спортивный разряд/категория или аналог
 msgid "The event's form takes only these files: %(formats)s."
 msgstr "Форма мероприятия принимает только такие файлы: %(formats)s."
 
-#: cycling_site/templates/_file_drop_js.html
-msgid "or drag it here"
-msgstr "или перетащите его сюда"
+#: assistant/templates/assistant/_chat.html
+msgid "A file can also be dragged here."
+msgstr "Файл можно и перетащить сюда."
 
 #: cycling_site/templates/_file_drop_js.html
 msgid "A file can also be dragged onto its field."
