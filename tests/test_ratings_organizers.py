@@ -43,6 +43,19 @@ class OrganizerRatingTests(TestCase):
         self.assertIsNone(scores.of_organizer(self.anna))
         self.assertIsNone(scores.of_organizer(self.agent))
 
+    def test_every_score_weighs_the_same_whatever_the_size_of_its_event(self):
+        """An event of a thousand with three hundred good scores and one of ten with a bad one: the rating
+        is the average of all 301 scores, not of the two events' averages."""
+        kim = make_user("kim", role=User.Role.ORGANIZER)
+        big = make_competition(title="Big race", submitted_by=kim)
+        Review.objects.bulk_create(
+            Review(competition=big, form=form.VERSION, answers={form.RATED: 5}) for _ in range(300)
+        )
+        _reviewed(make_competition(title="Small race", submitted_by=kim), 1)
+        rating = scores.of_organizer(kim)
+        self.assertAlmostEqual(rating["average"], (300 * 5 + 1) / 301)
+        self.assertEqual((rating["reviews"], rating["events"]), (301, 2))
+
     def test_the_best_rated_comes_first(self):
         _reviewed(self.anna_event, 5)
         self.assertEqual([row["organizer"] for row in scores.organizers()], [self.anna, self.pavel])
