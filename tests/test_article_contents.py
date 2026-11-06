@@ -86,6 +86,11 @@ class ContentsTests(SimpleTestCase):
             html = str(with_contents("<p>[toc]</p><h2>One</h2>"))
         self.assertIn(">\u0421\u043e\u0434\u0435\u0440\u0436\u0430\u043d\u0438\u0435</p>", html)
 
+    def test_the_contents_of_a_text_in_another_language_are_titled_in_its_own(self):
+        with translation.override("en"):
+            html = str(with_contents("<p>[toc]</p><h2>One</h2>", "ru"))
+        self.assertIn(">\u0421\u043e\u0434\u0435\u0440\u0436\u0430\u043d\u0438\u0435</p>", html)
+
     def test_a_summary_never_reads_the_marker(self):
         self.assertEqual(summarize("<p>[toc]</p><p>The story begins.</p>"), "The story begins.")
 
@@ -99,6 +104,10 @@ class ArticlePagesTests(TestCase):
             self.assertIn('<nav class="article-toc" aria-labelledby="article-toc-title">', html)
             self.assertIn('id="section-2-participants"', html)
             self.assertIn('href="#section-2-participants"', html)
+        # a Russian article opened at the English address keeps its contents' title in Russian
+        russian = KnowledgeArticle.objects.create(title="Obzor", slug="obzor", locale="ru", body=BODY)
+        html = self.client.get(russian.get_absolute_url().replace("/ru/", "/en/", 1)).content.decode()
+        self.assertIn(">\u0421\u043e\u0434\u0435\u0440\u0436\u0430\u043d\u0438\u0435</p>", html)
         # what is stored is what the author sent: the anchors are drawn, not saved
         article.refresh_from_db()
         self.assertIn("<p>[toc]</p>", article.body)

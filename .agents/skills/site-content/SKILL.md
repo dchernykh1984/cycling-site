@@ -88,7 +88,7 @@ with an http(s) or data source.
   words: `<h2>2. Participants</h2>` is `#section-2-participants`, and a Cyrillic heading keeps its
   letters. Nothing is stored; the sanitizer drops ids an author sends.
 - A paragraph holding `[toc]` alone, `<p>[toc]</p>`, is drawn as the article's contents: a box of
-  links to its `h2`, with its `h3` under them, titled in the page's language. Put it after the lead;
+  links to its `h2`, with its `h3` under them, titled in the article's language. Put it after the lead;
   only the first marker counts, and an article without one shows no contents.
 - Django templates do not support multi-line `{# #}` comments -- use `{% comment %}` (there is a
   test that enforces this).

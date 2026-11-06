@@ -15,7 +15,7 @@ import re
 from django.utils.html import escape, strip_tags
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from django.utils.translation import gettext
+from django.utils.translation import get_language, gettext, override
 
 #: A paragraph holding the marker alone, as the editor or the API leaves it -- aligned by the editor too
 MARKER = re.compile(r"<p(?:\s[^>]*)?>\s*\[toc\]\s*</p>", re.IGNORECASE)
@@ -28,9 +28,11 @@ def _words(inner: str) -> str:
     return " ".join(html.unescape(strip_tags(inner)).split())
 
 
-def with_contents(body: str) -> str:
+def with_contents(body: str, language: str | None = None) -> str:
     """``body`` -- a sanitised text -- with an id on every h2 and h3, and its first ``[toc]`` paragraph
-    replaced by the contents; further markers are dropped, and a text without one is left as it was."""
+    replaced by the contents, titled in ``language`` -- the text's own, where a page shows a text written
+    in another (a knowledge article opened at another language's address) --, else the page's. Further
+    markers are dropped, and a text without one is left as it was."""
     headings: list[tuple[str, str, str]] = []
     taken: set[str] = set()
 
@@ -47,7 +49,8 @@ def with_contents(body: str) -> str:
 
     text = _HEADING.sub(anchor, str(body))
     if MARKER.search(text):
-        contents = _contents(headings)
+        with override(language or get_language()):
+            contents = _contents(headings)
         text = MARKER.sub(lambda _match: contents, text, count=1)
         text = MARKER.sub("", text)
     return mark_safe(text)  # noqa: S308 -- the sanitised text, with ids and links built from escaped words
