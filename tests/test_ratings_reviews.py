@@ -11,7 +11,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone, translation
 
-from accounts.models import User
+from accounts.models import User, VirtualMember
 from audit.models import AuditLog
 from event_photos.models import IssuedBib
 from protocols.models import Protocol
@@ -95,6 +95,18 @@ class ReviewTests(TestCase):
         entry = self._enter(disputed, self.rider, "6")
         IssuedBib.objects.filter(registration=entry).update(state=IssuedBib.State.CONFLICT)
         _protocol(disputed, [_row("6")])
+        self.assertEqual(rules.reviewable(self.rider), [self.event])
+
+    def test_nobody_is_asked_for_a_person_without_an_account_who_took_part(self):
+        coach = make_user("coach")
+        kid = VirtualMember.objects.create(
+            owner=coach, last_name="Lee", first_name="Ann", gender="F", birth_date=datetime.date(2012, 3, 4)
+        )
+        self._enter(self.event, None, "12", virtual_member=kid, registered_by=coach)
+        Protocol.objects.filter(competition=self.event).update(
+            document={"sections": [{"columns": [{"id": "bib", "role": "bib"}], "rows": [_row("7"), _row("12")]}]}
+        )
+        self.assertEqual(rules.reviewable(coach), [])
         self.assertEqual(rules.reviewable(self.rider), [self.event])
 
     def _entered_in_own_event(self):
