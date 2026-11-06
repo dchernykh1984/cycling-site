@@ -290,6 +290,8 @@ const TEXT_EN = {
     "mp.linkStarted": "The group race in your link has already started.",
     "mp.linkMissing": "There is no group race at this link.",
     "strava.offer": "Connect Strava, and every ride you finish here goes there as a virtual ride along the streets of its route.",
+    "strava.on": "Your rides go to Strava as virtual rides.",
+    "strava.manage": "Manage in your profile",
     "strava.processing": "Sending the ride to Strava…",
     "strava.done": "The ride is on Strava as a virtual ride.",
     "strava.failed": "The ride did not reach Strava: {msg}",

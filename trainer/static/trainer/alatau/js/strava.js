@@ -1,15 +1,20 @@
 'use strict';
 /* ---------------- Strava: every finished ride goes there as a virtual ride, once the member allows it ---------------- */
 const STRAVA_LOGO = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>';
-// on the setup page: an offer to connect Strava, to a member who has not; turning it off is the profile's
+// on the setup page: an offer to connect Strava, or, once connected, that the rides go there and where to manage it
 function renderStravaNote() {
-  const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available && !who.strava_connected);
+  const el = $('#stravaNote'), who = Records.me, on = !!(who && who.authenticated && who.strava_available);
   el.classList.toggle('hidden', !on); if (!on) return;
   el.textContent = '';
   const text = document.createElement('span'), a = document.createElement('a');
-  a.target = '_top'; a.className = 'strava-btn'; a.innerHTML = STRAVA_LOGO + '<span>Connect with Strava</span>';
-  a.href = langPath(who.strava_connect_url) + '?next=' + encodeURIComponent(topPath());
-  text.textContent = t('strava.offer');
+  a.target = '_top';
+  if (who.strava_connected) {
+    text.textContent = t('strava.on'); a.href = Records.accountUrl + '#virtual-rides-strava'; a.textContent = t('strava.manage');
+  } else {
+    a.className = 'strava-btn'; a.innerHTML = STRAVA_LOGO + '<span>Connect with Strava</span>';
+    a.href = langPath(who.strava_connect_url) + '?next=' + encodeURIComponent(topPath());
+    text.textContent = t('strava.offer');
+  }
   el.append(text, a);
 }
 // what happened to a saved ride at Strava: processing, an activity to open, or why not and another try
