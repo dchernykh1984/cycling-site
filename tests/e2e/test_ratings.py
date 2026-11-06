@@ -1,5 +1,5 @@
 """E2E for rating an event one took part in (issue #436): the banner's way to the review and away once it
-is answered, and the size of what is tapped on a phone, in all three languages."""
+is answered, the size of what is tapped on a phone in all three languages, and contrast in every skin."""
 
 import datetime
 import re
@@ -16,6 +16,8 @@ from ratings import form
 from ratings.models import Review
 from registrations.models import CompetitionRegistration
 from tests.e2e.conftest import inject_session
+from tests.e2e.contrast import is_large, legibility
+from tests.e2e.test_skin_contrast import NO_FADES, _in_state
 
 # The event has no place, so its days are counted in UTC: two days back, it is over everywhere
 OVER = datetime.datetime.now(datetime.UTC).date() - datetime.timedelta(days=2)
@@ -127,3 +129,25 @@ def test_on_a_phone_every_control_takes_a_tap_and_nothing_scrolls_sideways(
             if box and min(round(box["height"], 1), round(box["width"], 1)) < 44:
                 small.append((path, control.inner_text(), box["width"], box["height"]))
     assert not small, small
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_banner_and_the_review_page_read_in_this_skin(page: Page, live_server, organizer, rider):
+    """The banner sits on the skin's warning colour: its buttons and the date stay 4.5:1 on it, at rest,
+    under the pointer and in focus, and so do the review page's buttons."""
+    event = _took_part(organizer, rider)
+    _sign_in(page, live_server, rider)
+    shortfalls = []
+    for path, selector in (
+        ("/en/news/", ".review-requests .btn, .review-requests .small"),
+        (f"/en/ratings/events/{event.pk}/review/", ".rating-review .btn"),
+    ):
+        page.goto(f"{live_server.url}{path}")
+        page.add_style_tag(content=NO_FADES)
+        for control in page.locator(selector).all():
+            for state in ("rest", "hover", "focus"):
+                _in_state(page, control, state)
+                value = legibility(control)
+                if value < (3 if is_large(control) else 4.5):
+                    shortfalls.append(f"{path} {control.inner_text()!r} ({state}): {value:.2f}")
+    assert not shortfalls, shortfalls

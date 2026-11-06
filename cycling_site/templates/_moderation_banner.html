@@ -40,7 +40,7 @@ banners' place and look, until one is marked.{% endcomment %}
 <div class="alert alert-warning border shadow-sm service-account-missing" role="region" aria-label="{% trans 'Service accounts' %}">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span>{% trans "Mark the account the agents add events through: its events must stay out of the organizers' ratings." %}</span>
-        <a href="{% url 'account_profile' %}#service-accounts" class="btn btn-sm btn-outline-dark">{% trans "Choose" %}</a>
+        <a href="{% url 'account_profile' %}#service-accounts" class="btn btn-sm btn-outline-primary">{% trans "Choose" %}</a>
     </div>
 </div>
 {% endif %}
@@ -52,13 +52,13 @@ day until they rate it or refuse, in the banners' place and look. Refusing is fi
     <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
         {% for event in review_requests %}
         <li class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span>{{ event.title }} <span class="text-muted small text-nowrap">{{ event.last_day|date:"d.m.Y" }}</span></span>
+            <span>{{ event.title }} <span class="small text-nowrap">{{ event.last_day|date:"d.m.Y" }}</span></span>
             <span class="d-flex flex-wrap gap-2">
-                <a href="{% url 'ratings:review' event.pk %}" class="btn btn-sm btn-outline-dark" aria-label="{% trans 'Rate' %}: {{ event.title }}">{% trans "Rate" %}</a>
+                <a href="{% url 'ratings:review' event.pk %}" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Rate' %}: {{ event.title }}">{% trans "Rate" %}</a>
                 <form method="post" action="{% url 'ratings:review' event.pk %}">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                    <button type="submit" name="decline" value="1" class="btn btn-sm btn-outline-secondary" aria-label="{% trans 'Do not rate' %}: {{ event.title }}">{% trans "Do not rate" %}</button>
+                    <button type="submit" name="decline" value="1" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Do not rate' %}: {{ event.title }}">{% trans "Do not rate" %}</button>
                 </form>
             </span>
         </li>
