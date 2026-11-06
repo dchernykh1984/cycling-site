@@ -888,7 +888,8 @@ form p:has(> #id_privacy) > .helptext {
 /* A file dragged over the block that takes it, on a computer; a phone, which has nothing to drag, is not
    told it may (cycling_site/templates/_file_drop_js.html). */
 .file-drop-over {
-    outline: 2px dashed var(--bs-primary);
+    /* the text's colour, which every skin sets apart from the page: the dark skin's primary is the page's own */
+    outline: 2px dashed var(--bs-body-color);
     outline-offset: 4px;
     border-radius: var(--bs-border-radius);
 }

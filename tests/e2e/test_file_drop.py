@@ -5,6 +5,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from tests.e2e.conftest import inject_session
+from tests.e2e.contrast import drawn, ratio
 from tests.e2e.test_event_assistant import _model
 
 # Lets go of a file named ``name`` over the zone -- ``selector``, or its block ``within`` it sits in -- as
@@ -94,3 +95,16 @@ def test_a_file_let_go_past_the_fields_does_not_replace_the_page_and_a_lone_inpu
     on_page, on_input = page.evaluate(OUTSIDE)
     assert on_page is False  # cancelled: nothing opens in place of the form
     assert on_input is True  # let through: the input's own drop stands
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_mark_of_a_field_a_file_is_over_can_be_seen_in_this_skin(page: Page, live_server, organizer):
+    """The dashed frame is all that says a file let go here is taken: 3:1 against the page, in every skin."""
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    if not _desktop(page):
+        pytest.skip("a phone has nothing to drag")
+    zone = page.locator("#id_file_regulations").locator("xpath=ancestor::div[contains(@class, 'mb-3')][1]")
+    zone.evaluate("el => el.classList.add('file-drop-over')")
+    frame = drawn(zone, "colour:" + zone.evaluate("el => getComputedStyle(el).outlineColor"))
+    assert ratio(frame, drawn(zone, "fill-beneath")) >= 3
