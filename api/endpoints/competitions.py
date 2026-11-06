@@ -12,6 +12,7 @@ from ninja.errors import HttpError
 from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
+from calendar_app import organizers
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.tracks import route_track
@@ -397,6 +398,7 @@ def list_competitions(
     direction_ids: list[int] = Query(default=[]),  # noqa: B008
     event_type_ids: list[int] = Query(default=[]),  # noqa: B008
     location_ids: list[int] = Query(default=[]),  # noqa: B008
+    organizer_ids: list[int] = Query(default=[]),  # noqa: B008
     only_favorite: bool = False,
     deleted: bool = False,
 ):
@@ -426,6 +428,9 @@ def list_competitions(
         qs = qs.filter(event_types__id__in=event_type_ids).distinct()
     if location_ids:
         qs = qs.filter(location_id__in=_descendant_location_ids(list(location_ids)))
+    if organizer_ids:
+        # The members who posted the events (issue #336), as the calendar's organizer filter names them.
+        qs = qs.filter(submitted_by_id__in=organizer_ids)
     # only_favorite restricts to the authenticated user's favorites (issue #183). There is no way
     # to favorite via the API -- it is filter-only -- so an anonymous caller has no favorites and
     # asking for them is a 401 rather than a silently empty list.
@@ -434,6 +439,17 @@ def list_competitions(
             raise HttpError(HTTPStatus.UNAUTHORIZED, "Authentication is required to filter by favorites.")
         qs = qs.filter(favorited_by__user=user)
     return _annotate_city_ids(list(qs.select_related("location")))
+
+
+class OrganizerOut(Schema):
+    user_id: int
+    name: str  # last name first, as the calendar's filter names them
+
+
+@router.get("/organizers", response=list[OrganizerOut], auth=None, summary="The organizers the calendar filters by")
+def list_organizers(request):
+    """Whoever posted a public event, but the site's agents (issue #336); their ids go to ``organizer_ids``."""
+    return [OrganizerOut(user_id=row["pk"], name=row["name"]) for row in organizers.choices()]
 
 
 @router.get("/{competition_id}", response=CompetitionDetailOut, auth=optional_auth, summary="Get competition detail")

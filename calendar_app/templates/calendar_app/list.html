@@ -78,6 +78,7 @@
       {% include "calendar_app/_event_type_filter.html" %}
       {% include "calendar_app/_direction_filter.html" %}
       {% include "calendar_app/_location_filter.html" %}
+      {% include "calendar_app/_organizer_filter.html" %}
       {% if request.user.is_authenticated %}
       <div class="col-auto">
         <div class="form-check mt-3">
@@ -109,6 +110,7 @@
         window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
         if (window.applyDirectionParams) window.applyDirectionParams(params, 'discipline_category');
         window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
+        window.appendIdsParam(params, 'organizer', window.getOrganizerFilterIds ? window.getOrganizerFilterIds() : []);
         var dfEl = form.querySelector('input[name="date_from"]');
         var dtEl = form.querySelector('input[name="date_to"]');
         // A range with no last day travels as all upcoming, which the other tabs show without one.
@@ -150,6 +152,7 @@
           window.applyDirectionParams(params, 'discipline_category');
         }
         window.appendIdsParam(params, 'location', window.getLocationFilterIds ? window.getLocationFilterIds() : []);
+        window.appendIdsParam(params, 'organizer', window.getOrganizerFilterIds ? window.getOrganizerFilterIds() : []);
         params.forEach(function (value, key) { addInput(key, value); });
       }
       window.onCalendarFilterChange = function () { syncFilterInputs(); updateSwitcherLinks(); form.submit(); };

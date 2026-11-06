@@ -46,7 +46,8 @@ Nothing keeps who wrote a review.
    -- in the menu right after Calendar, in every skin -- lists them, the best average first, with the
    number of scores and of events, and each of their events' pages shows "Organizer's rating" with
    the average and the number of scores; with fewer, nothing shows. The average is of all their
-   scores, each weighing the same whatever the size of its event.
+   scores, each weighing the same whatever the size of its event. An organizer's name opens the
+   calendar's list of all their events, past and to come (the Organizer filter, [calendar](calendar.md)).
 2. **Given** a hidden, deleted or unapproved event, or one the site's agents posted, **Then** its
    reviews do not count. An event by invitation (issue #313) asks its participants and counts as any
    other.

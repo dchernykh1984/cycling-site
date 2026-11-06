@@ -46,7 +46,9 @@ and protocols with the event's upload token. The API has no language prefix.
 4. **Given** news, **Then** admins create, update and soft-delete articles; **given** the knowledge
    base, members manage their own drafts and admins publish articles (a news item carries every
    language, a knowledge article its one).
-5. **Given** disciplines and event types, **Then** they can be listed with their names per language.
+5. **Given** disciplines and event types, **Then** they can be listed with their names per language;
+   so can the organizers the calendar filters by (`GET /competitions/organizers`, issue #336), whose
+   ids narrow the event list (`organizer_ids`).
 6. **Given** the gallery, **Then** anybody reads the albums and photos they could see on the site,
    and admins and the owner create, change and delete albums, upload photos and caption them, by the
    pages' own rules ([gallery](gallery.md), issue #365).

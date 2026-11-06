@@ -1,0 +1,49 @@
+{% load i18n %}
+{% comment %}
+The organizers (issue #336): the members who posted the calendar's events, last name first, one searchable
+list of boxes like the others, built on the generic window.MultiSelectCascade factory. Exposes
+window.getOrganizerFilterIds() and calls window.onCalendarFilterChange() on change. Chosen ids go to the
+GET as ?organizer=; a list about organizers shows all their events, past and to come.
+{% endcomment %}
+<div class="col-sm-6 col-lg-3">
+  <label class="form-label form-label-sm mb-1">{% trans "Organizer" %}</label>
+  <div class="dropdown">
+    <button class="form-select form-select-sm text-start" type="button" id="og-btn-1"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+      <span class="mf-text text-muted">{% trans "All" %}</span>
+    </button>
+    <ul class="dropdown-menu w-100 px-1" style="max-height:240px;overflow-y:auto;" id="og-menu-1"></ul>
+  </div>
+</div>
+{{ organizers_json|json_script:"organizers-data" }}
+<script>
+// What the address says, until the list below takes over: the page builds its links from it at once.
+window.getOrganizerFilterIds = window.getOrganizerFilterIds || function () {
+  return new URLSearchParams(window.location.search).getAll('organizer')
+    .reduce(function (a, v) { return a.concat(v.split(',')); }, [])
+    .filter(Boolean);
+};
+document.addEventListener('DOMContentLoaded', function () {
+  var el = document.getElementById('organizers-data');
+  if (!el || !window.MultiSelectCascade) return;
+  var people = JSON.parse(el.textContent);
+  var chosen = window.getOrganizerFilterIds();
+  var inst = window.MultiSelectCascade({
+    levels: [{ btn: document.getElementById('og-btn-1'), menu: document.getElementById('og-menu-1') }],
+    nodesUnder: function () { return people.map(function (p) { return { pk: p.pk, name: p.name }; }); },
+    restoreChains: function () { return chosen.map(function (id) { return [{ depth: 1, pk: id }]; }); },
+    searchable: true,
+    labels: { all: '{% trans "All" %}', selected: '{% trans "selected" %}', search: '{% trans "Search..." %}' },
+    onChange: function () {
+      // A page about organizers shows all their events, past and to come: the days it showed go with
+      // the choice, and the server spans the chosen organizers' events (or the usual days, with none).
+      document.querySelectorAll('#filter-form input[name="date_from"], #filter-form input[name="date_to"]')
+        .forEach(function (field) { field.value = ''; });
+      var upcoming = document.getElementById('filter-period');
+      if (upcoming) upcoming.disabled = true;
+      if (window.onCalendarFilterChange) window.onCalendarFilterChange();
+    }
+  });
+  window.getOrganizerFilterIds = function () { return inst.effectivePks(); };
+});
+</script>

@@ -16,7 +16,7 @@ inside the panel changes.{% endcomment %}
 </button>
 <script>
 (function () {
-  // How many kinds of filter narrow the page now: type, direction or discipline, place, favourites.
+  // How many kinds of filter narrow the page now: type, direction or discipline, place, organizer, favourites.
   window.countActiveFilters = function () {
     var count = 0;
     if (window.getEventTypeFilterIds && window.getEventTypeFilterIds().length) count += 1;
@@ -26,6 +26,7 @@ inside the panel changes.{% endcomment %}
       if (params.toString()) count += 1;
     }
     if (window.getLocationFilterIds && window.getLocationFilterIds().length) count += 1;
+    if (window.getOrganizerFilterIds && window.getOrganizerFilterIds().length) count += 1;
     var favourite = document.querySelector('#filter-panel input[type="checkbox"][id$="favorite-filter"]');
     if (favourite && favourite.checked) count += 1;
     return count;
