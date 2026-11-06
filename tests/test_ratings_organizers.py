@@ -65,3 +65,16 @@ class OrganizerRatingTests(TestCase):
         self.assertEqual(
             listed, [{"user_id": self.pavel.pk, "name": "Pavel Melnikov", "average": 4.0, "reviews": 3, "events": 2}]
         )
+
+
+class RatingsTabTests(TestCase):
+    def test_every_skin_has_the_ratings_tab_right_after_the_calendar(self):
+        from cycling_site import skins
+
+        for key in skins.registry():
+            with self.subTest(key):
+                self.client.cookies[skins.COOKIE] = key
+                menu = self.client.get(_url("news_index")).content.decode()
+                calendar_at = menu.index(f'href="{_url("calendar")}"')
+                ratings_at = menu.index(f'href="{_url("ratings:index")}"')
+                self.assertLess(calendar_at, ratings_at)
