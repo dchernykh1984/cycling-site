@@ -5241,3 +5241,7 @@ msgstr "<strong>Передача человека.</strong> Человек, до
 #: accounts/transfers.py
 msgid "Add your first and last name to your profile first: whoever opens the link must see who hands the person over."
 msgstr "Сначала добавьте в профиль имя и фамилию: тот, кто откроет ссылку, должен видеть, кто передаёт данные."
+
+#: cycling_site/contents.py
+msgid "Contents"
+msgstr "Содержание"

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n seo_tags %}
+{% load i18n seo_tags article_tags %}
 
 {% block title %}{{ article.title }}{% endblock %}
 
@@ -40,7 +40,7 @@
     {% endif %}
 
     {% if article.body %}
-    <div class="article-body">{{ article.body|safe|localized_links }}</div>
+    <div class="article-body">{{ article.body|safe|localized_links|with_contents }}</div>
     {% endif %}
 
     {% if article.is_hidden and can_edit %}
