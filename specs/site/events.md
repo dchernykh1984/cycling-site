@@ -42,7 +42,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    disciplines (both optional), a location from the tree or a new venue
    proposed in a city (see [locations](locations.md)), a registration link, links and files for
    announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
-   images, up to 10 MB; the route takes KMZ, TCX, FIT and GeoJSON too), and for link previews an
+   images, up to 10 MB; the route takes KMZ, TCX, FIT and GeoJSON too -- on a computer a file may be
+   dragged onto its field's block as well as picked), and for link previews an
    image and a line of text per language (up to 200 characters; a chat shows about the first 80 and
    cuts the rest, the form says so).
 3. **Given** an invalid field -- a missing title or date, a link longer than its column, an end
