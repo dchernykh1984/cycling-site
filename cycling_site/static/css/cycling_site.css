@@ -743,6 +743,14 @@ main .event-photo-preview img { object-fit: contain; }
 .virtual-filters .form-select {
     min-height: 2.75rem;
 }
+/* The form to add a person opens by a button: the button is the fold's header, with no triangle of
+   its own beside the words. */
+.virtual-add-fold > summary {
+    list-style: none;
+}
+.virtual-add-fold > summary::-webkit-details-marker {
+    display: none;
+}
 /* The owner's list of the home page's cards is tapped on phones too: 44 px whatever height the skin
    gives a button. */
 .home-cards .btn {
