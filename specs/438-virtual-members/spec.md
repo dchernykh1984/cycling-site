@@ -42,6 +42,7 @@ Taken with the maintainer on 2026-11-05.
     `specs/site/registrations.md` listed.
 11. **Privacy.** A tick "I agree with the privacy policy" on the sign-up form; an account Google,
     GitHub or Strava made is asked the same at its first sign-in; members from before are not asked.
+    Whoever does not agree goes no further, and a line under the box says so (2026-11-06).
     The policy says that whoever adds people without accounts answers for the permission to handle
     their personal data.
 12. **The registration page (#439).** A tick chooses a person; opening their details is a button of
@@ -129,6 +130,6 @@ Taken with the maintainer on 2026-11-05.
 
 ## Open Questions
 
-- A member who does not agree at a provider's first sign-in keeps the account the provider made,
-  with the name it brought, but can open no page until they agree; the site has no way for them to
-  delete it themselves (`NEEDS CLARIFICATION`: whether the question page should offer one).
+- None. Answered 2026-11-06: whoever does not agree goes no further -- no way to delete the account is
+  offered; under the box a line says, as sign-up forms do, that without the yes there is no signing
+  up.

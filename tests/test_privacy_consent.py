@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import translation
+from django.utils.translation import gettext
 
 from accounts.adapters import SocialAccountAdapter
 from accounts.models import User
@@ -31,6 +32,13 @@ class SignupTests(TestCase):
         self.assertEqual(list(form.fields)[-1], "privacy")
         self.assertTrue(form.fields["privacy"].required)
         self.assertContains(page, f'href="{_url("privacy_policy")}" target="_blank" rel="noopener"')
+
+    def test_under_the_box_it_says_there_is_no_account_without_the_yes(self):
+        with translation.override("ru"):
+            hint = gettext("Without agreeing to the privacy policy you cannot sign up.")
+            page = self.client.get(reverse("account_signup"))
+        self.assertContains(page, f'<span class="helptext" id="id_privacy_helptext">{hint}</span>', html=True)
+        self.assertContains(page, 'aria-describedby="id_privacy_helptext"')
 
     def test_without_the_tick_no_account_is_made(self):
         self._sign_up()
@@ -67,6 +75,8 @@ class ProviderAccountTests(TestCase):
         self.assertRedirects(answer, f"{_url('account_privacy_consent')}?next={page.replace('/', '%2F')}")
         question = self.client.get(answer["Location"])
         self.assertContains(question, f'href="{_url("privacy_policy")}"')
+        self.assertContains(question, "Without agreeing to the privacy policy you cannot sign up.")
+        self.assertContains(question, 'aria-describedby="id_privacy_helptext"')
         self.assertEqual(question.context["next"], page)
         back = self.client.post(_url("account_privacy_consent"), {"privacy": "on", "next": page})
         self.assertRedirects(back, page)
