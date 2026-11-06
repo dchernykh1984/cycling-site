@@ -15,7 +15,7 @@
   (`NewsArticleCreateView`); the chat on `news/templates/news/article_form.html`.
 
 **Tests**: `assistant/tests/` (models, llm, prompt, images, places, fields, conversations, api,
-access, chat), `tests/e2e/test_event_assistant.py`
+access, chat), `tests/e2e/test_event_assistant.py`, `tests/e2e/test_file_drop.py`
 **Related**: [events](events.md), [API](api.md), [locations](locations.md),
 [events agents](events-agents.md); `specs/353-event-assistant/` (the decisions, the research, the plan)
 

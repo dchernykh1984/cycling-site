@@ -15,7 +15,7 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_top_events.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
 `calendar_app/test_tracks.py`, `tests/test_route_track_page.py`,
 `assistant/tests/test_chat.py`,
-`tests/e2e/test_competition_form.py`, `test_add_to_calendar.py`,
+`tests/e2e/test_competition_form.py`, `test_file_drop.py`, `test_add_to_calendar.py`,
 `test_competition_materials.py`, `test_description_editor.py`, `test_resubmit.py`,
 `test_pending_moderation.py`, `test_invite_only_events.py`, `test_competition_link_order.py`,
 `test_map_links_menu.py`, `test_route_track.py`
