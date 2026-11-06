@@ -14,7 +14,7 @@ import datetime
 
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Max, Prefetch, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -40,12 +40,13 @@ def ended(competition) -> bool:
 
 def started_bibs(competition) -> set[str]:
     """The bibs the event's protocol data lists as having started. The banner asks on every page, so they
-    are kept until a protocol of the event changes rather than read from its documents each time."""
+    are kept until a protocol of the event changes, comes or goes, rather than read from its documents
+    each time."""
     documents = competition.protocols.exclude(document__isnull=True)
-    latest = documents.aggregate(latest=Max("last_updated"))["latest"]
-    if latest is None:
+    state = documents.aggregate(latest=Max("last_updated"), count=Count("id"))
+    if state["latest"] is None:
         return set()
-    key = f"ratings:started:{competition.pk}:{latest.timestamp()}"
+    key = f"ratings:started:{competition.pk}:{state['count']}:{state['latest'].timestamp()}"
     kept = cache.get(key)
     if kept is not None:
         return kept
