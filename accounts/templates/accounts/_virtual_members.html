@@ -79,11 +79,11 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                               data-confirm="{% blocktrans with name=link.claimed_by.public_display_name %}Hand {{ person }} over to {{ name }}? Their registrations and named bibs go to that account, and {{ person }} leaves your list.{% endblocktrans %}"
                               onsubmit="return confirm(this.dataset.confirm)">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-primary">{% trans "Confirm" %}</button>
+                            <button type="submit" class="btn btn-sm btn-primary" aria-label="{% trans 'Confirm' %}: {{ person }}">{% trans "Confirm" %}</button>
                         </form>
                         <form method="post" action="{% url 'account_virtual_transfer_reject' person.pk %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Reject" %}</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{% trans 'Reject' %}: {{ person }}">{% trans "Reject" %}</button>
                         </form>
                     </div>
                 </div>
@@ -99,7 +99,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                           data-confirm="{% trans 'Make a new link? This one will stop working.' %}"
                           onsubmit="return confirm(this.dataset.confirm)">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-warning">{% trans "New link" %}</button>
+                        <button type="submit" class="btn btn-sm btn-outline-warning" aria-label="{% trans 'New link' %}: {{ person }}">{% trans "New link" %}</button>
                     </form>
                 </div>
                 {% endif %}
