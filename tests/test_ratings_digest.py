@@ -89,6 +89,19 @@ class DigestTests(TestCase):
         self.assertEqual(len(json.loads(model.call_args.args[0][1]["content"])["reviews"]), 3)
         self.assertEqual(ReviewSummary.objects.get().reviews, 3)
 
+    def test_with_nothing_new_to_write_it_from_the_model_is_not_asked_again(self):
+        _reviewed(self.event, (4, "A"), (5, "B"))
+        self.client.force_login(self.organizer)
+        with self._model():
+            self.client.post(self.page)
+        api = f"/api/v1/ratings/events/{self.event.pk}/summary?language=en"
+        with self._model("- Again") as model:
+            self.client.post(self.page)
+            again = self.client.post(api, **_bearer(self.organizer)).json()
+        model.assert_not_called()
+        self.assertEqual(again["digest"], "- The course was clear\n- The start was late")
+        self.assertEqual(ReviewSummary.objects.get().reviews, 2)
+
     def test_when_the_model_does_not_answer_the_page_says_so_and_keeps_nothing(self):
         _reviewed(self.event, (4, "A"), (5, "B"))
         self.client.force_login(self.organizer)

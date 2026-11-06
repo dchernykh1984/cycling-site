@@ -52,8 +52,9 @@ Nothing keeps who wrote a review.
    reviews, the average, the spread of scores and a digest; anybody else finds no page.
 2. **Given** "Write the digest", **Then** the language model the assistant uses gets the scores and
    comments shuffled, with nothing of their authors, and writes the points participants liked and
-   would improve in the page's language; the digest is kept and offered again only once more reviews
-   came. A model that does not answer leaves a message and nothing kept.
+   would improve in the page's language; the digest is kept and written again only once more reviews
+   came -- until then a request to write it gives the kept one, and the model is not asked. A model
+   that does not answer leaves a message and nothing kept.
 3. **Given** the API, **Then** `GET` and `POST /ratings/events/{id}/summary?language=` give and write
    it (403 for anyone else, 409 below two reviews, 503 when the model does not answer).
 

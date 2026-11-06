@@ -135,7 +135,7 @@ def summary(request, competition_id: int, language: str = ""):
     "/events/{competition_id}/summary",
     response=SummaryOut,
     auth=member_auth,
-    summary="Write the digest of an event's reviews again (who edits it)",
+    summary="Write the digest of an event's reviews, again once more came (who edits it)",
 )
 def write_summary(request, competition_id: int, language: str = ""):
     competition = _edited(request, competition_id)
