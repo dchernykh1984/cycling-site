@@ -58,13 +58,18 @@ def kept(competition) -> ReviewSummary | None:
 
 
 def write(competition) -> ReviewSummary:
-    """A digest of the event's reviews in the page's language, written now and kept; raises
-    llm.UnavailableError when the model gives none, and ValueError while there are too few reviews."""
+    """A digest of the event's reviews in the page's language, written now and kept -- or the one kept,
+    while no review came since it was written: the model is not asked, nor paid, for the same digest
+    twice. Raises llm.UnavailableError when the model gives none, and ValueError while there are too
+    few reviews."""
     reviews = list(Review.objects.filter(competition=competition).values_list("answers", flat=True))
     if len(reviews) < DIGEST_FROM:
         raise ValueError("too few reviews")
-    random.shuffle(reviews)  # the order they came in is nobody's business, the model's included
     language = language_code()
+    written = ReviewSummary.objects.filter(competition=competition, language=language).first()
+    if written is not None and written.reviews >= len(reviews):
+        return written
+    random.shuffle(reviews)  # the order they came in is nobody's business, the model's included
     lines = [
         {"score": answers.get(form.RATED), "comment": answers.get("comment", "")}
         for answers in reviews
