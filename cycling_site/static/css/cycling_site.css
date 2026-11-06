@@ -935,3 +935,19 @@ form p:has(> #id_privacy) > .helptext {
 .article-body h3[id] {
     scroll-margin-top: 6rem;
 }
+
+/* A picture floated beside an article's text -- by the editor's alignment, or a style the API sent --
+   would leave a phone a column too narrow to read: there it stands alone, centred, as wide as its
+   author made it and the column allows. A section starts below the pictures of the one before. */
+@media (max-width: 767.98px) {
+    main .article-body img[style*="float"] {
+        float: none !important;
+        display: block;
+        max-width: 100% !important;
+        margin: 0 auto 0.75rem !important;
+    }
+}
+main .article-body h2,
+main .article-body h3 {
+    clear: both;
+}
