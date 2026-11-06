@@ -166,9 +166,9 @@ class IssuedBibEvent(models.Model):
 
 class DeclaredBib(models.Model):
     """The bib a member names for themselves at an event where the start lists give them none, one per
-    member and event -- or for a person without an account they added (issue #438). A preference that
-    finds that bib's photos, not a right: nobody marks them, and no registration's album or bib search
-    reads it."""
+    member and event -- or for a person without an account they added (issue #438); two where handing
+    such a person over to the member brought another number. A preference that finds that bib's
+    photos, not a right: nobody marks them, and no registration's album or bib search reads it."""
 
     competition = models.ForeignKey("calendar_app.Competition", on_delete=models.CASCADE, related_name="declared_bibs")
     user = models.ForeignKey(
@@ -182,8 +182,10 @@ class DeclaredBib(models.Model):
 
     class Meta:
         constraints: ClassVar[list] = [
-            models.UniqueConstraint(fields=["competition", "user"], name="declared_bib_unique"),
-            models.UniqueConstraint(fields=["competition", "virtual_member"], name="declared_bib_virtual_unique"),
+            models.UniqueConstraint(fields=["competition", "user", "bib"], name="declared_bib_unique"),
+            models.UniqueConstraint(
+                fields=["competition", "virtual_member", "bib"], name="declared_bib_virtual_unique"
+            ),
             # Somebody's bib: a member's or a person's without an account, never both or neither
             models.CheckConstraint(
                 condition=models.Q(user__isnull=True) ^ models.Q(virtual_member__isnull=True),

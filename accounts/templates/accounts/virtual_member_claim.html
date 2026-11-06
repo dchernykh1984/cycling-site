@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}A link that hands a person without an account over to the account that opens it (issue #438):
+who hands whom over, what moves, a box -- unticked -- to keep the manager, and one button. Opening it
+changes nothing; a link that cannot be used says why.{% endcomment %}
+
+{% block title %}{% trans "Taking over a person's data" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center virtual-claim">
+  <div class="col-md-8 col-lg-6">
+    {% if asked %}
+    {% with name=link.person.owner.public_display_name person=link.person %}
+    <h1 class="h3 mb-3">{% blocktrans %}Take {{ person }} into your account?{% endblocktrans %}</h1>
+    <p>{% blocktrans %}{{ name }} hands {{ person }} over to you: their registrations and the bibs named for their photos go into your account, and {{ name }} no longer sees them.{% endblocktrans %}</p>
+    {% if filled %}<p>{% trans "Your profile's empty fields get filled from their data:" %} {{ filled|join:", " }}.</p>{% endif %}
+    <p class="small text-muted">{% blocktrans %}Nothing moves until {{ name }} confirms that this account is their person's.{% endblocktrans %}</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="keep_manager" id="keep-manager">
+        <label class="form-check-label" for="keep-manager">{% blocktrans %}Let {{ name }} go on managing my registrations and photos{% endblocktrans %}</label>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <button type="submit" class="btn btn-primary">{% trans "Take over" %}</button>
+        <a href="{% url 'account_profile' %}" class="btn btn-link">{% trans "Not now" %}</a>
+      </div>
+    </form>
+    {% endwith %}
+    {% else %}
+    <h1 class="h3 mb-3">{% trans "Taking over a person's data" %}</h1>
+    <div class="alert alert-warning" role="alert">{{ refusal }}</div>
+    <a href="{% url 'account_profile' %}" class="btn btn-link px-0">{% trans "To your profile" %}</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

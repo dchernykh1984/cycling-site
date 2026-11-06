@@ -45,14 +45,20 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
         <p class="small text-muted mb-2" aria-live="polite">{% blocktrans with all=virtual.people|length %}Shown: <span class="vm-shown">{{ all }}</span> of {{ all }}{% endblocktrans %}</p>
         <ul class="list-group mb-3 virtual-people">
             {% for person in virtual.people %}
-            <li class="list-group-item d-flex flex-column align-items-start gap-2"
+            <li class="list-group-item d-flex flex-column align-items-start gap-2" id="vm-{{ person.pk }}"
                 data-name="{{ person.last_name }} {{ person.first_name }}" data-team="{{ person.team }}" data-born="{{ person.birth_date|date:'Y-m-d' }}">
                 <span>
                     <span class="fw-semibold">{{ person.last_name }} {{ person.first_name }}</span>
                     <span class="text-muted small d-block">{{ person.birth_date|date:"d.m.Y" }} &middot; {{ person.get_gender_display }}{% if person.team %} &middot; {{ person.team }}{% endif %}{% if person.city %} &middot; {{ person.city }}{% endif %}{% if person.strava_link %} &middot; <a href="{{ person.strava_link }}" target="_blank" rel="noopener">Strava</a>{% endif %}{% if person.sports_achievements %} &middot; {{ person.sports_achievements }}{% endif %}</span>
                 </span>
-                <span class="d-flex gap-2">
+                <span class="d-flex flex-wrap gap-2">
                     <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>
+                    {% if not person.transfer_url and not person.transfer_link.claimed_by_id %}
+                    <form method="post" action="{% url 'account_virtual_transfer' person.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="{% trans 'Hand over' %}: {{ person }}">{% trans "Hand over" %}</button>
+                    </form>
+                    {% endif %}
                     {% comment %}The question in an attribute, as the page's text: a name with an apostrophe reads as
                     typed, where escaping it once for HTML and again for a script string would show the code.{% endcomment %}
                     <form method="post" action="{% url 'account_virtual_delete' person.pk %}"
@@ -62,6 +68,42 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                         <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="{% trans 'Delete' %}: {{ person }}">{% trans "Delete" %}</button>
                     </form>
                 </span>
+                {% comment %}Handing the person over to an account of their own: the link to send while it is
+                live, then the request that came through it, which waits for the reader's answer.{% endcomment %}
+                {% with link=person.transfer_link %}
+                {% if link.claimed_by_id %}
+                <div class="virtual-transfer small w-100">
+                    <p class="mb-2">{% blocktrans with name=link.claimed_by.public_display_name %}{{ name }} asks to take {{ person }} into their account.{% endblocktrans %}{% if link.keep_manager %} {% trans "They let you go on managing their registrations and photos." %}{% endif %}</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="post" action="{% url 'account_virtual_transfer_confirm' person.pk %}"
+                              data-confirm="{% blocktrans with name=link.claimed_by.public_display_name %}Hand {{ person }} over to {{ name }}? Their registrations and named bibs go to that account, and {{ person }} leaves your list.{% endblocktrans %}"
+                              onsubmit="return confirm(this.dataset.confirm)">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary">{% trans "Confirm" %}</button>
+                        </form>
+                        <form method="post" action="{% url 'account_virtual_transfer_reject' person.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">{% trans "Reject" %}</button>
+                        </form>
+                    </div>
+                </div>
+                {% elif person.transfer_url %}
+                <div class="virtual-transfer small w-100">
+                    <p class="mb-2">{% blocktrans %}Send this link to the owner of the account the data of {{ person }} moves to: they open it signed in, and then you confirm it here. {{ person }} then leaves your list, with their registrations and named bibs.{% endblocktrans %}</p>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <code class="user-select-all text-break">{{ person.transfer_url }}</code>
+                        {% include "_share_button.html" with share_url=person.transfer_url %}
+                    </div>
+                    <p class="text-muted mb-2">{% blocktrans with date=link.expires_at|date:"d.m.Y" %}Valid until {{ date }}.{% endblocktrans %}</p>
+                    <form method="post" action="{% url 'account_virtual_transfer' person.pk %}"
+                          data-confirm="{% trans 'Make a new link? This one will stop working.' %}"
+                          onsubmit="return confirm(this.dataset.confirm)">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-warning">{% trans "New link" %}</button>
+                    </form>
+                </div>
+                {% endif %}
+                {% endwith %}
             </li>
             {% endfor %}
         </ul>

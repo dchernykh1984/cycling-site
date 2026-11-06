@@ -365,11 +365,16 @@ def has_indexed_album(competition) -> bool:
 
 def declare_bib(person, competition, bib: str) -> DeclaredBib:
     """The person's one bib at the event -- the member's own, or a person's without an account they
-    added -- in place of any named before."""
-    declared, _created = DeclaredBib.objects.update_or_create(
-        **virtual_members.who(person), competition=competition, defaults={"bib": bib}
-    )
-    return declared
+    added -- in place of any named before, the second one a hand-over may bring (issue #438) too."""
+    with transaction.atomic():
+        named = DeclaredBib.objects.select_for_update().filter(**virtual_members.who(person), competition=competition)
+        kept = named.order_by("pk").first()
+        if kept is None:
+            return DeclaredBib.objects.create(**virtual_members.who(person), competition=competition, bib=bib)
+        named.exclude(pk=kept.pk).delete()
+        kept.bib = bib
+        kept.save(update_fields=["bib", "updated_at"])
+        return kept
 
 
 def forget_bib(person, competition) -> None:
