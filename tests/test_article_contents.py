@@ -62,6 +62,11 @@ class ContentsTests(SimpleTestCase):
         self.assertNotIn("article-toc", html)
         self.assertIn("[toc] inside a sentence stays.", html)
 
+    def test_a_marker_the_editor_aligned_still_draws_the_contents(self):
+        html = str(with_contents('<p class="ql-align-center">[toc]</p><h2>One</h2>'))
+        self.assertIn('<nav class="article-toc"', html)
+        self.assertNotIn("[toc]", html)
+
     def test_a_second_marker_draws_no_second_contents(self):
         html = str(with_contents("<p>[toc]</p><h2>One</h2><p> [TOC] </p><h2>Two</h2>"))
         self.assertEqual(html.count('<nav class="article-toc"'), 1)
