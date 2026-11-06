@@ -65,6 +65,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    (`window.cascadeSearchWords`), a team, and the event's open categories as the calendar's menu of
    boxes (a person shows when they fit any one ticked). The filters change what is shown, never what
    is sent: a line counts the people ticked and, of them, those the filters hide.
+   With two people or more to tick, an "All" box heads the list: it ticks or clears everyone shown --
+   those the filters leave, never "another person" -- and is half ticked while only some are.
 10. **Given** a member's own token, **Then** `/api/v1/registrations/` does what the page for several
    does: `POST` enters a list of people (`me`, `member:<id>`, `virtual:<id>`, or `other` where anyone
    may be entered) one after another, each with its own answer, filling in what an entry leaves out

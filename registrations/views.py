@@ -81,6 +81,8 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "relay_enabled": False,
                 "all_categories_json": self._categories_json(competition),
                 "filters": self._filters(competition, rows),
+                # "All" where there are two people or more to tick
+                "tick_all": sum(1 for row in rows if row.profile is not None and row.form and not row.entered) >= 2,
             },
         )
 
