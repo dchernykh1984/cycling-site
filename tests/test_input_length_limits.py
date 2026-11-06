@@ -122,6 +122,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_members.VirtualMembersIn": None,
     # Taking a person over names the link's key, a UUID, and a flag; nothing lands in a text column.
     "api.endpoints.virtual_members.ClaimIn": None,
+    # A review's answers go into one JSON column, checked by ratings.form: the text at most TEXT_LENGTH.
+    "api.endpoints.ratings.ReviewIn": None,
     # A page's address and where it was opened from, as tally keys: stats.counting.add cuts a key to its
     # column, and the schema bounds the request.
     "api.endpoints.stats.HitIn": None,

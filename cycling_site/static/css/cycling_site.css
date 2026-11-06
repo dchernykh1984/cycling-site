@@ -948,3 +948,9 @@ main .article-body h2,
 main .article-body h3 {
     clear: both;
 }
+
+/* The score of a review (issue #436): five buttons, each a target a finger hits (44px). */
+.rating-scores .btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+}

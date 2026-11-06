@@ -44,3 +44,25 @@ banners' place and look, until one is marked.{% endcomment %}
     </div>
 </div>
 {% endif %}
+{% if review_requests %}
+{% comment %}The events the reader took part in, to rate (issue #436): from the day after each one's last
+day until they rate it or refuse, in the banners' place and look. Refusing is final and stays here.{% endcomment %}
+<div class="alert alert-warning border shadow-sm review-requests" role="region" aria-label="{% trans 'Rate the events you took part in' %}">
+    <div class="fw-semibold mb-2">{% trans "Rate the events you took part in" %}</div>
+    <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
+        {% for event in review_requests %}
+        <li class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>{{ event.title }} <span class="text-muted small text-nowrap">{{ event.last_day|date:"d.m.Y" }}</span></span>
+            <span class="d-flex flex-wrap gap-2">
+                <a href="{% url 'ratings:review' event.pk %}" class="btn btn-sm btn-outline-dark" aria-label="{% trans 'Rate' %}: {{ event.title }}">{% trans "Rate" %}</a>
+                <form method="post" action="{% url 'ratings:review' event.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" name="decline" value="1" class="btn btn-sm btn-outline-secondary" aria-label="{% trans 'Do not rate' %}: {{ event.title }}">{% trans "Do not rate" %}</button>
+                </form>
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

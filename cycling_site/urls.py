@@ -155,6 +155,7 @@ urlpatterns += i18n_patterns(
     path("gallery/", include("gallery.urls")),
     path("virtual-ride/", include("trainer.urls")),
     path("stats/", include("stats.urls")),
+    path("ratings/", include("ratings.urls")),
     path("", include("protocols.urls")),
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),

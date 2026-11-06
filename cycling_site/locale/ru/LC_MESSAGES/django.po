@@ -5265,3 +5265,73 @@ msgstr "Сохранено."
 #: cycling_site/templates/_moderation_banner.html
 msgid "Mark the account the agents add events through: its events must stay out of the organizers' ratings."
 msgstr "Отметьте аккаунт, через который агенты добавляют мероприятия: его мероприятия не должны попадать в рейтинги организаторов."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Rate the events you took part in"
+msgstr "Оцените мероприятия, в которых вы участвовали"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Rate"
+msgstr "Оценить"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Do not rate"
+msgstr "Не оценивать"
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Reviews of events.</strong> After an event you took part in, the site asks you to rate it. Your account keeps only that you answered -- with a review or with a refusal, which cannot be told apart -- and not when. The review keeps nothing of who wrote it or when: nobody, the site's owners included, can see that it is yours, and so it cannot be changed or deleted afterwards. Its score goes into the organizer's public rating; the site shows no review as it was written."
+msgstr "<strong>Отзывы о мероприятиях.</strong> После мероприятия, в котором вы участвовали, сайт просит его оценить. Ваш аккаунт хранит только то, что вы ответили, — отзывом или отказом, их не отличить, — и не хранит когда. Отзыв не хранит ничего о том, кто и когда его написал: никто, включая владельцев сайта, не может увидеть, что он ваш, и поэтому его нельзя потом изменить или удалить. Его оценка входит в публичный рейтинг организатора; сайт не показывает отзывы в том виде, в каком их написали."
+
+#: ratings/form.py
+msgid "Your overall score of the event"
+msgstr "Ваша общая оценка мероприятия"
+
+#: ratings/form.py
+msgid "What went well, and what could be better"
+msgstr "Что было хорошо, а что можно сделать лучше"
+
+#: ratings/form.py
+#, python-format
+msgid "Choose a score from %(lowest)s to %(highest)s."
+msgstr "Выберите оценку от %(lowest)s до %(highest)s."
+
+#: ratings/form.py
+#, python-format
+msgid "At most %(count)s characters."
+msgstr "Не больше %(count)s символов."
+
+#: ratings/form.py
+msgid "This field is required."
+msgstr "Обязательное поле."
+
+#: ratings/templates/ratings/review.html
+msgid "Rate the event"
+msgstr "Оцените мероприятие"
+
+#: ratings/templates/ratings/review.html
+msgid "The review is anonymous: the site keeps no record of who wrote it or when, so it cannot be changed or deleted later. The event's organizers see only a digest of all its reviews."
+msgstr "Отзыв анонимный: сайт не хранит, кто и когда его написал, поэтому потом его нельзя изменить или удалить. Организаторы мероприятия видят только выжимку из всех отзывов."
+
+#: ratings/templates/ratings/review.html
+msgid "1 is very bad, 5 is excellent."
+msgstr "1 — очень плохо, 5 — отлично."
+
+#: ratings/templates/ratings/review.html
+msgid "If you like: the digest the organizers get is written from these words."
+msgstr "По желанию: из этих слов составляется выжимка для организаторов."
+
+#: ratings/templates/ratings/review.html
+msgid "Send the review"
+msgstr "Отправить отзыв"
+
+#: ratings/views.py
+msgid "We will not ask about this event again."
+msgstr "Больше не будем спрашивать об этом мероприятии."
+
+#: ratings/views.py
+msgid "Thank you! Nobody will know the review is yours."
+msgstr "Спасибо! Никто не узнает, что этот отзыв ваш."
+
+#: ratings/views.py
+msgid "This event cannot be rated, or you have answered already."
+msgstr "Это мероприятие нельзя оценить, или вы уже ответили."

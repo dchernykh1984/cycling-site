@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% comment %}A participant's review of an event they took part in (issue #436): a score, a comment if they
+like, and the word that nobody will know it is theirs -- which is also why it cannot be changed later.
+Refusing is the other answer, as final.{% endcomment %}
+
+{% block title %}{% trans "Rate the event" %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center rating-review">
+  <div class="col-md-8 col-lg-6">
+    <h1 class="h3 mb-2">{% trans "Rate the event" %}</h1>
+    <p class="mb-2"><a href="{{ competition.get_absolute_url }}">{{ competition.title }}</a>, {{ competition.last_day|date:"d.m.Y" }}</p>
+    <p class="small text-muted">{% trans "The review is anonymous: the site keeps no record of who wrote it or when, so it cannot be changed or deleted later. The event's organizers see only a digest of all its reviews." %}</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% for row in rows %}
+      {% if row.question.kind == score %}
+      <fieldset class="mb-3">
+        <legend class="form-label fw-semibold fs-6 mb-2">{{ row.question.label }}</legend>
+        <div class="d-flex flex-wrap gap-2 rating-scores">
+          {% for value in scores %}
+          <input type="radio" class="btn-check" name="{{ row.question.key }}" id="{{ row.question.key }}-{{ value }}" value="{{ value }}"{% if row.value == value|stringformat:"s" %} checked{% endif %}>
+          <label class="btn btn-outline-primary" for="{{ row.question.key }}-{{ value }}">{{ value }}</label>
+          {% endfor %}
+        </div>
+        <div class="form-text">{% trans "1 is very bad, 5 is excellent." %}</div>
+        {% if row.error %}<div class="text-danger small mt-1">{{ row.error }}</div>{% endif %}
+      </fieldset>
+      {% else %}
+      <div class="mb-3">
+        <label for="{{ row.question.key }}" class="form-label fw-semibold">{{ row.question.label }}</label>
+        <textarea class="form-control" name="{{ row.question.key }}" id="{{ row.question.key }}" rows="5" maxlength="{{ text_length }}">{{ row.value }}</textarea>
+        <div class="form-text">{% trans "If you like: the digest the organizers get is written from these words." %}</div>
+        {% if row.error %}<div class="text-danger small mt-1">{{ row.error }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% endfor %}
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-primary">{% trans "Send the review" %}</button>
+        <button type="submit" name="decline" value="1" class="btn btn-outline-secondary">{% trans "Do not rate" %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
