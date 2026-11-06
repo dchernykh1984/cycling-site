@@ -24,6 +24,7 @@ from agent.geo import parse_start
 from api.auth import member_auth
 from assistant import conversations, llm
 from assistant.models import Conversation
+from calendar_app import tracks
 from calendar_app.models import Competition
 from news.models import NewsArticle
 
@@ -222,13 +223,20 @@ def link_conversation(request, conversation_id: int, payload: LinkIn):
     "/track-start",
     response=PointOut,
     auth=member_auth,
-    summary="Where a GPX or KML track starts (organizer)",
+    summary="Where a track starts: GPX, KML, KMZ, TCX, FIT or GeoJSON (organizer)",
 )
 def track_start(request, file: UploadedFile = File(...)):  # noqa: B008
     _member(request)
     if file.size is None or file.size > _MAX_TRACK_BYTES:
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "The file is too large for a track")
-    point = parse_start(file.read().decode("utf-8", errors="replace"))
+    data = file.read()
+    point = parse_start(data.decode("utf-8", errors="replace"))
+    if point is None:
+        # every format the event's map reads -- KMZ, TCX, FIT, GeoJSON too: where its first line begins
+        drawn = tracks.read(data)
+        if drawn:
+            lng, lat = drawn["coordinates"][0][0]
+            point = (lat, lng)
     if point is None:
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "No track point was found in this file")
     return {"lat": point[0], "lng": point[1]}

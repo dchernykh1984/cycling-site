@@ -59,6 +59,13 @@ def _preview_text_field() -> forms.CharField:
     )
 
 
+#: What every file field of the event form takes; the route's takes the track formats too (tracks.EXTENSIONS),
+#: and the event assistant takes the same as the form it fills.
+DOCUMENT_EXTENSIONS = frozenset(
+    {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
+)
+
+
 class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         # The submitting user is needed to validate location ownership (issue #111).
@@ -175,9 +182,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     is_top = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
     _MAX_FILE_BYTES = tracks.MAX_BYTES
-    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = frozenset(
-        {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
-    )
+    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = DOCUMENT_EXTENSIONS
 
     def _validate_file(self, f, also: frozenset[str] = frozenset()):
         if not f:

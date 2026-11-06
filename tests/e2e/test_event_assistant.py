@@ -223,6 +223,25 @@ def test_an_attached_track_goes_into_the_form_and_places_a_new_venue(
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_word_document_goes_into_the_form_as_the_regulations_as_the_form_itself_takes_it(
+    page: Page, live_server, admin_user, chat_on, monkeypatch, tmp_path
+):
+    """The chat's file button takes what the event form's own file fields take, a Word document too."""
+    rules = tmp_path / "rules.docx"
+    rules.write_bytes(b"PK\x03\x04 a Word document")
+    _model(monkeypatch, {"reply": "Got the regulations.", "set": {}})
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    page.click("#assistant-toggle")
+    assert ".docx" in (page.get_attribute("#assistant-file", "accept") or "").split(",")
+    page.set_input_files("#assistant-file", str(rules))
+    log = page.locator("#assistant-log")
+    expect(log).to_contain_text("Attached to the form as the regulations: rules.docx")
+    expect(log).to_contain_text("Got the regulations.")
+    assert page.eval_on_selector("#id_file_regulations", "i => i.files.length ? i.files[0].name : ''") == "rules.docx"
+
+
+@pytest.mark.django_db(transaction=True)
 def test_when_the_model_cannot_answer_the_message_waits_to_be_sent_again(
     page: Page, live_server, admin_user, chat_on, monkeypatch
 ):

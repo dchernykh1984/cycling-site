@@ -15,6 +15,8 @@ from django.utils.translation import gettext as _
 from assistant.conversations import may_see, offered, subject_field
 from assistant.models import Conversation
 from assistant.prompt import LANGUAGES, URL_FIELDS
+from calendar_app import tracks
+from calendar_app.forms import DOCUMENT_EXTENSIONS
 
 register = template.Library()
 
@@ -76,6 +78,7 @@ def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
     first = _first_question(kind, subject is not None)
     return {
         "offered": True,
+        "accept": ",".join(f".{ext}" for ext in sorted(DOCUMENT_EXTENSIONS | tracks.EXTENSIONS)),
         "history": [{"role": m.role, "text": m.text} for m in conversation.messages.all()] if conversation else [],
         "config": {
             "kind": kind,
@@ -91,7 +94,11 @@ def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
                 "failed": _("The message did not go through. Send it again."),
                 "attachedRoute": _("Attached to the form as the route: %(name)s"),
                 "attachedRegulations": _("Attached to the form as the regulations: %(name)s"),
-                "wrongFile": _("Attach a GPX or KML track, or the regulations as a PDF."),
+                "wrongFile": _("The event's form takes only these files: %(formats)s.")
+                % {"formats": ", ".join(sorted(DOCUMENT_EXTENSIONS | tracks.EXTENSIONS))},
             },
+            # What the form's file fields take: a track goes to the route, anything else to the regulations
+            "trackExtensions": sorted(tracks.EXTENSIONS),
+            "documentExtensions": sorted(DOCUMENT_EXTENSIONS - tracks.EXTENSIONS),
         },
     }

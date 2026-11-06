@@ -139,6 +139,13 @@ class AssistantApiTests(ApiTestMixin, TestCase):
         not_a_track = self.client.post(url, {"file": SimpleUploadedFile("a.gpx", b"hello")}, **self.auth(self.admin))
         self.assertEqual(not_a_track.status_code, 422)
 
+    def test_a_tracks_start_is_read_from_any_format_the_events_map_reads(self):
+        geojson = b'{"type": "LineString", "coordinates": [[76.9453, 43.2389], [76.95, 43.25]]}'
+        response = self.client.post(
+            f"{API}/track-start", {"file": SimpleUploadedFile("ride.geojson", geojson)}, **self.auth(self.admin)
+        )
+        self.assertEqual(response.json(), {"lat": 43.2389, "lng": 76.9453})
+
     def test_no_answer_carries_the_key(self):
         conversation_id = self._start().json()["id"]
         with mock.patch("assistant.llm.complete", return_value={"reply": "When?", "set": {}}):

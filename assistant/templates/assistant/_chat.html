@@ -19,7 +19,7 @@ inside a form is not HTML.
     <label class="visually-hidden" for="assistant-text">{% trans "Your message" %}</label>
     <textarea class="form-control" id="assistant-text" rows="2" maxlength="10000"
               placeholder="{% trans 'Write to the assistant' %}"></textarea>
-    <input type="file" id="assistant-file" accept=".gpx,.kml,.pdf" hidden>
+    <input type="file" id="assistant-file" accept="{{ accept }}" hidden>
     <div class="d-flex gap-2 mt-2">
       <button type="button" class="btn btn-outline-secondary" id="assistant-attach">{% trans "Attach a file" %}</button>
       <button type="submit" class="btn btn-primary ms-auto" id="assistant-send">{% trans "Send" %}</button>
@@ -233,7 +233,7 @@ inside a form is not HTML.
     picker.value = '';
     if (!file || busy) return;
     var ext = file.name.toLowerCase().split('.').pop();
-    var kind = ext === 'gpx' || ext === 'kml' ? 'route' : (ext === 'pdf' ? 'regulations' : '');
+    var kind = cfg.trackExtensions.indexOf(ext) >= 0 ? 'route' : (cfg.documentExtensions.indexOf(ext) >= 0 ? 'regulations' : '');
     if (!kind) { say('assistant', words.wrongFile, 'note'); return; }
     var target = document.getElementById(kind === 'route' ? 'id_file_route' : 'id_file_regulations');
     var holder = new DataTransfer();
