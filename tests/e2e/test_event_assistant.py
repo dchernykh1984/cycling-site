@@ -242,6 +242,23 @@ def test_a_word_document_goes_into_the_form_as_the_regulations_as_the_form_itsel
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_file_past_the_forms_size_is_refused_in_the_chat_not_on_saving(
+    page: Page, live_server, admin_user, chat_on, monkeypatch, tmp_path
+):
+    """The form takes files up to 10 MB: the chat says so at once instead of letting saving fail later."""
+    big = tmp_path / "rules.pdf"
+    big.write_bytes(b"%PDF-1.4" + b"0" * (10 * 1024 * 1024))
+    asked = _model(monkeypatch, {"reply": "Got it.", "set": {}})
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    page.click("#assistant-toggle")
+    page.set_input_files("#assistant-file", str(big))
+    expect(page.locator("#assistant-log")).to_contain_text("File size must not exceed 10 MB.")
+    assert page.eval_on_selector("#id_file_regulations", "i => i.files.length") == 0
+    assert not asked
+
+
+@pytest.mark.django_db(transaction=True)
 def test_when_the_model_cannot_answer_the_message_waits_to_be_sent_again(
     page: Page, live_server, admin_user, chat_on, monkeypatch
 ):

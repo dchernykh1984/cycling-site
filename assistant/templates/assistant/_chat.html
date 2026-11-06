@@ -243,6 +243,7 @@ inside a form is not HTML.
     var ext = file.name.toLowerCase().split('.').pop();
     var kind = cfg.trackExtensions.indexOf(ext) >= 0 ? 'route' : (cfg.documentExtensions.indexOf(ext) >= 0 ? 'regulations' : '');
     if (!kind) { say('assistant', words.wrongFile, 'note'); return; }
+    if (file.size > cfg.maxBytes) { say('assistant', words.tooLarge, 'note'); return; }
     var target = document.getElementById(kind === 'route' ? 'id_file_route' : 'id_file_regulations');
     var holder = new DataTransfer();
     holder.items.add(file);

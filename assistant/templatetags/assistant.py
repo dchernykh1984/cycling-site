@@ -94,10 +94,13 @@ def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
                 "failed": _("The message did not go through. Send it again."),
                 "attachedRoute": _("Attached to the form as the route: %(name)s"),
                 "attachedRegulations": _("Attached to the form as the regulations: %(name)s"),
+                "tooLarge": _("File size must not exceed 10 MB."),
                 "wrongFile": _("The event's form takes only these files: %(formats)s.")
                 % {"formats": ", ".join(sorted(DOCUMENT_EXTENSIONS | tracks.EXTENSIONS))},
             },
-            # What the form's file fields take: a track goes to the route, anything else to the regulations
+            # What the form's file fields take: a track goes to the route, anything else to the regulations,
+            # none past the form's size
+            "maxBytes": tracks.MAX_BYTES,
             "trackExtensions": sorted(tracks.EXTENSIONS),
             "documentExtensions": sorted(DOCUMENT_EXTENSIONS - tracks.EXTENSIONS),
         },
