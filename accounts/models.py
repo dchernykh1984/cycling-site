@@ -231,8 +231,8 @@ class VirtualMember(models.Model):
     team = models.CharField(max_length=100, blank=True, default="")
     city = models.CharField(max_length=100, blank=True, default="")
 
-    # A form that asks for a Strava link fills it in from a profile; nobody without an account has one
-    strava_link = ""
+    # What a form asking for a Strava link fills itself in from, as a member's profile has it
+    strava_link = models.URLField(max_length=100, blank=True, default="")
 
     class Meta:
         ordering: ClassVar[list[str]] = ["last_name", "first_name", "pk"]

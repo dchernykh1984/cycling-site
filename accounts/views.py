@@ -154,7 +154,7 @@ class VirtualMemberForm(forms.ModelForm):
 
     class Meta:
         model = VirtualMember
-        fields = ("last_name", "first_name", "gender", "birth_date", "team", "city")
+        fields = ("last_name", "first_name", "gender", "birth_date", "team", "city", "strava_link")
         labels: ClassVar[dict] = {
             "last_name": gettext_lazy("Last name"),
             "first_name": gettext_lazy("First name"),
@@ -162,6 +162,7 @@ class VirtualMemberForm(forms.ModelForm):
             "birth_date": gettext_lazy("Date of birth"),
             "team": gettext_lazy("Team"),
             "city": gettext_lazy("City"),
+            "strava_link": gettext_lazy("Strava link"),
         }
         widgets: ClassVar[dict] = {"birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
 
