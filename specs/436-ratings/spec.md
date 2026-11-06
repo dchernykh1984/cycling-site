@@ -21,7 +21,8 @@ are a later piece of work and are not described here.
 3. **Who may rate.** A member whose own entry was given a bib by the start list (Start Protocol
    Maker's `r<id>` field, `IssuedBib`, active) and whose bib the event's protocol data lists with a
    result or with any mark but `dns` -- a DNF or a DSQ rates too. An event with HTML protocols only
-   asks nobody. Nobody rates their own event. People without an account do not rate; handed over to
+   asks nobody. An organizer who entered their own event and started rates it as anyone else does
+   (the maintainer, 2026-11-06). People without an account do not rate; handed over to
    an account of their own, they can. Until then the member who added and entered them -- their
    coach, in effect -- is asked instead, once for the event however many of them started: such a
    person is a small child, whose view of the organization is not one to weigh, or one who did not

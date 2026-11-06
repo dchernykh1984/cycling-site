@@ -88,7 +88,7 @@ class ReviewTests(TestCase):
         rules.answer(self.rider, self.event)
         self.assertIn("Rate: Spring Cup", self.client.get(_url("news_index")).content.decode())
 
-    def test_nobody_is_asked_who_did_not_start_or_is_its_organizer_or_whose_event_the_agents_posted(self):
+    def test_nobody_is_asked_who_did_not_start_or_whose_event_the_agents_posted(self):
         cases = {
             "did not start": ("8", {}),
             "did not finish, but started": ("9", {}),
@@ -100,7 +100,6 @@ class ReviewTests(TestCase):
                 self._enter(self.event, member, bib, **extra)
                 expected = [self.event] if name == "did not finish, but started" else []
                 self.assertEqual(rules.reviewable(member), expected)
-        self.assertEqual(rules.reviewable(self._entered_in_own_event()), [])
         agent = make_user("agent", is_service_account=True)
         agents_event = self._event(TODAY - datetime.timedelta(days=2), organizer=agent)
         self._enter(agents_event, self.rider, "3")
@@ -149,6 +148,9 @@ class ReviewTests(TestCase):
         self._enter(private, self.rider, "7")
         _protocol(private, [_row("7")])
         self.assertEqual(rules.reviewable(self.rider), [self.event, private])
+
+    def test_an_organizer_who_started_in_their_own_event_rates_it_as_anyone(self):
+        self.assertEqual(rules.reviewable(self._entered_in_own_event()), [self.event])
 
     def _entered_in_own_event(self):
         self._enter(self.event, self.organizer, "11")
