@@ -67,7 +67,7 @@ Nothing keeps who wrote a review.
    API token, and those marked, and marks exactly the ticked ones; until one is marked, every page
    asks the owners to. The API has `GET /service-accounts/` and `PUT`/`DELETE /service-accounts/{id}`.
 
-## Requirements
+## Functional Requirements
 
 - **FR-RAT-001**: A review (`Review`) keeps a random UUID, its event, the form version and the answers;
   an account keeps one `ReviewMark` per event answered, with no time; neither is in the audit log, and
@@ -92,3 +92,13 @@ Nothing keeps who wrote a review.
 
 - None: rating, refusing, the organizers' list, the digest and the service accounts all have their
   operations.
+
+## Open Questions
+
+- The banner lists every event a member may still rate, with no cap: one who leaves many unanswered
+  sees all of them on every page, above the content.
+- In the light and dark skins, which are kept as they are, the Ratings tab folds the menu onto two
+  lines in Russian and Kazakh at every desktop width; before it, the menu fitted on one line from
+  1440 px.
+- A member who manages other members' accounts (issue #315) is not asked for them, as they have
+  accounts to answer with; only people without an account are answered for.
