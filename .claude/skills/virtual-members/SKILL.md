@@ -1,6 +1,6 @@
 ---
 name: virtual-members
-description: People without accounts a member adds to enter them for races and look after their photos (issue 438) - the member's word, the limits, adding hundreds from a list in one request with the member's own token, entering them for races and naming their bibs. Read before adding or entering people for a member, by hand or from a list.
+description: People without accounts a member adds to enter them for races and look after their photos (issue 438) - the member's word, the limits, adding hundreds from a list in one request with the member's own token, entering them for races, naming their bibs and handing them over to an account of their own. Read before adding or entering people for a member, by hand or from a list.
 ---
 
 # People without accounts
@@ -10,7 +10,8 @@ section, a family. Such a person (`accounts.models.VirtualMember`) belongs to th
 them and exists only in that member's profile card "People without an account" and in the API below.
 The member enters them for races on the registration page, events that take only one's own data
 included, and looks after their race photos: the albums of their entries and a bib named for them.
-A person without an account is never turned into an account.
+A person without an account is never turned into an account by itself; the member may hand them
+over to an account the person has (below).
 
 Everything below is done with **the member's own token**: profile, "API access", "Generate token",
 then `Authorization: Bearer <token>`. The token is the member's; it goes into one command's
@@ -94,6 +95,25 @@ are. Where the start lists give no bib, the member names one:
 `PUT /api/v1/event-photos/competitions/{id}/my-bib` with `{"bib": "7", "person": <id>}`, and takes it
 back with `DELETE .../my-bib?person=<id>`; `GET /api/v1/event-photos/me/declared-bibs` lists them,
 `person` naming whose.
+
+## Handing a person over to their own account
+
+When the person has an account of their own, the member hands them over; nothing moves until the
+member confirms, so never confirm a request for them because one arrived.
+
+1. `POST /api/v1/virtual-members/{id}/transfer` (member's token): the link, in `url`. One per person,
+   a week long, one request; a new one stops the old and drops a request waiting.
+2. The member sends it. The person opens it signed in and asks -- on the page, or
+   `POST /api/v1/virtual-members/transfers/claim` with `{"key": ..., "keep_manager": false}` and their
+   own token. `keep_manager: true` lets the member go on managing their registrations and photos.
+3. `GET /api/v1/virtual-members/` shows the request in the person's `transfer.claimed_by`; the member
+   answers `POST .../{id}/transfer/confirm` or `.../reject`.
+
+On confirming, the person's entries go to the account (an event both were entered for keeps both),
+their named bibs too (the same number at the same event once, a different one as a second), the
+account's empty profile fields are filled from the person, and the person leaves the member's list.
+`accounts/transfers.py` holds the rules; a table that comes to point at people fails
+`tests/test_virtual_member_transfer.py` until `hand_over` moves it.
 
 ## Privacy
 

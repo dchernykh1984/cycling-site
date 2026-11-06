@@ -46,7 +46,7 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 | `skins` | the look of the site: light and dark kept as they are, designers' skins, their checks |
 | `specs` | spec-driven development: the constitution, `specs/site/`, a feature from issue to spec, plan and code |
 | `interface` | how a page should look and behave -- phone first, nothing that jumps, qualities and patterns of the look, tap targets, fit, contrast -- and its checks |
-| `virtual-members` | people without accounts a member adds: the member's word, limits, adding hundreds from a list in one request, entering them for races and naming their bibs |
+| `virtual-members` | people without accounts a member adds: the member's word, limits, adding hundreds from a list in one request, entering them for races, naming their bibs and handing them over to their own account |
 
 ## Quick facts
 

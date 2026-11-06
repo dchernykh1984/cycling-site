@@ -80,7 +80,11 @@ and protocols with the event's upload token. The API has no language prefix.
    adds nobody), adds up to 1000 a request whole or not at all (`POST /virtual-members/`: a 422 names
    every row's mistakes or the room short, `dry_run` saves nothing, somebody added already comes back
    in `existing`), and changes (409 for a copy of somebody added) or deletes one. An id reaches only
-   the caller's own people: anything else is a 404.
+   the caller's own people: anything else is a 404. A person is handed over to an account of their
+   own as on the profile: `POST /virtual-members/{id}/transfer` makes the link (the list shows it in
+   `transfer`, and the request that came through it), `POST /virtual-members/transfers/claim` asks
+   through it (404 for a link not valid, run out or used, 409 for one's own person), and
+   `POST /virtual-members/{id}/transfer/confirm` or `/reject` answers (404 when no request waits).
 12. **Given** entries for races ([registrations](registrations.md)), **Then** a confirmed member
    enters themselves, the members they manage and the people they added (`POST /registrations/`,
    one answer per entry), lists those entries (`GET /registrations/`), and changes or cancels one
