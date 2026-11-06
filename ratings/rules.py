@@ -18,6 +18,7 @@ from django.db.models import Max, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
+from accounts import virtual_members
 from calendar_app.models import Competition
 from event_photos.index import normalize_bib
 from event_photos.models import IssuedBib
@@ -78,7 +79,7 @@ def reviewable(user, competition=None) -> list:
     latest_over = datetime.datetime.now(datetime.UTC).date()
     entries = (
         CompetitionRegistration.objects.filter(
-            Q(user=user) | Q(virtual_member__owner=user),
+            Q(user=user) | Q(virtual_member__in=virtual_members.of(user)),
             is_rejected=False,
             issued_bibs__state=IssuedBib.State.ACTIVE,
             competition__status=Competition.Status.APPROVED,
