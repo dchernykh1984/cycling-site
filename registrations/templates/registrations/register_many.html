@@ -125,10 +125,12 @@ the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endco
 
 {% include "registrations/_person_script.html" %}
 {% if filters %}{% include "calendar_app/_filter_multiselect_js.html" %}{% endif %}
-{% comment %}Without a script nothing would open the details: they all stand open, with no buttons.{% endcomment %}
+{% comment %}Without a script nothing would open the details: they all stand open, with no buttons; and
+"All", which only a script ticks the others by, is not there.{% endcomment %}
 <noscript><style>
 .register-many .register-person-form[hidden] { display: block !important; }
 .register-many .register-person-toggle { display: none !important; }
+.register-many .register-person-all { display: none !important; }
 </style></noscript>
 <script>
 (function () {

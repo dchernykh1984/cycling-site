@@ -206,7 +206,10 @@ class RegisterManyTests(TestCase):
         self.assertEqual(CompetitionRegistration.objects.get().category, None)
 
     def test_a_box_for_everyone_heads_the_page_while_two_people_or_more_may_be_ticked(self):
-        self.assertContains(self.client.get(self._url()), 'id="register-all"')
+        page = self.client.get(self._url())
+        self.assertContains(page, 'id="register-all"')
+        # only a script ticks the others: without one the box is not shown
+        self.assertContains(page, ".register-many .register-person-all { display: none !important; }")
         make_registration(self.comp, user=self.anna)
         make_registration(self.comp, user=self.boris)
         page = self.client.get(self._url())
