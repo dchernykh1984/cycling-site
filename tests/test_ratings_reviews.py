@@ -184,6 +184,21 @@ class ReviewTests(TestCase):
         )
         self.assertEqual(rules.reviewable(self.rider), [])
 
+    @override_settings(CACHES=LOCAL_CACHE)
+    def test_a_protocol_taken_away_stops_the_asking_at_once(self):
+        """A protocol uploaded to the wrong event and deleted: a review cannot be taken back, so nobody it
+        listed is asked any more, even when a newer protocol of the event stays."""
+        cache.clear()
+        group = Protocol.objects.create(
+            competition=self.event,
+            protocol_type=Protocol.ProtocolType.GROUP,
+            document={"sections": [{"columns": [{"id": "bib", "role": "bib"}], "rows": [_row("8")]}]},
+        )
+        Protocol.objects.filter(pk=group.pk).update(last_updated=timezone.now() + datetime.timedelta(seconds=5))
+        self.assertEqual(rules.reviewable(self.rider), [self.event])
+        Protocol.objects.filter(competition=self.event, protocol_type=Protocol.ProtocolType.ABSOLUTE).delete()
+        self.assertEqual(rules.reviewable(self.rider), [])
+
     def test_through_the_api_as_on_the_page(self):
         auth = _bearer(self.rider)
         pending = self.client.get("/api/v1/ratings/pending", **auth).json()
