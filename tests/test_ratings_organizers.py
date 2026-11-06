@@ -56,6 +56,12 @@ class OrganizerRatingTests(TestCase):
         self.assertAlmostEqual(rating["average"], (300 * 5 + 1) / 301)
         self.assertEqual((rating["reviews"], rating["events"]), (301, 2))
 
+    def test_an_event_by_invitation_counts_as_any_other(self):
+        _reviewed(make_competition(title="Private ride", submitted_by=self.anna, invite_only=True), 4)
+        rating = scores.of_organizer(self.anna)
+        self.assertAlmostEqual(rating["average"], (5 + 5 + 4) / 3)
+        self.assertEqual((rating["reviews"], rating["events"]), (3, 2))
+
     def test_the_best_rated_comes_first(self):
         _reviewed(self.anna_event, 5)
         self.assertEqual([row["organizer"] for row in scores.organizers()], [self.anna, self.pavel])

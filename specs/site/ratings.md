@@ -46,7 +46,8 @@ Nothing keeps who wrote a review.
    the average and the number of scores; with fewer, nothing shows. The average is of all their
    scores, each weighing the same whatever the size of its event.
 2. **Given** a hidden, deleted or unapproved event, or one the site's agents posted, **Then** its
-   reviews do not count.
+   reviews do not count. An event by invitation (issue #313) asks its participants and counts as any
+   other.
 3. **Given** the API, **Then** `GET /ratings/organizers` (no token) gives the same list.
 
 ### Story 3 -- What the participants think (P2)
