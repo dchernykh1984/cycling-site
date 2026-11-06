@@ -22,7 +22,11 @@ are a later piece of work and are not described here.
    Maker's `r<id>` field, `IssuedBib`, active) and whose bib the event's protocol data lists with a
    result or with any mark but `dns` -- a DNF or a DSQ rates too. An event with HTML protocols only
    asks nobody. Nobody rates their own event. People without an account do not rate; handed over to
-   an account of their own, they can.
+   an account of their own, they can. Until then the member who added and entered them -- their
+   coach, in effect -- is asked instead, once for the event however many of them started: such a
+   person is a small child, whose view of the organization is not one to weigh, or one who did not
+   bother to sign up, whose view counts for no more than one participant's. A member who manages
+   other members' accounts is not asked for them: they have accounts to answer with.
 4. **When.** From the day after the event's last day, by the calendar of the event's own place --
    not on the day, in the heat of it -- and then on every page, with no end, until the member rates
    or refuses. The early events, held long ago, are wanted too.

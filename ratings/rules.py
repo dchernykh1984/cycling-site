@@ -1,17 +1,20 @@
 """Who may review an event, and the answer they give (issue #436).
 
 A member reviews an event they took part in: their own entry, a bib the start list gave it, and that bib
-in the event's protocol data as having started -- a result, or any mark but "dns". The protocol data is
-what the timing programs send beside the HTML; an event with HTML alone asks nobody. They are asked from
-the day after the event's last day by its own place's calendar -- not on the day, in the heat of it --
-until they review or refuse, once. Nobody reviews their own event, nor one the site's agents posted.
+in the event's protocol data as having started -- a result, or any mark but "dns". A person without an
+account has none to answer with -- a child, or one who never signed up -- so the member who added and
+entered them answers instead: once for the event, however many of them started, weighing as one
+participant. The protocol data is what the timing programs send beside the HTML; an event with HTML alone
+asks nobody. They are asked from the day after the event's last day by its own place's calendar -- not on
+the day, in the heat of it -- until they review or refuse, once. Nobody reviews their own event, nor one
+the site's agents posted.
 """
 
 import datetime
 
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Max, Prefetch
+from django.db.models import Max, Prefetch, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -66,8 +69,8 @@ def _collect(part: dict, bibs: set[str]) -> None:
 
 
 def reviewable(user, competition=None) -> list:
-    """The events ``user`` took part in and may still review, the earliest first; only ``competition``
-    when it is given."""
+    """The events ``user`` took part in, or the people without an account they added did, and may still
+    review, the earliest first; only ``competition`` when it is given."""
     if not getattr(user, "is_authenticated", False):
         return []
     # No place on Earth is a day ahead of UTC and more: an event whose last day comes after today there
@@ -75,7 +78,7 @@ def reviewable(user, competition=None) -> list:
     latest_over = datetime.datetime.now(datetime.UTC).date()
     entries = (
         CompetitionRegistration.objects.filter(
-            user=user,
+            Q(user=user) | Q(virtual_member__owner=user),
             is_rejected=False,
             issued_bibs__state=IssuedBib.State.ACTIVE,
             competition__status=Competition.Status.APPROVED,

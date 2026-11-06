@@ -97,17 +97,30 @@ class ReviewTests(TestCase):
         _protocol(disputed, [_row("6")])
         self.assertEqual(rules.reviewable(self.rider), [self.event])
 
-    def test_nobody_is_asked_for_a_person_without_an_account_who_took_part(self):
+    def test_the_member_who_entered_people_without_an_account_is_asked_once_however_many(self):
+        """Such a person has no account to answer with: a child, or one who never signed up. The member who
+        added and entered them answers instead, and weighs as one participant whatever their number."""
         coach = make_user("coach")
-        kid = VirtualMember.objects.create(
-            owner=coach, last_name="Lee", first_name="Ann", gender="F", birth_date=datetime.date(2012, 3, 4)
-        )
-        self._enter(self.event, None, "12", virtual_member=kid, registered_by=coach)
+        kids = [
+            VirtualMember.objects.create(
+                owner=coach, last_name="Lee", first_name=name, gender="F", birth_date=datetime.date(2012, 3, 4)
+            )
+            for name in ("Ann", "Bea")
+        ]
+        for kid, bib in zip(kids, ("12", "13"), strict=True):
+            self._enter(self.event, None, bib, virtual_member=kid, registered_by=coach)
         Protocol.objects.filter(competition=self.event).update(
-            document={"sections": [{"columns": [{"id": "bib", "role": "bib"}], "rows": [_row("7"), _row("12")]}]}
+            document={
+                "sections": [{"columns": [{"id": "bib", "role": "bib"}], "rows": [_row(b) for b in "7 12 13".split()]}]
+            }
         )
+        not_started = self._event(TODAY - datetime.timedelta(days=2))
+        self._enter(not_started, None, "14", virtual_member=kids[0], registered_by=coach)
+        _protocol(not_started, [_row("14", "dns")])
+        self.assertEqual(rules.reviewable(coach), [self.event])
+        self.assertTrue(rules.answer(coach, self.event, {"overall": 4}))
+        self.assertEqual(Review.objects.count(), 1)
         self.assertEqual(rules.reviewable(coach), [])
-        self.assertEqual(rules.reviewable(self.rider), [self.event])
 
     def _entered_in_own_event(self):
         self._enter(self.event, self.organizer, "11")

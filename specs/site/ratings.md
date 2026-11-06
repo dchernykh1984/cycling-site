@@ -22,8 +22,9 @@ Nothing keeps who wrote a review.
 
 ### Story 1 -- Rate an event one took part in (P1)
 
-1. **Given** a member whose own entry has an active bib from the start list, and that bib in the
-   event's protocol data with a result or any mark but `dns`, **When** the event's last day is over
+1. **Given** a member whose own entry -- or the entry of a person without an account they added --
+   has an active bib from the start list, and that bib in the event's protocol data with a result or
+   any mark but `dns`, **When** the event's last day is over
    where it took place, **Then** every page shows "Rate the events you took part in" with the event,
    "Rate" and "Do not rate", until they answer; either answer brings them back to the page they were
    on. On a phone each button takes a tap across 44 px, and in every skin reads 4.5:1 on the banner.
@@ -31,8 +32,8 @@ Nothing keeps who wrote a review.
    (optional), says the review is anonymous and so cannot be changed or deleted, and sends it or
    refuses; refusing is as final as a review and leaves the same mark.
 3. **Given** the event's author, an event the site's agents posted, an event with HTML protocols
-   only, a `dns`, a rejected entry, a bib in conflict or a person without an account (the member who
-   entered them included), **Then** nobody is asked.
+   only, a `dns`, a rejected entry or a bib in conflict, **Then** nobody is asked; for people without
+   an account, the member who added them is asked once for the event, however many of them started.
 4. **Given** the API, **Then** `GET /ratings/pending` lists the events the caller may rate,
    `POST /ratings/events/{id}/review` takes `{"answers": {"overall": 1-5, "comment": ""}}` (422 for
    a wrong score, 409 when not allowed or answered) and `POST .../decline` refuses.
