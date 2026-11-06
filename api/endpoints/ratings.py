@@ -32,7 +32,12 @@ class ReviewIn(Schema):
     answers: dict[str, int | str]  # by question key: "overall" (1-5), "comment"
 
 
-@router.get("/pending", response=list[PendingOut], auth=member_auth, summary="The events I took part in and may rate")
+@router.get(
+    "/pending",
+    response=list[PendingOut],
+    auth=member_auth,
+    summary="The events I, or people without an account I added, took part in and I may rate",
+)
 def pending(request):
     return [PendingOut(competition_id=c.pk, title=c.title, last_day=c.last_day) for c in rules.reviewable(request.auth)]
 
