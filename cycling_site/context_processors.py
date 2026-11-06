@@ -130,13 +130,13 @@ def service_account_missing(request):
 
 def review_requests(request):
     """The events the reader took part in and may still rate (issue #436): asked on every page from the
-    day after each one's last day, until they rate it or refuse."""
+    day after each one's last day, until they rate it or refuse -- a few at a time, the latest first."""
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return {}
     from ratings import rules
 
-    return {"review_requests": rules.reviewable(user)}
+    return {"review_requests": rules.reviewable(user)[: rules.ASKED_AT_ONCE]}
 
 
 def _knowledge_index_url() -> str:

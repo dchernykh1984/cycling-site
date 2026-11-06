@@ -31,6 +31,8 @@ from registrations.models import CompetitionRegistration
 NOT_STARTED = "dns"
 #: How long the bibs read from an event's protocols are kept: they are read again once a protocol changes
 STARTED_KEPT_SECONDS = 24 * 60 * 60
+#: How many events the banner asks about at a time; the rest wait their turn, none is dropped
+ASKED_AT_ONCE = 2
 
 
 def ended(competition) -> bool:
@@ -72,7 +74,7 @@ def _collect(part: dict, bibs: set[str]) -> None:
 
 def reviewable(user, competition=None) -> list:
     """The events ``user`` took part in, or the people without an account they added did, and may still
-    review, the earliest first; only ``competition`` when it is given."""
+    review, the latest first -- the one remembered best; only ``competition`` when it is given."""
     if not getattr(user, "is_authenticated", False):
         return []
     # No place on Earth is a day ahead of UTC and more: an event whose last day comes after today there
@@ -111,7 +113,7 @@ def reviewable(user, competition=None) -> list:
             started[event.pk] = started_bibs(event)
         if {normalize_bib(bib.bib) for bib in entry.bibs} & started[event.pk]:
             found[event.pk] = event
-    return sorted(found.values(), key=lambda event: (event.last_day, event.pk))
+    return sorted(found.values(), key=lambda event: (event.last_day, event.pk), reverse=True)
 
 
 def answer(user, competition, answers: dict | None = None) -> bool:

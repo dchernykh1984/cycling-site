@@ -27,7 +27,7 @@ Nothing keeps who wrote a review.
    any mark but `dns`, **When** the event's last day is over
    where it took place, **Then** every page shows "Rate the events you took part in" with the event,
    "Rate" and "Do not rate", until they answer; either answer brings them back to the page they were
-   on. On a phone each button takes a tap across 44 px, and in every skin reads 4.5:1 on the banner.
+   on. The banner holds two events at a time, the latest first; the rest come up as these are answered. On a phone each button takes a tap across 44 px, and in every skin reads 4.5:1 on the banner.
 2. **Given** "Rate", **Then** a page asks an overall score from 1 to 5 (required) and a comment
    (optional), says the review is anonymous and so cannot be changed or deleted, and sends it or
    refuses; refusing is as final as a review and leaves the same mark.
@@ -95,10 +95,5 @@ Nothing keeps who wrote a review.
 
 ## Open Questions
 
-- The banner lists every event a member may still rate, with no cap: one who leaves many unanswered
-  sees all of them on every page, above the content.
-- In the light and dark skins, which are kept as they are, the Ratings tab folds the menu onto two
-  lines in Russian and Kazakh at every desktop width; before it, the menu fitted on one line from
-  1440 px.
 - A member who manages other members' accounts (issue #315) is not asked for them, as they have
   accounts to answer with; only people without an account are answered for.
