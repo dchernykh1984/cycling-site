@@ -30,7 +30,8 @@ Nothing keeps who wrote a review.
    on. The banner holds two events at a time, the latest first; the rest come up as these are answered. On a phone each button takes a tap across 44 px, and in every skin reads 4.5:1 on the banner.
 2. **Given** "Rate", **Then** a page asks an overall score from 1 to 5 (required) and a comment
    (optional), says the review is anonymous and so cannot be changed or deleted, and sends it or
-   refuses; refusing is as final as a review and leaves the same mark.
+   refuses; refusing is as final as a review and leaves the same mark. The chosen score shows as a
+   pressed button, 3:1 apart from the others in every skin.
 3. **Given** an event the site's agents posted, an event with HTML protocols only, a `dns`, a
    rejected entry or a bib in conflict, **Then** nobody is asked; for people without an account, the
    member who added them is asked once for the event, however many of them started. The event's
