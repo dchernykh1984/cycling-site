@@ -68,9 +68,12 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
         {% endif %}
 
         {% if virtual.room != 0 %}
-        <form method="post" action="{% url 'account_virtual_add' %}" class="virtual-add border-top pt-3" novalidate>
+        {% comment %}Folded until asked for: the list comes first, and the form opens by its button. A form
+        sent back with mistakes comes back open, its reasons beside the fields.{% endcomment %}
+        <details class="virtual-add-fold border-top pt-3"{% if virtual.form.errors %} open{% endif %}>
+        <summary class="btn btn-outline-primary">{% trans "Add a person" %}</summary>
+        <form method="post" action="{% url 'account_virtual_add' %}" class="virtual-add pt-3" novalidate>
             {% csrf_token %}
-            <h2 class="h6">{% trans "Add a person" %}</h2>
             {% if virtual.form.non_field_errors %}<div class="alert alert-danger py-2">{{ virtual.form.non_field_errors|join:" " }}</div>{% endif %}
             <div class="row g-2">
                 {% comment %}One field a row: the profile's column is narrow at every width, and a select
@@ -85,6 +88,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
             </div>
             <button type="submit" class="btn btn-outline-primary mt-3">{% trans "Add" %}</button>
         </form>
+        </details>
         {% else %}
         <p class="small text-muted mb-0">{% blocktrans with limit=virtual.limit %}You have added as many people as you may: {{ limit }}.{% endblocktrans %}</p>
         {% endif %}

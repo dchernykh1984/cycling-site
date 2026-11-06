@@ -311,6 +311,15 @@ class ProfileCardTests(TestCase):
         self.assertIn("as many people as you may", " ".join(refused.context["virtual"]["form"].non_field_errors()))
         self.assertEqual(VirtualMember.objects.count(), 10)
 
+    def test_the_form_to_add_a_person_is_folded_until_asked_for_and_comes_back_open_with_mistakes(self):
+        virtual_members.consent(self.coach)
+        page = self.client.get(self._url("account_profile"))
+        self.assertContains(page, '<details class="virtual-add-fold border-top pt-3">')
+        refused = self._add(strava_link="not a link")
+        self.assertContains(refused, '<details class="virtual-add-fold border-top pt-3" open>')
+        self.assertIn("strava_link", refused.context["virtual"]["form"].errors)
+        self.assertFalse(VirtualMember.objects.exists())
+
     def test_a_person_keeps_a_strava_link_and_the_card_links_to_it(self):
         virtual_members.consent(self.coach)
         self._add(strava_link="https://www.strava.com/athletes/42")
