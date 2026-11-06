@@ -7,7 +7,8 @@
 `cycling_site/context_processors.py` (`review_requests`, `service_account_missing`),
 `cycling_site/templates/_moderation_banner.html`
 **Tests**: `tests/test_ratings_reviews.py`, `tests/test_ratings_organizers.py`, `tests/test_ratings_digest.py`,
-`tests/test_service_accounts.py`, `tests/test_role_matrix.py` (`SERVICE_ACCOUNTS`), `tests/e2e/test_ratings.py`
+`tests/test_service_accounts.py`, `tests/test_role_matrix.py` (`SERVICE_ACCOUNTS`), `tests/e2e/test_ratings.py`,
+`tests/test_organizer_filter.py` (an organizer's name opens their events)
 **Related**: [events](events.md), [accounts](accounts.md), [protocols](protocols.md),
 [event photos](event-photos.md) (the bibs a start list gives); `specs/436-ratings/spec.md` (the decisions)
 
