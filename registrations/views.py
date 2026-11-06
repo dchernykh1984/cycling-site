@@ -70,6 +70,8 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
 
     def _many(self, request, competition, rows, nobody=False):
         """The page for several (issue #315): the reader and the members they manage, ticked."""
+        # the people with a box to tick: neither "another person" nor one without a form or entered
+        tickable = [row for row in rows if row.profile is not None and row.form is not None and not row.entered]
         return render(
             request,
             "registrations/register_many.html",
@@ -81,8 +83,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "relay_enabled": False,
                 "all_categories_json": self._categories_json(competition),
                 "filters": self._filters(competition, rows),
-                # "All" where there are two people or more to tick
-                "tick_all": sum(1 for row in rows if row.profile is not None and row.form and not row.entered) >= 2,
+                "tick_all": len(tickable) >= 2,  # "All" where there are two people or more to tick
             },
         )
 
