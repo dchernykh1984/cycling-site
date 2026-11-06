@@ -187,6 +187,21 @@ class HandOverTests(TestCase):
         self.assertContains(page, "They let you go on managing their registrations and photos.")
         self.assertNotContains(page, ">Hand over</button>")
 
+    def test_a_manager_without_a_name_is_asked_for_one_before_a_link(self):
+        """Whoever opens the link must see who hands the person over, as with a manager's own link."""
+        nameless = make_user("nameless")
+        virtual_members.consent(nameless)
+        person = VirtualMember.objects.create(
+            owner=nameless, last_name="Kim", first_name="Arman", gender="M", birth_date=datetime.date(2011, 1, 2)
+        )
+        self.client.force_login(nameless)
+        with translation.override("en"):
+            answer = self.client.post(_url("account_virtual_transfer", pk=person.pk), follow=True)
+        self.assertContains(answer, "Add your first and last name to your profile first")
+        self.assertFalse(VirtualMemberTransfer.objects.filter(person=person).exists())
+        refused = self.client.post(f"{API}/{person.pk}/transfer", content_type="application/json", **_bearer(nameless))
+        self.assertEqual(refused.status_code, HTTPStatus.CONFLICT)
+
     def test_naming_a_bib_again_leaves_one_where_a_hand_over_brought_two(self):
         competition = make_open_competition()
         first = DeclaredBib.objects.create(competition=competition, user=self.rider, bib="12")

@@ -5237,3 +5237,7 @@ msgstr "%(person)s теперь в аккаунте пользователя %(n
 #: home/templates/home/privacy_page.html
 msgid "<strong>Handing a person over.</strong> A person added this way may take their data into an account of their own: the member sends them a link, they open it signed in, and the member confirms it. Their registrations and the bibs named for their photos then go to that account, its empty profile fields are filled from what the member typed in, and the member no longer sees or changes them -- unless the person lets the member go on managing their registrations and photos."
 msgstr "<strong>Передача человека.</strong> Человек, добавленный так, может перенести свои данные в собственный аккаунт: участник отправляет ему ссылку, тот открывает её, войдя на сайт, а участник подтверждает перенос. Тогда его заявки и номера, названные для фото, переходят в этот аккаунт, пустые поля профиля заполняются тем, что ввёл участник, и участник больше не видит и не меняет эти данные — если только человек не разрешит ему и дальше управлять своими заявками и фото."
+
+#: accounts/transfers.py
+msgid "Add your first and last name to your profile first: whoever opens the link must see who hands the person over."
+msgstr "Сначала добавьте в профиль имя и фамилию: тот, кто откроет ссылку, должен видеть, кто передаёт данные."

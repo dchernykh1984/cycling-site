@@ -46,6 +46,16 @@ def links_of(owner):
     return VirtualMemberTransfer.objects.filter(person__owner=owner).select_related("claimed_by")
 
 
+def why_no_link(owner) -> str:
+    """Why ``owner`` may not hand a person over, in the reader's language; empty when they may. Whoever
+    opens the link has to see who hands the person over, so a member without a name is asked for one."""
+    if owner.first_name.strip() and owner.last_name.strip():
+        return ""
+    return gettext(
+        "Add your first and last name to your profile first: whoever opens the link must see who hands the person over."
+    )
+
+
 def issue(person: VirtualMember) -> VirtualMemberTransfer:
     """A new link for ``person``: the old key stops working at once, and a request waiting is dropped."""
     link, _created = VirtualMemberTransfer.objects.update_or_create(
