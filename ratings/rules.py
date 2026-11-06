@@ -7,8 +7,12 @@ the day after the event's last day by its own place's calendar -- not on the day
 until they review or refuse, once. Nobody reviews their own event, nor one the site's agents posted.
 """
 
+import datetime
+
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch
+from django.db.models import Max, Prefetch
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from calendar_app.models import Competition
@@ -21,6 +25,8 @@ from registrations.models import CompetitionRegistration
 
 #: A protocol row's mark for a rider who did not start
 NOT_STARTED = "dns"
+#: How long the bibs read from an event's protocols are kept: they are read again once a protocol changes
+STARTED_KEPT_SECONDS = 24 * 60 * 60
 
 
 def ended(competition) -> bool:
@@ -29,10 +35,20 @@ def ended(competition) -> bool:
 
 
 def started_bibs(competition) -> set[str]:
-    """The bibs the event's protocol data lists as having started."""
+    """The bibs the event's protocol data lists as having started. The banner asks on every page, so they
+    are kept until a protocol of the event changes rather than read from its documents each time."""
+    documents = competition.protocols.exclude(document__isnull=True)
+    latest = documents.aggregate(latest=Max("last_updated"))["latest"]
+    if latest is None:
+        return set()
+    key = f"ratings:started:{competition.pk}:{latest.timestamp()}"
+    kept = cache.get(key)
+    if kept is not None:
+        return kept
     bibs: set[str] = set()
-    for document in competition.protocols.exclude(document__isnull=True).values_list("document", flat=True):
+    for document in documents.values_list("document", flat=True):
         _collect(document, bibs)
+    cache.set(key, bibs, STARTED_KEPT_SECONDS)
     return bibs
 
 
@@ -54,6 +70,9 @@ def reviewable(user, competition=None) -> list:
     when it is given."""
     if not getattr(user, "is_authenticated", False):
         return []
+    # No place on Earth is a day ahead of UTC and more: an event whose last day comes after today there
+    # is over nowhere yet, and is left out before any time zone is worked out
+    latest_over = datetime.datetime.now(datetime.UTC).date()
     entries = (
         CompetitionRegistration.objects.filter(
             user=user,
@@ -67,6 +86,8 @@ def reviewable(user, competition=None) -> list:
         .exclude(competition__submitted_by=user)
         .exclude(competition__submitted_by__is_service_account=True)
         .exclude(competition__review_marks__user=user)
+        .annotate(last_day=Coalesce("competition__date_end", "competition__date_start"))
+        .filter(last_day__lte=latest_over)
         .select_related("competition", "competition__location")
         .prefetch_related(
             Prefetch("issued_bibs", queryset=IssuedBib.objects.filter(state=IssuedBib.State.ACTIVE), to_attr="bibs")

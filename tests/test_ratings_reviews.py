@@ -4,9 +4,12 @@ review keeps -- nothing of its author -- and that rating or refusing is the one 
 import datetime
 from http import HTTPStatus
 
-from django.test import TestCase
+from django.core.cache import cache
+from django.db import connection
+from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
-from django.utils import translation
+from django.utils import timezone, translation
 
 from accounts.models import User
 from audit.models import AuditLog
@@ -38,6 +41,9 @@ def _row(bib, status=None):
     if status:
         row["status"] = status
     return row
+
+
+LOCAL_CACHE = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "ratings-tests"}}
 
 
 class ReviewTests(TestCase):
@@ -131,6 +137,22 @@ class ReviewTests(TestCase):
                 self.assertContains(page, "Choose a score from 1 to 5.")
         self.client.post(_url("ratings:review", pk=self.event.pk), {"overall": "5", "comment": "  "})
         self.assertEqual(Review.objects.get().answers, {"overall": 5})
+
+    @override_settings(CACHES=LOCAL_CACHE)
+    def test_the_banner_reads_the_protocols_once_until_one_of_them_changes(self):
+        cache.clear()
+        rules.reviewable(self.rider)
+        with CaptureQueriesContext(connection) as queries:
+            self.assertEqual(rules.reviewable(self.rider), [self.event])
+        read = [
+            q["sql"] for q in queries.captured_queries if q["sql"].startswith('SELECT "protocols_protocol"."document"')
+        ]
+        self.assertEqual(read, [])
+        Protocol.objects.filter(competition=self.event).update(
+            document={"sections": [{"columns": [{"id": "bib", "role": "bib"}], "rows": [_row("7", "dns")]}]},
+            last_updated=timezone.now() + datetime.timedelta(seconds=5),
+        )
+        self.assertEqual(rules.reviewable(self.rider), [])
 
     def test_through_the_api_as_on_the_page(self):
         auth = _bearer(self.rider)
