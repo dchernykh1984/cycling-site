@@ -35,7 +35,7 @@ member may submit a draft for review; members comment.
 4. **Given** an article or a news item, **Then** every `h2` and `h3` of its body is drawn with an
    anchor made of its words (`section-` and the slug, Cyrillic kept; a repeat numbered), so a link
    leads to a section and stops it below the sticky menu; a paragraph holding `[toc]` alone becomes
-   its contents -- links to the `h2`, their `h3` under them, titled in the page's language, each line
+   its contents -- links to the `h2`, their `h3` under them, titled in the text's own language, each line
    a 44px row on a phone. Nothing stored changes, a summary never reads the marker, and an article
    without it shows no contents (maintainer, 2026-11-06).
 5. **Given** a picture floated beside the text, **Then** it sits beside it from 768px up and stands
