@@ -399,6 +399,8 @@
       </a>
       <a href="{% url 'calendar_submit' %}?clone={{ competition.pk }}" class="btn btn-outline-secondary btn-sm">
         {% trans "Clone" %}</a>
+      <a href="{% url 'ratings:summary' competition.pk %}" class="btn btn-outline-secondary btn-sm">
+        {% trans "What the participants think" %}</a>
       {% if competition.status == competition.Status.REJECTED %}
       <form method="post" action="{% url 'competition_resubmit' competition.pk %}" class="d-inline">
         {% csrf_token %}

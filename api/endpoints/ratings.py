@@ -9,12 +9,15 @@ import datetime
 from http import HTTPStatus
 
 from django.shortcuts import get_object_or_404
+from django.utils import translation
 from ninja import Router, Schema, Status
 from ninja.errors import HttpError
 
 from api.auth import member_auth
+from assistant import llm
 from calendar_app.models import Competition
-from ratings import form, rules, scores
+from calendar_app.visibility import can_manage_or_own
+from ratings import digest, form, rules, scores
 
 router = Router(tags=["ratings"])
 
@@ -86,3 +89,63 @@ def organizers(request):
         )
         for row in scores.organizers()
     ]
+
+
+class SummaryOut(Schema):
+    reviews: int
+    average: float | None  # from digest.DIGEST_FROM reviews up, as the spread and the digest
+    spread: dict[int, int] | None  # score -> how many gave it
+    digest: str | None
+    digest_reviews: int | None  # how many reviews the digest was written from
+
+
+def _edited(request, competition_id: int):
+    competition = get_object_or_404(Competition, pk=competition_id)
+    if not can_manage_or_own(request.auth, competition):
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only the people who edit the event see what its participants think")
+    return competition
+
+
+def _summary_out(competition) -> SummaryOut:
+    figures = digest.figures(competition)
+    kept = digest.kept(competition) if figures["shown"] else None
+    return SummaryOut(
+        reviews=figures["reviews"],
+        average=round(figures["average"], 2) if figures["shown"] else None,
+        spread=dict(figures["spread"]) if figures["shown"] else None,
+        digest=kept.text if kept else None,
+        digest_reviews=kept.reviews if kept else None,
+    )
+
+
+@router.get(
+    "/events/{competition_id}/summary",
+    response=SummaryOut,
+    auth=member_auth,
+    summary="What the participants think of an event (who edits it)",
+)
+def summary(request, competition_id: int, language: str = ""):
+    """``language`` -- ru, kk or en -- picks the digest's language; the request's otherwise."""
+    competition = _edited(request, competition_id)
+    with translation.override(language or translation.get_language()):
+        return _summary_out(competition)
+
+
+@router.post(
+    "/events/{competition_id}/summary",
+    response=SummaryOut,
+    auth=member_auth,
+    summary="Write the digest of an event's reviews again (who edits it)",
+)
+def write_summary(request, competition_id: int, language: str = ""):
+    competition = _edited(request, competition_id)
+    with translation.override(language or translation.get_language()):
+        try:
+            digest.write(competition)
+        except ValueError:
+            raise HttpError(HTTPStatus.CONFLICT, "Too few reviews for a digest") from None
+        except llm.UnavailableError:
+            raise HttpError(
+                HTTPStatus.SERVICE_UNAVAILABLE, "The language model did not answer; try again later"
+            ) from None
+        return _summary_out(competition)

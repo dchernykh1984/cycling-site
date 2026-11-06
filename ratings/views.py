@@ -9,8 +9,10 @@ from django.utils.translation import gettext
 from django.views import View
 from django.views.generic import TemplateView
 
+from assistant import llm
 from calendar_app.models import Competition
-from ratings import form, rules, scores
+from calendar_app.visibility import can_manage_or_own
+from ratings import digest, form, rules, scores
 
 
 def _back(request, competition) -> str:
@@ -81,3 +83,46 @@ class RatingsView(TemplateView):
         return super().get_context_data(
             organizers=scores.organizers(), public_from=scores.PUBLIC_FROM, meta_title=gettext("Ratings"), **kwargs
         )
+
+
+class SummaryView(LoginRequiredMixin, View):
+    """What the participants think of an event, for the people who edit it -- its author, the admins and
+    the owners: the figures, and the digest the language model writes by a button. Anybody else finds no
+    page."""
+
+    template_name = "ratings/summary.html"
+
+    def _event(self, request, pk):
+        competition = get_object_or_404(Competition, pk=pk)
+        if not can_manage_or_own(request.user, competition):
+            raise Http404
+        return competition
+
+    def get(self, request, pk):
+        competition = self._event(request, pk)
+        figures = digest.figures(competition)
+        summary = digest.kept(competition) if figures["shown"] else None
+        return render(
+            request,
+            self.template_name,
+            {
+                "competition": competition,
+                "figures": figures,
+                "summary": summary,
+                "outdated": figures["shown"] and (summary is None or summary.reviews < figures["reviews"]),
+                "digest_from": digest.DIGEST_FROM,
+            },
+        )
+
+    def post(self, request, pk):
+        competition = self._event(request, pk)
+        try:
+            digest.write(competition)
+        except ValueError:
+            pass  # too few reviews: the page says so
+        except llm.UnavailableError:
+            messages.error(
+                request,
+                gettext("The digest could not be written now: the language model did not answer. Try again later."),
+            )
+        return redirect("ratings:summary", pk=competition.pk)

@@ -5368,3 +5368,55 @@ msgstr[1] "%(counter)s іс-шара"
 #: ratings/templates/ratings/index.html
 msgid "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in."
 msgstr "Әзірге бірде-бір ұйымдастырушыда бағалар жеткіліксіз. Қатысушылар өздері қатысқан іс-шараларды бағалаған сайын рейтинг толады."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "What the participants think"
+msgstr "Қатысушылар не ойлайды"
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>The digest of reviews.</strong> For the people who edit an event -- its author, the site's admins and owners --, the scores and the words of its reviews, shuffled and with nothing that names their authors, go to the language model provider the site's assistant uses, which sums them up. The site keeps that digest and shows it to them alone, from two reviews up."
+msgstr "<strong>Пікірлердің қысқаша мазмұны.</strong> Іс-шараны өңдейтіндер үшін — оның авторы, сайт әкімшілері мен иелері үшін — оның пікірлерінің бағалары мен мәтіндері араластырылып, авторларын атайтын ештеңесіз сайт көмекшісі пайдаланатын тілдік модель жеткізушісіне жіберіледі, ал модель олардан қысқаша мазмұн құрастырады. Сайт сол қысқаша мазмұнды сақтап, екі пікірден бастап тек соларға көрсетеді."
+
+#: ratings/templates/ratings/summary.html
+msgid "Only the people who edit the event see this page. The reviews are anonymous, and nobody reads them as they were written: the language model sums them up."
+msgstr "Бұл бетті тек іс-шараны өңдейтіндер көреді. Пікірлер жасырын, оларды ешкім жазылған күйінде оқымайды: тілдік модель олардан қысқаша мазмұн құрастырады."
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Reviews: %(count)s"
+msgstr "Пікірлер: %(count)s"
+
+#: ratings/templates/ratings/summary.html
+msgid "Average score"
+msgstr "Орташа баға"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Score %(value)s: %(count)s"
+msgstr "%(value)s баға: %(count)s"
+
+#: ratings/templates/ratings/summary.html
+msgid "Digest"
+msgstr "Қысқаша мазмұн"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "Written from reviews: %(count)s."
+msgstr "Пікірлер бойынша құрастырылды: %(count)s."
+
+#: ratings/templates/ratings/summary.html
+msgid "Write the digest again"
+msgstr "Қысқаша мазмұнды қайта құрастыру"
+
+#: ratings/templates/ratings/summary.html
+msgid "Write the digest"
+msgstr "Қысқаша мазмұн құрастыру"
+
+#: ratings/templates/ratings/summary.html
+#, python-format
+msgid "The figures and the digest show from %(count)s reviews up, so that nobody's score is read alone."
+msgstr "Сандар мен қысқаша мазмұн пікірлер кемінде %(count)s болғанда шығады: осылай ешкімнің бағасын жеке оқу мүмкін емес."
+
+#: ratings/views.py
+msgid "The digest could not be written now: the language model did not answer. Try again later."
+msgstr "Қысқаша мазмұнды қазір құрастыру мүмкін болмады: тілдік модель жауап бермеді. Кейінірек көріңіз."
