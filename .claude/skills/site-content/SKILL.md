@@ -84,6 +84,12 @@ with an http(s) or data source.
 
 - `h1` is the page title, so sections start at `h2`.
 - Paragraphs are `<p>`; stripping them and relying on `<br>` collapses the text into one block.
+- Every `h2` and `h3` of a knowledge article or a news item is drawn with an anchor made of its
+  words: `<h2>2. Participants</h2>` is `#section-2-participants`, and a Cyrillic heading keeps its
+  letters. Nothing is stored; the sanitizer drops ids an author sends.
+- A paragraph holding `[toc]` alone, `<p>[toc]</p>`, is drawn as the article's contents: a box of
+  links to its `h2`, with its `h3` under them, titled in the page's language. Put it after the lead;
+  only the first marker counts, and an article without one shows no contents.
 - Django templates do not support multi-line `{# #}` comments -- use `{% comment %}` (there is a
   test that enforces this).
 
@@ -94,6 +100,11 @@ Upload the file to `/var/media/<folder>/` (see `production-access`) and referenc
 
 Give every `<img>` `width` and `height` attributes: without them the browser cannot reserve space
 before the file arrives, and in an embedded protocol the iframe measures the page too short.
+
+The article's column is narrow (32em, about 530px on a computer). A picture floated beside the text
+-- `style="float: right; width: 100%; max-width: 48%"` -- sits beside it on a computer and stands
+alone, as wide as the column, on a screen narrower than 768px; a section starts below the pictures
+of the one before. A screenshot of the site reads best taken at phone width.
 
 Only use photographs you are allowed to publish. Wikimedia Commons under CC BY-SA works if the
 caption names the author, the licence and links to the file page; product shots from a shop's
