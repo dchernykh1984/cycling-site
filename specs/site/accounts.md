@@ -6,15 +6,16 @@ against branch `roles-in-one-module` on 2026-10-31; people without accounts and 
 against branch `438-virtual-members` on 2026-11-05
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
-`api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/forms.py`, `accounts/middleware.py`,
-`api/endpoints/virtual_members.py`
+`api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/transfers.py`, `accounts/forms.py`,
+`accounts/middleware.py`, `api/endpoints/virtual_members.py`
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
 `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
-`tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`
+`tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
+`tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md)
 
 ## Overview
@@ -152,7 +153,8 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 
 A coach or a parent enters people who have no account -- the children of a section, a family -- for
 races and looks after their race photos (issue #438). They exist only in the member's profile and in
-`/api/v1/virtual-members/`, and never become an account.
+`/api/v1/virtual-members/`, and never become an account by themselves: a person may be handed over to
+an account of their own (8 below).
 
 1. **Given** a confirmed member, **Then** the profile shows a card "People without an account" after
    the managing card; it folds by its header, and once folded stays folded in that browser.
@@ -179,6 +181,18 @@ races and looks after their race photos (issue #438). They exist only in the mem
 7. **Given** a person added, **Then** the member enters them for races ([registrations](registrations.md))
    and looks after their photos and names their bib ([event photos](event-photos.md)), as for a
    member they manage.
+8. **Given** a person who has an account of their own (maintainer, 2026-11-06), **Then** the member
+   hands them over: "Hand over" by the person makes a link to send -- one per person, a new one stops
+   the old and drops a request waiting, it lasts a week and takes one request. The account that opens
+   it signed in sees who hands whom over and the names, not the values, of its empty profile fields
+   that get filled, may tick -- unticked at first -- to let the member go on managing its registrations
+   and photos, and asks by a button; the member's own link, or an account whose address is not
+   confirmed, is told why it cannot. Nothing moves until the member confirms in the card ("Confirm",
+   or "Reject", which drops the request with its link). Then the person's entries go to the account --
+   an event both were entered for keeps both entries --, so do their named bibs (a number the account
+   named at the same event once, a different one as a second), the account's empty profile fields
+   are filled from the person, the box ticked makes the member its manager, and the person leaves the
+   member's list. An account may take over several people, from several members.
 
 ### Edge Cases
 
@@ -246,7 +260,9 @@ races and looks after their race photos (issue #438). They exist only in the mem
   (`virtual_members_consent_at`) and room under the role's limit; a person is one per last name,
   first name and date of birth for a member (`virtual_members.key`). The pages, the registration
   page and the photos share `accounts/virtual_members.py` (`who` tells an account from a person
-  without one), and so does `/api/v1/virtual-members/`.
+  without one), and so does `/api/v1/virtual-members/`. Handing a person over is
+  `accounts/transfers.py` (`VirtualMemberTransfer`): `hand_over` moves every table that points at a
+  person, and a test fails when a field or a table is added that it does not name.
 - **FR-ACC-013**: The privacy question (issue #438): the sign-up form's last field
   (`accounts.forms.SignupForm`, `ACCOUNT_SIGNUP_FORM_CLASS`) or, for an account a provider made, the
   page `account_privacy_consent` that `accounts.middleware.PrivacyConsentMiddleware` sends its first

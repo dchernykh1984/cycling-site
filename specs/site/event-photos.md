@@ -148,7 +148,9 @@ start list's bib: marks still do.
   sizes) is not offered and answers 413 over the API. An original over
   `PHOTO_ARCHIVE_MAX_FILE_BYTES`, or one storage cannot give after one short retry, is left out and
   listed with its link in a text file inside the archive. Equal file names get a number.
-- **FR-EVP-014**: A named bib (`DeclaredBib`) is unique per member and event and is read as an index's
+- **FR-EVP-014**: A named bib (`DeclaredBib`) is one per member and event -- two where handing a person
+  without an account over to the member brought another number (issue #438), and naming a bib again
+  leaves one -- and is read as an index's
   bib (`normalize_bib`, `is_valid_bib`). It is offered only at an event with an indexed album and only
   while the start lists bound no bib to the member's own registration there (`declared_bib_refusal`);
   while such a binding exists it is not shown (`declared_in_force`). Its album is `_bib_album` without
