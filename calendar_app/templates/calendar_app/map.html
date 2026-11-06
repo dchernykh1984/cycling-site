@@ -49,6 +49,7 @@
         </div>
         {% include "calendar_app/_event_type_filter.html" %}
         {% include "calendar_app/_direction_filter.html" %}
+        {% include "calendar_app/_organizer_filter.html" %}
         {% if request.user.is_authenticated %}
         <div class="col-auto">
           <div class="form-check mt-2">
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     window.appendIdsParam(params, 'event_type', window.getEventTypeFilterIds ? window.getEventTypeFilterIds() : []);
     if (window.applyDirectionParams) window.applyDirectionParams(params, directionParam);
+    window.appendIdsParam(params, 'organizer', window.getOrganizerFilterIds ? window.getOrganizerFilterIds() : []);
     if (favEl && favEl.checked) params.set('favorite', '1');
   }
 

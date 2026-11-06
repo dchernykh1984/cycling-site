@@ -12,8 +12,9 @@ filters), `calendar_app/test_date_words.py`, `tests/test_calendar_toolbar.py`, `
 `test_discipline_filter.py`, `test_location_filter.py`, `test_filter_search.py`, `test_guest_region.py`, `test_date_filters.py`,
 `test_filter_url_length.py`, `test_view_switcher_location.py`, `test_favorite_events.py`,
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
-`test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`;
-`tests/test_top_events.py`, `tests/test_guest_region.py`
+`test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`,
+`test_organizer_filter.py`; `tests/test_top_events.py`, `tests/test_guest_region.py`,
+`tests/test_organizer_filter.py`
 **Related**: [events](events.md), [locations](locations.md), [accounts](accounts.md) (saved
 preferences), [search visibility](search-visibility.md)
 
@@ -91,13 +92,22 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
    second country stays ticked after a region of the first is picked, ready for its own. The API's
    `direction_ids` and `discipline_ids` keep their OR, and its `location_ids` their union
    (FR-API-005).
-4. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing";
+4. **Given** the Organizer filter (issue #336), **Then** it offers everybody who posted a public
+   event but the account the site's agents post through, last name first, as one searchable list of
+   boxes like the places, on the list, the grid and the map, with its chip and its place in the
+   filters' count. A list about organizers holds all their events, past and to come -- from the first
+   day of the earliest to the last of the latest -- unless a period is asked for, and choosing or
+   dropping one on the list lets go of the days it showed; the map opened on them with no days does
+   the same, while the grid keeps its month and the map its days as for any filter. The calendar
+   file narrows to them too, and the API takes `organizer_ids` and lists the choices
+   (`GET /competitions/organizers`). Saved preferences do not keep an organizer.
+5. **Given** a junk or unknown id in the address, **Then** it is ignored, not treated as "nothing";
    so is a date that is not one, in the grid's data, the calendar file and the places map as in the
    list's filters.
-5. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
+6. **Given** a member with saved preferences opens a calendar page without a query, **Then** they
    are redirected to it with their preferences applied; an explicit query or the reset link is
    left alone (see [accounts](accounts.md)).
-6. **Given** a guest -- not signed in, not a crawler or a link preview -- opens the calendar, the
+7. **Given** a guest -- not signed in, not a crawler or a link preview -- opens the calendar, the
    list or the map without a query, **Then** they are redirected to it with their region in the
    place filter (#332): the region of the site's city nearest to the point the network provider
    reports for them, within `GUEST_REGION_RADIUS_KM`, and only when it has an event still to come.

@@ -13,7 +13,8 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Max, Min, Prefetch, Q
+from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -47,6 +48,7 @@ from locations.models import (
     sort_locations_for_filter,
 )
 
+from . import organizers
 from .forms import (
     AddCompetitionCommentForm,
     CompetitionFilterForm,
@@ -246,6 +248,27 @@ def _apply_id_filters(qs, event_type_ids, discipline_ids, direction_ids):
     elif directions:
         qs = qs.filter(disciplines__category_id__in=directions).distinct()
     return qs
+
+
+def _apply_organizer_filter(qs, values):
+    """The events the chosen organizers -- the members who posted them -- posted (issue #336); a value that
+    is no id is no filter."""
+    ids = _parse_int_ids(values)
+    return qs.filter(submitted_by_id__in=ids) if ids else qs
+
+
+def _organizers_days(user, values) -> tuple[datetime.date, datetime.date] | None:
+    """The first and the last day of the chosen organizers' events ``user`` may see: a page about an
+    organizer shows every one of them, past and to come, unless its days are asked for (issue #336)."""
+    ids = _parse_int_ids(values)
+    if not ids:
+        return None
+    span = (
+        listed_events(user)
+        .filter(submitted_by_id__in=ids)
+        .aggregate(first=Min("date_start"), last=Max(Coalesce("date_end", "date_start")))
+    )
+    return (span["first"], span["last"]) if span["first"] else None
 
 
 def _only_favorite_requested(request) -> bool:
@@ -463,6 +486,7 @@ def _filter_panel_context(request) -> dict:
         "event_types_json": _event_types_for_locale(),
         "categories_json": _categories_for_locale(),
         "disciplines_json": _disciplines_for_locale(),
+        "organizers_json": organizers.choices(),
         "only_favorite": _only_favorite_requested(request),
         **month_picker_choices(),
     }
@@ -633,6 +657,7 @@ class CalendarEventsAPIView(View):
         location_ids = _parse_int_ids(request.GET.getlist("location"))
         if location_ids:
             qs = qs.filter(location_id__in=_location_descendant_pks(location_ids))
+        qs = _apply_organizer_filter(qs, request.GET.getlist("organizer"))
         qs = _apply_favorite_filter(qs, request)
 
         # Evaluate once (with its select_related/prefetch) and reuse the rows for the favorite
@@ -674,7 +699,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # page and drops the date window from it.
         chosen = {
             name: _parse_int_ids(self.request.GET.getlist(name))
-            for name in ("location", "discipline", "discipline_category", "event_type")
+            for name in ("location", "discipline", "discipline_category", "event_type", "organizer")
         }
         # The unfiltered list is a "what is on soon" page: the rest of this month, the period the
         # calendar and the map open on too (issue #330). A list filtered down to one city or one
@@ -685,6 +710,10 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         # "All upcoming" has no last day, filtered or not.
         upcoming = period == Period.UPCOMING
         date_to = None if upcoming or (faceted and period != Period.MONTH) else end_of_month(today)
+        # A list about organizers is all their events, past and to come (issue #336), unless a period is asked.
+        span = None if period else _organizers_days(self.request.user, chosen["organizer"])
+        if span:
+            date_from, date_to = span
 
         is_manager = roles.at_least(self.request.user, roles.MANAGE_ALL_EVENTS)
         qs = (
@@ -708,6 +737,7 @@ class CompetitionListView(ListingIndexMixin, DefaultFilterRedirectMixin, Templat
         )
         if chosen["location"]:
             qs = qs.filter(location_id__in=_location_descendant_pks(chosen["location"]))
+        qs = _apply_organizer_filter(qs, chosen["organizer"])
         qs = _apply_favorite_filter(qs, self.request)
 
         # Top events first, then the rest by date; the page draws a divider between the two. The id
@@ -762,6 +792,11 @@ class CalendarMapView(ListingIndexMixin, DefaultFilterRedirectMixin, TemplateVie
         context["date_from"] = _parse_date(self.request.GET.get("date_from"), today)
         upcoming = self.request.GET.get("period") == Period.UPCOMING
         context["date_to"] = _parse_date(self.request.GET.get("date_to"), None if upcoming else end_of_month(today))
+        # As on the list: the chosen organizers' events, every one of them, unless days are asked for.
+        asked = any(self.request.GET.get(key) for key in ("period", "date_from", "date_to"))
+        span = None if asked else _organizers_days(self.request.user, self.request.GET.getlist("organizer"))
+        if span:
+            context["date_from"], context["date_to"] = span
         context["map_home_area"] = map_home_area(_parse_int_ids(self.request.GET.getlist("location")))
         context["map_default_view"] = settings.MAP_DEFAULT_VIEW
         return context
@@ -790,6 +825,7 @@ class CalendarMapAPIView(View):
             request.GET.getlist("discipline"),
             request.GET.getlist("direction"),
         )
+        qs = _apply_organizer_filter(qs, request.GET.getlist("organizer"))
         qs = _apply_favorite_filter(qs, request)
 
         by_path = {loc.path: loc for loc in Location.objects.filter(is_deleted=False)}

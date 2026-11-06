@@ -16,7 +16,7 @@ list.{% endcomment %}
     {% for row in organizers %}
     <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
       <div class="ms-2 me-auto">
-        <div class="fw-semibold">{{ row.organizer.public_display_name }}</div>
+        <div class="fw-semibold"><a href="{% url 'calendar_list' %}?organizer={{ row.organizer.pk }}">{{ row.organizer.public_display_name }}</a></div>
         <div class="small text-muted">{% blocktrans count counter=row.reviews %}{{ counter }} score{% plural %}{{ counter }} scores{% endblocktrans %}, {% blocktrans count counter=row.events %}{{ counter }} event{% plural %}{{ counter }} events{% endblocktrans %}</div>
       </div>
       <span class="fs-5 fw-semibold">{{ row.average|floatformat:1 }}</span>
