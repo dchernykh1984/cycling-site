@@ -954,3 +954,25 @@ main .article-body h3 {
     min-width: 2.75rem;
     min-height: 2.75rem;
 }
+/* The ratings' banners and pages and the owners' card of service accounts (issue #436) are tapped on
+   phones: 44 px whatever height the skin gives a button, and a box and its words are one label, in
+   a row of that height, the box drawn as the registration page draws its boxes. */
+.review-requests .btn, .service-account-missing .btn,
+.rating-review .btn, .rating-summary .btn, .service-accounts .btn {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.service-account-pick {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+}
+.service-account-pick .form-check-input {
+    flex: none;
+    margin: 0;
+    border-color: var(--bs-secondary-color);
+}
