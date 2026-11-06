@@ -17,8 +17,8 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import gettext
 
-#: A paragraph holding the marker alone, as the editor or the API leaves it
-MARKER = re.compile(r"<p>\s*\[toc\]\s*</p>", re.IGNORECASE)
+#: A paragraph holding the marker alone, as the editor or the API leaves it -- aligned by the editor too
+MARKER = re.compile(r"<p(?:\s[^>]*)?>\s*\[toc\]\s*</p>", re.IGNORECASE)
 _HEADING = re.compile(r"<(h[23])(\s[^>]*)?>(.*?)</\1\s*>", re.IGNORECASE | re.DOTALL)
 PREFIX = "section-"
 
