@@ -139,6 +139,17 @@ class ReviewTests(TestCase):
         self.assertEqual(Review.objects.count(), 1)
         self.assertEqual(rules.reviewable(coach), [])
 
+    def test_an_event_by_invitation_asks_its_participants_as_any_other(self):
+        private = make_competition(
+            title="Private ride",
+            date_start=TODAY - datetime.timedelta(days=2),
+            submitted_by=self.organizer,
+            invite_only=True,
+        )
+        self._enter(private, self.rider, "7")
+        _protocol(private, [_row("7")])
+        self.assertEqual(rules.reviewable(self.rider), [self.event, private])
+
     def _entered_in_own_event(self):
         self._enter(self.event, self.organizer, "11")
         Protocol.objects.filter(competition=self.event).update(
