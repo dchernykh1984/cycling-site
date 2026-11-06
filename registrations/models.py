@@ -156,6 +156,17 @@ class CompetitionRegistration(models.Model):
         return bool(self.participant_names)
 
     @property
+    def additional_info_date(self) -> datetime.date | None:
+        """The additional field read as a date, where the event collects the date of birth there, for
+        the list to show in the reader's order; None for anything else, which is shown as typed."""
+        if not (self.additional_info and self.competition.additional_info_is_birth_date):
+            return None
+        try:
+            return datetime.date.fromisoformat(self.additional_info)
+        except ValueError:
+            return None
+
+    @property
     def display_name(self) -> str:
         """Who the entry is for, as plain text: a relay team's members, or one person's name."""
         if self.participant_names:

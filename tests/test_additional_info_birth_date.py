@@ -55,12 +55,15 @@ class BirthDateModeTests(TestCase):
         self.assertIn(f'value="{BORN.isoformat()}"', field)
         self.assertIn("readonly", field)
 
-    def test_the_participant_list_heads_its_column_with_the_date_of_birth(self):
+    def test_the_participant_list_heads_its_column_with_the_date_of_birth_and_shows_it_as_dates_are(self):
         comp = self._event()
         make_registration(comp, user=self.member, additional_info=BORN.isoformat())
+        make_registration(comp, first_name="Old", last_name="Entry", additional_info="road bike")
         with translation.override("en"):
             page = self.client.get(reverse("registrations:participant_list", args=[comp.pk]))
         self.assertContains(page, "<th>Date of birth</th>", html=True)
+        self.assertContains(page, '<span class="text-nowrap">17.04.1990</span>', html=True)
+        self.assertContains(page, "road bike")
 
     def test_an_event_taking_only_ones_own_data_keeps_the_accounts_date_whatever_the_form_says(self):
         comp = self._event()
