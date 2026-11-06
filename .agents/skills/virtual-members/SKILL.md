@@ -75,7 +75,8 @@ answer `{row, registration_id, errors}`: an entry refused says why and the next 
   in, only where the event lets anyone be entered.
 - The rest is the event's form -- `category_id`, `team`, `city`, `additional_info`, names, `gender`,
   `birth_date` or `birth_year` -- and is filled in from the person when left out, the first category
-  they fit included. An event that takes only one's own data takes the names, gender and date of
+  they fit included. Where the event's additional field is the date of birth, it is `YYYY-MM-DD`, from the
+  person's account when left out. An event that takes only one's own data takes the names, gender and date of
   birth from the person, whatever the entry says.
 - An event with categories enters nobody without one: a person no open category takes is refused,
   and `errors.category` says so -- tell the member, never pick another category for them.
