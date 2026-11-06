@@ -27,6 +27,8 @@ class SportsAchievementsTests(TestCase):
         self.assertContains(page, f'<label class="form-label" for="id_sports_achievements">{label}</label>', html=True)
         self.assertContains(page, f'<div class="form-text" id="sports-achievements-hint">{hint}</div>', html=True)
         self.assertContains(page, 'aria-describedby="sports-achievements-hint"')
+        limit = User._meta.get_field("sports_achievements").max_length
+        self.assertContains(page, f'maxlength="{limit}"')
 
     def test_the_profile_keeps_and_shows_them(self):
         data = {"first_name": "Ivan", "last_name": "Petrov", "sports_achievements": "  KMS in road cycling "}

@@ -68,7 +68,7 @@
             <div class="mb-3" id="sports-achievements">
                 <label class="form-label" for="id_sports_achievements">{% trans "Sports achievements" %}</label>
                 {{ form.sports_achievements.errors }}
-                <input type="text" name="sports_achievements" id="id_sports_achievements" maxlength="200"
+                <input type="text" name="sports_achievements" id="id_sports_achievements" maxlength="{{ form.sports_achievements.field.max_length }}"
                        value="{{ form.sports_achievements.value|default:'' }}" aria-describedby="sports-achievements-hint"
                        class="form-control{% if form.sports_achievements.errors %} is-invalid{% endif %}">
                 <div class="form-text" id="sports-achievements-hint">{% trans "A sports rank or category, or the like" %}</div>
