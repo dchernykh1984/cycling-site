@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n static calendar_tags seo_tags event_photos_tags %}
+{% load i18n static calendar_tags seo_tags event_photos_tags ratings_tags %}
 
 {% block extra_css %}
 {% if location_lat or route_track %}
@@ -103,6 +103,13 @@
         <button type="submit" class="btn btn-outline-secondary btn-sm">{% trans "Dismiss report" %}</button>
       </form>
       {% endif %}
+    </div>
+    {% endif %}
+    {% organizer_rating competition as rating %}
+    {% if rating %}
+    <div class="mb-2 text-muted small organizer-rating">
+      <strong>{% trans "Organizer's rating" %}:</strong> <a href="{% url 'ratings:index' %}">{{ rating.average|floatformat:1 }}</a>,
+      {% blocktrans count counter=rating.reviews %}{{ counter }} score{% plural %}{{ counter }} scores{% endblocktrans %}
     </div>
     {% endif %}
     {% if competition.location_full_label %}

@@ -5331,3 +5331,40 @@ msgstr "Рақмет! Бұл пікірдің сіздікі екенін ешк
 #: ratings/views.py
 msgid "This event cannot be rated, or you have answered already."
 msgstr "Бұл іс-шараны бағалау мүмкін емес немесе сіз жауап беріп қойдыңыз."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Organizer's rating"
+msgstr "Ұйымдастырушы рейтингі"
+
+#: calendar_app/templates/calendar_app/detail.html
+#, python-format
+msgid "%(counter)s score"
+msgid_plural "%(counter)s scores"
+msgstr[0] "%(counter)s баға"
+msgstr[1] "%(counter)s баға"
+
+#: cycling_site/templates/base.html
+msgid "Ratings"
+msgstr "Рейтингтер"
+
+#: ratings/templates/ratings/index.html
+msgid "Organizers"
+msgstr "Ұйымдастырушылар"
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from %(counter)s score."
+msgid_plural "An organizer's rating is the average overall score the participants of their events gave, from 1 to 5. It is shown from %(counter)s scores."
+msgstr[0] "Ұйымдастырушы рейтингі — оның іс-шараларына қатысушылар қойған жалпы бағалардың орташасы, 1-ден 5-ке дейін. Ол %(counter)s бағадан бастап көрсетіледі."
+msgstr[1] "Ұйымдастырушы рейтингі — оның іс-шараларына қатысушылар қойған жалпы бағалардың орташасы, 1-ден 5-ке дейін. Ол %(counter)s бағадан бастап көрсетіледі."
+
+#: ratings/templates/ratings/index.html
+#, python-format
+msgid "%(counter)s event"
+msgid_plural "%(counter)s events"
+msgstr[0] "%(counter)s іс-шара"
+msgstr[1] "%(counter)s іс-шара"
+
+#: ratings/templates/ratings/index.html
+msgid "No organizer has enough scores yet. The ratings fill in as participants rate the events they took part in."
+msgstr "Әзірге бірде-бір ұйымдастырушыда бағалар жеткіліксіз. Қатысушылар өздері қатысқан іс-шараларды бағалаған сайын рейтинг толады."
