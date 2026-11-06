@@ -204,6 +204,8 @@ class Competition(index.Indexed, models.Model):
         NONE = "none", "Do not show"
         FREE = "free", "Free-form input"
         STRAVA = "strava", "Strava link"
+        # the date in full, from the person's account, where the event asks only the year of birth
+        BIRTH_DATE = "birth_date", "Date of birth"
 
     additional_info_mode = models.CharField(
         max_length=10,
@@ -538,12 +540,21 @@ class Competition(index.Indexed, models.Model):
 
         if self.additional_info_label.strip():
             return self.additional_info_label.strip()
-        return gettext("Strava link") if self.additional_info_is_strava else gettext("Additional info")
+        if self.additional_info_is_strava:
+            return gettext("Strava link")
+        if self.additional_info_is_birth_date:
+            return gettext("Date of birth")
+        return gettext("Additional info")
 
     @property
     def additional_info_is_strava(self) -> bool:
         """Whether the additional-info field collects a Strava link (vs free text)."""
         return self.additional_info_mode == self.AdditionalInfoMode.STRAVA
+
+    @property
+    def additional_info_is_birth_date(self) -> bool:
+        """Whether the additional-info field collects the date of birth in full, from the person's account."""
+        return self.additional_info_mode == self.AdditionalInfoMode.BIRTH_DATE
 
     @property
     def additional_info_visible_publicly(self) -> bool:
