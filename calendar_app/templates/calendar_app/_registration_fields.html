@@ -109,6 +109,7 @@ bounds: none of them sits in a field of its own that could carry the message.{% 
     <option value="none" {% if mode == "none" %}selected{% endif %}>{% trans "Do not show" %}</option>
     <option value="free" {% if mode == "free" or not mode %}selected{% endif %}>{% trans "Free-form input" %}</option>
     <option value="strava" {% if mode == "strava" %}selected{% endif %}>{% trans "Strava link" %}</option>
+    <option value="birth_date" {% if mode == "birth_date" %}selected{% endif %}>{% trans "Date of birth" %}</option>
   </select>
   {% endwith %}
   <div class="mt-2" style="max-width: 320px;">

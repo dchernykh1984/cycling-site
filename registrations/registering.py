@@ -74,6 +74,19 @@ def _offer(form, categories) -> None:
     cast(forms.ModelChoiceField, form.fields["category"]).queryset = categories
 
 
+def additional_info_from(competition, person) -> str | None:
+    """What the event's additional field takes from ``person``'s account -- a member's, or a person's
+    without one: their Strava link, or their date of birth in full (ISO, as a date field sends it);
+    None where the field is the participant's own to type."""
+    if not competition.show_additional_info_field:
+        return None
+    if competition.additional_info_is_strava:
+        return person.strava_link
+    if competition.additional_info_is_birth_date:
+        return person.birth_date.isoformat() if person.birth_date else ""
+    return None
+
+
 def blank_form(competition, person, prefix=None, offered=None) -> RegistrationForm:
     """The form as the page first shows it for ``person``: filled in from their profile; empty for
     nobody's, as for another person typed in where anyone may be entered."""
@@ -95,8 +108,9 @@ def blank_form(competition, person, prefix=None, offered=None) -> RegistrationFo
         initial["birth_date"] = person.birth_date
     if categories:
         initial["category"] = categories[0].pk
-    if competition.show_additional_info_field and competition.additional_info_is_strava:
-        initial["additional_info"] = person.strava_link
+    from_profile = additional_info_from(competition, person)
+    if from_profile is not None:
+        initial["additional_info"] = from_profile
     form = _form(competition, person, initial=initial, prefix=prefix)
     _offer(form, RegistrationCategory.objects.filter(pk__in=[c.pk for c in categories]))
     return form
@@ -107,6 +121,14 @@ def bound_form(competition, person, data, prefix=None) -> RegistrationForm:
     form = _form(competition, person, data, prefix=prefix)
     _offer(form, RegistrationCategory.objects.filter(competition=competition, is_deleted=False))
     return form
+
+
+def _additional_info(competition, cleaned, person) -> str:
+    """The entry's additional field: as the form sent it, but an event that takes only one's own data
+    takes the date of birth from the person's account, whatever the form says."""
+    if not is_free(competition) and competition.additional_info_is_birth_date and person is not None:
+        return person.birth_date.isoformat() if person.birth_date else ""
+    return cleaned.get("additional_info", "")
 
 
 def _category_refusal(competition, form, category, gender, birth_date, relay_enabled) -> str:
@@ -195,7 +217,7 @@ def register_one(competition, form, person, registered_by, relay=None) -> Compet
             category=category,
             city="" if relay_enabled else cleaned.get("city", ""),
             team=team,
-            additional_info=cleaned.get("additional_info", ""),
+            additional_info=_additional_info(competition, cleaned, person),
             is_approved=not competition.require_approval,
             is_paid=not competition.require_payment,
         )

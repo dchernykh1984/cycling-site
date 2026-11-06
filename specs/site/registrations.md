@@ -139,8 +139,11 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   match by gender and an inclusive birth-date range (an open bound matches everything). A date of
   birth lies from 1900 to today and a year from 1900 to this year, counted when the form is sent;
   the member's profile holds its date to the same bounds.
-- **FR-REG-003**: Additional info: off, free text, or a Strava link (prefilled from the profile,
-  with a banner when the profile has none); optional or required; the organizer may name the field,
+- **FR-REG-003**: Additional info: off, free text, a Strava link (prefilled from the profile,
+  with a banner when the profile has none), or the date of birth in full, for an event that asks
+  only the year: a date field filled in from the person's account -- a member's or a person's
+  without one -- kept as ISO, from 1900 to today; where the event takes only one's own data it is
+  the account's, whatever the form says, and the participant's own edit leaves it; optional or required; the organizer may name the field,
   and that wording reaches the form, the list column and the export (the built-in name follows the
   reader's language, and the list heads the column "Info" instead of the built-in free-text name;
   the export header stays English).

@@ -15,6 +15,21 @@ from .models import RELAY_SEPARATOR, CompetitionRegistration, RegistrationCatego
 GENDER_CHOICES = User.Gender.choices
 
 
+def _birth_date_info(form) -> str:
+    """The additional field of an event that collects the date of birth in full: a date from 1900 to
+    today, kept as ISO, as a date field sends it; any other field as typed."""
+    value = form.cleaned_data.get("additional_info", "")
+    competition = form.competition
+    if not (value and competition and competition.additional_info_is_birth_date):
+        return value
+    try:
+        born = datetime.date.fromisoformat(value.strip())
+    except ValueError:
+        raise forms.ValidationError(_("Enter a valid date.")) from None
+    validate_birth_date(born)
+    return born.isoformat()
+
+
 class RegistrationForm(forms.Form):
     first_name = forms.CharField(max_length=100, label=_("First name"))
     last_name = forms.CharField(max_length=100, label=_("Last name"))
@@ -49,11 +64,7 @@ class RegistrationForm(forms.Form):
             else:
                 del self.fields["birth_year"]
 
-            if not competition.show_additional_info_field:
-                del self.fields["additional_info"]
-            elif "additional_info" in self.fields:
-                self.fields["additional_info"].label = competition.additional_info_field_label
-                self.fields["additional_info"].required = competition.additional_info_required
+            self._set_additional_info(competition)
 
             if competition.relay_enabled:
                 self.fields["first_name"].required = False
@@ -66,6 +77,21 @@ class RegistrationForm(forms.Form):
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs["readonly"] = True
                 self.fields[field_name].widget.attrs["class"] = "form-control-plaintext"
+
+    def _set_additional_info(self, competition):
+        """The event's additional field: named and required as the organizer chose, or gone."""
+        if not competition.show_additional_info_field:
+            del self.fields["additional_info"]
+            return
+        field = self.fields["additional_info"]
+        field.label = competition.additional_info_field_label
+        field.required = competition.additional_info_required
+        # The date of birth comes from the account where the event takes only one's own data
+        if competition.additional_info_is_birth_date and "birth_date" in self._readonly_fields:
+            field.widget.attrs["readonly"] = True
+
+    def clean_additional_info(self):
+        return _birth_date_info(self)
 
     def clean(self):
         cleaned = super().clean()
@@ -135,6 +161,9 @@ class EditRegistrationForm(forms.ModelForm):
     def clean_participant_names(self):
         return self._sanitize_relay_field("participant_names")
 
+    def clean_additional_info(self):
+        return _birth_date_info(self)
+
     def clean_participant_birth_years(self):
         return self._sanitize_relay_field("participant_birth_years")
 
@@ -178,6 +207,9 @@ class EditRegistrationForm(forms.ModelForm):
         # that are read-only at registration stay locked when they self-edit. Django's `disabled`
         # is enforced server-side: a crafted POST cannot change these.
         if competition.registration_mode == competition.RegistrationMode.SELF_ONLY:
-            for name in ("first_name", "last_name", "birth_date", "gender"):
+            locked = ["first_name", "last_name", "birth_date", "gender"]
+            if competition.additional_info_is_birth_date:
+                locked.append("additional_info")  # the account's date of birth, as the entry took it
+            for name in locked:
                 if name in self.fields:
                     self.fields[name].disabled = True

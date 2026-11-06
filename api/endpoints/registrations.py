@@ -164,8 +164,9 @@ def _form_data(competition, person, entry: EntryIn, typed: bool) -> dict:
         }
         if person.birth_date:
             data["birth_date"], data["birth_year"] = person.birth_date, person.birth_date.year
-        if competition.show_additional_info_field and competition.additional_info_is_strava:
-            data["additional_info"] = person.strava_link
+        from_profile = registering.additional_info_from(competition, person)
+        if from_profile is not None:
+            data["additional_info"] = from_profile
     own_data_only = not registering.is_free(competition)
     given = {
         "first_name": entry.first_name,
