@@ -72,9 +72,10 @@ def _collect(part: dict, bibs: set[str]) -> None:
         _collect(section, bibs)
 
 
-def reviewable(user, competition=None) -> list:
+def reviewable(user, competition=None, limit: int | None = None) -> list:
     """The events ``user`` took part in, or the people without an account they added did, and may still
-    review, the latest first -- the one remembered best; only ``competition`` when it is given."""
+    review, the latest first -- the one remembered best; only ``competition`` when it is given, and the
+    first ``limit`` of them, the others' protocols left unread, when that is."""
     if not getattr(user, "is_authenticated", False):
         return []
     # No place on Earth is a day ahead of UTC and more: an event whose last day comes after today there
@@ -98,6 +99,7 @@ def reviewable(user, competition=None) -> list:
         .prefetch_related(
             Prefetch("issued_bibs", queryset=IssuedBib.objects.filter(state=IssuedBib.State.ACTIVE), to_attr="bibs")
         )
+        .order_by("-last_day", "-competition_id")
         .distinct()
     )
     if competition is not None:
@@ -105,6 +107,8 @@ def reviewable(user, competition=None) -> list:
     found: dict[int, Competition] = {}
     started: dict[int, set[str]] = {}
     for entry in entries:
+        if limit is not None and len(found) >= limit:
+            break
         event = entry.competition
         if event.pk in found or not ended(event):
             continue

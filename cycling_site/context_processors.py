@@ -136,7 +136,7 @@ def review_requests(request):
         return {}
     from ratings import rules
 
-    return {"review_requests": rules.reviewable(user)[: rules.ASKED_AT_ONCE]}
+    return {"review_requests": rules.reviewable(user, limit=rules.ASKED_AT_ONCE)}
 
 
 def _knowledge_index_url() -> str:

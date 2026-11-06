@@ -88,6 +88,22 @@ class ReviewTests(TestCase):
         rules.answer(self.rider, self.event)
         self.assertIn("Rate: Spring Cup", self.client.get(_url("news_index")).content.decode())
 
+    @override_settings(CACHES=LOCAL_CACHE)
+    def test_the_banner_reads_no_more_events_than_it_shows(self):
+        """A member with many events left unanswered costs a page no more than one with two."""
+        cache.clear()
+        for days in range(2, 8):
+            event = make_competition(
+                title=f"Race {days}", date_start=TODAY - datetime.timedelta(days=days), submitted_by=self.organizer
+            )
+            self._enter(event, self.rider, "7")
+            _protocol(event, [_row("7")])
+        self.client.force_login(self.rider)
+        with CaptureQueriesContext(connection) as queries:
+            self.client.get(_url("news_index"))
+        read = [q["sql"] for q in queries.captured_queries if 'FROM "protocols_protocol"' in q["sql"]]
+        self.assertEqual(len(read), rules.ASKED_AT_ONCE * 2)  # each event's protocols: their state, then the bibs
+
     def test_nobody_is_asked_who_did_not_start_or_whose_event_the_agents_posted(self):
         cases = {
             "did not start": ("8", {}),
