@@ -1,8 +1,9 @@
 """E2E for rating an event one took part in (issue #436): the banner's way to the review and away once it
-is answered."""
+is answered, and the size of what is tapped on a phone, in all three languages."""
 
 import datetime
 import re
+import uuid
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -11,6 +12,7 @@ from accounts.models import User
 from calendar_app.models import Competition
 from event_photos.models import IssuedBib
 from protocols.models import Protocol
+from ratings import form
 from ratings.models import Review
 from registrations.models import CompetitionRegistration
 from tests.e2e.conftest import inject_session
@@ -94,3 +96,34 @@ def test_refusing_from_the_banner_stays_on_the_page_and_the_banner_goes(page: Pa
     expect(page).to_have_url(re.compile(r"/en/knowledge/$"))
     expect(page.get_by_role("region", name=BANNER)).to_have_count(0)
     assert not Review.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_on_a_phone_every_control_takes_a_tap_and_nothing_scrolls_sideways(
+    page: Page, live_server, organizer, owner, rider, lang
+):
+    event = _took_part(organizer, rider)
+    for score in (4, 5):  # the digest is offered from two reviews
+        Review.objects.create(competition=event, form=form.VERSION, answers={form.RATED: score})
+    User.objects.create_user(username="agent", email="agent@test.local", password="x", api_token=uuid.uuid4())
+    page.set_viewport_size({"width": 360, "height": 800})
+    small = []
+    for user, path, controls in (
+        (rider, "/calendar/", ".review-requests .btn"),
+        (rider, f"/ratings/events/{event.pk}/review/", ".rating-review .btn"),
+        (owner, "/calendar/", ".service-account-missing .btn"),
+        (owner, "/accounts/profile/", ".service-accounts .btn, .service-account-pick"),
+        (organizer, f"/ratings/events/{event.pk}/summary/", ".rating-summary .btn"),
+    ):
+        _sign_in(page, live_server, user)
+        page.goto(f"{live_server.url}/{lang}{path}")
+        assert page.evaluate("document.scrollingElement.scrollWidth <= document.scrollingElement.clientWidth"), path
+        found = page.locator(controls).all()
+        assert found, (path, controls)
+        for control in found:
+            box = control.bounding_box()
+            # to a tenth of a pixel: Firefox lays a 44 px line out as 43.99997
+            if box and min(round(box["height"], 1), round(box["width"], 1)) < 44:
+                small.append((path, control.inner_text(), box["width"], box["height"]))
+    assert not small, small
