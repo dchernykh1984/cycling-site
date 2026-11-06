@@ -276,11 +276,11 @@ bounds: none of them sits in a field of its own that could carry the message.{% 
           <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="{% trans 'Name' %}"
             value="${esc(cat.name||'')}" onchange="updateCat(${idx},'name',this.value)"></div>
           <div class="col-auto"><div class="form-check form-check-inline mb-0">
-            <input class="form-check-input" type="checkbox" ${cat.male!==false?'checked':''} onchange="updateCat(${idx},'male',this.checked)">
-            <label class="form-check-label small">M</label></div>
+            <input class="form-check-input" type="checkbox" id="cat-${idx}-male" ${cat.male!==false?'checked':''} onchange="updateCat(${idx},'male',this.checked)">
+            <label class="form-check-label small" for="cat-${idx}-male">{% translate "M" context "a category's gender box: men, as one letter" %}<span class="visually-hidden"> {% trans "Male" %}</span></label></div>
             <div class="form-check form-check-inline mb-0">
-            <input class="form-check-input" type="checkbox" ${cat.female!==false?'checked':''} onchange="updateCat(${idx},'female',this.checked)">
-            <label class="form-check-label small">F</label></div></div>
+            <input class="form-check-input" type="checkbox" id="cat-${idx}-female" ${cat.female!==false?'checked':''} onchange="updateCat(${idx},'female',this.checked)">
+            <label class="form-check-label small" for="cat-${idx}-female">{% translate "F" context "a category's gender box: women, as one letter" %}<span class="visually-hidden"> {% trans "Female" %}</span></label></div></div>
           <div class="col-md-2"><input type="${mode==='year'?'number':'date'}" class="form-control form-control-sm"
             placeholder="${mode==='year'?'{% trans "From year" %}':'{% trans "From date" %}'}"
             value="${esc(cat.birth_from||'')}" onchange="updateCat(${idx},'birth_from',this.value)"></div>
