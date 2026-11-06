@@ -78,10 +78,15 @@ change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_K
 
 ### Story 4 -- Files (P2)
 
-1. **Given** a GPX or KML file attached in the chat, **Then** it goes into the form's route file,
-   and its first point becomes the point of a new venue.
-2. **Given** a PDF, **Then** it goes into the regulations file, and is neither read nor checked.
-3. **Given** an event with no route file, **Then** the chat says plainly, even when the event has a
+1. **Given** a track attached in the chat -- whatever the route's field takes: GPX, KML, KMZ, TCX, FIT
+   or GeoJSON --, **Then** it goes into the form's route file, and its first point becomes the point of
+   a new venue.
+2. **Given** any other file the form's fields take (PDF, Office documents, ZIP, images), **Then** it
+   goes into the regulations file, and is neither read nor checked; a file the form would refuse is
+   refused in the chat, which names what it takes (`calendar_app.forms.DOCUMENT_EXTENSIONS`).
+3. **Given** a computer, **Then** a file may also be dragged onto the chat and is taken as the button
+   takes it; a phone, with nothing to drag, is not told it may.
+4. **Given** an event with no route file, **Then** the chat says plainly, even when the event has a
    link to its track, that the track is drawn on the event's map only from a GPX file and asks for
    one; a link alone draws nothing (maintainer, 2026-11-01).
 
