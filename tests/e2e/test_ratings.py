@@ -16,7 +16,8 @@ from ratings import form
 from ratings.models import Review
 from registrations.models import CompetitionRegistration
 from tests.e2e.conftest import inject_session
-from tests.e2e.contrast import is_large, legibility
+from tests.e2e.contrast import drawn, is_large, legibility, ratio
+from tests.e2e.test_interface_rules import _frame
 from tests.e2e.test_skin_contrast import NO_FADES, _in_state
 
 # The event has no place, so its days are counted in UTC: two days back, it is over everywhere
@@ -152,3 +153,21 @@ def test_the_banner_and_the_review_page_read_in_this_skin(page: Page, live_serve
                 if value < (3 if is_large(control) else 4.5):
                     shortfalls.append(f"{path} {control.inner_text()!r} ({state}): {value:.2f}")
     assert not shortfalls, shortfalls
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_chosen_score_stands_out_from_the_others_in_this_skin(page: Page, live_server, organizer, rider):
+    """A score picked is filled or framed 3:1 apart from one not picked, as every selection on the site is.
+    The dark skins paint outline buttons with !important and drew a picked score as an unpicked one."""
+    event = _took_part(organizer, rider)
+    _sign_in(page, live_server, rider)
+    page.goto(f"{live_server.url}/en/ratings/events/{event.pk}/review/")
+    page.add_style_tag(content=NO_FADES)
+    chosen, other = page.locator('label[for="overall-3"]'), page.locator('label[for="overall-4"]')
+    chosen.click()
+    page.mouse.move(0, 0)
+    expect(page.get_by_role("radio", name="3")).to_be_checked()
+    fill = ratio(drawn(chosen, "fill"), drawn(other, "fill"))
+    frame = ratio(_frame(chosen) or drawn(chosen, "fill"), _frame(other) or drawn(other, "fill"))
+    assert max(fill, frame) >= 3, f"fill {fill:.2f}, frame {frame:.2f}"
+    assert legibility(chosen) >= 4.5

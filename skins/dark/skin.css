@@ -64,9 +64,12 @@
     border-color: var(--skin-accent) !important;
     background-color: transparent !important;
 }
+/* A toggle built on .btn-check (a review's score) shows its choice as the pressed state: the rule above
+   would otherwise keep a chosen one as empty as the rest. */
 [data-bs-theme="dark"] .btn-outline-primary:hover,
 [data-bs-theme="dark"] .btn-outline-primary:focus,
-[data-bs-theme="dark"] .btn-outline-primary:active {
+[data-bs-theme="dark"] .btn-outline-primary:active,
+[data-bs-theme="dark"] .btn-check:checked + .btn-outline-primary {
     color: var(--skin-on-accent) !important;
     background-color: var(--skin-accent) !important;
     border-color: var(--skin-accent) !important;
