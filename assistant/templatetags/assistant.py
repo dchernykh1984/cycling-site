@@ -95,6 +95,7 @@ def assistant_chat(context, kind: str = Conversation.Kind.EVENT):
                 "attachedRoute": _("Attached to the form as the route: %(name)s"),
                 "attachedRegulations": _("Attached to the form as the regulations: %(name)s"),
                 "tooLarge": _("File size must not exceed 10 MB."),
+                "wait": _("Wait for the assistant's reply, then attach the file."),
                 "wrongFile": _("The event's form takes only these files: %(formats)s.")
                 % {"formats": ", ".join(sorted(DOCUMENT_EXTENSIONS | tracks.EXTENSIONS))},
             },

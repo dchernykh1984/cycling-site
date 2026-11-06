@@ -5152,3 +5152,7 @@ msgstr "М"
 msgctxt "a category's gender box: women, as one letter"
 msgid "F"
 msgstr "Ж"
+
+#: assistant/templatetags/assistant.py
+msgid "Wait for the assistant's reply, then attach the file."
+msgstr "Дождитесь ответа ассистента, затем приложите файл."

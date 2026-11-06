@@ -128,3 +128,24 @@ def test_on_a_phone_the_documents_heading_stands_above_its_first_field_as_the_fi
     }"""
     )
     assert gap == pytest.approx(spacing, abs=0.5)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_file_dropped_while_the_assistant_answers_is_left_out_and_the_chat_asks_to_wait(
+    page: Page, live_server, admin_user, chat_on, monkeypatch
+):
+    """The attach button waits for the reply; a file let go on the chat meanwhile is not lost without a word."""
+    _model(monkeypatch, {"reply": "Noted.", "set": {}})
+    inject_session(page, live_server, admin_user)
+    page.goto(f"{live_server.url}/en/calendar/submit/")
+    if not _desktop(page):
+        pytest.skip("a phone has nothing to drag")
+    held: list = []
+    page.route("**/messages", lambda route: held.append(route))  # the reply is kept from coming till the end
+    page.click("#assistant-toggle")
+    page.fill("#assistant-text", "A race on Saturday")
+    page.click("#assistant-send")
+    expect(page.locator("#assistant-attach")).to_be_disabled()
+    assert page.evaluate(DROP, ["#assistant-panel", None, "rules.pdf", "application/pdf"])
+    expect(page.locator("#assistant-log")).to_contain_text("Wait for the assistant's reply, then attach the file.")
+    assert page.eval_on_selector("#id_file_regulations", "i => i.files.length") == 0

@@ -85,7 +85,8 @@ change to one kind leaves the others as they were. One key, `ASSISTANT_LLM_API_K
    goes into the regulations file, and is neither read nor checked; a file the form would refuse is
    refused in the chat, which names what it takes (`calendar_app.forms.DOCUMENT_EXTENSIONS`).
 3. **Given** a computer, **Then** a file may also be dragged onto the chat and is taken as the button
-   takes it; a phone, with nothing to drag, is not told it may.
+   takes it -- while the assistant is answering, it is left out and the chat asks to wait for the
+   reply, as the button waits; a phone, with nothing to drag, is not told it may.
 4. **Given** an event with no route file, **Then** the chat says plainly, even when the event has a
    link to its track, that the track is drawn on the event's map only from a GPX file and asks for
    one; a link alone draws nothing (maintainer, 2026-11-01).
