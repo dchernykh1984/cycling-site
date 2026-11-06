@@ -178,13 +178,18 @@ class HandOverTests(TestCase):
             self.assertContains(self.client.get(_url("account_profile")), ">Hand over</button>")
             self.client.post(_url("account_virtual_transfer", pk=self.kid.pk))
             link = VirtualMemberTransfer.objects.get(person=self.kid)
-            self.assertContains(self.client.get(_url("account_profile")), _url("account_virtual_claim", key=link.key))
+            page = self.client.get(_url("account_profile"))
+        self.assertContains(page, _url("account_virtual_claim", key=link.key))
+        # Every row has these buttons: a screen reader hears whose each one is, as with "Edit" and "Delete"
+        self.assertContains(page, 'aria-label="New link: Kim Dana"')
         self._ask(keep_manager=True)
         self.client.force_login(self.coach)
         with translation.override("en"):
             page = self.client.get(_url("account_profile"))
         self.assertContains(page, "Dana Kim asks to take Kim Dana into their account.")
         self.assertContains(page, "They let you go on managing their registrations and photos.")
+        self.assertContains(page, 'aria-label="Confirm: Kim Dana"')
+        self.assertContains(page, 'aria-label="Reject: Kim Dana"')
         self.assertNotContains(page, ">Hand over</button>")
 
     def test_a_manager_without_a_name_is_asked_for_one_before_a_link(self):
