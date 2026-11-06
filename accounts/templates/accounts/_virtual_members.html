@@ -49,7 +49,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                 data-name="{{ person.last_name }} {{ person.first_name }}" data-team="{{ person.team }}" data-born="{{ person.birth_date|date:'Y-m-d' }}">
                 <span>
                     <span class="fw-semibold">{{ person.last_name }} {{ person.first_name }}</span>
-                    <span class="text-muted small d-block">{{ person.birth_date|date:"d.m.Y" }} &middot; {{ person.get_gender_display }}{% if person.team %} &middot; {{ person.team }}{% endif %}{% if person.city %} &middot; {{ person.city }}{% endif %}</span>
+                    <span class="text-muted small d-block">{{ person.birth_date|date:"d.m.Y" }} &middot; {{ person.get_gender_display }}{% if person.team %} &middot; {{ person.team }}{% endif %}{% if person.city %} &middot; {{ person.city }}{% endif %}{% if person.strava_link %} &middot; <a href="{{ person.strava_link }}" target="_blank" rel="noopener">Strava</a>{% endif %}</span>
                 </span>
                 <span class="d-flex gap-2">
                     <a href="{% url 'account_virtual_edit' person.pk %}" class="btn btn-sm btn-outline-primary" aria-label="{% trans 'Edit' %}: {{ person }}">{% trans "Edit" %}</a>

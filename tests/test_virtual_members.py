@@ -125,6 +125,22 @@ class EnteringTests(TestCase):
             rows, [(str(self.coach.pk), "Ivan Petrov (you)", False), (f"v{self.kid.pk}", "Ivanova Dana", True)]
         )
 
+    def test_an_event_asking_for_a_strava_link_fills_it_in_from_the_person_on_the_page_and_the_api(self):
+        self.kid.strava_link = "https://www.strava.com/athletes/42"
+        self.kid.save(update_fields=["strava_link"])
+        self.comp.additional_info_mode = "strava"
+        self.comp.save(update_fields=["additional_info_mode"])
+        rows = {row.key: row for row in self.client.get(self._url()).context["rows"]}
+        self.assertEqual(rows[f"v{self.kid.pk}"].form.initial["additional_info"], "https://www.strava.com/athletes/42")
+        answer = self.client.post(
+            "/api/v1/registrations/",
+            {"competition_id": self.comp.pk, "entries": [{"person": f"virtual:{self.kid.pk}"}]},
+            content_type="application/json",
+            **_bearer(self.coach),
+        )
+        self.assertEqual(answer.json()[0]["errors"], {})
+        self.assertEqual(CompetitionRegistration.objects.get().additional_info, "https://www.strava.com/athletes/42")
+
     def test_an_event_taking_only_ones_own_data_enters_the_person_as_added_whatever_the_form_says(self):
         response = self.client.post(self._url(), {"person": [f"v{self.kid.pk}"], **self._fields(category=self.cat.pk)})
         self.assertEqual(response.status_code, 302)
@@ -295,6 +311,15 @@ class ProfileCardTests(TestCase):
         self.assertIn("as many people as you may", " ".join(refused.context["virtual"]["form"].non_field_errors()))
         self.assertEqual(VirtualMember.objects.count(), 10)
 
+    def test_a_person_keeps_a_strava_link_and_the_card_links_to_it(self):
+        virtual_members.consent(self.coach)
+        self._add(strava_link="https://www.strava.com/athletes/42")
+        self.assertEqual(VirtualMember.objects.get().strava_link, "https://www.strava.com/athletes/42")
+        page = self.client.get(self._url("account_profile"))
+        self.assertContains(
+            page, '<a href="https://www.strava.com/athletes/42" target="_blank" rel="noopener">Strava</a>'
+        )
+
     def test_the_deletion_question_names_the_person_as_typed(self):
         virtual_members.consent(self.coach)
         _added(self.coach, last="O'Brien")
@@ -392,6 +417,20 @@ class ApiTests(TestCase):
         listed = self.client.get("/api/v1/virtual-members/", **self.auth).json()
         self.assertEqual((listed["consented"], listed["limit"], listed["room"]), (True, 10, 9))
         self.assertEqual([p["last_name"] for p in listed["people"]], ["Ivanova"])
+
+    def test_a_strava_link_is_added_changed_and_refused_when_it_is_no_link(self):
+        virtual_members.consent(self.coach)
+        added = self._post("", {"people": [self._row(strava_link="https://www.strava.com/athletes/7")]}).json()
+        self.assertEqual(added["created"][0]["strava_link"], "https://www.strava.com/athletes/7")
+        person = VirtualMember.objects.get()
+        url = f"/api/v1/virtual-members/{person.pk}"
+        changed = self.client.patch(
+            url, {"strava_link": "https://www.strava.com/athletes/8"}, content_type="application/json", **self.auth
+        )
+        self.assertEqual(changed.json()["strava_link"], "https://www.strava.com/athletes/8")
+        refused = self._post("", {"people": [self._row(n=1, strava_link="strava me")]})
+        self.assertEqual(refused.status_code, 422)
+        self.assertIn("strava_link", refused.json()["rows"][0]["errors"])
 
     def test_a_member_changes_and_deletes_their_own_people_only(self):
         mine, other = _added(self.coach), _added(make_user("other"), first="Zoe")

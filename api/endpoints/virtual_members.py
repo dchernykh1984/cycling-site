@@ -30,6 +30,7 @@ class VirtualMemberIn(Schema):
     birth_date: datetime.date
     team: str = Field("", max_length=_TEXT)
     city: str = Field("", max_length=_TEXT)
+    strava_link: str = Field("", max_length=_TEXT)  # a URL, as a profile's
 
 
 class VirtualMemberPatchIn(Schema):
@@ -39,6 +40,7 @@ class VirtualMemberPatchIn(Schema):
     birth_date: datetime.date | None = None
     team: str | None = Field(None, max_length=_TEXT)
     city: str | None = Field(None, max_length=_TEXT)
+    strava_link: str | None = Field(None, max_length=_TEXT)
 
 
 class VirtualMembersIn(Schema):
@@ -54,6 +56,7 @@ class VirtualMemberOut(Schema):
     birth_date: datetime.date
     team: str
     city: str
+    strava_link: str
 
 
 class VirtualMembersOut(Schema):
@@ -88,6 +91,7 @@ def _out(person) -> VirtualMemberOut:
         birth_date=person.birth_date,
         team=person.team,
         city=person.city,
+        strava_link=person.strava_link,
     )
 
 

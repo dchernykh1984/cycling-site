@@ -86,8 +86,12 @@ def test_the_card_takes_the_members_word_first_and_then_adds_a_person(page: Page
     card.locator("#id_first_name").fill("Dana")
     card.locator("#id_gender").select_option("F")
     card.locator("#id_birth_date").fill("2012-03-04")
+    card.locator("#id_strava_link").fill("https://www.strava.com/athletes/42")
     card.get_by_role("button", name="Add", exact=True).click()
     expect(page.locator("#virtual-members .virtual-people")).to_contain_text("Sokolova Dana")
+    expect(page.locator("#virtual-members .virtual-people a", has_text="Strava")).to_have_attribute(
+        "href", "https://www.strava.com/athletes/42"
+    )
     expect(page.locator("#virtual-members")).to_contain_text("Added: 1 of 10")
     assert VirtualMember.objects.filter(owner=coach, last_name="Sokolova", first_name="Dana").exists()
 
