@@ -253,3 +253,53 @@ def test_the_organizers_table_splits_no_word_and_never_widens_the_page(
     result = page.evaluate(_SPLIT_WORDS)
     assert result["split"] == [], f"words split across lines: {result['split']}"
     assert result["pageFits"], "the page scrolls sideways"
+
+
+_NUMBERS_ON_TWO_LINES = """
+() => [...document.querySelectorAll('.participant-list-table tbody td:first-child')].map(cell => {
+  const range = document.createRange();
+  range.selectNodeContents(cell);
+  const lines = new Set([...range.getClientRects()].filter(r => r.width > 0).map(r => Math.round(r.top)));
+  return {number: cell.textContent.trim(), lines: lines.size};
+}).filter(row => row.lines > 1)
+"""
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [1200, 1440])
+def test_a_number_stays_on_one_line_however_crowded_the_table(page: Page, live_server, organizer, width):
+    """An organizer's crowded table -- dates of birth, long team names, entries made by somebody else --
+    squeezed the number column to one digit, and 22 stood as a 2 over a 2."""
+    import datetime
+
+    from registrations.models import CompetitionRegistration, RegistrationCategory, Team
+
+    comp = Competition.objects.create(
+        title_ru="Crowded RU",
+        title_en="Crowded",
+        date_start=UPCOMING,
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+        birth_date_mode=Competition.BirthDateMode.DATE,
+    )
+    boys = RegistrationCategory.objects.create(competition=comp, name="Boys 2014-2015", bib_from=22, bib_to=99)
+    team = Team.objects.create(name="Tuzy jol - Verkhovykh E.A, Nalyotov M.A, Mikhramova O.A, Bekova D.A")
+    for last, first in (("Aitkulov", "Alkarim"), ("Almasuly", "Alizhan"), ("Bazarov", "Timofei")):
+        CompetitionRegistration.objects.create(
+            competition=comp,
+            category=boys,
+            first_name=first,
+            last_name=last,
+            gender="M",
+            birth_date=datetime.date(2015, 2, 8),
+            team=team,
+            city="Almaty",
+            registered_by=organizer,
+        )
+    page.set_viewport_size({"width": width, "height": 900})
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/ru/competitions/{comp.pk}/participants/")
+    expect(page.locator(".participant-list-table")).to_be_visible()
+    assert page.evaluate(_NUMBERS_ON_TWO_LINES) == []
