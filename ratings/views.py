@@ -46,6 +46,8 @@ class ReviewView(LoginRequiredMixin, View):
                 "scores": range(form.LOWEST, form.HIGHEST + 1),
                 "text_length": form.TEXT_LENGTH,
                 "next": _back(request, competition),
+                # The page is the request itself: the banner's answers would come back to a page gone
+                "review_requests": [],
             },
         )
 

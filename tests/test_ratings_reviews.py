@@ -131,6 +131,11 @@ class ReviewTests(TestCase):
         self.client.post(_url("ratings:review", pk=self.event.pk), {"overall": "1"})
         self.assertEqual(Review.objects.count(), 1)
 
+    def test_the_review_page_carries_no_banner_whose_answer_would_come_back_to_a_missing_page(self):
+        self.client.force_login(self.rider)
+        self.assertNotContains(self.client.get(_url("ratings:review", pk=self.event.pk)), "review-requests")
+        self.assertContains(self.client.get(_url("news_index")), "review-requests")
+
     def test_refusing_is_as_final_as_a_review_and_leaves_the_same_mark(self):
         self.client.force_login(self.rider)
         self.client.post(_url("ratings:review", pk=self.event.pk), {"decline": "1"})
