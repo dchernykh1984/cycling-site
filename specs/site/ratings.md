@@ -43,7 +43,8 @@ Nothing keeps who wrote a review.
 1. **Given** an organizer whose events' reviews hold three scores or more, **Then** the Ratings tab
    -- in the menu right after Calendar, in every skin -- lists them, the best average first, with the
    number of scores and of events, and each of their events' pages shows "Organizer's rating" with
-   the average and the number of scores; with fewer, nothing shows.
+   the average and the number of scores; with fewer, nothing shows. The average is of all their
+   scores, each weighing the same whatever the size of its event.
 2. **Given** a hidden, deleted or unapproved event, or one the site's agents posted, **Then** its
    reviews do not count.
 3. **Given** the API, **Then** `GET /ratings/organizers` (no token) gives the same list.
