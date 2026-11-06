@@ -71,7 +71,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     # competition collects Strava links (used later to match riders to their segment efforts).
     # Capped at the additional_info field's length so the prefilled value always fits.
     strava_link = models.URLField(max_length=100, blank=True, default="")
-    # A sports rank or category, or the like, in the member's own words; the profile only, no form takes it
+    # A sports rank or category, or the like, in the member's own words; no registration form takes it
     sports_achievements = models.CharField(max_length=200, blank=True, default="")
     # Saved calendar-filter preferences: exactly the same three filter dimensions the calendar uses,
     # so an opened calendar/list/map defaults to what this user cares about (issue #229). Left empty
@@ -235,7 +235,7 @@ class VirtualMember(models.Model):
 
     # What a form asking for a Strava link fills itself in from, as a member's profile has it
     strava_link = models.URLField(max_length=100, blank=True, default="")
-    # A sports rank or category, or the like, as a member's profile has it; no form takes it
+    # A sports rank or category, or the like, as a member's profile has it; no registration form takes it
     sports_achievements = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
