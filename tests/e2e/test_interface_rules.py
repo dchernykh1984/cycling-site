@@ -93,24 +93,6 @@ def _breaks(found):
     return [item for item in found if f"{skin}|{item}" not in KNOWN or (item.startswith(COLOURS) and not maintainers)]
 
 
-_FACES_OF_THE_HEADER = """
-async (selector) => {
-  const loads = [];
-  for (const el of document.querySelectorAll(selector.split(',').map(s => s + ', ' + s + ' *').join(','))) {
-    const texts = [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE);
-    const words = texts.map(node => node.textContent).join('');
-    if (!words.trim()) continue;
-    const style = getComputedStyle(el);
-    const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    loads.push(document.fonts.load(font, words));
-  }
-  await Promise.all(loads);
-  await document.fonts.ready;
-  await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
-}
-"""
-
-
 def _open(page: Page, live_server, viewport, lang, tab, query=""):
     page.set_viewport_size(SIZES[viewport])
     page.goto(f"{live_server.url}/{lang}{TABS[tab]}{query}")
@@ -120,10 +102,7 @@ def _open(page: Page, live_server, viewport, lang, tab, query=""):
         expect(page.locator(".fc-view")).to_be_visible()
     page.wait_for_load_state("networkidle")
     # A skin's font arrives with font-display: swap; a label measured before it has the fallback's width.
-    # document.fonts.ready alone is not enough: the period's words are written by the page's script, and
-    # a letter outside the font's first subset -- a Kazakh one, U+049A in November's name -- sends for its
-    # own subset, which may start after ready has settled. The header asks for the faces its words need.
-    page.evaluate(_FACES_OF_THE_HEADER, HEADER)
+    page.evaluate("() => document.fonts.ready")
     # What the tests measure must be there: a header region gone would leave them measuring nothing,
     # and passing (#384).
     for region in ("#period-nav", "#period-hint", "#filter-chips"):
@@ -161,10 +140,29 @@ def test_switching_tabs_moves_none_of_the_controls(page: Page, live_server, view
     found, details = [], []
     for key in sorted(set().union(*boxes.values())):
         where = {tab: boxes[tab].get(key) for tab in TABS}
-        if len({str(box) for box in where.values()}) > 1:
+        if _moved(list(where.values())):
             found.append(f"moves/{viewport}/{lang}/{key}")
             details.append(f"{key}: {where}")
     assert not _breaks(found), "\n".join(details)
+
+
+# How far a control may sit apart on two tabs and still count as in one place. In Kazakh on an emulated
+# Pixel 7 (2.625 device pixels to one) the month's word measured a pixel wider now and then, on any of
+# the tabs: three times in CI in November 2026, never locally, and not for the font's late subset, which
+# the test once waited for to no avail. A control that moves where a reader sees it moves by more.
+JITTER = 1.0
+
+
+def _moved(boxes) -> bool:
+    """Whether a control's boxes on the tabs differ beyond JITTER, or it is missing on some of them."""
+    if any(box is None for box in boxes):
+        return any(box is not None for box in boxes)
+    return any(
+        round(abs(a - b), 1) > JITTER
+        for i, first in enumerate(boxes)
+        for second in boxes[i + 1 :]
+        for a, b in zip(first, second, strict=True)
+    )
 
 
 # How far a tap reaches: from the control's centre outwards, as long as the point still lands on it
