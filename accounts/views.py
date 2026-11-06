@@ -21,7 +21,7 @@ from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.generic import FormView, TemplateView
 
-from accounts import managing, roles, virtual_members
+from accounts import managing, roles, transfers, virtual_members
 from accounts.access import (
     EMAIL_CONFIRMATION_REQUIRED_MESSAGE,
     ParticipantRequiredMixin,
@@ -196,11 +196,23 @@ class VirtualMemberForm(forms.ModelForm):
         return super().save(commit)
 
 
-def _virtual_context(user, form=None):
+def _virtual_context(request, form=None):
     """The profile's card of the people without accounts the reader added (issue #438): only the
-    reader's word that they may handle these people's data until they give it, then the people."""
+    reader's word that they may handle these people's data until they give it, then the people --
+    each with ``transfer_link``, the link handing them over to an account of their own or the request
+    that came through it, and ``transfer_url``, the address to send while the link is live."""
+    user = request.user
     consented = virtual_members.consented(user)
     people = list(virtual_members.of(user)) if consented else []
+    links = {link.person_id: link for link in transfers.links_of(user)} if people else {}
+    for person in people:
+        link = links.get(person.pk)
+        person.transfer_link = link
+        person.transfer_url = (
+            request.build_absolute_uri(reverse("account_virtual_claim", kwargs={"key": link.key}))
+            if link is not None and link.is_live()
+            else ""
+        )
     return {
         "consented": consented,
         "people": people,
@@ -240,7 +252,7 @@ class ProfileView(TemplateView):
 
             context["virtual_ride"] = profile_context(user)
             context["managing"] = _managing_context(self.request, user)
-            context["virtual"] = _virtual_context(user)
+            context["virtual"] = _virtual_context(self.request)
         from knowledge.models import DraftSubmission
 
         context["submissions"] = DraftSubmission.objects.filter(author=self.request.user).select_related("reviewed_by")
@@ -797,7 +809,7 @@ class VirtualMemberAddView(ParticipantRequiredMixin, ProfileView):
             messages.success(request, gettext("%(name)s is added.") % {"name": person})
             return redirect(_to_virtual_members())
         context = self.get_context_data()
-        context["virtual"] = _virtual_context(user, form)
+        context["virtual"] = _virtual_context(request, form)
         return self.render_to_response(context)
 
 
@@ -841,3 +853,74 @@ class VirtualMemberDeleteView(ParticipantRequiredMixin, View):
         person.delete()
         messages.success(request, gettext("%(name)s is deleted.") % {"name": name})
         return redirect(_to_virtual_members())
+
+
+class VirtualMemberTransferView(ParticipantRequiredMixin, View):
+    """The buttons that hand a person the reader added over to an account of their own (issue #438): a
+    link to send, and the answer to the request that came through it. Each reaches only the reader's own
+    people, so an id in the address can never touch anyone else's."""
+
+    action = ""
+
+    def post(self, request, pk):
+        person = virtual_members.find(request.user, pk)
+        if person is None:
+            raise Http404
+        if self.action == "issue":
+            transfers.issue(person)
+            return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
+        if self.action == "confirm":
+            done = transfers.confirm(request.user, person.pk)
+            if done is not None:
+                messages.success(
+                    request,
+                    gettext("%(person)s is now in the account of %(name)s.")
+                    % {"person": done.person, "name": done.claimed_by.public_display_name},
+                )
+        elif self.action == "reject":
+            transfers.reject(request.user, person.pk)
+        return redirect(_to_virtual_members())
+
+
+class VirtualMemberClaimView(LoginRequiredMixin, View):
+    """A link that hands a person without an account over to the account that opens it (issue #438):
+    taken by a button, never by opening, and moved only once the person's manager confirms it.
+
+    The page names who hands whom over, what moves, which empty fields of the profile get filled -- by
+    name, not value: the manager has not confirmed anything yet --, and asks; or says plainly why it
+    cannot. A visitor signs in first and comes back here, as with a manager's link.
+    """
+
+    template_name = "accounts/virtual_member_claim.html"
+
+    def _page(self, request, link, outcome):
+        asked = outcome == transfers.ASKED and link is not None
+        labels = VirtualMemberForm.Meta.labels
+        context = {
+            "link": link,
+            "asked": asked,
+            "refusal": transfers.refusal(outcome, link),
+            "filled": [labels[name] for name in transfers.fills(link.person, request.user)] if asked else [],
+        }
+        response = render(request, self.template_name, context)
+        if outcome == transfers.INVALID:
+            response.status_code = HTTPStatus.NOT_FOUND
+        return response
+
+    def get(self, request, key):
+        link = transfers.find(key)
+        outcome = transfers.outcome_for(request.user, link)
+        if outcome == transfers.ASKED and needs_email_confirmation(request.user):
+            outcome = transfers.UNCONFIRMED
+        return self._page(request, link, outcome)
+
+    def post(self, request, key):
+        if needs_email_confirmation(request.user):
+            return redirect_to_profile_for_email_confirmation(request)
+        link = transfers.find(key)
+        outcome = transfers.ask(request.user, key, keep_manager="keep_manager" in request.POST)
+        if outcome != transfers.ASKED or link is None:
+            return self._page(request, link, outcome)
+        name = link.person.owner.public_display_name
+        messages.success(request, gettext("Your request is waiting for %(name)s to accept it.") % {"name": name})
+        return redirect("account_profile")

@@ -243,3 +243,36 @@ class VirtualMember(models.Model):
 
     def __str__(self) -> str:
         return f"{self.last_name} {self.first_name}".strip()
+
+
+class VirtualMemberTransfer(models.Model):
+    """A person without an account handed over to an account of their own (issue #438): the link their
+    manager sends, then the request of the account that opened it, waiting for the manager to confirm.
+
+    One per person: a new link replaces the key and drops a request waiting, so a leaked one stops
+    working; a link lasts a week and takes one request. Opening it changes nothing: the account asks
+    by a button, and nothing moves until the manager confirms that the account is their person's.
+    """
+
+    LIFETIME = datetime.timedelta(days=7)
+
+    person = models.OneToOneField(VirtualMember, on_delete=models.CASCADE, related_name="transfer")
+    key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    # The account that asked through the link, and whether it lets the manager go on managing it
+    claimed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="+"
+    )
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    keep_manager = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return f"transfer of v{self.person_id}" + (f" to {self.claimed_by_id}" if self.claimed_by_id else "")
+
+    @property
+    def expires_at(self) -> datetime.datetime:
+        return self.created_at + self.LIFETIME
+
+    def is_live(self) -> bool:
+        """Whether the link still takes a request: within its week, and nobody has asked through it."""
+        return self.claimed_by_id is None and timezone.now() < self.expires_at

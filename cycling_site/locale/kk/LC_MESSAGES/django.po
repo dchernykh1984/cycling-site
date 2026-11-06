@@ -5152,3 +5152,84 @@ msgstr "Ә"
 #: assistant/templatetags/assistant.py
 msgid "Wait for the assistant's reply, then attach the file."
 msgstr "Көмекшінің жауабын күтіңіз, содан кейін файлды тіркеңіз."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Hand over"
+msgstr "Тапсыру"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "%(name)s asks to take %(person)s into their account."
+msgstr "%(name)s %(person)s деректерін өз тіркелгісіне көшіруді сұрайды."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "They let you go on managing their registrations and photos."
+msgstr "Әрі сізге өз тіркелулері мен фотоларын әрі қарай басқаруға рұқсат береді."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Hand %(person)s over to %(name)s? Their registrations and named bibs go to that account, and %(person)s leaves your list."
+msgstr "%(person)s деректерін %(name)s тіркелгісіне тапсыру керек пе? Тіркелулері мен аталған нөмірлері сол тіркелгіге көшеді, ал %(person)s тізіміңізден шығады."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Send this link to the owner of the account the data of %(person)s moves to: they open it signed in, and then you confirm it here. %(person)s then leaves your list, with their registrations and named bibs."
+msgstr "Бұл сілтемені %(person)s деректері көшетін тіркелгінің иесіне жіберіңіз: ол сайтқа кіріп, сілтемені ашады, содан кейін сіз мұнда растайсыз. Осыдан кейін %(person)s тіркелулерімен және аталған нөмірлерімен бірге тізіміңізден шығады."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Make a new link? This one will stop working."
+msgstr "Жаңа сілтеме жасау керек пе? Мына сілтеме жұмыс істемей қалады."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Taking over a person's data"
+msgstr "Адам деректерін көшіру"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Take %(person)s into your account?"
+msgstr "%(person)s деректерін тіркелгіңізге көшіру керек пе?"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "%(name)s hands %(person)s over to you: their registrations and the bibs named for their photos go into your account, and %(name)s no longer sees them."
+msgstr "%(name)s сізге %(person)s деректерін береді: тіркелулер мен фото үшін аталған нөмірлер тіркелгіңізге көшеді, ал %(name)s оларды бұдан былай көрмейді."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Your profile's empty fields get filled from their data:"
+msgstr "Профиліңіздің бос өрістері осы деректермен толтырылады:"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Nothing moves until %(name)s confirms that this account is their person's."
+msgstr "%(name)s бұл тіркелгі дәл сол адамдікі екенін растамайынша, ештеңе көшпейді."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Let %(name)s go on managing my registrations and photos"
+msgstr "%(name)s тіркелулерім мен фотоларымды әрі қарай басқара берсін"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Take over"
+msgstr "Көшіру"
+
+#: accounts/transfers.py
+msgid "This link is not valid, has expired or has been used. Ask whoever sent it for a new one."
+msgstr "Бұл сілтеме жарамсыз, мерзімі өткен немесе пайдаланылған. Оны жіберген адамнан жаңасын сұраңыз."
+
+#: accounts/transfers.py
+msgid "This is the link of a person you added: send it to the owner of the account their data moves to."
+msgstr "Бұл — сіз қосқан адамның сілтемесі: оны деректері көшетін тіркелгінің иесіне жіберіңіз."
+
+#: accounts/transfers.py
+#, python-format
+msgid "%(name)s hands %(person)s over to you. To answer, confirm your e-mail address first -- open the link in the mail we sent you -- and then open this link again."
+msgstr "%(name)s сізге %(person)s деректерін береді. Жауап беру үшін алдымен поштаңызды растаңыз — біз жіберген хаттағы сілтемені ашыңыз, — содан кейін осы сілтемені қайта ашыңыз."
+
+#: accounts/views.py
+#, python-format
+msgid "%(person)s is now in the account of %(name)s."
+msgstr "%(person)s енді %(name)s тіркелгісінде."
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Handing a person over.</strong> A person added this way may take their data into an account of their own: the member sends them a link, they open it signed in, and the member confirms it. Their registrations and the bibs named for their photos then go to that account, its empty profile fields are filled from what the member typed in, and the member no longer sees or changes them -- unless the person lets the member go on managing their registrations and photos."
+msgstr "<strong>Адамды тапсыру.</strong> Осылай қосылған адам өз деректерін жеке тіркелгісіне көшіре алады: қатысушы оған сілтеме жібереді, ол сайтқа кіріп, сілтемені ашады, ал қатысушы көшіруді растайды. Сонда оның тіркелулері мен фото үшін аталған нөмірлері сол тіркелгіге көшеді, профилінің бос өрістері қатысушы енгізген деректермен толтырылады, ал қатысушы бұл деректерді бұдан былай көрмейді және өзгертпейді — егер адам оған тіркелулері мен фотоларын әрі қарай басқаруға рұқсат бермесе."

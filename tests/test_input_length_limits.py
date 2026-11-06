@@ -120,6 +120,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.registrations.EntriesIn": None,
     # A batch holds its rows and a flag; each row (VirtualMemberIn) bounds its own fields to the columns.
     "api.endpoints.virtual_members.VirtualMembersIn": None,
+    # Taking a person over names the link's key, a UUID, and a flag; nothing lands in a text column.
+    "api.endpoints.virtual_members.ClaimIn": None,
     # A page's address and where it was opened from, as tally keys: stats.counting.add cuts a key to its
     # column, and the schema bounds the request.
     "api.endpoints.stats.HitIn": None,

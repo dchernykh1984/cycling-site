@@ -4,17 +4,22 @@ Adding anyone takes the member's word, given once, that they may handle these pe
 (``POST /consent``). A batch is checked whole before anything is saved: a row with a mistake, or more
 people than the member may add, saves nobody and says why, row by row. Somebody already added -- the
 same names and date of birth -- is left as they are, so a batch sent twice adds nobody twice.
+
+A person may be handed over to an account of their own (``accounts.transfers``): the member makes a
+link, the account asks through it, and the member confirms -- the same rules as the profile's card.
 """
 
 import datetime
+import uuid
 from http import HTTPStatus
 from typing import Literal
 
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
-from accounts import roles, virtual_members
+from accounts import roles, transfers, virtual_members
 from accounts.models import VIRTUAL_NAME_LENGTH, VirtualMember
 from api.auth import member_auth
 
@@ -51,6 +56,21 @@ class VirtualMembersIn(Schema):
     dry_run: bool = False  # check the batch and say what it would do, saving nothing
 
 
+class ClaimantOut(Schema):
+    """The account that asked to take a person over: what tells it apart, and no more."""
+
+    user_id: int
+    name: str
+    birth_year: int | None
+
+
+class TransferOut(Schema):
+    url: str  # the link to send while it is live; empty once somebody asked through it, or it ran out
+    expires_at: datetime.datetime
+    claimed_by: ClaimantOut | None  # the account whose request waits for the member to confirm it
+    keep_manager: bool  # that account lets the member go on managing its registrations and photos
+
+
 class VirtualMemberOut(Schema):
     id: int
     last_name: str
@@ -61,6 +81,17 @@ class VirtualMemberOut(Schema):
     city: str
     strava_link: str
     sports_achievements: str
+    transfer: TransferOut | None = None  # the link handing the person over to an account of their own
+
+
+class ClaimIn(Schema):
+    key: uuid.UUID
+    keep_manager: bool = False  # let the person's manager go on managing my registrations and photos
+
+
+class ClaimOut(Schema):
+    person: str  # last and first name
+    manager: str  # who confirms it
 
 
 class VirtualMembersOut(Schema):
@@ -86,7 +117,25 @@ class BatchRefusalOut(Schema):
     rows: list[RowError]
 
 
-def _out(person) -> VirtualMemberOut:
+def _transfer_out(request, link) -> TransferOut:
+    claimant = link.claimed_by
+    return TransferOut(
+        url=request.build_absolute_uri(reverse("account_virtual_claim", kwargs={"key": link.key}))
+        if link.is_live()
+        else "",
+        expires_at=link.expires_at,
+        claimed_by=ClaimantOut(
+            user_id=claimant.pk,
+            name=claimant.public_display_name,
+            birth_year=claimant.birth_date.year if claimant.birth_date else None,
+        )
+        if claimant is not None
+        else None,
+        keep_manager=link.keep_manager,
+    )
+
+
+def _out(person, transfer: TransferOut | None = None) -> VirtualMemberOut:
     return VirtualMemberOut(
         id=person.pk or 0,
         last_name=person.last_name,
@@ -97,6 +146,7 @@ def _out(person) -> VirtualMemberOut:
         city=person.city,
         strava_link=person.strava_link,
         sports_achievements=person.sports_achievements,
+        transfer=transfer,
     )
 
 
@@ -136,11 +186,14 @@ def list_people(request):
     user = request.auth
     consented = virtual_members.consented(user)
     people = virtual_members.of(user) if consented else VirtualMember.objects.none()
+    links = {link.person_id: link for link in transfers.links_of(user)} if consented else {}
     return VirtualMembersOut(
         consented=consented,
         limit=roles.virtual_members_limit(user),
         room=virtual_members.room(user),
-        people=[_out(person) for person in people],
+        people=[
+            _out(person, _transfer_out(request, links[person.pk]) if person.pk in links else None) for person in people
+        ],
     )
 
 
@@ -214,4 +267,60 @@ def change_person(request, virtual_member_id: int, payload: VirtualMemberPatchIn
 def delete_person(request, virtual_member_id: int):
     """Their entries in races to come are cancelled; past races stay in the results."""
     _person(request.auth, virtual_member_id).delete()
+    return Status(HTTPStatus.NO_CONTENT, None)
+
+
+@router.post(
+    "/transfers/claim",
+    response={HTTPStatus.CREATED: ClaimOut},
+    auth=member_auth,
+    summary="Ask, through a link, to take over a person somebody added",
+)
+def claim(request, payload: ClaimIn):
+    """The person's entries and named bibs come to my account, and my profile's empty fields are filled
+    from them, once their manager confirms it; a link takes one request."""
+    link = transfers.find(payload.key)
+    outcome = transfers.ask(request.auth, payload.key, payload.keep_manager)
+    if outcome != transfers.ASKED or link is None:
+        raise HttpError(
+            HTTPStatus.NOT_FOUND if outcome == transfers.INVALID else HTTPStatus.CONFLICT,
+            transfers.refusal(outcome, link),
+        )
+    return Status(HTTPStatus.CREATED, ClaimOut(person=str(link.person), manager=link.person.owner.public_display_name))
+
+
+@router.post(
+    "/{virtual_member_id}/transfer",
+    response={HTTPStatus.CREATED: TransferOut},
+    auth=member_auth,
+    summary="Make a link handing a person I added over to their own account",
+)
+def issue_transfer(request, virtual_member_id: int):
+    """A new link replaces the old one and drops a request waiting; it lasts a week and takes one request."""
+    link = transfers.issue(_person(request.auth, virtual_member_id))
+    return Status(HTTPStatus.CREATED, _transfer_out(request, link))
+
+
+@router.post(
+    "/{virtual_member_id}/transfer/confirm",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=member_auth,
+    summary="Confirm the request: hand the person over",
+)
+def confirm_transfer(request, virtual_member_id: int):
+    """The person's entries and named bibs go to the account that asked, and the person leaves my list."""
+    if transfers.confirm(request.auth, _person(request.auth, virtual_member_id).pk) is None:
+        raise HttpError(HTTPStatus.NOT_FOUND, "No request waits for this person")
+    return Status(HTTPStatus.NO_CONTENT, None)
+
+
+@router.post(
+    "/{virtual_member_id}/transfer/reject",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=member_auth,
+    summary="Reject the request; the link goes with it",
+)
+def reject_transfer(request, virtual_member_id: int):
+    if not transfers.reject(request.auth, _person(request.auth, virtual_member_id).pk):
+        raise HttpError(HTTPStatus.NOT_FOUND, "No request waits for this person")
     return Status(HTTPStatus.NO_CONTENT, None)

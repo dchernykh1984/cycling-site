@@ -5156,3 +5156,84 @@ msgstr "Ж"
 #: assistant/templatetags/assistant.py
 msgid "Wait for the assistant's reply, then attach the file."
 msgstr "Дождитесь ответа ассистента, затем приложите файл."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Hand over"
+msgstr "Передать"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "%(name)s asks to take %(person)s into their account."
+msgstr "%(name)s просит перенести в свой аккаунт данные человека %(person)s."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "They let you go on managing their registrations and photos."
+msgstr "И разрешает вам и дальше управлять своими заявками и фото."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Hand %(person)s over to %(name)s? Their registrations and named bibs go to that account, and %(person)s leaves your list."
+msgstr "Передать данные человека %(person)s в аккаунт пользователя %(name)s? Заявки и названные номера перейдут туда, а из вашего списка %(person)s пропадёт."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Send this link to the owner of the account the data of %(person)s moves to: they open it signed in, and then you confirm it here. %(person)s then leaves your list, with their registrations and named bibs."
+msgstr "Отправьте эту ссылку владельцу аккаунта, куда переходят данные человека %(person)s: он откроет её, войдя на сайт, а потом вы подтвердите перенос здесь. После этого %(person)s пропадёт из вашего списка вместе с заявками и названными номерами."
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Make a new link? This one will stop working."
+msgstr "Сделать новую ссылку? Эта перестанет работать."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Taking over a person's data"
+msgstr "Перенос данных человека"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Take %(person)s into your account?"
+msgstr "%(person)s: перенести в ваш аккаунт?"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "%(name)s hands %(person)s over to you: their registrations and the bibs named for their photos go into your account, and %(name)s no longer sees them."
+msgstr "%(name)s передаёт вам данные человека %(person)s: заявки и номера, названные для фото, перейдут в ваш аккаунт, а %(name)s перестанет их видеть."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Your profile's empty fields get filled from their data:"
+msgstr "Пустые поля вашего профиля заполнятся этими данными:"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Nothing moves until %(name)s confirms that this account is their person's."
+msgstr "Ничего не перейдёт, пока %(name)s не подтвердит, что это аккаунт именно этого человека."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Let %(name)s go on managing my registrations and photos"
+msgstr "Пусть %(name)s и дальше управляет моими заявками и фото"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Take over"
+msgstr "Перенести"
+
+#: accounts/transfers.py
+msgid "This link is not valid, has expired or has been used. Ask whoever sent it for a new one."
+msgstr "Эта ссылка недействительна, устарела или уже использована. Попросите того, кто её прислал, сделать новую."
+
+#: accounts/transfers.py
+msgid "This is the link of a person you added: send it to the owner of the account their data moves to."
+msgstr "Это ссылка человека, которого добавили вы: отправьте её владельцу аккаунта, куда переходят его данные."
+
+#: accounts/transfers.py
+#, python-format
+msgid "%(name)s hands %(person)s over to you. To answer, confirm your e-mail address first -- open the link in the mail we sent you -- and then open this link again."
+msgstr "%(name)s передаёт вам данные человека %(person)s. Чтобы ответить, сначала подтвердите почту — откройте ссылку из нашего письма, — а потом снова откройте эту ссылку."
+
+#: accounts/views.py
+#, python-format
+msgid "%(person)s is now in the account of %(name)s."
+msgstr "%(person)s теперь в аккаунте пользователя %(name)s."
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Handing a person over.</strong> A person added this way may take their data into an account of their own: the member sends them a link, they open it signed in, and the member confirms it. Their registrations and the bibs named for their photos then go to that account, its empty profile fields are filled from what the member typed in, and the member no longer sees or changes them -- unless the person lets the member go on managing their registrations and photos."
+msgstr "<strong>Передача человека.</strong> Человек, добавленный так, может перенести свои данные в собственный аккаунт: участник отправляет ему ссылку, тот открывает её, войдя на сайт, а участник подтверждает перенос. Тогда его заявки и номера, названные для фото, переходят в этот аккаунт, пустые поля профиля заполняются тем, что ввёл участник, и участник больше не видит и не меняет эти данные — если только человек не разрешит ему и дальше управлять своими заявками и фото."

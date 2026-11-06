@@ -52,4 +52,20 @@ urlpatterns = [
     path("virtual-members/add/", views.VirtualMemberAddView.as_view(), name="account_virtual_add"),
     path("virtual-members/<int:pk>/edit/", views.VirtualMemberEditView.as_view(), name="account_virtual_edit"),
     path("virtual-members/<int:pk>/delete/", views.VirtualMemberDeleteView.as_view(), name="account_virtual_delete"),
+    path(
+        "virtual-members/<int:pk>/transfer/",
+        views.VirtualMemberTransferView.as_view(action="issue"),
+        name="account_virtual_transfer",
+    ),
+    path(
+        "virtual-members/<int:pk>/transfer/confirm/",
+        views.VirtualMemberTransferView.as_view(action="confirm"),
+        name="account_virtual_transfer_confirm",
+    ),
+    path(
+        "virtual-members/<int:pk>/transfer/reject/",
+        views.VirtualMemberTransferView.as_view(action="reject"),
+        name="account_virtual_transfer_reject",
+    ),
+    path("virtual-members/take/<uuid:key>/", views.VirtualMemberClaimView.as_view(), name="account_virtual_claim"),
 ]

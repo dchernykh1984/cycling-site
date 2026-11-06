@@ -1,0 +1,76 @@
+"""E2E for handing a person without an account over to an account of their own (issue #438): the link's way
+from the manager's card to the account, and back to the manager's answer."""
+
+import datetime
+import re
+
+import pytest
+from playwright.sync_api import Page, expect
+
+from accounts import virtual_members
+from accounts.models import ManagedMember, User, VirtualMember
+from calendar_app.models import Competition
+from registrations.models import CompetitionRegistration
+from tests.e2e.conftest import UPCOMING, inject_session
+
+
+def _member(username, first_name, last_name):
+    return User.objects.create_user(
+        username=username,
+        email=f"{username}@test.local",
+        password="testpass123!",
+        role=User.Role.PARTICIPANT,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+
+def _sign_in(page, live_server, user):
+    page.context.clear_cookies()
+    inject_session(page, live_server, user)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_person_goes_from_the_managers_card_into_their_own_account(page: Page, live_server):
+    coach = _member("coach", "Ivan", "Petrov")
+    virtual_members.consent(coach)
+    kid = VirtualMember.objects.create(
+        owner=coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+    )
+    race = Competition.objects.create(
+        title_ru="Transfer Race", date_start=UPCOMING, status=Competition.Status.APPROVED, registration_enabled=True
+    )
+    entry = CompetitionRegistration.objects.create(
+        competition=race, virtual_member=kid, first_name="Dana", last_name="Kim", birth_date=kid.birth_date, gender="F"
+    )
+    dana = _member("dana", "Dana", "Kim")
+
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    page.get_by_role("button", name="Hand over: Kim Dana").click()
+    row = page.locator(f"#vm-{kid.pk}")
+    link = row.locator("code").inner_text()
+    assert re.search(r"/en/accounts/virtual-members/take/[0-9a-f-]{36}/$", link), link
+    expect(row.locator(".share-btn")).to_have_attribute("data-share-url", link)
+
+    _sign_in(page, live_server, dana)
+    page.goto(link)
+    expect(page.get_by_role("heading", level=1)).to_have_text("Take Kim Dana into your account?")
+    keep = page.get_by_label("Let Ivan Petrov go on managing my registrations and photos")
+    expect(keep).not_to_be_checked()
+    keep.check()
+    page.get_by_role("button", name="Take over").click()
+    expect(page).to_have_url(re.compile(r"/en/accounts/profile/$"))
+    expect(page.get_by_text("Your request is waiting for Ivan Petrov to accept it.")).to_be_visible()
+
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    row = page.locator(f"#vm-{kid.pk}")
+    expect(row).to_contain_text("Dana Kim asks to take Kim Dana into their account.")
+    page.once("dialog", lambda dialog: dialog.accept())
+    row.get_by_role("button", name="Confirm").click()
+    expect(page.get_by_text("Kim Dana is now in the account of Dana Kim.")).to_be_visible()
+    expect(page.locator(f"#vm-{kid.pk}")).to_have_count(0)
+    entry.refresh_from_db()
+    assert (entry.user_id, entry.virtual_member_id) == (dana.pk, None)
+    assert ManagedMember.objects.filter(manager=coach, member=dana, accepted_at__isnull=False).exists()
