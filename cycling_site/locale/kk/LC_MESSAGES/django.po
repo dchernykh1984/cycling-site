@@ -5233,3 +5233,7 @@ msgstr "%(person)s енді %(name)s тіркелгісінде."
 #: home/templates/home/privacy_page.html
 msgid "<strong>Handing a person over.</strong> A person added this way may take their data into an account of their own: the member sends them a link, they open it signed in, and the member confirms it. Their registrations and the bibs named for their photos then go to that account, its empty profile fields are filled from what the member typed in, and the member no longer sees or changes them -- unless the person lets the member go on managing their registrations and photos."
 msgstr "<strong>Адамды тапсыру.</strong> Осылай қосылған адам өз деректерін жеке тіркелгісіне көшіре алады: қатысушы оған сілтеме жібереді, ол сайтқа кіріп, сілтемені ашады, ал қатысушы көшіруді растайды. Сонда оның тіркелулері мен фото үшін аталған нөмірлері сол тіркелгіге көшеді, профилінің бос өрістері қатысушы енгізген деректермен толтырылады, ал қатысушы бұл деректерді бұдан былай көрмейді және өзгертпейді — егер адам оған тіркелулері мен фотоларын әрі қарай басқаруға рұқсат бермесе."
+
+#: accounts/transfers.py
+msgid "Add your first and last name to your profile first: whoever opens the link must see who hands the person over."
+msgstr "Алдымен профиліңізге атыңыз бен тегіңізді қосыңыз: сілтемені ашқан адам деректерді кім беретінін көруі керек."

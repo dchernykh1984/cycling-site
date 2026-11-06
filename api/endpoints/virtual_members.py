@@ -296,8 +296,13 @@ def claim(request, payload: ClaimIn):
     summary="Make a link handing a person I added over to their own account",
 )
 def issue_transfer(request, virtual_member_id: int):
-    """A new link replaces the old one and drops a request waiting; it lasts a week and takes one request."""
-    link = transfers.issue(_person(request.auth, virtual_member_id))
+    """A new link replaces the old one and drops a request waiting; it lasts a week and takes one request.
+    A member without a name in their profile is asked for one first (409)."""
+    person = _person(request.auth, virtual_member_id)
+    refusal = transfers.why_no_link(request.auth)
+    if refusal:
+        raise HttpError(HTTPStatus.CONFLICT, refusal)
+    link = transfers.issue(person)
     return Status(HTTPStatus.CREATED, _transfer_out(request, link))
 
 

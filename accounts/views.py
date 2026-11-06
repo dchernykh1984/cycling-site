@@ -867,7 +867,11 @@ class VirtualMemberTransferView(ParticipantRequiredMixin, View):
         if person is None:
             raise Http404
         if self.action == "issue":
-            transfers.issue(person)
+            refusal = transfers.why_no_link(request.user)
+            if refusal:
+                messages.error(request, refusal)
+            else:
+                transfers.issue(person)
             return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
         if self.action == "confirm":
             done = transfers.confirm(request.user, person.pk)
