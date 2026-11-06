@@ -5261,3 +5261,73 @@ msgstr "Сақталды."
 #: cycling_site/templates/_moderation_banner.html
 msgid "Mark the account the agents add events through: its events must stay out of the organizers' ratings."
 msgstr "Агенттер іс-шараларды қосатын тіркелгіні белгілеңіз: оның іс-шаралары ұйымдастырушылар рейтингіне кірмеуі керек."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Rate the events you took part in"
+msgstr "Өзіңіз қатысқан іс-шараларды бағалаңыз"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Rate"
+msgstr "Бағалау"
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Do not rate"
+msgstr "Бағаламау"
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Reviews of events.</strong> After an event you took part in, the site asks you to rate it. Your account keeps only that you answered -- with a review or with a refusal, which cannot be told apart -- and not when. The review keeps nothing of who wrote it or when: nobody, the site's owners included, can see that it is yours, and so it cannot be changed or deleted afterwards. Its score goes into the organizer's public rating; the site shows no review as it was written."
+msgstr "<strong>Іс-шаралар туралы пікірлер.</strong> Сіз қатысқан іс-шарадан кейін сайт оны бағалауды сұрайды. Тіркелгіңіз тек сіздің жауап бергеніңізді сақтайды — пікірмен бе, әлде бас тартумен бе, оларды ажырату мүмкін емес, — ал қашан екенін сақтамайды. Пікір оны кім және қашан жазғаны туралы ештеңе сақтамайды: ешкім, сайт иелерін қоса, оның сіздікі екенін көре алмайды, сондықтан оны кейін өзгерту немесе жою мүмкін емес. Оның бағасы ұйымдастырушының ашық рейтингіне кіреді; сайт пікірлерді жазылған күйінде көрсетпейді."
+
+#: ratings/form.py
+msgid "Your overall score of the event"
+msgstr "Іс-шараға жалпы бағаңыз"
+
+#: ratings/form.py
+msgid "What went well, and what could be better"
+msgstr "Не жақсы болды, ал нені жақсартуға болады"
+
+#: ratings/form.py
+#, python-format
+msgid "Choose a score from %(lowest)s to %(highest)s."
+msgstr "%(lowest)s-ден %(highest)s-ке дейін баға таңдаңыз."
+
+#: ratings/form.py
+#, python-format
+msgid "At most %(count)s characters."
+msgstr "Ең көбі %(count)s таңба."
+
+#: ratings/form.py
+msgid "This field is required."
+msgstr "Міндетті өріс."
+
+#: ratings/templates/ratings/review.html
+msgid "Rate the event"
+msgstr "Іс-шараны бағалаңыз"
+
+#: ratings/templates/ratings/review.html
+msgid "The review is anonymous: the site keeps no record of who wrote it or when, so it cannot be changed or deleted later. The event's organizers see only a digest of all its reviews."
+msgstr "Пікір жасырын: сайт оны кім және қашан жазғанын сақтамайды, сондықтан кейін оны өзгерту немесе жою мүмкін емес. Іс-шара ұйымдастырушылары барлық пікірлердің тек қысқаша мазмұнын көреді."
+
+#: ratings/templates/ratings/review.html
+msgid "1 is very bad, 5 is excellent."
+msgstr "1 — өте нашар, 5 — тамаша."
+
+#: ratings/templates/ratings/review.html
+msgid "If you like: the digest the organizers get is written from these words."
+msgstr "Қаласаңыз: ұйымдастырушыларға арналған қысқаша мазмұн осы сөздерден құрастырылады."
+
+#: ratings/templates/ratings/review.html
+msgid "Send the review"
+msgstr "Пікірді жіберу"
+
+#: ratings/views.py
+msgid "We will not ask about this event again."
+msgstr "Бұл іс-шара туралы енді сұрамаймыз."
+
+#: ratings/views.py
+msgid "Thank you! Nobody will know the review is yours."
+msgstr "Рақмет! Бұл пікірдің сіздікі екенін ешкім білмейді."
+
+#: ratings/views.py
+msgid "This event cannot be rated, or you have answered already."
+msgstr "Бұл іс-шараны бағалау мүмкін емес немесе сіз жауап беріп қойдыңыз."

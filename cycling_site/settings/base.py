@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "trainer",
     "stats",
     "assistant",
+    "ratings",
     "modeltranslation",  # before apps it will translate and before django.contrib.admin
     "wagtail_localize",  # before wagtail.admin
     "wagtail_localize.locales",  # replaces wagtail.locales
@@ -211,6 +212,7 @@ TEMPLATES = [
                 "cycling_site.context_processors.moderation_tasks",
                 "cycling_site.context_processors.managing_waiting",
                 "cycling_site.context_processors.service_account_missing",
+                "cycling_site.context_processors.review_requests",
                 "cycling_site.context_processors.setup_hint",
                 "cycling_site.context_processors.sign_in_link",
                 "cycling_site.context_processors.skins",
