@@ -70,7 +70,7 @@ def _sign_in(page, live_server, user):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_banner_leads_to_the_review_and_goes_once_it_is_sent(page: Page, live_server, organizer, rider):
+def test_the_banner_leads_to_the_review_and_back_and_goes_once_it_is_sent(page: Page, live_server, organizer, rider):
     event = _took_part(organizer, rider)
     page.set_viewport_size({"width": 360, "height": 800})
     _sign_in(page, live_server, rider)
@@ -78,12 +78,13 @@ def test_the_banner_leads_to_the_review_and_goes_once_it_is_sent(page: Page, liv
     banner = page.get_by_role("region", name=BANNER)
     expect(banner).to_contain_text("Autumn Cup")
     banner.get_by_role("link", name="Rate: Autumn Cup").click()
-    expect(page).to_have_url(re.compile(rf"/en/ratings/events/{event.pk}/review/$"))
+    expect(page).to_have_url(re.compile(rf"/en/ratings/events/{event.pk}/review/\?"))
     page.locator('label[for="overall-4"]').click()
     expect(page.get_by_role("radio", name="4")).to_be_checked()
     page.get_by_label("What went well, and what could be better").fill("Clear course")
     page.get_by_role("button", name="Send the review").click()
     expect(page.get_by_text("Thank you! Nobody will know the review is yours.")).to_be_visible()
+    expect(page).to_have_url(re.compile(r"/en/calendar/$"))  # back where the banner was tapped
     expect(page.get_by_role("region", name=BANNER)).to_have_count(0)
     assert Review.objects.get().answers == {"overall": 4, "comment": "Clear course"}
 
