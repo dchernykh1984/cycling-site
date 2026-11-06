@@ -3303,7 +3303,7 @@ msgstr "Жаңалық қосу"
 
 #: news/templates/news/submit.html:36
 msgid "Submit for review"
-msgstr "Тексеруге жіберу"
+msgstr "Қарауға жіберу"
 
 #: news/views.py:188
 msgid "News published successfully."

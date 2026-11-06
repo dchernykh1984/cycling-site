@@ -3306,7 +3306,7 @@ msgstr "Добавить новость"
 
 #: news/templates/news/submit.html:36
 msgid "Submit for review"
-msgstr "Отправить на проверку"
+msgstr "Отправить на рассмотрение"
 
 #: news/views.py:188
 msgid "News published successfully."

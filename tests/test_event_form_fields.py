@@ -63,3 +63,22 @@ class RouteHintTests(_EventFormPages):
                 with translation.override("ru"):
                     self.assertEqual(html.count(gettext("and the track file, from which the map draws the track")), 1)
                     self.assertEqual(html.count(gettext("or upload file")), 3)
+
+
+class SubmitButtonTests(TestCase):
+    """The submit page's button says what happens to the event: a participant's waits for a moderator, an
+    organizer's is published as it is saved."""
+
+    def test_the_button_says_whether_the_event_waits_for_review(self):
+        for role, says, not_says in (
+            (User.Role.PARTICIPANT, "Submit for review", "Save"),
+            (User.Role.ORGANIZER, "Save", "Submit for review"),
+        ):
+            with self.subTest(role):
+                member = User.objects.create_user(username=role, email=f"{role}@example.com", password="pw", role=role)
+                self.client.force_login(member)
+                with translation.override("ru"):
+                    page = self.client.get(reverse("calendar_submit")).content.decode()
+                    button = '<button type="submit" class="btn btn-primary">{}</button>'
+                    self.assertIn(button.format(gettext(says)), page)
+                    self.assertNotIn(button.format(gettext(not_says)), page)
