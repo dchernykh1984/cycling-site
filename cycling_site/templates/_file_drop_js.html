@@ -40,8 +40,12 @@ however many times a page includes it.{% endcomment %}
     });
   };
   if (canDrag) {
+    // a file input outside every zone takes a dropped file as the browser lets it, which this must not stop
     ['dragover', 'drop'].forEach(function (kind) {
-      window.addEventListener(kind, function (event) { if (carriesFiles(event)) event.preventDefault(); });
+      window.addEventListener(kind, function (event) {
+        var onInput = event.target instanceof HTMLInputElement && event.target.type === 'file';
+        if (carriesFiles(event) && !onInput) event.preventDefault();
+      });
     });
   }
 })();
