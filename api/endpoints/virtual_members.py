@@ -21,6 +21,7 @@ from api.auth import member_auth
 router = Router(tags=["virtual members"])
 
 _TEXT = 100
+_ACHIEVEMENTS = VirtualMember._meta.get_field("sports_achievements").max_length
 
 
 class VirtualMemberIn(Schema):
@@ -31,6 +32,7 @@ class VirtualMemberIn(Schema):
     team: str = Field("", max_length=_TEXT)
     city: str = Field("", max_length=_TEXT)
     strava_link: str = Field("", max_length=_TEXT)  # a URL, as a profile's
+    sports_achievements: str = Field("", max_length=_ACHIEVEMENTS)  # a rank or category, or the like
 
 
 class VirtualMemberPatchIn(Schema):
@@ -41,6 +43,7 @@ class VirtualMemberPatchIn(Schema):
     team: str | None = Field(None, max_length=_TEXT)
     city: str | None = Field(None, max_length=_TEXT)
     strava_link: str | None = Field(None, max_length=_TEXT)
+    sports_achievements: str | None = Field(None, max_length=_ACHIEVEMENTS)
 
 
 class VirtualMembersIn(Schema):
@@ -57,6 +60,7 @@ class VirtualMemberOut(Schema):
     team: str
     city: str
     strava_link: str
+    sports_achievements: str
 
 
 class VirtualMembersOut(Schema):
@@ -92,6 +96,7 @@ def _out(person) -> VirtualMemberOut:
         team=person.team,
         city=person.city,
         strava_link=person.strava_link,
+        sports_achievements=person.sports_achievements,
     )
 
 

@@ -329,6 +329,18 @@ class ProfileCardTests(TestCase):
             page, '<a href="https://www.strava.com/athletes/42" target="_blank" rel="noopener">Strava</a>'
         )
 
+    def test_a_person_keeps_sports_achievements_which_the_card_shows_with_its_hint_in_the_form(self):
+        virtual_members.consent(self.coach)
+        page = self.client.get(self._url("account_profile"))
+        with translation.override("en"):
+            hint = "A sports rank or category, or the like"
+            self.assertContains(
+                page, f'<div class="form-text" id="id_sports_achievements_helptext">{hint}</div>', html=True
+            )
+        self._add(sports_achievements="KMS")
+        self.assertEqual(VirtualMember.objects.get().sports_achievements, "KMS")
+        self.assertContains(self.client.get(self._url("account_profile")), "&middot; KMS")
+
     def test_the_deletion_question_names_the_person_as_typed(self):
         virtual_members.consent(self.coach)
         _added(self.coach, last="O'Brien")
@@ -440,6 +452,21 @@ class ApiTests(TestCase):
         refused = self._post("", {"people": [self._row(n=1, strava_link="strava me")]})
         self.assertEqual(refused.status_code, 422)
         self.assertIn("strava_link", refused.json()["rows"][0]["errors"])
+
+    def test_sports_achievements_are_added_changed_and_refused_past_their_length(self):
+        virtual_members.consent(self.coach)
+        added = self._post("", {"people": [self._row(sports_achievements="1st grade")]}).json()
+        self.assertEqual(added["created"][0]["sports_achievements"], "1st grade")
+        person = VirtualMember.objects.get()
+        changed = self.client.patch(
+            f"/api/v1/virtual-members/{person.pk}",
+            {"sports_achievements": "KMS"},
+            content_type="application/json",
+            **self.auth,
+        )
+        self.assertEqual(changed.json()["sports_achievements"], "KMS")
+        too_long = self._post("", {"people": [self._row(n=1, sports_achievements="a" * 201)]})
+        self.assertEqual(too_long.status_code, 422)
 
     def test_a_member_changes_and_deletes_their_own_people_only(self):
         mine, other = _added(self.coach), _added(make_user("other"), first="Zoe")
