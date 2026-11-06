@@ -170,6 +170,30 @@ def test_category_row_has_two_lines(page: Page, live_server, organizer):
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    ("lang", "men", "women"),
+    [("ru", "\u041c", "\u0416"), ("kk", "\u0415", "\u04d8"), ("en", "M", "F")],
+)
+def test_a_categorys_gender_boxes_are_lettered_in_the_pages_language_and_answer_a_tap_on_the_letter(
+    page: Page, live_server, organizer, lang, men, women
+):
+    """The letters a form in that language writes for men and women -- in Kazakh as an identity card does
+    -- with the whole word for a screen reader, each tied to its box."""
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/{lang}/calendar/submit/")
+    page.locator("#reg_enabled").check()
+    page.locator("#add-category-btn").click()
+    row = page.locator("#categories-container .card").first
+    letters = row.locator(".form-check-label").evaluate_all("els => els.map(el => el.firstChild.textContent.trim())")
+    assert letters == [men, women]
+    women_box = row.locator("input[type=checkbox]").nth(1)
+    expect(women_box).to_be_checked()
+    row.locator(".form-check-label").nth(1).click()
+    expect(women_box).not_to_be_checked()
+    assert row.locator(".form-check-label .visually-hidden").count() == 2
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_category_name_is_shown_as_text_in_the_editor(page: Page, live_server, organizer):
     name = '"><img src=x onerror="window.__xss=1">'
     comp = Competition.objects.create(

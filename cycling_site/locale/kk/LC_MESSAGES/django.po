@@ -5138,3 +5138,13 @@ msgstr "немесе оны осында сүйреп әкеліңіз"
 #: cycling_site/templates/_file_drop_js.html
 msgid "A file can also be dragged onto its field."
 msgstr "Файлды оның өрісіне сүйреп апаруға да болады."
+
+#: calendar_app/templates/calendar_app/_registration_fields.html
+msgctxt "a category's gender box: men, as one letter"
+msgid "M"
+msgstr "Е"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html
+msgctxt "a category's gender box: women, as one letter"
+msgid "F"
+msgstr "Ә"

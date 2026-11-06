@@ -5142,3 +5142,13 @@ msgstr "или перетащите его сюда"
 #: cycling_site/templates/_file_drop_js.html
 msgid "A file can also be dragged onto its field."
 msgstr "Файл можно и перетащить на его поле."
+
+#: calendar_app/templates/calendar_app/_registration_fields.html
+msgctxt "a category's gender box: men, as one letter"
+msgid "M"
+msgstr "М"
+
+#: calendar_app/templates/calendar_app/_registration_fields.html
+msgctxt "a category's gender box: women, as one letter"
+msgid "F"
+msgstr "Ж"
