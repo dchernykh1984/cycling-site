@@ -48,6 +48,8 @@ EDIT_HOME_PAGE = Role.OWNER
 # The site's own statistics (stats/, issue #184): the owners read them. The pages the people who run
 # the site open are their work, not readers' visits: counted apart, as the team's activity.
 SEE_SITE_STATS = Role.OWNER
+# Which account the site's own agents post through (issue #436): the owners mark it.
+MARK_SERVICE_ACCOUNTS = Role.OWNER
 COUNTED_AS_TEAM = Role.ADMIN
 
 # People without accounts a member adds and enters for starts (issue #438), at most this many by the

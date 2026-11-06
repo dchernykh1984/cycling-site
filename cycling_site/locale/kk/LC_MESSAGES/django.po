@@ -5241,3 +5241,23 @@ msgstr "Алдымен профиліңізге атыңыз бен тегіңі
 #: cycling_site/contents.py
 msgid "Contents"
 msgstr "Мазмұны"
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "Service accounts"
+msgstr "Қызметтік тіркелгілер"
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "The agents add the events they find through such an account. Its events carry no organizer's rating."
+msgstr "Агенттер тапқан іс-шараларды осындай тіркелгі арқылы қосады. Оның іс-шараларында ұйымдастырушы рейтингі болмайды."
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "No account has an API token yet: an agent posts through one."
+msgstr "Әзірге бірде-бір тіркелгіде API токені жоқ, ал агенттер сол арқылы жұмыс істейді."
+
+#: accounts/views.py
+msgid "Saved."
+msgstr "Сақталды."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Mark the account the agents add events through: its events must stay out of the organizers' ratings."
+msgstr "Агенттер іс-шараларды қосатын тіркелгіні белгілеңіз: оның іс-шаралары ұйымдастырушылар рейтингіне кірмеуі керек."

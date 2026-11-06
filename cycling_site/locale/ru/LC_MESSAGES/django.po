@@ -5245,3 +5245,23 @@ msgstr "Сначала добавьте в профиль имя и фамили
 #: cycling_site/contents.py
 msgid "Contents"
 msgstr "Содержание"
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "Service accounts"
+msgstr "Служебные аккаунты"
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "The agents add the events they find through such an account. Its events carry no organizer's rating."
+msgstr "Через такой аккаунт агенты добавляют найденные мероприятия. У его мероприятий нет рейтинга организатора."
+
+#: accounts/templates/accounts/_service_accounts.html
+msgid "No account has an API token yet: an agent posts through one."
+msgstr "Пока ни у одного аккаунта нет токена API, а агенты работают через него."
+
+#: accounts/views.py
+msgid "Saved."
+msgstr "Сохранено."
+
+#: cycling_site/templates/_moderation_banner.html
+msgid "Mark the account the agents add events through: its events must stay out of the organizers' ratings."
+msgstr "Отметьте аккаунт, через который агенты добавляют мероприятия: его мероприятия не должны попадать в рейтинги организаторов."

@@ -34,3 +34,13 @@ lives in this file because every skin's own base.html already includes it.{% end
     </div>
 </div>
 {% endif %}
+{% if service_account_missing %}
+{% comment %}The owners are asked to mark the account the site's agents post through (issue #436), in the
+banners' place and look, until one is marked.{% endcomment %}
+<div class="alert alert-warning border shadow-sm service-account-missing" role="region" aria-label="{% trans 'Service accounts' %}">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>{% trans "Mark the account the agents add events through: its events must stay out of the organizers' ratings." %}</span>
+        <a href="{% url 'account_profile' %}#service-accounts" class="btn btn-sm btn-outline-dark">{% trans "Choose" %}</a>
+    </div>
+</div>
+{% endif %}
