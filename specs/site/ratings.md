@@ -7,7 +7,7 @@
 `cycling_site/context_processors.py` (`review_requests`, `service_account_missing`),
 `cycling_site/templates/_moderation_banner.html`
 **Tests**: `tests/test_ratings_reviews.py`, `tests/test_ratings_organizers.py`, `tests/test_ratings_digest.py`,
-`tests/test_service_accounts.py`
+`tests/test_service_accounts.py`, `tests/test_role_matrix.py` (`SERVICE_ACCOUNTS`), `tests/e2e/test_ratings.py`
 **Related**: [events](events.md), [accounts](accounts.md), [protocols](protocols.md),
 [event photos](event-photos.md) (the bibs a start list gives); `specs/436-ratings/spec.md` (the decisions)
 
@@ -25,12 +25,14 @@ Nothing keeps who wrote a review.
 1. **Given** a member whose own entry has an active bib from the start list, and that bib in the
    event's protocol data with a result or any mark but `dns`, **When** the event's last day is over
    where it took place, **Then** every page shows "Rate the events you took part in" with the event,
-   "Rate" and "Do not rate", until they answer.
+   "Rate" and "Do not rate", until they answer; either answer brings them back to the page they were
+   on. On a phone each button takes a tap across 44 px, and in every skin reads 4.5:1 on the banner.
 2. **Given** "Rate", **Then** a page asks an overall score from 1 to 5 (required) and a comment
    (optional), says the review is anonymous and so cannot be changed or deleted, and sends it or
    refuses; refusing is as final as a review and leaves the same mark.
 3. **Given** the event's author, an event the site's agents posted, an event with HTML protocols
-   only, a `dns`, a rejected entry or a bib in conflict, **Then** nobody is asked.
+   only, a `dns`, a rejected entry, a bib in conflict or a person without an account (the member who
+   entered them included), **Then** nobody is asked.
 4. **Given** the API, **Then** `GET /ratings/pending` lists the events the caller may rate,
    `POST /ratings/events/{id}/review` takes `{"answers": {"overall": 1-5, "comment": ""}}` (422 for
    a wrong score, 409 when not allowed or answered) and `POST .../decline` refuses.
