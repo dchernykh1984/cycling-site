@@ -132,3 +132,27 @@ class BirthDateModeTests(TestCase):
         self.assertTrue(form.fields["additional_info"].disabled)
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["additional_info"], BORN.isoformat())
+
+
+class OtherPagesTests(TestCase):
+    """The organizer's page to add an entry and the page to edit one draw the form's own widgets: the
+    date of birth is a date field there too, so a date is picked rather than typed in some format."""
+
+    def setUp(self):
+        self.organizer = make_user("org", role=User.Role.ORGANIZER)
+        self.comp = make_open_competition(
+            registration_mode="free", additional_info_mode="birth_date", submitted_by=self.organizer
+        )
+        make_category(self.comp)
+        self.client.force_login(self.organizer)
+
+    def test_the_organizer_adds_and_edits_the_date_in_a_date_field(self):
+        with translation.override("en"):
+            added = self.client.get(reverse("registrations:manual_add", args=[self.comp.pk]))
+        self.assertIn('type="date"', _field(added.content.decode()))
+        entry = make_registration(self.comp, user=self.organizer, additional_info="1990-04-17")
+        with translation.override("en"):
+            edited = self.client.get(reverse("registrations:edit_registration", args=[self.comp.pk, entry.pk]))
+        field = _field(edited.content.decode())
+        self.assertIn('type="date"', field)
+        self.assertIn('value="1990-04-17"', field)

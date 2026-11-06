@@ -15,6 +15,12 @@ from .models import RELAY_SEPARATOR, CompetitionRegistration, RegistrationCatego
 GENDER_CHOICES = User.Gender.choices
 
 
+def _date_widget() -> forms.DateInput:
+    """A date field, as a browser draws one, for the additional field that collects a date of birth:
+    the organizer's add page and the edit page draw the form's own widget."""
+    return forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+
+
 def _birth_date_info(form) -> str:
     """The additional field of an event that collects the date of birth in full: a date from 1900 to
     today, kept as ISO, as a date field sends it; any other field as typed."""
@@ -86,9 +92,11 @@ class RegistrationForm(forms.Form):
         field = self.fields["additional_info"]
         field.label = competition.additional_info_field_label
         field.required = competition.additional_info_required
-        # The date of birth comes from the account where the event takes only one's own data
-        if competition.additional_info_is_birth_date and "birth_date" in self._readonly_fields:
-            field.widget.attrs["readonly"] = True
+        if competition.additional_info_is_birth_date:
+            field.widget = _date_widget()
+            # The date of birth comes from the account where the event takes only one's own data
+            if "birth_date" in self._readonly_fields:
+                field.widget.attrs["readonly"] = True
 
     def clean_additional_info(self):
         return _birth_date_info(self)
@@ -186,6 +194,8 @@ class EditRegistrationForm(forms.ModelForm):
                 self.fields["category"].queryset = RegistrationCategory.objects.filter(
                     competition=competition, is_deleted=False
                 )
+            if competition.additional_info_is_birth_date and "additional_info" in self.fields:
+                self.fields["additional_info"].widget = _date_widget()
             if "additional_info" in self.fields:
                 self.fields["additional_info"].label = competition.additional_info_field_label
             if participant_fields_only:
