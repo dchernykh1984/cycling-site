@@ -35,7 +35,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 1. **Given** a participant submits the form, **Then** the event is created **pending approval**;
    an organizer's submission is published at once -- unless it stands on a city or region still
-   awaiting approval, when it waits too.
+   awaiting approval, when it waits too. The form's button says so: "Submit for review" to a
+   participant, "Save" to an organizer (`tests/test_event_form_fields.py`).
 2. **Given** the form, **Then** it takes a title (required in Russian, optional in Kazakh and
    English), a rich-text description (sanitised, size-limited, edited with a bundled Quill editor),
    a start date and an optional end date (not before the start), several event types and several
