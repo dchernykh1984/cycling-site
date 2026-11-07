@@ -36,7 +36,8 @@ section that says it is a ladder, and the site draws it as one.
 7. **A heat named as its stage** ("Final" in the stage "Final") does not repeat the name above its
    table; its table still carries it for a screen reader.
 8. **Search, the category filter and live updates** work as in any protocol. A search keeps every
-   stage of a ladder in its place, takes away the heats it empties, and the lines while it is on.
+   stage of a ladder in its place and takes away the heats it empties; while it is on, the lines
+   and the empty heats step out of sight too, keeping their room.
 
 ## The generator
 
