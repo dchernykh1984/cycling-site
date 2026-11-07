@@ -1,11 +1,12 @@
 # Site Specification: Results protocols
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-24
-**Code**: `protocols/` (models, views, `protocols/document.py`, `protocols/rendering.py`),
+**Verified against**: `main` on 2026-11-07
+**Code**: `protocols/` (models, views, `protocols/document.py`, `protocols/rendering.py`, `protocols/sections.py`),
 `protocols/static/protocols/`, `protocols/schema/protocol-document-v1.json`, `api/endpoints/protocols.py`
 **Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
-`tests/test_protocol_upload.py`, `tests/e2e/test_competition_result_emphasis.py`,
+`tests/test_protocol_upload.py`, `tests/test_protocol_sections.py`, `tests/e2e/test_competition_result_emphasis.py`,
+`tests/e2e/test_protocol_sections.py`,
 `tests/e2e/test_protocol_live.py`, `tests/e2e/test_protocol_document.py`, `api/tests.py`
 (protocol endpoints)
 **Related**: [events](events.md), [API](api.md); the `protocols` skill holds the security detail
@@ -14,7 +15,8 @@
 
 A protocol is what the timing software uploads through the API with the event's upload token: the
 HTML file it writes for itself, a structured document describing the results (issue #310), or both
-from one run. The event page links its protocols; each opens on a page of its own. A document is
+from one run. The event page links its protocols, section by section under each section's heading
+(issue #452); each opens on a page of its own. A document is
 drawn by the site, in its own look, for a phone and a desktop and in every skin; HTML alone is shown
 as it was written, in a sandboxed frame. While results are live the page follows new uploads.
 
@@ -40,11 +42,17 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 5. **Given** an upload that fails half-way (storage or database), **Then** the protocol keeps its
    previous content and file and nothing new is left on disk; uploads of one event take turns, so
    the protocol never mixes two uploads.
+6. **Given** an upload or a delete naming a section (`section`, issue #452), **Then** it acts on that
+   section's protocol of its type and leaves the other sections' alone; without one it acts on
+   section 1, as software that does not know sections always did. A section the event does not have
+   -- never added, or deleted -- is a 400 that says so, and nothing is kept.
 
 ### Story 2 -- Read results (P1)
 
 1. **Given** an event with protocols, **Then** its page links them as filled, bold buttons that stay
-   legible in every skin, at rest, on hover and in focus; a live protocol is marked "Live".
+   legible in every skin, at rest, on hover and in focus; a live protocol is marked "Live". Each
+   section holding protocols has a block of its own, in the order of the sections' numbers, under
+   its name in the page's language -- section 1, unnamed, under "Protocols".
 2. **Given** a live protocol's page, **Then** it asks every minute whether a newer upload exists
    (`PROTOCOL_POLL_INTERVAL_MS`) and, when one does, loads it into a second, hidden frame; the frame
    reports which upload it holds, whether that upload is live and the form it is shown in, and only
@@ -92,16 +100,34 @@ table needs a change in the generator only; the site knows nothing of laps, atte
    search, group and switches by their ids; a group that disappeared falls back to "All categories".
 4. **Given** a protocol in another language than the page, **Then** the page says which.
 
+### Story 4 -- Arrange protocols in sections (P2)
+
+1. **Given** whoever sees the event's upload token -- its author or a manager -- **Then** a link in
+   the token's block opens the event's protocol sections: each with its number, its name and how
+   many protocols it holds, the numbers being what the generators are set to.
+2. **Given** that page, **Then** they add a section named in every language of the site (none may be
+   left out) and it gets the next number the event never had; they rename any section, section 1
+   included, the same way.
+3. **Given** a section other than the first that holds no protocols, **Then** they delete it and its
+   number is not given again; one holding protocols stays until the generator deletes them, and the
+   page says so instead of offering the button. Section 1 is never deleted.
+4. **Given** the API (`/api/v1/protocols/competitions/{id}/sections`), **Then** the same people list,
+   add, rename (a language left empty keeps its name) and delete sections by the same rules:
+   someone else's event is a 404, a missing name a 422, deleting section 1 or a section holding
+   protocols a 409.
+
 ### Edge Cases
 
 - Unknown token: 401; no token: 422; an event not approved: 401; wrong protocol type, wrong content
   type, an over-size file or neither a file nor a document: 400; GET on the upload endpoint: 405.
+- A section number below 1 or beyond the column's range, or one the event does not have: 400.
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
   and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
 
 ## Functional Requirements
 
-- **FR-PRO-001**: Protocol types: absolute and group, one of each per event (with a stage label).
+- **FR-PRO-001**: Protocol types: absolute and group, one of each per section of an event (with a
+  stage label).
 - **FR-PRO-002**: The protocol file is served as HTML with `nosniff`, `no-store`, `X-Frame-Options:
   SAMEORIGIN` and a narrow Content Security Policy: `sandbox allow-scripts` without same-origin,
   inline script and style only, no frames, forms or connections; external script, `<base>` and
@@ -115,7 +141,9 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   file carries the hash, the live flag and the form of the row it was read from, so an upload that
   lands between the check and the load can neither be shown under another upload's flag nor end
   live early. Content in another form than the page reloads the page.
-- **FR-PRO-006**: The protocol page's link preview title is "<event> -- <kind of protocol>".
+- **FR-PRO-006**: The protocol page's link preview title is "<event> -- <kind of protocol>", with the
+  section's name between them when the organizer named the section; the trail above the results
+  names it too and links to its block on the event's page.
 - **FR-PRO-007**: The document's schema is `protocols/document.py`, exported to
   `protocols/schema/protocol-document-v1.json` for the generators. Within a major version unknown
   fields are ignored, an unknown section type is drawn by its shape, an unknown role means none; an
@@ -135,12 +163,16 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   drawn in a box of its own above the tables; its footer -- the people who ran the race -- as one
   line of smaller type under them, a block of the generator's own text keeping a line of its own.
   Date, place, course and sponsors are the event page's, and the generators no longer send them.
+- **FR-PRO-014**: Deleting a protocol section and publishing into it take turns on the event's row, so a
+  protocol never lands in a section being deleted.
 
 ## Key Entities
 
-- **Protocol**: event, type, HTML file and/or structured document, last updated, live flag, stage
-  label, hash of the upload.
+- **Protocol**: event, section number, type, HTML file and/or structured document, last updated, live
+  flag, stage label, hash of the upload.
 - **ProtocolVersion**: an earlier upload of a protocol, its file and/or document (ten kept).
+- **ProtocolSection**: event, number, name in every language, deleted flag. Section 1 needs no row
+  until it is named; a deleted section keeps its row so its number is never given again.
 
 ## Local assumptions
 
