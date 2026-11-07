@@ -27,6 +27,16 @@ document is drawn by the site itself.
 - The upload switches a protocol in one transaction (event row locked, files written first under
   new names, displaced files deleted on commit).
 
+## Sections (issue #452)
+
+An event's protocols are shown in sections, each under a heading of its own. Section 1 is every
+event's and is called "Protocols" until the organizer names it; the organizer adds the others on a
+page linked from the token's block (`protocols/sections.py`, `/protocols/event/<pk>/sections/`), named
+in every language, and the generators publish into one by its number (`section` on upload and
+delete; without it, section 1). One protocol of each type per section; a section the event does not
+have is a 400. A deleted section keeps its row, so its number is never given again, and a section
+holding protocols is not deleted. Start lists, timings and live stats stay one per event.
+
 ## It is somebody else's HTML on our domain
 
 So it is served under a deliberately narrow policy (`protocols/views.py`): `default-src 'none'`,
