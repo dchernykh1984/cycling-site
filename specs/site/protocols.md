@@ -110,7 +110,7 @@ their heats (issue #454).
    seated in is an empty box; a heat named as its stage does not repeat the name. Each table shows
    what fits its column as any table fits its box (story 3.1), place and name at the least, set as
    tight as on a phone; when the stages do not fit, the ladder scrolls sideways inside its box. A
-   search keeps every stage in its place.
+   search keeps every stage in its place and takes the lines away while it is on.
 6. **Given** a ladder on a phone, **Then** its stages are a list, the last first, each under its
    name, without the empty heats and without the stages that hold nothing but them.
 

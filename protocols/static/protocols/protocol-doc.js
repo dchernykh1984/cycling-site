@@ -311,6 +311,8 @@
 
   function filter(root) {
     var words = searchWords(state.search);
+    // A ladder's lines join heats a search may hide: they go while the search is on.
+    root.classList.toggle("protocol-searching", words.length > 0);
     each(root, ".protocol-row", function (row) {
       var text = row.dataset.search || "";
       var out =
