@@ -5,6 +5,7 @@ through the API."""
 import json
 from http import HTTPStatus
 
+from django.db import connection
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.translation import gettext, override
@@ -112,6 +113,16 @@ class SectionRulesTest(_Event, TestCase):
         sections.delete(self.competition, number)
         with self.assertRaises(ProtocolSection.DoesNotExist):
             sections.rename(self.competition, number, FINALS)
+
+    def test_a_protocol_saved_by_code_that_knows_no_sections_lands_in_the_first(self):
+        # As the release still serving during a deploy saves one, after this one has migrated
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO protocols_protocol (competition_id, protocol_type, html_file, is_live, stage_label,"
+                " file_hash, last_updated) VALUES (%s, 'absolute', '', true, '', '', now())",
+                [self.competition.pk],
+            )
+        self.assertEqual(Protocol.objects.get().section, sections.FIRST)
 
 
 class EventPageTest(_Event, TestCase):

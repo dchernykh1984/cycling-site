@@ -29,8 +29,10 @@ class Protocol(models.Model):
     stage_label = models.CharField(max_length=200, blank=True)
     file_hash = models.CharField(max_length=64, blank=True)
     # The section of the event's page it is shown in (issue #452): the timing software names one by its
-    # number, and software that names none publishes into the first, every event's own.
-    section = models.PositiveIntegerField(default=1)
+    # number, and software that names none publishes into the first, every event's own. The database
+    # holds the default too: code that does not know sections yet -- the release still serving while
+    # this one migrates -- saves a protocol without one.
+    section = models.PositiveIntegerField(default=1, db_default=1)
 
     class Meta:
         unique_together: ClassVar[list] = [("competition", "section", "protocol_type")]

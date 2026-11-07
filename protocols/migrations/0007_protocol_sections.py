@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="protocol",
             name="section",
-            field=models.PositiveIntegerField(default=1),
+            field=models.PositiveIntegerField(db_default=1, default=1),
         ),
         migrations.AlterUniqueTogether(
             name="protocol",
