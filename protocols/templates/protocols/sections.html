@@ -18,7 +18,7 @@
   <div class="card mb-3 protocol-section" id="section-{{ section.number }}">
     <div class="card-body">
       <h2 class="h5 mb-1">{% blocktrans with number=section.number %}Section {{ number }}{% endblocktrans %}: {{ section.name }}</h2>
-      <p class="small text-muted mb-2">{% blocktrans count counter=section.protocols %}{{ counter }} protocol{% plural %}{{ counter }} protocols{% endblocktrans %}</p>
+      <p class="small mb-2">{% blocktrans count counter=section.protocols %}{{ counter }} protocol{% plural %}{{ counter }} protocols{% endblocktrans %}</p>
       <form method="post" class="mb-2">
         {% csrf_token %}
         <input type="hidden" name="number" value="{{ section.number }}">
@@ -27,12 +27,12 @@
       </form>
       {% if not section.is_first %}
       {% if section.protocols %}
-      <p class="small text-muted mb-0">{% trans "To delete the section, delete its protocols in the protocol generator first." %}</p>
+      <p class="small mb-0">{% trans "To delete the section, delete its protocols in the protocol generator first." %}</p>
       {% else %}
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="number" value="{{ section.number }}">
-        <button type="submit" name="action" value="delete" class="btn btn-outline-danger">{% blocktrans with number=section.number %}Delete section {{ number }}{% endblocktrans %}</button>
+        <button type="submit" name="action" value="delete" class="btn btn-outline-primary">{% blocktrans with number=section.number %}Delete section {{ number }}{% endblocktrans %}</button>
       </form>
       {% endif %}
       {% endif %}
