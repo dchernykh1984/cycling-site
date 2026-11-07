@@ -14,7 +14,7 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see
 
-from . import rendering
+from . import rendering, sections
 from .models import Protocol
 
 _MAX_VERSIONS = 10
@@ -203,6 +203,7 @@ def protocol_detail(request, pk):
     versions = protocol.versions.all()[:_MAX_VERSIONS]
     absolute = protocol.protocol_type == protocol.ProtocolType.ABSOLUTE
     kind = gettext("Absolute results") if absolute else gettext("Group results")
+    section_name = sections.name_of(protocol)
     state = protocol_state(protocol)
     doc = rendering.build(protocol.document, image_sources(request)) if state["shown"] == "document" else None
     return render(
@@ -213,8 +214,9 @@ def protocol_detail(request, pk):
             "versions": versions,
             "state": state,
             "doc": doc,
+            "section_name": section_name,
             # Without it a link to the protocol pasted into a chat previews with an empty title.
-            "meta_title": f"{protocol.competition.title} \u2014 {kind}",
+            "meta_title": " \u2014 ".join(filter(None, [protocol.competition.title, section_name, kind])),
             "poll_interval_ms": settings.PROTOCOL_POLL_INTERVAL_MS,
             "load_timeout_ms": settings.PROTOCOL_LOAD_TIMEOUT_MS,
         },
