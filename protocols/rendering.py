@@ -285,6 +285,9 @@ def _is_ladder(raw: dict) -> bool:
 
 
 def _ladder(raw: dict, group: str | None, anchor: str, counter: list[int], off_toggles: frozenset[str]) -> dict | None:
+    """A ladder in the section shape the rest of this module walks, or None when nobody is seated in
+    it. A heat without rows is ``vacant`` (an empty box), and so is a stage of nothing but such heats;
+    ``feeds``/``fed`` mark the stages lines join, ``together`` a stage that stands in the middle."""
     stages = []
     for stage_number, raw_stage in enumerate(raw["sections"], start=1):
         stage_anchor = f"{anchor}-{stage_number}"
