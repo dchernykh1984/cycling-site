@@ -184,7 +184,8 @@ their heats (issue #454).
 - **FR-PRO-015**: A section of type `ladder` is drawn as a ladder only when it has the shape --
   stages with the tables of their heats, nothing nested deeper, no table of its own; otherwise it
   is drawn by its shape, as any unknown kind. The layout is the stylesheet's alone: no script
-  places a heat, so nothing moves after the page is drawn.
+  places a heat, so a heat is where it belongs before any script runs (fitting the columns, as in
+  every table, may then make the tables shorter).
 
 ## Key Entities
 
