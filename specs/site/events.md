@@ -92,7 +92,9 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
    and to its managers on its page) and show it again, and delete its comments.
 3. **Given** a manager or the event's author, **Then** they see its upload token and may regenerate
-   or delete it; the timing apps use it to send results (see [API](api.md)).
+   or delete it; the timing apps use it to send results (see [API](api.md)). From there they arrange
+   the event's protocols in sections, each with the number the generators are set to
+   ([protocols](protocols.md), issue #452).
 4. **Given** someone who may edit or moderate an event, **Then** its page shows how a link to it
    looks in a chat: the title and the preview text in the page's language, or the date and the
    place when that language has none (issue #318). Nobody else sees the block; the line itself
