@@ -11,4 +11,5 @@ urlpatterns = [
     path("protocols/<int:pk>/html/", views.protocol_html, name="protocol_html"),
     path("protocols/<int:pk>/fragment/", views.protocol_fragment, name="protocol_fragment"),
     path("protocols/<int:pk>/", views.protocol_detail, name="protocol_detail"),
+    path("protocols/event/<int:pk>/sections/", views.protocol_sections, name="protocol_sections"),
 ]

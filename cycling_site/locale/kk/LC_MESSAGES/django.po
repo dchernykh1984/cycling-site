@@ -5439,3 +5439,71 @@ msgstr "Қысқаша мазмұн әлі жоқ"
 #: ratings/templates/ratings/index.html
 msgid "New reviews since the digest"
 msgstr "Қысқаша мазмұннан кейін жаңа пікірлер келді"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Protocol sections"
+msgstr "Хаттама бөлімдері"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "headings of their own on this page, each with a number to enter in the protocol generator."
+msgstr "осы беттегі жеке тақырыптар, әрқайсысының хаттама генераторына енгізілетін өз нөмірі бар."
+
+#: protocols/sections.py
+msgid "The first section cannot be deleted."
+msgstr "Бірінші бөлімді жоюға болмайды."
+
+#: protocols/sections.py
+msgid "The section still holds protocols: delete them in the protocol generator first."
+msgstr "Бөлімде әлі хаттамалар бар: алдымен оларды хаттама генераторында жойыңыз."
+
+#: protocols/templates/protocols/_section_names.html
+msgctxt "protocol section"
+msgid "Name"
+msgstr "Атауы"
+
+#: protocols/templates/protocols/sections.html
+msgid "Each section is shown on the event's page under its own heading. To publish protocols into a section, enter its number in the protocol generator; a generator without that setting publishes into section 1."
+msgstr "Әр бөлім іс-шара бетінде өз тақырыбымен көрсетіледі. Хаттамаларды бөлімге жариялау үшін оның нөмірін хаттама генераторында көрсетіңіз; бұл баптауы жоқ генератор 1-бөлімге жариялайды."
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Section %(number)s"
+msgstr "%(number)s-бөлім"
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "%(counter)s protocol"
+msgid_plural "%(counter)s protocols"
+msgstr[0] "%(counter)s хаттама"
+msgstr[1] "%(counter)s хаттама"
+
+#: protocols/templates/protocols/sections.html
+msgid "To delete the section, delete its protocols in the protocol generator first."
+msgstr "Бөлімді жою үшін алдымен оның хаттамаларын хаттама генераторында жойыңыз."
+
+#: protocols/templates/protocols/sections.html
+msgid "Delete section"
+msgstr "Бөлімді жою"
+
+#: protocols/templates/protocols/sections.html
+msgid "New section"
+msgstr "Жаңа бөлім"
+
+#: protocols/templates/protocols/sections.html
+msgid "Add section"
+msgstr "Бөлім қосу"
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s added."
+msgstr "%(number)s-бөлім қосылды."
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s deleted."
+msgstr "%(number)s-бөлім жойылды."
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s renamed."
+msgstr "%(number)s-бөлімнің атауы өзгертілді."

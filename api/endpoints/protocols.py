@@ -7,19 +7,24 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils.text import get_valid_filename
-from ninja import File, Form, Router, Schema
+from django.utils.translation import override
+from ninja import File, Form, Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
-from api.auth import competition_by_token
+from api.auth import ApiTokenAuth, competition_by_token
+from api.schemas import LocalizedStr
 from calendar_app.models import Competition
+from calendar_app.visibility import can_manage_or_own
 from protocols import sections
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
-from protocols.models import Protocol, ProtocolVersion
+from protocols.forms import SectionNamesForm
+from protocols.models import Protocol, ProtocolSection, ProtocolVersion
 
 router = Router(tags=["protocols"])
 logger = logging.getLogger(__name__)
+auth = ApiTokenAuth()
 
 _MAX_VERSIONS = 10
 
@@ -33,6 +38,16 @@ class ProtocolUploadOut(Schema):
 
 class ProtocolDeleteOut(Schema):
     deleted: bool
+
+
+class SectionIn(Schema):
+    name: LocalizedStr
+
+
+class SectionOut(Schema):
+    number: int
+    name: LocalizedStr
+    protocols: int
 
 
 def _delete_files(names: list) -> None:
@@ -263,3 +278,95 @@ def delete_protocol(
         protocol.delete()
         transaction.on_commit(lambda: _delete_files(files))
     return {"deleted": True}
+
+
+# -- Sections (issue #452): what the organizer does on the event's page of its protocol sections -----
+
+
+def _managed_event(user, competition_id: int) -> Competition:
+    competition = Competition.objects.filter(pk=competition_id, is_deleted=False).first()
+    if competition is None or not can_manage_or_own(user, competition):
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+    return competition
+
+
+def _section(competition: Competition, number: int) -> dict:
+    """The section as the API shows it, or a 404 for a number the event does not have."""
+    for row in sections.listing(competition):
+        if row["number"] == number:
+            return {"number": number, "name": row["names"], "protocols": row["protocols"]}
+    raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+
+
+def _names(given: dict[str, str]) -> dict[str, str]:
+    form = SectionNamesForm(given)
+    if not form.is_valid():
+        raise HttpError(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            "; ".join(f"name.{field}: {' '.join(str(e) for e in errors)}" for field, errors in form.errors.items()),
+        )
+    return form.names()
+
+
+@router.get(
+    "/competitions/{competition_id}/sections",
+    response=list[SectionOut],
+    auth=auth,
+    summary="List an event's protocol sections (its author and managers)",
+)
+def list_sections(request, competition_id: int):
+    competition = _managed_event(request.auth, competition_id)
+    return [
+        {"number": row["number"], "name": row["names"], "protocols": row["protocols"]}
+        for row in sections.listing(competition)
+    ]
+
+
+@router.post(
+    "/competitions/{competition_id}/sections",
+    response={HTTPStatus.CREATED: SectionOut},
+    auth=auth,
+    summary="Add a protocol section, named in every language",
+)
+def add_section(request, competition_id: int, payload: SectionIn):
+    """The new section gets a number the event never had; the timing software publishes into it by that number."""
+    competition = _managed_event(request.auth, competition_id)
+    number = sections.add(competition, _names(payload.name.dict())).number
+    return Status(HTTPStatus.CREATED, _section(competition, number))
+
+
+@router.patch(
+    "/competitions/{competition_id}/sections/{number}",
+    response=SectionOut,
+    auth=auth,
+    summary="Rename a protocol section; a language left empty keeps its name",
+)
+def rename_section(request, competition_id: int, number: int, payload: SectionIn):
+    competition = _managed_event(request.auth, competition_id)
+    current = _section(competition, number)["name"]
+    given = {code: value or current[code] for code, value in payload.name.dict().items()}
+    try:
+        sections.rename(competition, number, _names(given))
+    except ProtocolSection.DoesNotExist:
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
+    return _section(competition, number)
+
+
+@router.delete(
+    "/competitions/{competition_id}/sections/{number}",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=auth,
+    summary="Delete a protocol section that holds no protocols",
+)
+def delete_section(request, competition_id: int, number: int):
+    """The first section stays, and one with protocols stays until the generator deletes them (409)."""
+    competition = _managed_event(request.auth, competition_id)
+    _section(competition, number)
+    try:
+        sections.delete(competition, number)
+    except ProtocolSection.DoesNotExist:
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found") from None
+    except sections.SectionRefusedError as exc:
+        with override("en"):
+            raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
+    return Status(HTTPStatus.NO_CONTENT, None)

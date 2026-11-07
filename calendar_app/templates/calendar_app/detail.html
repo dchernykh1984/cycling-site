@@ -326,6 +326,10 @@
         <button type="submit" class="btn btn-outline-primary btn-sm">{% trans "Generate token" %}</button>
       </form>
       {% endif %}
+      <div class="small mt-2 protocol-sections-link">
+        <a href="{% url 'protocol_sections' competition.pk %}">{% trans "Protocol sections" %}</a>:
+        {% trans "headings of their own on this page, each with a number to enter in the protocol generator." %}
+      </div>
     </div>
     {% endif %}
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ meta_title }}{% endblock %}
+
+{% block content %}
+<section class="protocol-sections">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'competition_detail' competition.pk %}">{{ competition.title }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans "Protocol sections" %}</li>
+    </ol>
+  </nav>
+  <h1 class="h3 mb-2">{% trans "Protocol sections" %}</h1>
+  <p class="mb-4">{% trans "Each section is shown on the event's page under its own heading. To publish protocols into a section, enter its number in the protocol generator; a generator without that setting publishes into section 1." %}</p>
+
+  {% for section in sections %}
+  <div class="card mb-3 protocol-section" id="section-{{ section.number }}">
+    <div class="card-body">
+      <h2 class="h5 mb-1">{% blocktrans with number=section.number %}Section {{ number }}{% endblocktrans %}: {{ section.name }}</h2>
+      <p class="small text-muted mb-2">{% blocktrans count counter=section.protocols %}{{ counter }} protocol{% plural %}{{ counter }} protocols{% endblocktrans %}</p>
+      <form method="post" class="mb-2">
+        {% csrf_token %}
+        <input type="hidden" name="number" value="{{ section.number }}">
+        {% include "protocols/_section_names.html" with form=section.form %}
+        <button type="submit" name="action" value="rename" class="btn btn-outline-primary">{% trans "Save" %}</button>
+      </form>
+      {% if not section.is_first %}
+      {% if section.protocols %}
+      <p class="small text-muted mb-0">{% trans "To delete the section, delete its protocols in the protocol generator first." %}</p>
+      {% else %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="number" value="{{ section.number }}">
+        <button type="submit" name="action" value="delete" class="btn btn-outline-danger">{% trans "Delete section" %}</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <h2 class="h5 mt-4">{% trans "New section" %}</h2>
+  <form method="post" class="mb-4">
+    {% csrf_token %}
+    {% include "protocols/_section_names.html" with form=add_form %}
+    <button type="submit" name="action" value="add" class="btn btn-primary">{% trans "Add section" %}</button>
+  </form>
+</section>
+{% endblock %}

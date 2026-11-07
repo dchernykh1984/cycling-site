@@ -1,9 +1,12 @@
-"""Protocol sections (issue #452): an event's protocols under headings of their own, and the timing
-software publishing into one by its number."""
+"""Protocol sections (issue #452): an event's protocols under headings of their own, the timing software
+publishing into one by its number, and the organizer adding, renaming and deleting them on the site and
+through the API."""
 
+import json
 from http import HTTPStatus
 
 from django.test import Client, TestCase
+from django.urls import reverse
 from django.utils.translation import gettext, override
 
 from accounts.models import User
@@ -11,10 +14,16 @@ from protocols import sections
 from protocols.models import Protocol, ProtocolSection
 from registrations.tests import make_competition, make_user
 from tests.test_protocol_upload import _html, _MediaMixin, _stored_files
+from tests.test_virtual_members import _bearer
 
 UPLOAD = "/api/v1/protocols/upload/"
 DELETE = "/api/v1/protocols/delete/"
 FINALS = {"ru": "Protokoly finalov", "kk": "Finaldyq hattamalar", "en": "Finals"}
+
+
+def _api(competition, number=None) -> str:
+    tail = "" if number is None else f"/{number}"
+    return f"/api/v1/protocols/competitions/{competition.pk}/sections{tail}"
 
 
 class _Event(_MediaMixin):
@@ -126,3 +135,105 @@ class EventPageTest(_Event, TestCase):
         page = self.client.get(f"/en/protocols/{protocol.pk}/").content.decode()
         self.assertIn(f"#protocol-section-{number}", page)
         self.assertIn("Race \u2014 Finals \u2014 Absolute results", page)
+
+
+class SectionsPageTest(_Event, TestCase):
+    def _page(self):
+        return reverse("protocol_sections", args=[self.competition.pk])
+
+    def _post(self, **data):
+        return self.client.post(self._page(), data, follow=True)
+
+    def test_the_organizer_adds_renames_and_deletes_a_section(self):
+        self.client.force_login(self.author)
+        self._post(action="add", **{f"new-{code}": value for code, value in FINALS.items()})
+        section = ProtocolSection.objects.get(number=2)
+        self.assertEqual(section.name_en, "Finals")
+        self._post(action="rename", number=2, **{"section-2-ru": "R", "section-2-kk": "K", "section-2-en": "E"})
+        section.refresh_from_db()
+        self.assertEqual((section.name_ru, section.name_kk, section.name_en), ("R", "K", "E"))
+        self._post(action="delete", number=2)
+        section.refresh_from_db()
+        self.assertTrue(section.is_deleted)
+
+    def test_a_name_left_out_in_a_language_is_asked_for(self):
+        self.client.force_login(self.author)
+        response = self._post(action="add", **{"new-ru": "R", "new-kk": "", "new-en": "E"})
+        self.assertContains(response, "is-invalid")
+        self.assertFalse(ProtocolSection.objects.exists())
+
+    def test_a_section_holding_protocols_is_kept_with_the_reason(self):
+        number = sections.add(self.competition, FINALS).number
+        self._upload(section=number)
+        self.client.force_login(self.author)
+        with override("en"):
+            response = self.client.post(
+                f"/en/protocols/event/{self.competition.pk}/sections/",
+                {"action": "delete", "number": number},
+                follow=True,
+            )
+        self.assertContains(response, "still holds protocols")
+        self.assertFalse(ProtocolSection.objects.get(number=number).is_deleted)
+
+    def test_only_the_author_and_the_managers_reach_the_page(self):
+        self.assertEqual(self.client.get(self._page()).status_code, HTTPStatus.FOUND)
+        self.client.force_login(make_user("other", role=User.Role.ORGANIZER))
+        self.assertEqual(self.client.get(self._page()).status_code, HTTPStatus.FORBIDDEN)
+        self.client.force_login(make_user("admin", role=User.Role.ADMIN))
+        self.assertEqual(self.client.get(self._page()).status_code, HTTPStatus.OK)
+
+    def test_the_event_page_links_the_page_for_the_token_holder(self):
+        self.client.force_login(self.author)
+        page = self.client.get(f"/en/calendar/{self.competition.pk}/").content.decode()
+        self.assertIn(f"/en/protocols/event/{self.competition.pk}/sections/", page)
+
+
+class SectionsApiTest(_Event, TestCase):
+    def _send(self, method, url, user, payload=None):
+        send = getattr(self.client, method)
+        if payload is None:
+            return send(url, **_bearer(user))
+        return send(url, json.dumps(payload), content_type="application/json", **_bearer(user))
+
+    def test_the_organizer_lists_adds_renames_and_deletes_sections(self):
+        added = self._send("post", _api(self.competition), self.author, {"name": FINALS})
+        self.assertEqual(added.status_code, HTTPStatus.CREATED)
+        self.assertEqual(added.json(), {"number": 2, "name": FINALS, "protocols": 0})
+        renamed = self._send("patch", _api(self.competition, 2), self.author, {"name": {"en": "Final heats"}})
+        self.assertEqual(renamed.json()["name"], {**FINALS, "en": "Final heats"})
+        listed = self._send("get", _api(self.competition), self.author).json()
+        self.assertEqual([row["number"] for row in listed], [1, 2])
+        with override("kk"):
+            self.assertEqual(listed[0]["name"]["kk"], gettext("Protocols"))
+        self.assertEqual(
+            self._send("delete", _api(self.competition, 2), self.author).status_code, HTTPStatus.NO_CONTENT
+        )
+        self.assertEqual(self._send("delete", _api(self.competition, 2), self.author).status_code, HTTPStatus.NOT_FOUND)
+
+    def test_a_name_must_be_given_in_every_language(self):
+        response = self._send("post", _api(self.competition), self.author, {"name": {"ru": "R", "en": "E"}})
+        self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
+        self.assertIn("name.kk", response.json()["detail"])
+        too_long = {**FINALS, "en": "x" * 201}
+        response = self._send("post", _api(self.competition), self.author, {"name": too_long})
+        self.assertEqual(response.status_code, HTTPStatus.UNPROCESSABLE_ENTITY)
+        self.assertIn("name.en", response.json()["detail"])
+        self.assertFalse(ProtocolSection.objects.exists())
+
+    def test_a_section_with_protocols_or_the_first_is_not_deleted(self):
+        number = sections.add(self.competition, FINALS).number
+        self._upload(section=number)
+        for target in (number, sections.FIRST):
+            with self.subTest(section=target):
+                response = self._send("delete", _api(self.competition, target), self.author)
+                self.assertEqual(response.status_code, HTTPStatus.CONFLICT)
+        self.assertIn(
+            "still holds protocols", self._send("delete", _api(self.competition, number), self.author).json()["detail"]
+        )
+
+    def test_someone_elses_event_is_not_found(self):
+        stranger = make_user("stranger", role=User.Role.ORGANIZER)
+        self.assertEqual(self._send("get", _api(self.competition), stranger).status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(
+            self._send("post", _api(self.competition), stranger, {"name": FINALS}).status_code, HTTPStatus.NOT_FOUND
+        )

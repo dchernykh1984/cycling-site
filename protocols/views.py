@@ -5,17 +5,21 @@ import re
 from urllib.parse import urlsplit
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.translation import gettext
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from calendar_app.models import Competition
-from calendar_app.visibility import can_see
+from calendar_app.visibility import can_manage_or_own, can_see
 
 from . import rendering, sections
-from .models import Protocol
+from .forms import SectionNamesForm
+from .models import Protocol, ProtocolSection
 
 _MAX_VERSIONS = 10
 
@@ -219,5 +223,74 @@ def protocol_detail(request, pk):
             "meta_title": " \u2014 ".join(filter(None, [protocol.competition.title, section_name, kind])),
             "poll_interval_ms": settings.PROTOCOL_POLL_INTERVAL_MS,
             "load_timeout_ms": settings.PROTOCOL_LOAD_TIMEOUT_MS,
+        },
+    )
+
+
+def _section_number(value) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        raise Http404 from None
+    if not sections.FIRST <= number <= sections.LAST:
+        raise Http404
+    return number
+
+
+def _change_section(request, competition, forms: dict) -> bool:
+    """Carry out what the organizer sent; False leaves the form with its errors in ``forms``."""
+    action = request.POST.get("action")
+    if action == "add":
+        form = SectionNamesForm(request.POST, prefix="new")
+        if not form.is_valid():
+            forms["new"] = form
+            return False
+        number = sections.add(competition, form.names()).number
+        messages.success(request, gettext("Section %(number)s added.") % {"number": number})
+        return True
+    number = _section_number(request.POST.get("number"))
+    if action not in ("rename", "delete"):
+        raise Http404
+    try:
+        if action == "delete":
+            sections.delete(competition, number)
+            messages.success(request, gettext("Section %(number)s deleted.") % {"number": number})
+            return True
+        form = SectionNamesForm(request.POST, prefix=f"section-{number}")
+        if not form.is_valid():
+            forms[number] = form
+            return False
+        sections.rename(competition, number, form.names())
+    except ProtocolSection.DoesNotExist:
+        raise Http404 from None
+    except sections.SectionRefusedError as exc:
+        messages.error(request, str(exc))
+        return True
+    messages.success(request, gettext("Section %(number)s renamed.") % {"number": number})
+    return True
+
+
+@login_required
+def protocol_sections(request, pk):
+    """The organizer's page of an event's protocol sections: add, rename and delete them (issue #452)."""
+    competition = get_object_or_404(Competition, pk=pk, is_deleted=False)
+    if not can_manage_or_own(request.user, competition):
+        raise PermissionDenied
+    forms: dict = {}
+    if request.method == "POST" and _change_section(request, competition, forms):
+        return redirect("protocol_sections", competition.pk)
+    rows = sections.listing(competition)
+    for row in rows:
+        row["form"] = forms.get(row["number"]) or SectionNamesForm(
+            initial=row["names"], prefix=f"section-{row['number']}"
+        )
+    return render(
+        request,
+        "protocols/sections.html",
+        {
+            "competition": competition,
+            "sections": rows,
+            "add_form": forms.get("new") or SectionNamesForm(prefix="new"),
+            "meta_title": gettext("Protocol sections"),
         },
     )
