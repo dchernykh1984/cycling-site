@@ -172,11 +172,18 @@ def test_a_search_leaves_every_stage_where_it_stood(page: Page, live_server, app
     _open(page, live_server, _protocol(approved_competition, _ladder(3)), 1280)
     stages = page.locator(".protocol-ladder-stage")
     before = [_box(stage)["x"] for stage in stages.all()]
+    joins = page.locator(".protocol-ladder-join")
+    expect(joins.first).to_be_visible()
     page.locator(".protocol-search").fill("S0H2 Rider3")
     expect(_heat_box(page, "1/4 final 1")).to_be_hidden()
     expect(_heat_box(page, "1/4 final 3")).to_be_visible()
     expect(stages).to_have_count(3)
     assert [_box(stage)["x"] for stage in stages.all()] == before
+    # Lines to the heats the search hid would lead nowhere: none while it is on.
+    for join in joins.all():
+        expect(join).to_be_hidden()
+    page.locator(".protocol-search").fill("")
+    expect(joins.first).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)

@@ -313,9 +313,9 @@
     border-top: 1px solid var(--bs-secondary-color);
     content: "";
   }
-  /* A heat the search emptied takes its lines away with it. */
-  .protocol-ladder-slot:has(> .protocol-section.is-empty)::after,
-  .protocol-ladder-slot:has(> .protocol-section.is-empty) > .protocol-ladder-join {
+  /* A search hides the heats it does not match: lines to them would lead nowhere. */
+  .protocol-searching .protocol-ladder-slot.feeds::after,
+  .protocol-searching .protocol-ladder-join {
     display: none;
   }
   .protocol-ladder-vacant {

@@ -43,8 +43,9 @@ A section of type `ladder` holds the stages of a knockout as its sections, in th
 each stage the tables of its heats (FinishProtocolGenerator's finals). `rendering.py` recognises the
 shape (anything else is drawn by its shape), keeps a heat without rows as an empty box and marks the
 stages for the lines; `_ladder.html` writes them; `protocol.css` alone lays them out -- side by side
-from 992px, each heat level with the two before it, a list with the final first below. The script is
-untouched: `fitColumns` fits each heat's table into its column like any other. A heat's time in the
+from 992px, each heat level with the two before it, a list with the final first below. The script
+only marks a search in progress (`protocol-searching`), which takes the lines away: `fitColumns`
+fits each heat's table into its column like any other. A heat's time in the
 finals has priority 4 (the generator's choice), so a narrow column keeps place and name.
 
 ## It is somebody else's HTML on our domain

@@ -15,11 +15,11 @@
   slot per heat (the lines hang on it), the heat's `.protocol-section` inside (search and fitting
   act on it as on any table), an empty box for a vacant heat.
 - **`protocol.css`** does the rest, with no script: a column (`column-reverse`) on a phone, a row
-  from 992px with `flex: 1 1 0` slots, the lines as borders in the gaps, `:has()` to drop the
-  lines of a heat a search emptied, an inner sideways scroll when the stages' minimum width does
-  not fit. Colours are the skin's own variables.
-- **`protocol-doc.js`** is unchanged: `fitColumns` already measures every table in its own box, so
-  a ladder's narrow columns leave out the low priorities first.
+  from 992px with `flex: 1 1 0` slots, the lines as borders in the gaps, an inner sideways scroll
+  when the stages' minimum width does not fit. Colours are the skin's own variables.
+- **`protocol-doc.js`** only marks a search in progress (`protocol-searching`), when the lines go:
+  `fitColumns` already measures every table in its own box, so a ladder's narrow columns leave out
+  the low priorities first.
 - **The generator** (FinishProtocolGeneratorPython, a pull request of its own) builds one ladder per
   group from the heats of every stage, empty ones included, and gives a heat's time priority 4.
 
