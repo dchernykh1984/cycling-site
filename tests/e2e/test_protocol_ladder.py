@@ -149,6 +149,19 @@ def test_a_heat_nobody_is_seated_in_is_an_empty_box_on_a_desktop_and_left_out_on
 
 
 @pytest.mark.django_db(transaction=True)
+def test_an_empty_heat_matches_no_search_and_keeps_its_room(page: Page, live_server, approved_competition):
+    _open(page, live_server, _protocol(approved_competition, _ladder(2, seated_rounds=1)), 1280)
+    vacant = page.locator(".protocol-ladder-vacant")
+    expect(vacant).to_be_visible()
+    page.locator(".protocol-search").fill("S0H1 Rider2")
+    expect(vacant).to_be_hidden()
+    expect(_heat_box(page, "1/2 final 1")).to_be_hidden()
+    expect(_heat_box(page, "1/2 final 2")).to_be_visible()
+    # Hidden, not taken out: its column keeps its room beside the heat found.
+    assert _box(page.locator(".protocol-ladder-slot.is-vacant"))["height"] > 0
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_narrow_column_keeps_place_and_name_and_opens_the_rest_on_a_tap(
     page: Page, live_server, approved_competition
 ):

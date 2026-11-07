@@ -313,10 +313,14 @@
     border-top: 1px solid var(--bs-secondary-color);
     content: "";
   }
-  /* A search hides the heats it does not match: lines to them would lead nowhere. */
+  /* A search hides the heats it does not match: lines to them would lead nowhere, and an empty
+   * heat matches nothing. Its box keeps its room, so the heats found stay where they were. */
   .protocol-searching .protocol-ladder-slot.feeds::after,
   .protocol-searching .protocol-ladder-join {
     display: none;
+  }
+  .protocol-searching .protocol-ladder-slot.is-vacant {
+    visibility: hidden;
   }
   .protocol-ladder-vacant {
     min-height: 4rem;
