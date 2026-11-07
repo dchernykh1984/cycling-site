@@ -181,6 +181,20 @@ def test_a_narrow_column_keeps_place_and_name_and_opens_the_rest_on_a_tap(
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_final_and_a_race_for_third_stand_together_in_the_middle(page: Page, live_server, approved_competition):
+    ladder = _ladder(2)
+    ladder["sections"][1]["sections"].append(_heat("Small final", _riders("Third")))
+    _open(page, live_server, _protocol(approved_competition, ladder), 1280)
+    semis = page.locator(".protocol-ladder-stage").first
+    middle = _box(semis)["y"] + _box(semis)["height"] / 2
+    final, third = _box(_heat_box(page, "Final")), _box(_heat_box(page, "Small final"))
+    # One above the other around the middle: neither beside a semi-final of its own.
+    assert final["y"] + final["height"] <= third["y"]
+    assert final["y"] < middle < third["y"] + third["height"]
+    assert abs((final["y"] + third["y"] + third["height"]) / 2 - middle) <= 40
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_search_leaves_every_stage_where_it_stood(page: Page, live_server, approved_competition):
     _open(page, live_server, _protocol(approved_competition, _ladder(3)), 1280)
     stages = page.locator(".protocol-ladder-stage")
