@@ -23,7 +23,7 @@
         {% csrf_token %}
         <input type="hidden" name="number" value="{{ section.number }}">
         {% include "protocols/_section_names.html" with form=section.form %}
-        <button type="submit" name="action" value="rename" class="btn btn-outline-primary">{% trans "Save" %}</button>
+        <button type="submit" name="action" value="rename" class="btn btn-outline-primary">{% blocktrans with number=section.number %}Save section {{ number }}{% endblocktrans %}</button>
       </form>
       {% if not section.is_first %}
       {% if section.protocols %}
@@ -32,7 +32,7 @@
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="number" value="{{ section.number }}">
-        <button type="submit" name="action" value="delete" class="btn btn-outline-danger">{% trans "Delete section" %}</button>
+        <button type="submit" name="action" value="delete" class="btn btn-outline-danger">{% blocktrans with number=section.number %}Delete section {{ number }}{% endblocktrans %}</button>
       </form>
       {% endif %}
       {% endif %}

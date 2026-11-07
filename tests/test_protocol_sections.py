@@ -156,6 +156,15 @@ class SectionsPageTest(_Event, TestCase):
         section.refresh_from_db()
         self.assertTrue(section.is_deleted)
 
+    def test_each_button_says_which_section_it_acts_on(self):
+        sections.add(self.competition, FINALS)
+        self.client.force_login(self.author)
+        with override("en"):
+            page = self.client.get(f"/en/protocols/event/{self.competition.pk}/sections/").content.decode()
+        for label in ("Save section 1", "Save section 2", "Delete section 2"):
+            self.assertIn(label, page)
+        self.assertNotIn("Delete section 1", page)
+
     def test_a_name_left_out_in_a_language_is_asked_for(self):
         self.client.force_login(self.author)
         response = self._post(action="add", **{"new-ru": "R", "new-kk": "", "new-en": "E"})

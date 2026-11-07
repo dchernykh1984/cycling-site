@@ -5481,9 +5481,6 @@ msgstr[1] "%(counter)s хаттама"
 msgid "To delete the section, delete its protocols in the protocol generator first."
 msgstr "Бөлімді жою үшін алдымен оның хаттамаларын хаттама генераторында жойыңыз."
 
-#: protocols/templates/protocols/sections.html
-msgid "Delete section"
-msgstr "Бөлімді жою"
 
 #: protocols/templates/protocols/sections.html
 msgid "New section"
@@ -5507,3 +5504,13 @@ msgstr "%(number)s-бөлім жойылды."
 #, python-format
 msgid "Section %(number)s renamed."
 msgstr "%(number)s-бөлімнің атауы өзгертілді."
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Save section %(number)s"
+msgstr "%(number)s-бөлімді сақтау"
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Delete section %(number)s"
+msgstr "%(number)s-бөлімді жою"
