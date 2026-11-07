@@ -5490,9 +5490,6 @@ msgstr[2] "%(counter)s протоколов"
 msgid "To delete the section, delete its protocols in the protocol generator first."
 msgstr "Чтобы удалить секцию, сначала удалите её протоколы в программе генерации протоколов."
 
-#: protocols/templates/protocols/sections.html
-msgid "Delete section"
-msgstr "Удалить секцию"
 
 #: protocols/templates/protocols/sections.html
 msgid "New section"
@@ -5516,3 +5513,13 @@ msgstr "Секция %(number)s удалена."
 #, python-format
 msgid "Section %(number)s renamed."
 msgstr "Секция %(number)s переименована."
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Save section %(number)s"
+msgstr "Сохранить секцию %(number)s"
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Delete section %(number)s"
+msgstr "Удалить секцию %(number)s"
