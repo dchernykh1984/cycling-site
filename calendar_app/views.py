@@ -47,6 +47,7 @@ from locations.models import (
     places_seen_by,
     sort_locations_for_filter,
 )
+from protocols import sections as protocol_sections
 
 from . import organizers
 from .forms import (
@@ -943,7 +944,6 @@ class CompetitionDetailView(View):
             raise Http404
         is_manager = manages(request.user, competition)
         can_moderate = moderates(request.user, competition)
-        protocols = competition.protocols.all()
         # upload_token is a secret credential: only show it to the submitter or to users
         # who can manage this specific competition (superuser, admin+, or the organizer
         # who submitted it). Removed the broad rank >= ORGANIZER check that exposed
@@ -984,7 +984,8 @@ class CompetitionDetailView(View):
         )
         ctx: dict = {
             "competition": competition,
-            "protocols": protocols,
+            # Each section of the event's protocols that holds any, under its own heading (issue #452).
+            "protocol_sections": protocol_sections.shown(competition),
             # Photo and video coverage, in the order its author arranged it. Shown to everyone who
             # can see the event at all -- the links are public pages, not a manager's business.
             "materials": competition.materials.all(),

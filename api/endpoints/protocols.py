@@ -13,6 +13,7 @@ from ninja.files import UploadedFile
 
 from api.auth import competition_by_token
 from calendar_app.models import Competition
+from protocols import sections
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
 from protocols.models import Protocol, ProtocolVersion
@@ -71,7 +72,9 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
     return content, filename
 
 
-def _replace_protocol(competition: Competition, protocol_type: str, fields: dict, html: tuple[bytes, str] | None):
+def _replace_protocol(
+    competition: Competition, protocol_type: str, section: int, fields: dict, html: tuple[bytes, str] | None
+):
     """Switch a protocol to one upload's content, all of it or nothing.
 
     The new files are written under names of their own before anything else changes; the protocol,
@@ -91,11 +94,13 @@ def _replace_protocol(competition: Competition, protocol_type: str, fields: dict
             saved.append(version_name)
         with transaction.atomic():
             Competition.objects.select_for_update().get(pk=competition.pk)
+            # Checked under the event's lock, which deleting a section takes too.
+            _check_section_exists(competition, section)
             protocol = (
                 Protocol.objects.select_for_update()
-                .filter(competition=competition, protocol_type=protocol_type)
+                .filter(competition=competition, section=section, protocol_type=protocol_type)
                 .first()
-            ) or Protocol(competition=competition, protocol_type=protocol_type)
+            ) or Protocol(competition=competition, section=section, protocol_type=protocol_type)
             displaced = [protocol.html_file.name] if protocol.html_file else []
             protocol.html_file = main_name
             for field, value in fields.items():
@@ -144,6 +149,19 @@ def _check_protocol_type(protocol_type: str) -> None:
         raise HttpError(HTTPStatus.BAD_REQUEST, f"protocol_type must be {allowed}")
 
 
+def _check_section(section: int) -> None:
+    if not sections.FIRST <= section <= sections.LAST:
+        raise HttpError(HTTPStatus.BAD_REQUEST, f"section must be a section's number, {sections.FIRST} or more")
+
+
+def _check_section_exists(competition: Competition, section: int) -> None:
+    if not sections.exists(competition, section):
+        raise HttpError(
+            HTTPStatus.BAD_REQUEST,
+            f"The event has no protocol section {section}: add it on the event's page first",
+        )
+
+
 @router.post(
     "/upload/",
     response=ProtocolUploadOut,
@@ -156,6 +174,7 @@ def upload_protocol(
     protocol_type: str = Form(Protocol.ProtocolType.ABSOLUTE),
     is_live: bool = Form(True),
     stage_label: str = Form(""),
+    section: int = Form(sections.FIRST),
     html_file: UploadedFile | None = File(None),  # noqa: B008
     document: UploadedFile | None = File(None),  # noqa: B008
 ):
@@ -163,8 +182,10 @@ def upload_protocol(
     Upload a competition's protocol, authenticated by `competition_token` (the event's upload token).
 
     `html_file` is the HTML the timing software wrote; `document` is the structured protocol
-    (protocols/document.py, JSON Schema in protocols/schema/). The upload replaces whatever the
-    protocol held: a document is drawn by the site, HTML alone is shown as it is. Sent together they
+    (protocols/document.py, JSON Schema in protocols/schema/). `section` is the number of the event's
+    protocol section to publish into: the first, every event's own, unless the organizer added another
+    on the event's page; an event holds one protocol of each type per section. The upload replaces
+    whatever the protocol held: a document is drawn by the site, HTML alone is shown as it is. Sent together they
     are one run -- the document is shown and the HTML kept as the original. When a document comes
     with HTML but cannot be accepted, the HTML is stored and `document_error` says why.
     Called by FinishProtocolGenerator and StravaProtocolGenerator.
@@ -172,6 +193,7 @@ def upload_protocol(
     competition = competition_by_token(competition_token)
 
     _check_protocol_type(protocol_type)
+    _check_section(section)
     if html_file is None and document is None:
         raise HttpError(HTTPStatus.BAD_REQUEST, "Send html_file, document or both")
 
@@ -190,6 +212,7 @@ def upload_protocol(
     protocol = _replace_protocol(
         competition,
         protocol_type,
+        section,
         {"is_live": is_live, "stage_label": stage_label, "file_hash": file_hash, "document": parsed},
         html,
     )
@@ -211,20 +234,25 @@ def delete_protocol(
     request,
     competition_token: str = Form(...),
     protocol_type: str = Form(Protocol.ProtocolType.ABSOLUTE),
+    section: int = Form(sections.FIRST),
 ):
-    """Delete a competition's protocol of the given type, if present.
+    """Delete a competition's protocol of the given type in the given section (the first by default).
 
-    Idempotent: returns ``deleted=False`` (200) when there is nothing to delete. Called by
-    FinishProtocolGenerator to drop a protocol the organizer no longer publishes, so its results
-    link disappears from the competition detail page.
+    Idempotent: returns ``deleted=False`` (200) when there is nothing to delete; a section the event
+    does not have is a 400. Called by the protocol generators to drop a protocol the organizer no
+    longer publishes, so its results link disappears from the competition detail page.
     """
     competition = competition_by_token(competition_token)
     _check_protocol_type(protocol_type)
+    _check_section(section)
 
     with transaction.atomic():
         Competition.objects.select_for_update().get(pk=competition.pk)
+        _check_section_exists(competition, section)
         protocol = (
-            Protocol.objects.select_for_update().filter(competition=competition, protocol_type=protocol_type).first()
+            Protocol.objects.select_for_update()
+            .filter(competition=competition, section=section, protocol_type=protocol_type)
+            .first()
         )
         if protocol is None:
             return {"deleted": False}

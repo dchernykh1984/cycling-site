@@ -14,6 +14,11 @@
         <li class="breadcrumb-item">
           <a href="{% url 'competition_detail' protocol.competition.pk %}">{{ protocol.competition.title }}</a>
         </li>
+        {% if section_name %}
+        <li class="breadcrumb-item">
+          <a href="{% url 'competition_detail' protocol.competition.pk %}#protocol-section-{{ protocol.section }}">{{ section_name }}</a>
+        </li>
+        {% endif %}
         <li class="breadcrumb-item active">
           {% if protocol.protocol_type == protocol.ProtocolType.ABSOLUTE %}{% trans "Absolute results" %}{% else %}{% trans "Group results" %}{% endif %}
         </li>

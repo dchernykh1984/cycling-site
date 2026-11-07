@@ -28,12 +28,39 @@ class Protocol(models.Model):
     is_live = models.BooleanField(default=True)
     stage_label = models.CharField(max_length=200, blank=True)
     file_hash = models.CharField(max_length=64, blank=True)
+    # The section of the event's page it is shown in (issue #452): the timing software names one by its
+    # number, and software that names none publishes into the first, every event's own.
+    section = models.PositiveIntegerField(default=1)
 
     class Meta:
-        unique_together: ClassVar[list] = [("competition", "protocol_type")]
+        unique_together: ClassVar[list] = [("competition", "section", "protocol_type")]
 
     def __str__(self) -> str:
-        return f"{self.competition} - {self.protocol_type}"
+        return f"{self.competition} - {self.section} - {self.protocol_type}"
+
+
+class ProtocolSection(models.Model):
+    """A section of an event's protocols with a name of its own, in every language (issue #452).
+
+    The first section is every event's and needs no row: without one it is called "Protocols". The
+    organizer adds the others and the timing software publishes into one by its number. A number is
+    given once: a deleted section keeps its row, so software still set to it is refused rather than
+    filling a section added since.
+    """
+
+    objects: ClassVar[models.Manager[ProtocolSection]]
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="protocol_sections")
+    number = models.PositiveIntegerField()
+    name = models.CharField(max_length=200)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together: ClassVar[list] = [("competition", "number")]
+        ordering: ClassVar[list] = ["number"]
+
+    def __str__(self) -> str:
+        return f"{self.competition} - section {self.number}"
 
 
 class ProtocolVersion(models.Model):
