@@ -958,7 +958,7 @@ main .article-body h3 {
    phones: 44 px whatever height the skin gives a button, and a box and its words are one label, in
    a row of that height, the box drawn as the registration page draws its boxes. */
 .review-requests .btn, .service-account-missing .btn,
-.rating-review .btn, .rating-summary .btn, .service-accounts .btn {
+.rating-review .btn, .rating-summary .btn, .service-accounts .btn, .protocol-sections .btn {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;

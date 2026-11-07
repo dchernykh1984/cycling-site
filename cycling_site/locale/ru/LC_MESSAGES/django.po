@@ -5447,3 +5447,72 @@ msgstr "Выжимки ещё нет"
 #: ratings/templates/ratings/index.html
 msgid "New reviews since the digest"
 msgstr "После выжимки пришли новые отзывы"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Protocol sections"
+msgstr "Секции протоколов"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "headings of their own on this page, each with a number to enter in the protocol generator."
+msgstr "отдельные заголовки на этой странице, у каждого свой номер для программы генерации протоколов."
+
+#: protocols/sections.py
+msgid "The first section cannot be deleted."
+msgstr "Первую секцию удалить нельзя."
+
+#: protocols/sections.py
+msgid "The section still holds protocols: delete them in the protocol generator first."
+msgstr "В секции ещё есть протоколы: сначала удалите их в программе генерации протоколов."
+
+#: protocols/templates/protocols/_section_names.html
+msgctxt "protocol section"
+msgid "Name"
+msgstr "Название"
+
+#: protocols/templates/protocols/sections.html
+msgid "Each section is shown on the event's page under its own heading. To publish protocols into a section, enter its number in the protocol generator; a generator without that setting publishes into section 1."
+msgstr "Каждая секция показывается на странице мероприятия под своим заголовком. Чтобы публиковать протоколы в секцию, укажите её номер в программе генерации протоколов; программа без этой настройки публикует в секцию 1."
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "Section %(number)s"
+msgstr "Секция %(number)s"
+
+#: protocols/templates/protocols/sections.html
+#, python-format
+msgid "%(counter)s protocol"
+msgid_plural "%(counter)s protocols"
+msgstr[0] "%(counter)s протокол"
+msgstr[1] "%(counter)s протокола"
+msgstr[2] "%(counter)s протоколов"
+
+#: protocols/templates/protocols/sections.html
+msgid "To delete the section, delete its protocols in the protocol generator first."
+msgstr "Чтобы удалить секцию, сначала удалите её протоколы в программе генерации протоколов."
+
+#: protocols/templates/protocols/sections.html
+msgid "Delete section"
+msgstr "Удалить секцию"
+
+#: protocols/templates/protocols/sections.html
+msgid "New section"
+msgstr "Новая секция"
+
+#: protocols/templates/protocols/sections.html
+msgid "Add section"
+msgstr "Добавить секцию"
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s added."
+msgstr "Секция %(number)s добавлена."
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s deleted."
+msgstr "Секция %(number)s удалена."
+
+#: protocols/views.py
+#, python-format
+msgid "Section %(number)s renamed."
+msgstr "Секция %(number)s переименована."

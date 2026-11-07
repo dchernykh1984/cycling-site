@@ -35,6 +35,7 @@ from home.models import HomeCard
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeArticleComment
 from locations.models import Location
 from news.models import NewsArticle, NewsArticleComment
+from protocols.models import ProtocolSection
 from registrations.models import CompetitionRegistration, RegistrationCategory, Team
 from trainer.models import GroupRide, LiveRider, VirtualRide
 
@@ -99,6 +100,7 @@ SCHEMA_TARGETS = {
     "api.endpoints.event_photos.AlbumIn": ExternalAlbum,
     "api.endpoints.event_photos.AlbumPatchIn": ExternalAlbum,
     "api.endpoints.event_photos.DeclaredBibIn": DeclaredBib,
+    "api.endpoints.protocols.SectionIn": ProtocolSection,
     # A mark and an undo name a state (a fixed pattern) and an id; nothing lands in a text column.
     "api.endpoints.event_photos.DecisionIn": None,
     "api.endpoints.event_photos.UndoIn": None,
@@ -139,6 +141,10 @@ SCHEMA_TARGETS = {
 CHECKED_ELSEWHERE = {
     ("api.endpoints.gallery.AlbumIn", "title"): "the page's AlbumForm (max_length 200), 422 naming title.<lang>",
     ("api.endpoints.gallery.AlbumPatchIn", "title"): "the page's AlbumForm (max_length 200), 422 naming title.<lang>",
+    (
+        "api.endpoints.protocols.SectionIn",
+        "name",
+    ): "the page's SectionNamesForm (max_length 200), 422 naming name.<lang>",
     ("api.endpoints.content.KnowledgeArticleIn", "title"): "_validate_knowledge_payload, localized 422",
     ("api.endpoints.content.KnowledgeArticleIn", "category"): "_validate_knowledge_payload, localized 422",
     ("api.endpoints.content.KnowledgeArticleIn", "locale"): "_validate_locale, against the choices",

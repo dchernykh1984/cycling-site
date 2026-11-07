@@ -1,0 +1,11 @@
+{% load i18n %}
+<fieldset class="mb-2">
+  <legend class="fs-6 fw-semibold mb-1">{% trans "Name" context "protocol section" %}</legend>
+  {% for field in form %}
+  <div class="mb-2">
+    <label for="{{ field.id_for_label }}" class="form-label small mb-1">{{ field.label }}</label>
+    <input type="text" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default_if_none:'' }}" maxlength="{{ field.field.max_length }}" required class="form-control{% if field.errors %} is-invalid{% endif %}">
+    {% for error in field.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+  </div>
+  {% endfor %}
+</fieldset>
