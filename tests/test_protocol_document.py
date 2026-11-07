@@ -390,6 +390,95 @@ def test_unknown_section_kinds_are_drawn_by_their_shape():
     assert view["sections"][0]["sections"][0]["table"] is not None
 
 
+def _heat(title: str, *names: str) -> dict:
+    return {
+        "type": "table",
+        "title": title,
+        "columns": [
+            {"id": "place", "label": "Place", "role": "place"},
+            {"id": "name", "label": "Name", "role": "name"},
+        ],
+        "rows": [{"cells": {"place": str(i + 1), "name": name}} for i, name in enumerate(names)],
+    }
+
+
+def _ladder(*stages: tuple[str, list[dict]], title: str = "Men", group: str | None = None) -> dict:
+    ladder: dict = {"type": "ladder", "title": title, "sections": [{"title": t, "sections": h} for t, h in stages]}
+    if group:
+        ladder["group"] = group
+    return ladder
+
+
+def _semis_and_final(*final: dict, **ladder) -> dict:
+    semis = [_heat("1/2 final 1", "Ann", "Bea"), _heat("1/2 final 2", "Cid", "Dan")]
+    return _ladder(("1/2 final", semis), ("Final", list(final) or [_heat("Final")]), **ladder)
+
+
+def test_a_ladder_keeps_its_stages_in_riding_order_and_an_empty_heat_in_its_place():
+    view = rendering.build(_document(sections=[_semis_and_final()]), [])
+    ladder = view["sections"][0]
+    assert ladder["ladder"] is True
+    assert [stage["title"] for stage in ladder["sections"]] == ["1/2 final", "Final"]
+    semis, final = ladder["sections"]
+    assert [heat["vacant"] for heat in semis["sections"]] == [False, False]
+    assert final["sections"][0]["vacant"] is True
+    assert final["vacant"] is True
+    # Two heats feed the one beside them: they are joined by lines.
+    assert semis.get("feeds") is True
+    assert final.get("fed") is True
+
+
+def test_a_race_for_third_place_stands_together_with_the_final():
+    final_stage = [_heat("Final", "Ann", "Cid"), _heat("Small final", "Bea", "Dan")]
+    view = rendering.build(_document(sections=[_semis_and_final(*final_stage)]), [])
+    semis, final = view["sections"][0]["sections"]
+    assert final.get("together") is True
+    assert not semis.get("feeds")
+    assert not final.get("fed")
+
+
+def test_a_ladder_nobody_is_seated_in_is_not_drawn():
+    empty = _ladder(("1/2 final", [_heat("1/2 final 1"), _heat("1/2 final 2")]), ("Final", [_heat("Final")]))
+    assert rendering.build(_document(sections=[empty]), [])["sections"] == []
+
+
+@pytest.mark.parametrize(
+    "stage",
+    [
+        {"title": "A table of its own", "columns": [{"id": "a"}], "rows": [{"cells": {"a": "1"}}], "sections": []},
+        {"title": "No heats", "sections": []},
+        {"title": "Heats nested deeper", "sections": [{"sections": [_heat("Deep", "Ann")]}]},
+    ],
+)
+def test_a_ladder_shaped_otherwise_is_drawn_by_its_shape(stage):
+    # Drawn straight from the dictionary: the validator refuses the deepest of these on upload.
+    view = rendering.build({"schema": 1, "sections": [{"type": "ladder", "title": "Men", "sections": [stage]}]}, [])
+    assert all(not section.get("ladder") for section in view["sections"])
+
+
+def test_the_rows_of_a_ladder_belong_to_its_group():
+    sections = [_semis_and_final(group="M30"), _semis_and_final(title="Women", group="M40")]
+    view = rendering.build(_document(sections=sections), [])
+    assert [g["id"] for g in view["groups"]] == ["M30", "M40"]
+    semi = view["sections"][1]["sections"][0]["sections"][0]
+    assert {row["group"] for row in semi["table"]["rows"]} == {"M40"}
+
+
+def test_a_ladder_page_draws_each_stage_with_its_heats(client: Client, protocol):
+    protocol.document = parse(json.dumps(_document(sections=[_semis_and_final()])).encode())
+    protocol.save()
+    body = client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
+    assert body.count('class="protocol-section protocol-ladder-stage') == 2
+    assert '<h4 class="protocol-ladder-stage-title">Final</h4>' in body
+    # A heat named as its stage is not named twice; the others are.
+    assert '<h5 class="protocol-ladder-heat-title">Final</h5>' not in body
+    assert '<h5 class="protocol-ladder-heat-title">1/2 final 1</h5>' in body
+    assert body.count('class="protocol-ladder-slot feeds"') == 2
+    assert body.count('class="protocol-ladder-join"') == 1
+    assert body.count('class="protocol-ladder-vacant"') == 1
+    assert body.count('<table class="table table-sm protocol-table">') == 2
+
+
 def test_language_note_only_when_the_protocol_is_in_another_language(client: Client, protocol):
     assert "protocol-language" not in client.get(f"/ru/protocols/{protocol.pk}/").content.decode()
     assert "protocol-language" in client.get(f"/en/protocols/{protocol.pk}/").content.decode()

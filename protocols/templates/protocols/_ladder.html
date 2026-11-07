@@ -1,0 +1,17 @@
+{% comment %}A knockout (issue #454): its stages in the order they are ridden. protocol.css lays them side by side on a wide screen, each heat beside the two it was fed by, and as a list, the last stage first, on a phone.{% endcomment %}<section class="protocol-section protocol-ladder" id="{{ section.anchor }}">
+  {% if section.title %}<h3 class="protocol-section-title h5 mt-3">{{ section.title }}</h3>{% endif %}
+  <div class="protocol-ladder-stages">
+    {% for stage in section.sections %}<section class="protocol-section protocol-ladder-stage{% if stage.together %} together{% endif %}{% if stage.vacant %} is-vacant{% endif %}" id="{{ stage.anchor }}">
+      {% if stage.title %}<h4 class="protocol-ladder-stage-title">{{ stage.title }}</h4>{% else %}<div class="protocol-ladder-stage-title"></div>{% endif %}
+      <div class="protocol-ladder-heats">
+        {% for heat in stage.sections %}<div class="protocol-ladder-slot{% if stage.feeds %} feeds{% endif %}{% if heat.vacant %} is-vacant{% endif %}">
+          {% if stage.fed %}<span class="protocol-ladder-join" aria-hidden="true"></span>{% endif %}
+          <section class="protocol-section protocol-ladder-heat" id="{{ heat.anchor }}">
+            {% if heat.title and heat.title != stage.title %}<h5 class="protocol-ladder-heat-title">{{ heat.title }}</h5>{% endif %}
+            {% if heat.vacant %}<div class="protocol-ladder-vacant"></div>{% else %}{% include "protocols/_table.html" with table=heat.table section=heat %}{% endif %}
+          </section>
+        </div>{% endfor %}
+      </div>
+    </section>{% endfor %}
+  </div>
+</section>
