@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from itertools import pairwise
 from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
@@ -32,6 +33,10 @@ _KNOWN_ROLES = frozenset({"place", "bib", "name", "result", "gap", "group", "tea
 _CSS_WORD = re.compile(r"[^a-z0-9_-]")
 #: A heading that ends in its number ("Lap 6"): the sets of such columns are named by the range.
 _NUMBERED = re.compile(r"^(.*?)(\d+)$")
+#: A section of this type holds the stages of a knockout, each stage the tables of its heats, in
+#: the order they are ridden (issue #454). A wide screen draws the stages side by side, each heat
+#: beside the two it was fed by; a phone lists them, the last stage first.
+_LADDER = "ladder"
 
 
 _KNOWN_STATUSES = frozenset({"ok", "dnf", "dns", "dsq"})
@@ -262,6 +267,64 @@ def _body_html(columns: list[dict], rows: list[dict], width: int) -> SafeString:
     return mark_safe("".join(parts))  # noqa: S308 -- every value above went through escape()
 
 
+def _is_ladder(raw: dict) -> bool:
+    """A ladder has its shape: stages holding the tables of their heats, nothing nested deeper and no
+    table of its own. A section that only says it is one is drawn by its shape, as any other."""
+    stages = raw.get("sections", [])
+    return (
+        raw.get("type") == _LADDER
+        and not raw.get("columns")
+        and bool(stages)
+        and all(
+            not stage.get("columns")
+            and stage.get("sections")
+            and all(heat.get("columns") and not heat.get("sections") for heat in stage["sections"])
+            for stage in stages
+        )
+    )
+
+
+def _ladder(raw: dict, group: str | None, anchor: str, counter: list[int], off_toggles: frozenset[str]) -> dict | None:
+    stages = []
+    for stage_number, raw_stage in enumerate(raw["sections"], start=1):
+        stage_anchor = f"{anchor}-{stage_number}"
+        stage_group = raw_stage.get("group") or group
+        heats = []
+        for heat_number, raw_heat in enumerate(raw_stage["sections"], start=1):
+            table = _table(raw_heat, raw_heat.get("group") or stage_group, counter, off_toggles)
+            heats.append(
+                {
+                    "anchor": f"{stage_anchor}-{heat_number}",
+                    "title": raw_heat.get("title", ""),
+                    "table": table,
+                    "sections": [],
+                    # A heat nobody is seated in yet keeps its place as an empty box, so the stages
+                    # beside it still line up with the heats they were fed by.
+                    "vacant": not table["rows"],
+                }
+            )
+        stages.append(
+            {
+                "anchor": stage_anchor,
+                "title": raw_stage.get("title", ""),
+                "table": None,
+                "sections": heats,
+                "vacant": all(heat["vacant"] for heat in heats),
+            }
+        )
+    if all(stage["vacant"] for stage in stages):
+        return None
+    for before, after in pairwise(stages):
+        if len(before["sections"]) == 2 * len(after["sections"]):
+            # Each heat was fed by the two beside it: lines join them.
+            before["feeds"] = after["fed"] = True
+        elif len(before["sections"]) == len(after["sections"]):
+            # A stage that sends its riders on to every heat of the next -- a final and a race for
+            # third place -- has no pair to sit beside: its heats stand together in the middle.
+            after["together"] = True
+    return {"anchor": anchor, "title": raw.get("title", ""), "table": None, "sections": stages, "ladder": True}
+
+
 def _sections(
     raw_sections: list[dict], inherited_group: str | None, prefix: str, counter: list[int], off_toggles: frozenset[str]
 ) -> list:
@@ -269,6 +332,11 @@ def _sections(
     for number, raw in enumerate(raw_sections, start=1):
         anchor = f"{prefix}-{number}"
         group = raw.get("group") or inherited_group
+        if _is_ladder(raw):
+            ladder = _ladder(raw, group, anchor, counter, off_toggles)
+            if ladder:
+                sections.append(ladder)
+            continue
         section = {
             "anchor": anchor,
             "title": raw.get("title", ""),

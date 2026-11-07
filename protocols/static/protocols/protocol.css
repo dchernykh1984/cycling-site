@@ -211,3 +211,129 @@
 .protocol-js:not(.protocol-full) .protocol-table .prio-off {
   display: none;
 }
+
+/* A knockout (issue #454; protocols/_ladder.html): its stages arrive in the order they are ridden.
+ * A phone lists them the last stage first -- the final on top -- and leaves out the heats nobody is
+ * seated in yet. */
+.protocol-ladder-stages {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.protocol-ladder-stage-title {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.protocol-ladder-heat-title {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+@media (max-width: 991.98px) {
+  .protocol-ladder-stage.is-vacant,
+  .protocol-ladder-slot.is-vacant,
+  .protocol-ladder-join {
+    display: none;
+  }
+}
+
+/* A wide screen sets the stages side by side, first on the left. A stage's heats share its height
+ * evenly, so a heat sits level with the middle of the two before it, and a line joins them. Each
+ * table shows what fits its column (protocol-doc.js, fitColumns) -- place and name at the least;
+ * when even those do not fit, the ladder scrolls sideways inside its box, never the page. */
+@media (min-width: 992px) {
+  .protocol-ladder-stages {
+    --protocol-ladder-gap: 2rem;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--protocol-ladder-gap);
+    overflow-x: auto;
+  }
+  .protocol-ladder-stage {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 14rem;
+  }
+  /* A search that empties a stage keeps its column, so the others stay where they were. */
+  .protocol-ladder-stage.is-empty {
+    display: flex;
+  }
+  .protocol-ladder-stage-title {
+    min-height: 1.5em;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .protocol-ladder-heat-title {
+    text-align: center;
+  }
+  .protocol-ladder-heats {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+  }
+  .protocol-ladder-slot {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .protocol-ladder-stage.together .protocol-ladder-heats {
+    justify-content: center;
+    gap: 1rem;
+  }
+  .protocol-ladder-stage.together .protocol-ladder-slot {
+    flex: 0 0 auto;
+  }
+  /* From a heat to the middle of the gap... */
+  .protocol-ladder-slot.feeds::after {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--protocol-ladder-gap) / -2);
+    width: calc(var(--protocol-ladder-gap) / 2);
+    border-top: 1px solid var(--bs-secondary-color);
+    content: "";
+  }
+  /* ...down the gap between the two heats that feed the next one, and across to it. */
+  .protocol-ladder-join {
+    position: absolute;
+    top: 25%;
+    bottom: 25%;
+    left: calc(var(--protocol-ladder-gap) / -2);
+    border-left: 1px solid var(--bs-secondary-color);
+  }
+  .protocol-ladder-join::after {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: calc(var(--protocol-ladder-gap) / 2);
+    border-top: 1px solid var(--bs-secondary-color);
+    content: "";
+  }
+  /* A heat the search emptied takes its lines away with it. */
+  .protocol-ladder-slot:has(> .protocol-section.is-empty)::after,
+  .protocol-ladder-slot:has(> .protocol-section.is-empty) > .protocol-ladder-join {
+    display: none;
+  }
+  .protocol-ladder-vacant {
+    min-height: 4rem;
+    border: 1px dashed var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+  }
+  /* A column of a ladder is as narrow as a phone: its tables are set as tight as a phone's. */
+  .protocol-ladder .protocol-table {
+    font-size: 0.875rem;
+  }
+  .protocol-ladder .protocol-table th,
+  .protocol-ladder .protocol-table td {
+    padding: 0.3rem 0.25rem;
+  }
+  .protocol-ladder .protocol-table th {
+    font-size: 0.75rem;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+}
