@@ -7,7 +7,8 @@
 **Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
 `tests/test_protocol_upload.py`, `tests/test_protocol_sections.py`, `tests/e2e/test_competition_result_emphasis.py`,
 `tests/e2e/test_protocol_sections.py`,
-`tests/e2e/test_protocol_live.py`, `tests/e2e/test_protocol_document.py`, `api/tests.py`
+`tests/e2e/test_protocol_live.py`, `tests/e2e/test_protocol_document.py`, `tests/e2e/test_protocol_ladder.py`,
+`api/tests.py`
 (protocol endpoints)
 **Related**: [events](events.md), [API](api.md); the `protocols` skill holds the security detail
 
@@ -23,6 +24,8 @@ as it was written, in a sandboxed frame. While results are live the page follows
 The document describes itself -- sections, columns with their labels, roles and priorities, cells,
 header and footer lines, groups and column switches -- so a new column, header field or kind of
 table needs a change in the generator only; the site knows nothing of laps, attempts or referees.
+One kind of section has a layout of its own: a ladder, the stages of a knockout with the tables of
+their heats (issue #454).
 
 ## User Scenarios
 
@@ -99,6 +102,17 @@ table needs a change in the generator only; the site knows nothing of laps, atte
 3. **Given** a live drawn protocol, **Then** a newer upload swaps in its tables and keeps the reader's
    search, group and switches by their ids; a group that disappeared falls back to "All categories".
 4. **Given** a protocol in another language than the page, **Then** the page says which.
+5. **Given** a ladder (a section of type `ladder`: its stages in the order ridden, each holding the
+   tables of its heats; issue #454) on a desktop, from 992px, **Then** its stages stand side by side,
+   the first on the left; a stage's heats share its height evenly, each level with the middle of the
+   two before it, joined to them by thin lines where every heat had exactly two; a stage with as
+   many heats as the one before stands them together in the middle, without lines. A heat nobody is
+   seated in is an empty box; a heat named as its stage does not repeat the name. Each table shows
+   what fits its column as any table fits its box (story 3.1), place and name at the least, set as
+   tight as on a phone; when the stages do not fit, the ladder scrolls sideways inside its box. A
+   search keeps every stage in its place.
+6. **Given** a ladder on a phone, **Then** its stages are a list, the last first, each under its
+   name, without the empty heats and without the stages that hold nothing but them.
 
 ### Story 4 -- Arrange protocols in sections (P2)
 
@@ -158,13 +172,18 @@ table needs a change in the generator only; the site knows nothing of laps, atte
   form of the row it was drawn from (`X-Protocol-*`); a protocol without a document answers empty.
 - **FR-PRO-011**: A column with no heading and no value in any row is not drawn.
 - **FR-PRO-012**: A section with no rows -- a group nobody rode in -- is not drawn, nor a section
-  left with nothing in it.
+  left with nothing in it. In a ladder, a heat with no rows keeps its place as an empty box on a
+  desktop; a ladder with no rows at all is not drawn.
 - **FR-PRO-013**: The document's header -- the conditions of the race, the weather above all -- is
   drawn in a box of its own above the tables; its footer -- the people who ran the race -- as one
   line of smaller type under them, a block of the generator's own text keeping a line of its own.
   Date, place, course and sponsors are the event page's, and the generators no longer send them.
 - **FR-PRO-014**: Deleting a protocol section and publishing into it take turns on the event's row, so a
   protocol never lands in a section being deleted.
+- **FR-PRO-015**: A section of type `ladder` is drawn as a ladder only when it has the shape --
+  stages with the tables of their heats, nothing nested deeper, no table of its own; otherwise it
+  is drawn by its shape, as any unknown kind. The layout is the stylesheet's alone: no script
+  places a heat, so nothing moves after the page is drawn.
 
 ## Key Entities
 
