@@ -94,6 +94,7 @@ takes a skin's colours. To restyle it further, target these classes from `skin.c
 | `.protocol-line` | a second line a switch shows and hides (a lap's statistics) |
 | `.protocol-note` | the always-visible note under a row (reasons for a DSQ) |
 | `.protocol-row-expand`, `.protocol-details` | the button and the row of columns that do not fit |
+| `.protocol-ladder`, `.protocol-ladder-stages`, `.protocol-ladder-stage`, `.protocol-ladder-stage-title`, `.protocol-ladder-slot`, `.protocol-ladder-heat`, `.protocol-ladder-heat-title`, `.protocol-ladder-join`, `.protocol-ladder-vacant` | a knockout: its stages, a heat's place in a stage, the lines between heats, a heat nobody is seated in yet |
 
 Do not hide columns from a skin: which columns a phone shows is the protocol's choice (column
 priorities), and the header groups are recounted only for columns the script hides.

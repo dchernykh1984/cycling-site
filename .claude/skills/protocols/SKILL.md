@@ -37,6 +37,16 @@ delete; without it, section 1). One protocol of each type per section; a section
 have is a 400. A deleted section keeps its row, so its number is never given again, and a section
 holding protocols is not deleted. Start lists, timings and live stats stay one per event.
 
+## Ladders (issue #454)
+
+A section of type `ladder` holds the stages of a knockout as its sections, in the order ridden, and
+each stage the tables of its heats (FinishProtocolGenerator's finals). `rendering.py` recognises the
+shape (anything else is drawn by its shape), keeps a heat without rows as an empty box and marks the
+stages for the lines; `_ladder.html` writes them; `protocol.css` alone lays them out -- side by side
+from 992px, each heat level with the two before it, a list with the final first below. The script is
+untouched: `fitColumns` fits each heat's table into its column like any other. A heat's time in the
+finals has priority 4 (the generator's choice), so a narrow column keeps place and name.
+
 ## It is somebody else's HTML on our domain
 
 So it is served under a deliberately narrow policy (`protocols/views.py`): `default-src 'none'`,
