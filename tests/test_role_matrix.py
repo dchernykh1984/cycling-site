@@ -49,6 +49,7 @@ EVENTS = {
     "public event offers":          "nnnnn   nnnnn yynnn     yynnn     yynyy   yynyy   yynyy",
     "list: moderation link":        "n       n     n         y         y       y       y",
     "edit another's event":         "403     403   403       403       200     200     200",
+    "another's protocol sections":  "302     403   403       403       200     200     200",
     "edit own event: organizer's":  "-       n     n         y         y       y       y",
     # manages a public event, reviews and opens a pending one, sees and lists a hidden one
     "event visibility":             "nnnnn   nnnnn nnnnn     nyynn     yyyyy   yyyyy   yyyyy",
@@ -62,6 +63,7 @@ EVENTS_API = {
     "own event: top":               "-       403   403       403       200     200     200",
     "own event: hidden":            "-       403   403       403       200     200     200",
     "another's pending event":      "404     404   404       404       200     200     200",
+    "another's protocol sections":  "401     404   404       404       200     200     200",
 }
 
 NEWS_AND_KNOWLEDGE = {
@@ -217,6 +219,10 @@ def edit_others_event(site, v):
     return str(v.browser.get(f"/en/calendar/{site.public.pk}/edit/").status_code)
 
 
+def others_protocol_sections(site, v):
+    return str(v.browser.get(f"/en/protocols/event/{site.public.pk}/sections/").status_code)
+
+
 def edit_own_event(site, v):
     if not v.user.is_authenticated:
         return "-"
@@ -262,6 +268,11 @@ def api_own_event(field):
 
 def api_pending_event(site, v):
     return str(v.program.get(f"/api/v1/competitions/{site.pending.pk}", **v.headers).status_code)
+
+
+def api_others_protocol_sections(site, v):
+    url = f"/api/v1/protocols/competitions/{site.public.pk}/sections"
+    return str(v.program.get(url, **v.headers).status_code)
 
 
 # -- news and knowledge ------------------------------------------------------------------------------
@@ -532,6 +543,7 @@ class RoleMatrixTests(TestCase):
                 "public event offers": public_event_offers,
                 "list: moderation link": list_moderation_link,
                 "edit another's event": edit_others_event,
+                "another's protocol sections": others_protocol_sections,
                 "edit own event: organizer's": edit_own_event,
                 "event visibility": event_visibility,
                 "moderation banner": moderation_banner,
@@ -546,6 +558,7 @@ class RoleMatrixTests(TestCase):
                 "own event: top": api_own_event("is_top"),
                 "own event: hidden": api_own_event("is_hidden"),
                 "another's pending event": api_pending_event,
+                "another's protocol sections": api_others_protocol_sections,
             },
             EVENTS_API,
         )
