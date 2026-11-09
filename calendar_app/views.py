@@ -27,7 +27,7 @@ from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
 from modeltranslation.utils import build_localized_fieldname
 
-from accounts import managing, roles
+from accounts import managing, roles, virtual_members
 from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
@@ -957,10 +957,13 @@ class CompetitionDetailView(View):
             already_registered = CompetitionRegistration.objects.filter(
                 competition=competition, user=request.user
             ).exists()
-            # Registered oneself, one may still register the members one manages (issue #315),
-            # on the page for several, which a relay does not have.
+            # Registered oneself, one may still register the members one manages (issue #315) and the
+            # people without an account one added (issue #438), on the page for several, which a relay
+            # does not have.
             registers_others = (
-                already_registered and not competition.relay_enabled and bool(managing.member_ids(request.user))
+                already_registered
+                and not competition.relay_enabled
+                and (bool(managing.member_ids(request.user)) or virtual_members.of(request.user).exists())
             )
 
         comments = competition.comments.select_related("author")

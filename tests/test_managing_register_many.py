@@ -343,6 +343,15 @@ class EventPageTests(TestCase):
         self.assertContains(page, f'href="{self.register}"')
         self.assertContains(page, "Register others")
 
+    def test_registered_oneself_one_may_still_register_the_people_without_an_account_one_added(self):
+        VirtualMember.objects.create(
+            owner=self.coach, last_name="Ivanova", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+        )
+        page = self.client.get(self.page)
+        self.assertContains(page, "You are registered")
+        self.assertContains(page, f'href="{self.register}"')
+        self.assertContains(page, "Register others")
+
     def test_a_relay_offers_no_page_for_several(self):
         _manage(self.coach, self.anna)
         relay = make_relay_competition()

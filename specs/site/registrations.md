@@ -54,7 +54,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    **Then** the page for several lists them after the members, each marked "no account", and enters
    them as it enters a member -- in a self-only event too, from their own names, gender and date of
    birth; the entry keeps the person (`virtual_member`) and, as who submitted it (`registered_by`),
-   the member -- no account of its own -- and lets nobody into an invite-only event.
+   the member -- no account of its own -- and lets nobody into an invite-only event. Entered
+   themselves, the member still finds "Register others" on the event page, as a manager of members
+   does.
 8. **Given** the page for several (issue #439), **Then** a tick only chooses a person: their details
    stay folded under a button of their own ("Show details", `aria-expanded`), and a person ticked and
    never opened is entered with their profile's data; the category they go into stands beside the
