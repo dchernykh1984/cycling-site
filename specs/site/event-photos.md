@@ -76,6 +76,10 @@ Thumbnails come from Dropbox and are kept by the site; a click opens the photo i
 7. **Given** a member who added people without accounts ([accounts](accounts.md), issue #438),
    **Then** those people's entries appear among the member's as a managed member's do, titled with
    the person's name, and the member marks their photos; nobody else sees them.
+8. **Given** a personal album -- a registration's or a named bib's -- without a single photo of its
+   person (a start not ridden, a bib in no picture), **Then** it has no card, on the event's overview
+   or in the profile; `GET /event-photos/me/registrations` still lists it, with its counts at 0
+   (`tests/test_event_photos.py::PageAndApiTests::test_an_album_with_no_photo_is_shown_neither_on_the_event_page_nor_in_the_profile`).
 
 ### Story 4 -- A member names their own bib (P2)
 
@@ -96,9 +100,10 @@ start list's bib: marks still do.
    review or in dispute -- **Then** no bib is named there and one named before is not shown, until the
    binding goes. The bib search stays open to everybody as it was.
 5. **Given** a member who added people without accounts, **Then** the overview offers them a bib for
-   each such person too, on the same terms, and its card says the member named it; the API takes the
-   person's id (`person`) on `PUT` and `DELETE .../my-bib`, and `GET /me/declared-bibs` says whose
-   each one is.
+   each such person too, on the same terms -- its list holds only the people the start lists gave no
+   bib at the event, and with nobody left the form is not drawn -- and its card says the member named
+   it; the API takes the person's id (`person`) on `PUT` and `DELETE .../my-bib`, and
+   `GET /me/declared-bibs` says whose each one is.
 
 ## Functional Requirements
 
