@@ -28,7 +28,7 @@ def event_photo_section(context, competition):
 def my_race_photos(context):
     """Cards of the personal albums the member looks after -- their own and their members'
     registrations, and the bibs they named themselves -- at events with albums they may see, newest
-    first."""
+    first; an album without a single photo has none."""
     user = context["request"].user
     if not user.is_authenticated:
         return []
