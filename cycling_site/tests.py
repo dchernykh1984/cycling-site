@@ -285,7 +285,15 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         ):
             out = sanitize_rich_html(f'<a href="{href}">x</a>')
             self.assertIn(f'href="{href}"', out, href)
+
+    def test_a_link_to_another_page_opens_in_a_new_tab_and_one_to_a_part_of_this_page_stays(self):
+        for href in ("https://x.com", "/ru/calendar/1/", "?q=1", "mailto:a@b.com"):
+            out = sanitize_rich_html(f'<a href="{href}">x</a>')
             self.assertIn('target="_blank"', out, href)
+            self.assertIn('rel="noopener"', out, href)
+        # a target the author wrote is dropped as well: the page decides
+        out = sanitize_rich_html('<a href="#section-2" target="_blank" rel="opener">x</a>')
+        self.assertEqual(out, '<a href="#section-2">x</a>')
 
     def test_data_href_dropped_on_anchor(self):
         out = sanitize_rich_html('<a href="data:text/html,<script>alert(1)</script>">x</a>')

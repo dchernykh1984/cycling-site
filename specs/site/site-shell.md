@@ -186,8 +186,9 @@ who asked for less motion (issue #434). Record labels keep the date and demo mar
   and what deleting them takes away ([accounts](accounts.md), issue #438) -- and links to the
   contact form.
 - **FR-SHL-003**: All rich text (home cards, articles, descriptions) goes through one sanitiser:
-  scripts and dangerous links dropped, links open in a new tab, a limited set of formatting, image
-  size/float and text colour kept.
+  scripts and dangerous links dropped, a link to another page opens in a new tab while one to a
+  part of the same page (`#...`) stays on it, a limited set of formatting, image size/float and text
+  colour kept (`tests/e2e/test_article_contents.py`).
 - **FR-SHL-004**: The navbar stays on top with a solid background while scrolling. Its open menu
   wraps whole links and tool groups when needed instead of widening the page, in every locale
   and skin (`tests/e2e/test_interface_rules.py::test_no_tab_scrolls_sideways`).
