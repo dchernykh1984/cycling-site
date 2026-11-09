@@ -387,6 +387,12 @@ def declared_photos(declared) -> QuerySet:
     return _bib_album(declared.competition_id, [declared.bib])
 
 
+def with_photos(cards: list[dict]) -> list[dict]:
+    """The personal albums worth a card: one without a single photo of its person -- a start that was
+    not ridden, a bib in no picture -- is left out, on the event's page and in the profile alike."""
+    return [card for card in cards if card["count"]]
+
+
 def declared_summary(declared) -> dict:
     """A named bib's card, as a registration's card shows it."""
     summary = _album_summary(declared_photos(declared), declared.competition_id)
