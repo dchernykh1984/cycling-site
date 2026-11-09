@@ -48,7 +48,7 @@ sign-in methods: it is about the account, not about an event.{% endcomment %}
                         <tr>
                             <td data-label="{% trans 'Last name' %}">{{ person.last_name }}</td>
                             <td data-label="{% trans 'First name' %}">{{ person.first_name }}</td>
-                            <td class="text-nowrap" data-label="{% trans 'Date of birth' %}">{{ person.birth_date|date:"SHORT_DATE_FORMAT" }}</td>
+                            <td class="text-nowrap" data-label="{% trans 'Date of birth' %}">{{ person.birth_date|date:"d.m.Y" }}</td>
                             <td data-label="{% trans 'Gender' %}">{{ person.get_gender_display }}</td>
                             <td data-label="{% trans 'City' %}">{{ person.city }}</td>
                             <td data-label="{% trans 'Team' %}">{{ person.team }}</td>
@@ -130,7 +130,7 @@ sign-in methods: it is about the account, not about an event.{% endcomment %}
                 <code class="user-select-all text-break">{{ managing.invite_url }}</code>
                 {% include "_share_button.html" with share_url=managing.invite_url %}
             </div>
-            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Valid until {{ date }}.{% endblocktrans %}</p>
+            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"d.m.Y" %}Valid until {{ date }}.{% endblocktrans %}</p>
             <div class="d-flex flex-wrap gap-2">
                 <form method="post" action="{% url 'account_managing_issue' %}"
                       onsubmit="return confirm('{% filter escapejs %}{% trans "Make a new link? This one will stop working; the requests already waiting stay." %}{% endfilter %}')">
@@ -145,7 +145,7 @@ sign-in methods: it is about the account, not about an event.{% endcomment %}
             </div>
             {% else %}
             {% if managing.invite %}
-            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"SHORT_DATE_FORMAT" %}Your link expired on {{ date }}.{% endblocktrans %}</p>
+            <p class="text-muted small mb-2">{% blocktrans with date=managing.invite.expires_at|date:"d.m.Y" %}Your link expired on {{ date }}.{% endblocktrans %}</p>
             {% endif %}
             {% if managing.no_link %}
             <p class="small mb-0">{{ managing.no_link }} <a href="{% url 'account_profile_edit' %}">{% trans "Edit profile" %}</a></p>
