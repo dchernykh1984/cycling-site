@@ -51,9 +51,9 @@ def describe_events(queryset):
     result = []
     for event in events:
         disciplines = list(event.disciplines.all())
-        dates = date_format(event.date_start, "SHORT_DATE_FORMAT")
+        dates = date_format(event.date_start, "d.m.Y")
         if event.date_end and event.date_end != event.date_start:
-            dates += " - " + date_format(event.date_end, "SHORT_DATE_FORMAT")
+            dates += " - " + date_format(event.date_end, "d.m.Y")
         place = ", ".join(
             locations[path].name
             for path in sorted(locations)

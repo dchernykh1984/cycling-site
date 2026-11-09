@@ -265,7 +265,7 @@
                         <tbody>
                             {% for best in virtual_ride.routes %}
                             <tr>
-                                <td>{{ best.route_name }}<div class="text-muted">{{ best.finished_at|date:"SHORT_DATE_FORMAT" }}</div></td>
+                                <td>{{ best.route_name }}<div class="text-muted">{{ best.finished_at|date:"d.m.Y" }}</div></td>
                                 <td class="text-end">{{ best.time_label }}{% if best.best_avg_power_w %}<div class="text-muted">{{ best.best_avg_power_w }} {% trans "W" context "watts" %}</div>{% endif %}</td>
                                 <td class="text-end">{{ best.attempts }}</td>
                             </tr>
@@ -286,7 +286,7 @@
                 <ul class="list-unstyled small mb-0">
                     {% for ride in virtual_ride.recent %}
                     <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
-                        <span><span class="text-muted">{{ ride.finished_at|date:"SHORT_DATE_FORMAT" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}</span>
+                        <span><span class="text-muted">{{ ride.finished_at|date:"d.m.Y" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}</span>
                         <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">View on Strava</a>{% endif %}</span>
                     </li>
                     {% endfor %}

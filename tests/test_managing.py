@@ -288,6 +288,17 @@ class ProfileSectionTests(TestCase):
         with translation.override("en"):
             return self.client.post(reverse(name, args=args))
 
+    def test_the_link_and_a_member_s_birthday_are_written_day_first_in_every_language(self):
+        # "12/09/2026" was the Kazakh and English page's date: Django has no Kazakh format to fall back on
+        invite = managing.issue_invite(self.coach)
+        managing.ask(self.anna, invite.key)
+        managing.accept(self.coach, self.anna.pk)
+        for language in ("ru", "kk", "en"):
+            with self.subTest(language=language):
+                page = self.client.get(f"/{language}/accounts/profile/")
+                self.assertContains(page, f"{timezone.localtime(invite.expires_at):%d.%m.%Y}")
+                self.assertContains(page, "17.04.2009")
+
     def test_a_confirmed_member_sees_both_sections_and_an_unconfirmed_one_neither(self):
         response = self.client.get(self.profile)
         self.assertContains(response, 'id="my-managers"')
@@ -354,7 +365,7 @@ class ProfileSectionTests(TestCase):
         self.assertTrue(managing.acts_for(self.coach, self.anna.pk))
         page = self.client.get(self.profile)
         self.assertNotContains(page, "Waiting for your answer")
-        for text in ("Ivanova", "Anna", "04/17/2009", "Female", "Taraz", "Snow Leopards"):
+        for text in ("Ivanova", "Anna", "17.04.2009", "Female", "Taraz", "Snow Leopards"):
             self.assertContains(page, text)
         self.assertNotContains(page, "anna@example.com")
 
