@@ -345,6 +345,14 @@ def has_bound_bib(person, competition) -> bool:
     return _bound_to_members(competition=competition, **_whose_registration(person)).exists()
 
 
+def without_bound_bib(people: QuerySet, competition) -> QuerySet:
+    """Those of ``people`` -- persons without an account -- the start lists bound no bib to at the event:
+    ``has_bound_bib`` for many at once, in one query."""
+    return people.exclude(
+        Exists(_bound_to_members(competition=competition, registration__virtual_member=OuterRef("pk")))
+    )
+
+
 def declared_in_force(declared: QuerySet) -> QuerySet:
     """The named bibs that still stand: the start lists bound no bib to their people at those events."""
     return declared.exclude(
