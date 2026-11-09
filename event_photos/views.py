@@ -178,6 +178,7 @@ def event_photos(request, pk):
                 [actions.registration_summary(r) for r in my_registrations(request.user, competition)]
             ),
             "declared_cards": actions.with_photos(declared_cards),
+            # all of them: the field keeps the member's bib, and "Remove", while no photo carries it yet
             "declare_form": _declare_form(request.user, competition, declared_cards),
             "added_people": _added_people(request.user, competition),
             # the same field as the member's own bib's, under ids of its own beside it
