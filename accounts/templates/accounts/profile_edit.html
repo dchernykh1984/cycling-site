@@ -10,21 +10,21 @@
         <form method="post">
             {% csrf_token %}
             <div class="mb-3">
-                <label class="form-label">{% trans "First name" %}</label>
+                <label class="form-label" for="id_first_name">{% trans "First name" %}</label>
                 {{ form.first_name.errors }}
-                <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+                <input type="text" name="first_name" id="id_first_name" value="{{ form.first_name.value|default:'' }}"
                        class="form-control{% if form.first_name.errors %} is-invalid{% endif %}">
             </div>
             <div class="mb-3">
-                <label class="form-label">{% trans "Last name" %}</label>
+                <label class="form-label" for="id_last_name">{% trans "Last name" %}</label>
                 {{ form.last_name.errors }}
-                <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+                <input type="text" name="last_name" id="id_last_name" value="{{ form.last_name.value|default:'' }}"
                        class="form-control{% if form.last_name.errors %} is-invalid{% endif %}">
             </div>
             <div class="mb-3">
-                <label class="form-label">{% trans "Gender" %}</label>
+                <label class="form-label" id="gender-label">{% trans "Gender" %}</label>
                 {{ form.gender.errors }}
-                <div>
+                <div role="radiogroup" aria-labelledby="gender-label">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" name="gender" id="gender_m" value="M"
                                {% if form.gender.value == "M" %}checked{% endif %}>
@@ -38,29 +38,29 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">{% trans "Date of birth" %}</label>
+                <label class="form-label" for="id_birth_date">{% trans "Date of birth" %}</label>
                 {{ form.birth_date.errors }}
-                <input type="date" name="birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
+                <input type="date" name="birth_date" id="id_birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
                        class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}">
             </div>
             <div class="mb-3">
-                <label class="form-label">{% trans "Team" %}</label>
+                <label class="form-label" for="id_team">{% trans "Team" %}</label>
                 {{ form.team.errors }}
-                <input type="text" name="team" value="{{ form.team.value|default:'' }}"
+                <input type="text" name="team" id="id_team" value="{{ form.team.value|default:'' }}"
                        class="form-control{% if form.team.errors %} is-invalid{% endif %}">
                 <div class="form-text">{% trans "Prefilled when you register for an event." %}</div>
             </div>
             <div class="mb-3">
-                <label class="form-label">{% trans "City" %}</label>
+                <label class="form-label" for="id_city">{% trans "City" %}</label>
                 {{ form.city.errors }}
-                <input type="text" name="city" value="{{ form.city.value|default:'' }}"
+                <input type="text" name="city" id="id_city" value="{{ form.city.value|default:'' }}"
                        class="form-control{% if form.city.errors %} is-invalid{% endif %}">
                 <div class="form-text">{% trans "Prefilled when you register for an event." %}</div>
             </div>
             <div class="mb-3" id="strava-link">
-                <label class="form-label">{% trans "Strava link" %}</label>
+                <label class="form-label" for="id_strava_link">{% trans "Strava link" %}</label>
                 {{ form.strava_link.errors }}
-                <input type="url" name="strava_link" value="{{ form.strava_link.value|default:'' }}"
+                <input type="url" name="strava_link" id="id_strava_link" value="{{ form.strava_link.value|default:'' }}"
                        class="form-control{% if form.strava_link.errors %} is-invalid{% endif %}"
                        placeholder="https://www.strava.com/athletes/...">
                 <div class="form-text">{% trans "Prefilled into the registration field for events that collect Strava links." %}</div>
