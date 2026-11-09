@@ -232,6 +232,28 @@ class PhotoTests(EventPhotosTestCase):
         self.assertIsNotNone(field)
         self.assertIn(f'maxlength="{BIB_MAX_LENGTH}"', field.group(0))
 
+    def test_the_page_offers_a_bib_only_for_the_people_the_start_list_gave_none(self):
+        entry = self._registration()
+        entry.virtual_member = self.kid
+        entry.save(update_fields=["virtual_member"])
+        IssuedBib.objects.create(competition=self.race, registration=entry, bib="9")
+        other = VirtualMember.objects.create(
+            owner=self.coach, last_name="Ivanov", first_name="Vanya", gender="M", birth_date=datetime.date(2018, 6, 6)
+        )
+        self.client.force_login(self.coach)
+        with translation.override("en"):
+            url = reverse("event_photos:event", args=[self.race.pk])
+        page = self.client.get(url)
+        self.assertEqual(page.context["added_people"], [other])
+        # everybody the coach added has a bib from the start list: the form is gone
+        entry = self._registration(last="Ivanov")
+        entry.virtual_member = other
+        entry.save(update_fields=["virtual_member"])
+        IssuedBib.objects.create(competition=self.race, registration=entry, bib="11")
+        page = self.client.get(url)
+        self.assertEqual(page.context["added_people"], [])
+        self.assertNotContains(page, 'id="added-person"')
+
     def test_nobody_names_a_bib_for_somebody_elses_person(self):
         response = self._declare(self.kid.pk, "7", user=self.stranger)
         self.assertEqual(response.status_code, 404)

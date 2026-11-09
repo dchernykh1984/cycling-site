@@ -87,10 +87,11 @@ def _declare_form(user, competition, declared_cards) -> DeclaredBibForm | None:
 
 def _added_people(user, competition) -> list:
     """The people without accounts ``user`` added (issue #438), offered a named bib at an event with an
-    indexed album; nobody where there is none."""
+    indexed album -- those the start lists gave no bib there, the only ones a bib may be named for; nobody
+    where there is no such album, and then the form is not drawn."""
     if not user.is_authenticated or not actions.has_indexed_album(competition):
         return []
-    return list(virtual_members.of(user))
+    return list(actions.without_bound_bib(virtual_members.of(user), competition))
 
 
 def _with_links(photos, competition):
