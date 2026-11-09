@@ -241,6 +241,14 @@ class GalleryEventDetailsTests(TestCase):
                 self.assertEqual(len(choice["details"]), 5)
                 self.assertIn(f"City {language.upper()}", str(choice["details"]))
 
+    def test_the_event_s_dates_read_day_first_in_every_language(self):
+        first, last = f"{DAY:%d.%m.%Y}", f"{DAY + datetime.timedelta(days=2):%d.%m.%Y}"
+        self.client.force_login(self.admin)
+        for language in ("ru", "kk", "en"):
+            with self.subTest(language=language):
+                choice = self.client.get(f"/{language}/gallery/events/", {"q": "Event"}).json()["results"][0]
+                self.assertEqual(choice["details"][0]["value"], f"{first} - {last}")
+
     def test_metadata_disappears_when_the_event_stops_being_public(self):
         self.event.is_hidden = True
         self.event.save(update_fields=["is_hidden"])
