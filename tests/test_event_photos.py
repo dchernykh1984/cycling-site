@@ -881,6 +881,8 @@ class PageAndApiTests(EventPhotosTestCase):
 
     def test_profile_cards_follow_event_visibility_and_tell_registrations_apart(self):
         from django.urls import reverse
+        from django.utils import translation
+        from django.utils.translation import gettext
 
         second = self._registration()  # the same person entered for another distance
         second.user = self.athlete
@@ -898,11 +900,13 @@ class PageAndApiTests(EventPhotosTestCase):
             )
         )
         self.client.force_login(self.athlete)
-        profile = self.client.get(reverse("account_profile"))
+        with translation.override("ru"):
+            profile = self.client.get(reverse("account_profile"))
+            bib = gettext("bib")
         self.assertContains(profile, self._url("registration", self.reg.pk))
         self.assertContains(profile, self._url("registration", second.pk))
-        self.assertContains(profile, "12")  # the first card names its bib
-        self.assertContains(profile, "13")  # and the second its own
+        self.assertContains(profile, f"{bib} 12")  # each card names its own bib
+        self.assertContains(profile, f"{bib} 13")
         self.assertEqual(actions.registration_summary(second)["count"], 1)
         self.assertEqual(actions.registration_summary(self.reg)["count"], 2)
         self.race.is_hidden = True
