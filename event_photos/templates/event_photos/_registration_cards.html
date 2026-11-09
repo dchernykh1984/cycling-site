@@ -1,6 +1,7 @@
 {% load i18n event_photos_tags %}
 {% comment %}One card per personal album -- a registration's, or a bib a member named themselves: my own
-cover and counts, never the photographer's. Shared by the profile and the event page.{% endcomment %}
+cover and counts, never the photographer's. Shared by the profile and the event page, which leave out
+an album without a single photo (actions.with_photos).{% endcomment %}
 <div class="gallery-grid event-photo-cards">
   {% for card in cards %}
   {% with reg=card.registration declared=card.declared %}
