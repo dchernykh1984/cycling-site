@@ -52,6 +52,25 @@ def test_a_line_of_the_contents_brings_its_section_into_view_below_the_menu(page
     _below_the_menu(page, heading)
 
 
+@pytest.mark.django_db(transaction=True)
+def test_a_link_in_the_text_to_another_section_opens_it_on_the_same_page(page: Page, live_server, knowledge_index):
+    sections = "".join(f"<h2>Part {n}</h2>{PARAGRAPH}" for n in range(1, 5))
+    article = KnowledgeArticle.objects.create(
+        title="Cross-references",
+        locale="ru",
+        body=f'<p>[toc]</p><p>Sign up first, <a href="#section-part-4">as in part 4</a>.</p>{sections}',
+    )
+    page.goto(f"{live_server.url}{article.get_absolute_url()}")
+    opened = []
+    page.context.on("page", lambda new_page: opened.append(new_page))
+    page.get_by_role("link", name="as in part 4").click()
+    expect(page).to_have_url(re.compile(r"#section-part-4$"))
+    heading = page.locator("#section-part-4")
+    expect(heading).to_be_in_viewport()
+    _below_the_menu(page, heading)
+    assert opened == [], "the link opened a new tab"
+
+
 def _below_the_menu(page, heading):
     menu_bottom = page.locator("nav.navbar").evaluate("nav => nav.getBoundingClientRect().bottom")
     box = heading.bounding_box()

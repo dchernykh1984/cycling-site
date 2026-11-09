@@ -218,8 +218,11 @@ def _clean_attrs_and_links(tag) -> bool:
             del tag["href"]
         else:
             tag["href"] = href
-            tag["rel"] = "noopener"
-            tag["target"] = "_blank"
+            # A link to a part of the same page -- "as in section 2" -- stays on it; any other opens
+            # in a new tab, so the reader keeps their place.
+            if not href.startswith("#"):
+                tag["rel"] = "noopener"
+                tag["target"] = "_blank"
         _apply_class_and_style(tag, None)
         return True
     style_allowed = _SPAN_STYLE if name == "span" else None
