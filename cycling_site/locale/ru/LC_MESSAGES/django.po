@@ -5523,3 +5523,7 @@ msgstr "Сохранить секцию %(number)s"
 #, python-format
 msgid "Delete section %(number)s"
 msgstr "Удалить секцию %(number)s"
+
+#: accounts/templates/socialaccount/snippets/login.html:13
+msgid "Or sign in with another service"
+msgstr "Или войдите через другой сервис"

@@ -5514,3 +5514,7 @@ msgstr "%(number)s-бөлімді сақтау"
 #, python-format
 msgid "Delete section %(number)s"
 msgstr "%(number)s-бөлімді жою"
+
+#: accounts/templates/socialaccount/snippets/login.html:13
+msgid "Or sign in with another service"
+msgstr "Немесе басқа сервис арқылы кіріңіз"

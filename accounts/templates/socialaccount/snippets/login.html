@@ -1,0 +1,18 @@
+{% load i18n %}
+{% load allauth %}
+{% load socialaccount %}
+{% comment %}allauth's own snippet with a heading of our own: its "Or use a third-party" stops halfway
+in its Russian and has no Kazakh at all, so the sign-up and sign-in pages read it half-finished or in
+English. The same markup otherwise -- keep it in step with allauth's when allauth changes it.{% endcomment %}
+{% get_providers as socialaccount_providers %}
+{% if socialaccount_providers %}
+    {% if not SOCIALACCOUNT_ONLY %}
+        {% element hr %}
+        {% endelement %}
+        {% element h2 %}
+            {% translate "Or sign in with another service" %}
+        {% endelement %}
+    {% endif %}
+    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+    {% include "socialaccount/snippets/login_extra.html" %}
+{% endif %}
