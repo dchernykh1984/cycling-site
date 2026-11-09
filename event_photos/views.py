@@ -173,10 +173,10 @@ def event_photos(request, pk):
             "archive": archive,
             "photo_page_title": (_("Photos with bib %(bib)s") % {"bib": bib}) if bib else "",
             "photos": page,
-            "registration_cards": [
-                actions.registration_summary(r) for r in my_registrations(request.user, competition)
-            ],
-            "declared_cards": declared_cards,
+            "registration_cards": actions.with_photos(
+                [actions.registration_summary(r) for r in my_registrations(request.user, competition)]
+            ),
+            "declared_cards": actions.with_photos(declared_cards),
             "declare_form": _declare_form(request.user, competition, declared_cards),
             "added_people": _added_people(request.user, competition),
             # the same field as the member's own bib's, under ids of its own beside it

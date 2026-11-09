@@ -1,7 +1,7 @@
 from django import template
 from django.urls import reverse
 
-from event_photos.actions import declared_in_force, declared_summary, registration_summary
+from event_photos.actions import declared_in_force, declared_summary, registration_summary, with_photos
 from event_photos.models import DeclaredBib, ExternalAlbum
 from event_photos.permissions import can_manage_albums, can_see_event, looked_after
 from event_photos.views import visible_albums
@@ -47,7 +47,9 @@ def my_race_photos(context):
     ]
     # Sorting is stable: on one day a registration's card keeps its place ahead of a named bib's.
     return sorted(
-        cards, key=lambda card: (card.get("registration") or card["declared"]).competition.date_start, reverse=True
+        with_photos(cards),
+        key=lambda card: (card.get("registration") or card["declared"]).competition.date_start,
+        reverse=True,
     )
 
 

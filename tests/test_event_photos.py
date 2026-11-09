@@ -747,6 +747,38 @@ class PageAndApiTests(EventPhotosTestCase):
         overview = self.client.get(self._url("event"))
         self.assertContains(overview, self._url("registration", self.reg.pk))
 
+    def test_an_album_with_no_photo_is_shown_neither_on_the_event_page_nor_in_the_profile(self):
+        from accounts.models import VirtualMember
+        from event_photos.models import DeclaredBib
+
+        # the athlete's child, entered with a bib, who did not start; and a bib named for another, in no photo
+        child = VirtualMember.objects.create(
+            owner=self.athlete,
+            last_name="Ivanova",
+            first_name="Dasha",
+            gender="F",
+            birth_date=datetime.date(2016, 5, 5),
+        )
+        absent = CompetitionRegistration.objects.create(
+            competition=self.race,
+            virtual_member=child,
+            registered_by=self.athlete,
+            first_name="Dasha",
+            last_name="Ivanova",
+            birth_date=child.birth_date,
+            gender="F",
+        )
+        self._bib(absent, "93")
+        other = VirtualMember.objects.create(
+            owner=self.athlete, last_name="Ivanov", first_name="Vanya", gender="M", birth_date=datetime.date(2018, 6, 6)
+        )
+        named = DeclaredBib.objects.create(competition=self.race, virtual_member=other, bib="65")
+        self.client.force_login(self.athlete)
+        for page in (self.client.get(self._url("event")), self.client.get("/ru/accounts/profile/")):
+            self.assertContains(page, self._url("registration", self.reg.pk))
+            self.assertNotContains(page, self._url("registration", absent.pk))
+            self.assertNotContains(page, self._url("declared", named.pk))
+
     def test_photo_breadcrumbs_name_each_level_and_the_current_person_in_every_locale(self):
         from bs4 import BeautifulSoup
         from django.utils.translation import gettext, override
@@ -853,12 +885,25 @@ class PageAndApiTests(EventPhotosTestCase):
         second = self._registration()  # the same person entered for another distance
         second.user = self.athlete
         second.save(update_fields=["user"])
+        # with a photo of its own: an album with none has no card at all
+        self._bib(second, "13")
+        self._publish(
+            _index(
+                [
+                    _photo(1, [("12", "accepted", "ocr")]),
+                    _photo(2, [("12", "candidate", "ocr")]),
+                    _photo(3, [("13", "accepted", "ocr")]),
+                ],
+                revision=2,
+            )
+        )
         self.client.force_login(self.athlete)
         profile = self.client.get(reverse("account_profile"))
         self.assertContains(profile, self._url("registration", self.reg.pk))
         self.assertContains(profile, self._url("registration", second.pk))
         self.assertContains(profile, "12")  # the first card names its bib
-        self.assertEqual(actions.registration_summary(second)["state"], "no-bib")
+        self.assertContains(profile, "13")  # and the second its own
+        self.assertEqual(actions.registration_summary(second)["count"], 1)
         self.assertEqual(actions.registration_summary(self.reg)["count"], 2)
         self.race.is_hidden = True
         self.race.save(update_fields=["is_hidden"])
