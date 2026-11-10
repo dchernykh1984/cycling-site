@@ -10,6 +10,7 @@ from django.utils import timezone, translation
 
 from accounts import transfers, virtual_members
 from accounts.models import ManagedMember, User, VirtualMember, VirtualMemberTransfer
+from calendar_app.visibility import can_see, listed_events
 from event_photos import actions
 from event_photos.models import DeclaredBib
 from registrations.models import CompetitionRegistration
@@ -114,6 +115,18 @@ class HandOverTests(TestCase):
         self.assertEqual(self.rider.sports_achievements, "KMS")
         self.assertTrue(ManagedMember.objects.filter(manager=self.coach, member=self.rider, accepted_at__isnull=False))
         self.assertTrue(can_self_edit(self.coach, to_come, own))
+
+    def test_an_invite_only_event_the_person_was_entered_for_opens_to_the_account_once_handed_over(self):
+        race = make_open_competition(invite_only=True)
+        make_registration(race, virtual_member=self.kid, first_name="Dana", last_name="Kim")
+        self.assertFalse(can_see(self.rider, race))
+        self._ask()
+        self._confirm()
+        # the entry is the account's now, and an entry lets its rider in as the invitation would
+        self.assertTrue(can_see(self.rider, race))
+        self.assertIn(race, listed_events(self.rider))
+        self.client.force_login(self.rider)
+        self.assertEqual(self.client.get(race.get_absolute_url()).status_code, HTTPStatus.OK)
 
     def test_without_the_box_ticked_the_manager_keeps_nothing_of_the_person(self):
         competition = make_open_competition()
