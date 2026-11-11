@@ -37,13 +37,14 @@ power or gear, the riders' drag, the bots, what a smart trainer is set to) and t
 step (`js/ride.js` -- the countdown, the rider, the bots, laps, sights, the finish, a plan's steps)
 neither read the page nor draw, and nothing else steps the physics. Each frame the ride takes its
 step, the trainer is told the grade and the rider's own drag (the rolling resistance of their bike
-and CdA x air density from their height, weight and bike, the numbers the ride moves them by); each
-command to a smart trainer waits for the trainer's answer to the one before, as FTMS requires, and
-a trainer that no longer grants control is asked for it once more and, if it still says no, is shown
-as not under control and left alone, and
+and CdA x air density from their height, weight and bike, the numbers the ride moves them by), and
 the scene and the HUD are drawn from the ride's state; what happened in the step reaches the page
-through `rideHooks`. A frame's time is ridden in steps of at
-most 50 ms, so the ride keeps real time on a device that draws two frames a second or more; a longer
+through `rideHooks`. A smart trainer is sent one command at a time, each once it has answered the one
+before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
+the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
+is shown as not under control and left alone; a grade sent before the trainer reconnected is sent
+again. A frame's time is ridden in steps of at most 50 ms, so the ride keeps real time on a device
+that draws two frames a second or more; a longer
 pause, such as a hidden page, counts as half a second. Production names each file after a hash of
 its content, as it names the page, and the page links those names (`cycling_site/storage.py`), so the
 page and its files are cached together. The ride
