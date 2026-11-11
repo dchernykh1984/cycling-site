@@ -516,13 +516,14 @@ def test_a_smart_trainer_that_never_answers_is_driven_all_the_same(page: Page):
             trainer.connect();
         }"""
     )
-    page.clock.run_for(1000)
+    wait = page.evaluate("() => CONTROL_ANSWER_MS")  # how long a command is given its answer
+    page.clock.run_for(wait // 2)
     assert page.evaluate("() => silent.written") == [0x00], "the start went out before the request was answered"
     # each unanswered command is given its time, then the next goes out: the start, then the route's grade
-    page.clock.run_for(1100)
-    page.clock.run_for(2100)
+    page.clock.run_for(wait // 2 + 100)
+    page.clock.run_for(wait + 100)
     page.evaluate("() => Trainer.update(10, 4, me)")
-    page.clock.run_for(2100)
+    page.clock.run_for(wait + 100)
     state = page.evaluate("() => ({ written: silent.written, ctrl: silent.trainer.ctrl, sent: Trainer.sent })")
     assert state == {"written": [0x00, 0x07, 0x11], "ctrl": True, "sent": 4}, state
     assert errors == [], errors
