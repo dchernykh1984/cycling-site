@@ -492,6 +492,42 @@ def test_a_smart_trainer_that_takes_back_control_is_asked_once_then_left_alone(p
     assert errors == [], errors
 
 
+def test_a_smart_trainer_that_never_answers_is_driven_all_the_same(page: Page):
+    page.clock.install()
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    page.evaluate(
+        """() => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // a trainer that takes every command and never indicates an answer, as some do
+            const written = [], point = { addEventListener() {}, async startNotifications() {},
+                async writeValueWithResponse(data) { written.push(data[0]); } };
+            const bikeData = { addEventListener() {}, async startNotifications() {} };
+            const ftms = { async getCharacteristic(uuid) { return uuid === 0x2AD9 ? point : bikeData; } };
+            const server = {
+                async getPrimaryService(uuid) { if (uuid === 0x1826) return ftms; throw new Error('-'); }
+            };
+            const gatt = { async connect() { return server; } };
+            const trainer = new BLEDev({ name: 'trainer', addEventListener() {}, gatt });
+            Sensors.devs.push(trainer);
+            globalThis.silent = { written, trainer };
+            trainer.connect();
+        }"""
+    )
+    page.clock.run_for(1000)
+    assert page.evaluate("() => silent.written") == [0x00], "the start went out before the request was answered"
+    # each unanswered command is given its time, then the next goes out: the start, then the route's grade
+    page.clock.run_for(1100)
+    page.clock.run_for(2100)
+    page.evaluate("() => Trainer.update(10, 4, me)")
+    page.clock.run_for(2100)
+    state = page.evaluate("() => ({ written: silent.written, ctrl: silent.trainer.ctrl, sent: Trainer.sent })")
+    assert state == {"written": [0x00, 0x07, 0x11], "ctrl": True, "sent": 4}, state
+    assert errors == [], errors
+
+
 def test_a_grade_sent_before_the_trainer_reconnected_is_not_counted_as_on_it(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
