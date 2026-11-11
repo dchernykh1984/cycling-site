@@ -48,6 +48,7 @@ class BLEDev {
     await ch.startNotifications(); return ch;
   }
   async connect() {
+    this.link = (this.link || 0) + 1; // each connection is told apart, so an answer from the last one is not taken for this one's
     const server = await this.dev.gatt.connect();
     const ftms = await this.svc(server, UUID.ftms), cp = await this.svc(server, UUID.cp), csc = await this.svc(server, UUID.csc), hr = await this.svc(server, UUID.hr);
     if (ftms) {
@@ -96,6 +97,7 @@ class BLEDev {
   }
   async setGrade(g, drag) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
+    const link = this.link;
     try {
       const v = Math.round(clamp(g, -10, 20) * 100), cmd = [0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]; // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
       let r = await this.command(cmd);
@@ -103,7 +105,7 @@ class BLEDev {
         if (await this.takeControl()) r = await this.command(cmd);
         else { this.ctrl = false; Sensors.changed(); return false; }
       }
-      return r === 1 || r === null;
+      return link === this.link && (r === 1 || r === null);
     } finally { this.busy = false; }
   }
   onIBD(dv) {
