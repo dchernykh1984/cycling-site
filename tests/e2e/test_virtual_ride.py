@@ -418,6 +418,52 @@ def test_a_smart_trainer_is_set_to_the_riders_own_drag(page: Page):
     assert errors == [], errors
 
 
+def test_a_smart_trainer_that_answers_each_command_is_given_the_grade(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    written = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // as FTMS asks: each control point command is answered by an indication a moment later, and a
+            // command written before the last one is answered is refused (Procedure Already In Progress)
+            const written = [], point = { listeners: [], busy: false,
+                addEventListener(name, fn) { this.listeners.push(fn); },
+                async startNotifications() {},
+                async writeValueWithResponse(data) {
+                    const bytes = Array.from(data);
+                    if (this.busy) {
+                        written.push(['refused', ...bytes]);
+                        throw new Error('Procedure Already In Progress');
+                    }
+                    written.push(bytes); this.busy = true;
+                    setTimeout(() => {
+                        this.busy = false;
+                        const value = new DataView(new Uint8Array([0x80, bytes[0], 1]).buffer);
+                        this.listeners.forEach(fn => fn({ target: { value } }));
+                    }, 50);
+                } };
+            const bikeData = { addEventListener() {}, async startNotifications() {} };
+            const ftms = { async getCharacteristic(uuid) { return uuid === 0x2AD9 ? point : bikeData; } };
+            const server = {
+                async getPrimaryService(uuid) { if (uuid === 0x1826) return ftms; throw new Error('none'); }
+            };
+            const gatt = { async connect() { return server; } };
+            const trainer = new BLEDev({ name: 'trainer', addEventListener() {}, gatt });
+            Sensors.devs.push(trainer);
+            await trainer.connect();
+            Trainer.update(10, 4, me);
+            await new Promise(done => setTimeout(done, 300));
+            return { written, ctrl: trainer.ctrl, sent: Trainer.sent };
+        }"""
+    )
+    # control is asked for, then the start, each after the last was answered; then the route's 4 % goes out
+    assert [bytes[:5] for bytes in written["written"]] == [[0x00], [0x07], [0x11, 0, 0, 400 & 255, 400 >> 8]], written
+    assert written["ctrl"] and written["sent"] == 4, written
+    assert errors == [], errors
+
+
 def test_the_ride_keeps_real_time_on_a_device_that_draws_a_few_frames_a_second(page: Page):
     _ride_alone(page)
     ridden = page.evaluate(
