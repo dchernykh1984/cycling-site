@@ -2,6 +2,7 @@
 /* ---------------- Устройства Bluetooth: датчики CSC, пульсометры, измерители мощности, умные станки FTMS ---------------- */
 const UUID = { csc: 0x1816, hr: 0x180D, cp: 0x1818, ftms: 0x1826, cscMeas: 0x2A5B, cscFeat: 0x2A5C, hrMeas: 0x2A37, cpMeas: 0x2A63, ibd: 0x2AD2, ftmsCP: 0x2AD9 };
 const fits = (dv, o, n) => o + n <= dv.byteLength;
+const CONTROL_ANSWER_MS = 2000; // how long a trainer may take to answer a command
 function parseCSC(dv) {
   let o = 0; const f = dv.getUint8(o); o += 1; const r = {};
   if ((f & 1) && fits(dv, o, 6)) { r.wr = dv.getUint32(o, true); r.wt = dv.getUint16(o + 4, true); o += 6; }
@@ -47,6 +48,7 @@ class BLEDev {
     await ch.startNotifications(); return ch;
   }
   async connect() {
+    this.link = (this.link || 0) + 1; // each connection is told apart, so an answer from the last one is not taken for this one's
     const server = await this.dev.gatt.connect();
     const ftms = await this.svc(server, UUID.ftms), cp = await this.svc(server, UUID.cp), csc = await this.svc(server, UUID.csc), hr = await this.svc(server, UUID.hr);
     if (ftms) {
@@ -56,9 +58,7 @@ class BLEDev {
         this.cpt = await ftms.getCharacteristic(UUID.ftmsCP);
         if (!this.ls.has(this.cpt)) { this.ls.add(this.cpt); this.cpt.addEventListener('characteristicvaluechanged', e => this.onCtrl(e.target.value)); }
         await this.cpt.startNotifications();
-        await this.write([0x00]); // запросить управление
-        await this.write([0x07]); // старт
-        this.ctrl = true;
+        this.ctrl = await this.takeControl();
       } catch (e) { this.ctrl = false; }
     }
     if (cp && !ftms) { try { await this.sub(cp, UUID.cpMeas, dv => this.onCP(dv)); this.roles.add('power'); } catch (e) {} }
@@ -72,11 +72,41 @@ class BLEDev {
     this.status = 'online'; this.retries = 0; Sensors.changed();
   }
   async write(bytes) { const data = new Uint8Array(bytes); if (this.cpt.writeValueWithResponse) await this.cpt.writeValueWithResponse(data); else await this.cpt.writeValue(data); }
-  onCtrl(dv) { if (dv.getUint8(0) === 0x80 && dv.byteLength >= 3 && dv.getUint8(1) === 0x00 && dv.getUint8(2) !== 1) { this.ctrl = false; Sensors.changed(); toast(t('dev.noControl')); } }
+  // A command to the FTMS control point is answered by an indication [0x80, opcode, result]; until it is,
+  // the trainer refuses the next command (Procedure Already In Progress), so each command waits for its
+  // answer. Resolves to the result (1 = success, 5 = control not permitted, ...), null when no answer came
+  // in time (some trainers never answer), -1 when the write itself failed.
+  command(bytes) {
+    return new Promise(resolve => {
+      const done = r => { clearTimeout(timer); if (this.pending === wait) this.pending = null; resolve(r); };
+      const wait = { op: bytes[0], done }, timer = setTimeout(() => done(null), CONTROL_ANSWER_MS);
+      this.pending = wait;
+      this.write(bytes).catch(e => { console.warn('[trainer] command ' + bytes[0] + ' failed: ' + e.message); done(-1); });
+    });
+  }
+  onCtrl(dv) {
+    if (dv.byteLength < 3 || dv.getUint8(0) !== 0x80) return;
+    if (this.pending && this.pending.op === dv.getUint8(1)) this.pending.done(dv.getUint8(2));
+  }
+  // request control, then start; a trainer that never answers is tried all the same, as before
+  async takeControl() {
+    const r = await this.command([0x00]);
+    if (r !== 1 && r !== null) { if (r > 1) toast(t('dev.noControl')); return false; }
+    await this.command([0x07]);
+    return true;
+  }
   async setGrade(g, drag) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
-    try { const v = Math.round(clamp(g, -10, 20) * 100); await this.write([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); return true; } // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
-    catch (e) { return false; } finally { this.busy = false; }
+    const link = this.link;
+    try {
+      const v = Math.round(clamp(g, -10, 20) * 100), cmd = [0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]; // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
+      let r = await this.command(cmd);
+      if (r === 5) { // the trainer let go of control (a reset, another app): ask once more, and if it says no, stop asking
+        if (await this.takeControl()) r = await this.command(cmd);
+        else { this.ctrl = false; Sensors.changed(); return false; }
+      }
+      return link === this.link && (r === 1 || r === null);
+    } finally { this.busy = false; }
   }
   onIBD(dv) {
     const r = parseIBD(dv), now = performance.now();
