@@ -13,6 +13,7 @@ from django.db import connection
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from accounts import roles
 from accounts.access import EMAIL_CONFIRMATION_REQUIRED_MESSAGE
@@ -1916,12 +1917,21 @@ class SigninMethodsCardTests(TestCase):
         resp = self.client.get(reverse("account_profile"))
         self.assertContains(resp, reverse("account_set_password"))
 
+    def _assert_links(self, resp, url, label):
+        self.assertRegex(resp.content.decode(), rf'href="{re.escape(url)}"[^>]*>\s*{re.escape(label)}\s*</a>')
+
     def test_account_without_an_email_is_asked_to_add_one_first(self):
         self.user.email = ""
         self.user.save(update_fields=["email"])
         EmailAddress.objects.filter(user=self.user).delete()
         resp = self.client.get(reverse("account_profile"))
-        self.assertContains(resp, reverse("account_email"))
+        self._assert_links(resp, reverse("account_email"), gettext("Add email"))
+        self.assertNotContains(resp, gettext("Change email"))
+
+    def test_account_with_an_address_is_offered_to_change_it(self):
+        resp = self.client.get(reverse("account_profile"))
+        self._assert_links(resp, reverse("account_email"), gettext("Change email"))
+        self.assertNotContains(resp, gettext("Add email"))
 
 
 class DisconnectLockoutGuardTests(TestCase):

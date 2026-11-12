@@ -15,6 +15,7 @@ from pathlib import Path
 import allauth
 import django
 import polib
+from allauth.account.models import EmailAddress
 from django.core import mail
 from django.test import Client, TestCase
 from django.utils import translation
@@ -136,6 +137,23 @@ class KazakhAccountPagesTests(TestCase):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
                 self.assert_speaks_kazakh(response)
+
+    def test_a_change_of_address_waiting_for_its_confirmation(self):
+        user = User.objects.create_user(username="kk-mover", email="kk.old@example.com", password="Strong-pass-2026")
+        EmailAddress.objects.create(user=user, email="kk.old@example.com", verified=True, primary=True)
+        EmailAddress.objects.create(user=user, email="kk.new@example.com", verified=False, primary=False)
+        self.client.force_login(user)
+        response = self.client.get("/kk/accounts/email/")
+        self.assert_speaks_kazakh(
+            response,
+            "Current email",
+            "Changing to",
+            "Your email address is still pending verification.",
+            "Re-send Verification",
+            "Cancel Change",
+            "Change to",
+            "Change Email",
+        )
 
     def test_a_form_refused_for_a_missing_security_cookie(self):
         """A chat app's own browser can drop cookies, and the refusal is all such a reader sees."""

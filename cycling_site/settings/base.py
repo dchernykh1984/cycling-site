@@ -106,6 +106,9 @@ ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # The sign-up form's own question: the privacy policy (issue #438)
 ACCOUNT_SIGNUP_FORM_CLASS = "accounts.forms.SignupForm"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+# One sign-in address per member: a new one replaces the old only once confirmed through the link
+# sent to it, so a typo never locks anybody out and nobody takes an address they cannot read.
+ACCOUNT_CHANGE_EMAIL = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 ACCOUNT_RATE_LIMITS = {

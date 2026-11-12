@@ -5527,3 +5527,7 @@ msgstr "Удалить секцию %(number)s"
 #: accounts/templates/socialaccount/snippets/login.html:13
 msgid "Or sign in with another service"
 msgstr "Или войдите через другой сервис"
+
+#: accounts/templates/accounts/profile.html:123
+msgid "Change email"
+msgstr "Изменить e-mail"
