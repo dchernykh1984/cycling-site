@@ -205,7 +205,7 @@ def _stays(why: str, person: VirtualMember, mentor) -> str:
     names = {"name": mentor.public_display_name, "person": person}
     if why == FULL:
         return gettext("%(name)s has no room left for people without an account, so %(person)s stays with you.") % names
-    return gettext("%(name)s already has %(person)s in their list, so %(person)s stays with you.") % names
+    return gettext("%(name)s already has %(person)s in their list, so they stay with you.") % names
 
 
 def reject(owner, person_id) -> bool:
