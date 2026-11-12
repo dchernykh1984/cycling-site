@@ -5157,9 +5157,6 @@ msgstr "Ж"
 msgid "Wait for the assistant's reply, then attach the file."
 msgstr "Дождитесь ответа ассистента, затем приложите файл."
 
-#: accounts/templates/accounts/_virtual_members.html
-msgid "Hand over"
-msgstr "Передать"
 
 #: accounts/templates/accounts/_virtual_members.html
 #, python-format
@@ -5180,9 +5177,6 @@ msgstr "Передать данные человека %(person)s в аккау�
 msgid "Send this link to the owner of the account the data of %(person)s moves to: they open it signed in, and then you confirm it here. %(person)s then leaves your list, with their registrations and named bibs."
 msgstr "Отправьте эту ссылку владельцу аккаунта, куда переходят данные человека %(person)s: он откроет её, войдя на сайт, а потом вы подтвердите перенос здесь. После этого %(person)s пропадёт из вашего списка вместе с заявками и названными номерами."
 
-#: accounts/templates/accounts/_virtual_members.html
-msgid "Make a new link? This one will stop working."
-msgstr "Сделать новую ссылку? Эта перестанет работать."
 
 #: accounts/templates/accounts/virtual_member_claim.html
 msgid "Taking over a person's data"
