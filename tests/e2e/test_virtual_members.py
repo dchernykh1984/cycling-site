@@ -82,13 +82,13 @@ def test_the_card_takes_the_members_word_first_and_then_adds_a_person(page: Page
     expect(card.locator(".virtual-add")).to_have_count(0)
     card.get_by_role("button", name="I am authorized to handle their personal data").click()
     card = page.locator("#virtual-members")
-    # The page the word leads to, loaded whole: it scrolls itself to the card as it loads, and a tap aimed
-    # before that lands wherever the scroll left the button -- on a slow phone, past it.
+    # The page the word leads to scrolls itself to the card -- smoothly, after it has loaded -- and a tap aimed
+    # meanwhile lands wherever the scroll left the button (a slow phone, CI). The fold opens from the keyboard
+    # instead, as for anybody who uses one: no place on the screen to miss.
     expect(card).to_contain_text("Added: 0 of 10")
-    page.wait_for_load_state("load")
     # the form waits folded under its button
     expect(card.locator("#id_last_name")).to_be_hidden()
-    card.locator(".virtual-add-fold > summary").click()
+    card.locator(".virtual-add-fold > summary").press("Enter")
     card.locator("#id_last_name").fill("Sokolova")
     card.locator("#id_first_name").fill("Dana")
     card.locator("#id_gender").select_option("F")
