@@ -3,8 +3,8 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29; the role checks in one module
 against branch `roles-in-one-module` on 2026-10-31; people without accounts and the privacy question (issue #438)
-against branch `438-virtual-members` on 2026-11-05; changing the sign-in address against branch
-`profile-change-email` on 2026-11-12
+against branch `438-virtual-members` on 2026-11-05; changing the sign-in address and handing a person over
+to a mentor against branch `profile-change-email` on 2026-11-12
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/transfers.py`, `accounts/forms.py`,
@@ -86,7 +86,8 @@ once; confirming the address unlocks everything that writes.
 6. **Given** a member with an address opens the profile, **Then** a button beside the address opens
    its change: the new address is sent a link and replaces the old one only once confirmed. Until
    then a confirmed old address still signs in and the change can be cancelled, while an unconfirmed
-   one -- a guest's -- is dropped at once and the button stays; a link sent for a change asked for
+   one -- a guest's -- is dropped at once: the profile shows the address waiting, marked so, and the
+   button stays; a link sent for a change asked for
    again confirms nothing; an address another account has confirmed is never taken over, and a guest
    who confirms the new one becomes a participant.
 
