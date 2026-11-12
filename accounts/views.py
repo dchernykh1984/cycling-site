@@ -130,7 +130,13 @@ def role_ladder(user) -> list[dict]:
     saying "Role: Participant", so the profile shows the whole ladder and where they stand on it.
     """
     return [
-        {"value": role, "label": User.Role(role).label, "is_current": role == user.role} for role in User.ROLE_HIERARCHY
+        {
+            "value": role,
+            "label": User.Role(role).label,
+            "description": roles.DESCRIPTIONS[role],
+            "is_current": role == user.role,
+        }
+        for role in User.ROLE_HIERARCHY
     ]
 
 
@@ -505,14 +511,19 @@ class RequestRoleView(ParticipantRequiredMixin, View):
 
     template_name = "accounts/request_role.html"
 
+    def _page(self, request, form):
+        # Each choice with the line saying what the role is for, as the profile's ladder shows it
+        choices = [(choice, roles.DESCRIPTIONS[choice.data["value"]]) for choice in form["role"]]
+        return render(request, self.template_name, {"form": form, "choices": choices})
+
     def get(self, request):
-        return render(request, self.template_name, {"form": RequestRoleForm(current_role=request.user.role)})
+        return self._page(request, RequestRoleForm(current_role=request.user.role))
 
     def post(self, request):
         user = request.user
         form = RequestRoleForm(request.POST, current_role=user.role)
         if not form.is_valid():
-            return render(request, self.template_name, {"form": form})
+            return self._page(request, form)
         cd = form.cleaned_data
         # Internal notification, always English -- the owners read it, not the sender, and the role
         # names follow the active language now that the profile shows them.
@@ -529,7 +540,7 @@ class RequestRoleView(ParticipantRequiredMixin, View):
             )
         sent = _mail_the_owners(request, f"Role request: {user.get_username()} -> {wanted}", body, what="role-request")
         if not sent:
-            return render(request, self.template_name, {"form": form})
+            return self._page(request, form)
         messages.success(request, gettext("Your request has been sent. We will get back to you."))
         return redirect("account_profile")
 

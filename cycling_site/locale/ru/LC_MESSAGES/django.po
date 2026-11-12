@@ -5629,3 +5629,35 @@ msgstr "Отменить ссылку"
 #: accounts/templates/accounts/_virtual_members.html
 msgid "Cancel this link? It stops working, and you may then hand the person over again, either way."
 msgstr "Отменить ссылку? Она перестанет работать, и человека можно будет передать заново — наставнику или владельцу."
+
+#: accounts/models.py
+msgid "Event organizer"
+msgstr "Организатор мероприятий"
+
+#: accounts/models.py
+msgid "Site administrator"
+msgstr "Администратор сайта"
+
+#: accounts/models.py
+msgid "Site owner"
+msgstr "Владелец сайта"
+
+#: accounts/roles.py
+msgid "The e-mail address is not confirmed yet: you may look around the site, but not enter races or write."
+msgstr "Почта ещё не подтверждена: можно смотреть сайт, но не записываться на старты и ничего не писать."
+
+#: accounts/roles.py
+msgid "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and parents need no other role."
+msgstr "Записывает на старты себя, своих детей и спортсменов и смотрит их фото. Тренерам и родителям другая роль не нужна."
+
+#: accounts/roles.py
+msgid "Publishes their own events and runs their registration, and checks other people's events."
+msgstr "Публикует свои мероприятия и ведёт их регистрацию, проверяет мероприятия других."
+
+#: accounts/roles.py
+msgid "Looks after all of the site's content: every event, the news, the knowledge articles, places and the gallery."
+msgstr "Следит за всем содержимым сайта: мероприятиями, новостями, статьями базы знаний, местами и галереей."
+
+#: accounts/roles.py
+msgid "Runs the site: all an administrator does, and the home page and the site's statistics too."
+msgstr "Ведёт сайт: всё, что делает администратор, а также главная страница и статистика сайта."

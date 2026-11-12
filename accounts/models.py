@@ -37,9 +37,10 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         # notifications force English back when they build their body.
         GUEST = "guest", _("Guest")
         PARTICIPANT = "participant", _("Participant")
-        ORGANIZER = "organizer", _("Organizer")
-        ADMIN = "admin", _("Admin")
-        OWNER = "owner", _("Owner")
+        # Named for what they are on this site: "Owner" alone was read as the owner of a child's account
+        ORGANIZER = "organizer", _("Event organizer")
+        ADMIN = "admin", _("Site administrator")
+        OWNER = "owner", _("Site owner")
 
     role = models.CharField(
         max_length=20,
