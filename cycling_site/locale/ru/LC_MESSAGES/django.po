@@ -5605,7 +5605,7 @@ msgstr "Стать наставником человека %(person)s?"
 #: accounts/templates/accounts/virtual_member_claim.html
 #, python-format
 msgid "%(name)s hands %(person)s (%(gender)s, born on %(born)s) over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and %(name)s no longer sees them."
-msgstr "%(name)s передаёт вам человека %(person)s (%(gender)s, дата рождения %(born)s): он останется человеком без аккаунта, в вашем списке, вместе с заявками и номерами, названными для фото. Вы записываете его на старты и следите за его фото, а %(name)s перестанет его видеть."
+msgstr "%(name)s передаёт вам человека %(person)s (пол: %(gender)s, дата рождения %(born)s): он останется человеком без аккаунта, в вашем списке, вместе с заявками и номерами, названными для фото. Вы записываете его на старты и следите за его фото, а %(name)s перестанет его видеть."
 
 #: accounts/templates/accounts/virtual_member_claim.html
 #, python-format
