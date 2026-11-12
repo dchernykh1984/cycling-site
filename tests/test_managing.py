@@ -126,6 +126,18 @@ class ChainTests(TestCase):
         self.assertTrue(managing.acts_for(b, c.pk))
         self.assertFalse(managing.acts_for(a, c.pk))
 
+    def test_a_member_may_have_several_managers_and_either_side_ends_one_link_alone(self):
+        rider, coach, parent, mentor = _user("rider"), _user("coach2"), _user("parent"), _user("mentor")
+        for manager in (coach, parent, mentor):
+            managing.ask(rider, managing.issue_invite(manager).key)
+            managing.accept(manager, rider.pk)
+        self.assertEqual({row.manager for row in managing.managers(rider)}, {coach, parent, mentor})
+        self.assertTrue(managing.leave(rider, coach.pk))  # the member ends one, without asking anybody
+        self.assertTrue(managing.drop(parent, rider.pk))  # and a manager ends another, without asking the member
+        self.assertEqual([row.manager for row in managing.managers(rider)], [mentor])
+        self.assertTrue(managing.acts_for(mentor, rider.pk))
+        self.assertFalse(managing.acts_for(coach, rider.pk) or managing.acts_for(parent, rider.pk))
+
 
 class JoinPageTests(TestCase):
     """The link's page: it asks the member by a button and says plainly why it cannot."""
