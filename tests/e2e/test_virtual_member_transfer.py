@@ -158,6 +158,9 @@ def test_a_live_link_is_named_for_whom_it_is_and_one_button_takes_it_back(page: 
     row.get_by_role("button", name="Hand over to the owner: Kim Dana").click()
     row = page.locator(f"#vm-{kid.pk}")
     expect(row).to_contain_text("Link for the owner")
+    # The page lands on the person's row by its anchor and scrolls there as it loads: a tap aimed before that
+    # lands wherever the scroll left the button (webkit, CI, 2026-11-12)
+    page.wait_for_load_state("load")
     # One state at a time: while the link is live, it alone is on offer, and the hand-over buttons wait
     expect(row.get_by_role("button", name="Hand over to a mentor: Kim Dana")).to_have_count(0)
     page.once("dialog", lambda dialog: dialog.accept())
