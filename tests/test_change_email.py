@@ -79,6 +79,14 @@ class ChangeEmailTests(TestCase):
         self.assertEqual(self._addresses(guest), [("right@example.com", True, True)])
         self.assertEqual(guest.role, User.Role.PARTICIPANT)
 
+    def test_the_page_names_the_waiting_address_apart_from_the_field_for_another(self):
+        EmailAddress.objects.create(user=self.member, email="new@example.com", verified=False, primary=False)
+        for language in ("ru", "kk", "en"):
+            with self.subTest(language=language):
+                page = self.client.get(f"/{language}/accounts/email/").content.decode()
+                labels = [" ".join(label.split()) for label in re.findall(r"<label[^>]*>(.*?)</label>", page, re.S)]
+                self.assertEqual(len(labels), len(set(labels)), labels)
+
     def test_an_address_another_account_confirmed_is_not_taken_over(self):
         other = self._member("owner-of-it", "taken@example.com", verified=True, role=User.Role.PARTICIPANT)
         self._ask_for("taken@example.com")
