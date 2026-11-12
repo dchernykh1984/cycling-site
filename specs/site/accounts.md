@@ -204,9 +204,10 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
    member's list. An account may take over several people, from several members.
 9. **Given** a person who is to stay without an account but go to another coach or a parent
    (maintainer, 2026-11-12), **Then** "Hand over to a mentor" makes a link of the same kind. The member
-   who opens it signed in sees who hands whom over, with the person's gender and date of birth, gives
-   their word about such people's data on the page where they have not given it yet, and asks by
-   "Accept"; a full list or a person already in it (the same names and date of birth) is told why it
+   who opens it signed in sees who hands whom over -- the names alone, as for the owner: nothing of the
+   person's data before the member confirms --, gives their word about such people's data on the page
+   where they have not given it yet, and asks by "Accept"; a full list or a person already in it (the
+   same names and date of birth) is told why it
    cannot. Once the member confirms, the person -- with their entries and named bibs, which stay theirs --
    is in the mentor's list instead, and the mentor enters them, looks after their photos and sees the
    invite-only events they are entered for; nothing of the mentor's own profile changes. A mentor whose

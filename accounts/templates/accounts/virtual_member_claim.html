@@ -3,7 +3,8 @@
 {% comment %}A link that hands a person without an account over to the account that opens it (issue #438):
 who hands whom over and what moves, and one button. To the owner, a box -- unticked -- keeps the manager;
 to a mentor, the person stays without an account, and a mentor who has not said yet that they may handle
-such people's data says it here. Opening it changes nothing; a link that cannot be used says why.{% endcomment %}
+such people's data says it here. Either way the person's name alone shows -- nothing of their data before
+the manager confirms. Opening it changes nothing; a link that cannot be used says why.{% endcomment %}
 
 {% block title %}{% if link.to_mentor %}{% trans "Becoming a person's mentor" %}{% else %}{% trans "Taking over a person's data" %}{% endif %}{% endblock %}
 
@@ -13,7 +14,7 @@ such people's data says it here. Opening it changes nothing; a link that cannot 
     {% if asked and link.to_mentor %}
     {% with name=link.person.owner.public_display_name person=link.person %}
     <h1 class="h3 mb-3">{% blocktrans %}Become the mentor of {{ person }}?{% endblocktrans %}</h1>
-    <p>{% blocktrans with born=person.birth_date|date:"d.m.Y" gender=person.get_gender_display|lower %}{{ name }} hands {{ person }} ({{ gender }}, born on {{ born }}) over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and {{ name }} no longer sees them.{% endblocktrans %}</p>
+    <p>{% blocktrans %}{{ name }} hands {{ person }} over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and {{ name }} no longer sees them.{% endblocktrans %}</p>
     <p class="small text-muted">{% blocktrans %}Nothing moves until {{ name }} confirms that this account is the mentor they meant.{% endblocktrans %}</p>
     {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
     <form method="post">
