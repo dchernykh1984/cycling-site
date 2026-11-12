@@ -44,7 +44,9 @@ class ProfileSectionTests(TestCase):
             self.assertContains(page, role[1])
 
     def test_the_current_role_is_the_bold_one(self):
-        self.assertContains(self._page(), "<strong>Event organizer</strong>", html=False)
+        page = self._page()
+        self.assertContains(page, '<strong class="role-name">Event organizer</strong>', html=False)
+        self.assertNotContains(page, '<strong class="role-name">Participant</strong>', html=False)
 
     def test_it_sits_between_the_sign_in_methods_and_contacting_the_owners(self):
         body = self._page().content.decode()
