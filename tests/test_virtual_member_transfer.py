@@ -321,7 +321,7 @@ class HandToMentorTests(TestCase):
         with translation.override("en"):
             page = self.client.get(_url("account_virtual_claim", key=link.key))
             self.assertContains(page, "Become the mentor of Kim Dana?")
-            self.assertContains(page, "Anna Coach hands Kim Dana (Female, born on 04.03.2012) over to you")
+            self.assertContains(page, "Anna Coach hands Kim Dana (female, born on 04.03.2012) over to you")
             self.assertContains(page, 'name="consent"')
             self.assertNotContains(page, 'name="keep_manager"')
             refused = self.client.post(_url("account_virtual_claim", key=link.key))
