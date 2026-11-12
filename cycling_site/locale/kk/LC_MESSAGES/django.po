@@ -5557,7 +5557,7 @@ msgstr "%(name)s тізімінде тіркелгісі жоқ адамдарғ
 
 #: accounts/transfers.py
 #, python-format
-msgid "%(name)s already has %(person)s in their list, so %(person)s stays with you."
+msgid "%(name)s already has %(person)s in their list, so they stay with you."
 msgstr "%(name)s тізімінде %(person)s бар, сондықтан ол сізде қалады."
 
 #: accounts/views.py

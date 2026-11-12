@@ -5566,7 +5566,7 @@ msgstr "У пользователя %(name)s больше нет места дл
 
 #: accounts/transfers.py
 #, python-format
-msgid "%(name)s already has %(person)s in their list, so %(person)s stays with you."
+msgid "%(name)s already has %(person)s in their list, so they stay with you."
 msgstr "У пользователя %(name)s в списке уже есть %(person)s, поэтому этот человек остаётся у вас."
 
 #: accounts/views.py
