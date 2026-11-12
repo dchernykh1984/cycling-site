@@ -5153,9 +5153,6 @@ msgstr "Ә"
 msgid "Wait for the assistant's reply, then attach the file."
 msgstr "Көмекшінің жауабын күтіңіз, содан кейін файлды тіркеңіз."
 
-#: accounts/templates/accounts/_virtual_members.html
-msgid "Hand over"
-msgstr "Тапсыру"
 
 #: accounts/templates/accounts/_virtual_members.html
 #, python-format
@@ -5176,9 +5173,6 @@ msgstr "%(person)s деректерін %(name)s тіркелгісіне тап
 msgid "Send this link to the owner of the account the data of %(person)s moves to: they open it signed in, and then you confirm it here. %(person)s then leaves your list, with their registrations and named bibs."
 msgstr "Бұл сілтемені %(person)s деректері көшетін тіркелгінің иесіне жіберіңіз: ол сайтқа кіріп, сілтемені ашады, содан кейін сіз мұнда растайсыз. Осыдан кейін %(person)s тіркелулерімен және аталған нөмірлерімен бірге тізіміңізден шығады."
 
-#: accounts/templates/accounts/_virtual_members.html
-msgid "Make a new link? This one will stop working."
-msgstr "Жаңа сілтеме жасау керек пе? Мына сілтеме жұмыс істемей қалады."
 
 #: accounts/templates/accounts/virtual_member_claim.html
 msgid "Taking over a person's data"
