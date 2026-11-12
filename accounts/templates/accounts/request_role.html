@@ -17,10 +17,11 @@
 
       <div class="mb-3">
         <span class="form-label d-block">{{ form.role.label }} *</span>
-        {% for choice in form.role %}
-        <div class="form-check">
+        {% for choice, about in choices %}
+        <div class="form-check mb-2">
           {{ choice.tag }}
           <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+          <div class="small text-muted">{{ about }}</div>
         </div>
         {% endfor %}
         {% for e in form.role.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}

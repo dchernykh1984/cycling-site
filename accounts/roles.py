@@ -14,10 +14,30 @@ In a template: ``{% load roles %}`` and ``user|at_least:ROLES.MODERATE_EVENTS`` 
 from __future__ import annotations
 
 from django.db.models import Q
+from django.utils.functional import Promise
+from django.utils.translation import gettext_lazy as _
 
 from accounts.models import User
 
 Role = User.Role
+
+#: What each role is for, in a line beside its name on the profile and on the role request: a name alone
+#: leaves a reader guessing, and a parent asked for the site owner's role to look after a child. Each line
+#: says what the rules below give the role, in short.
+DESCRIPTIONS: dict[str, Promise] = {
+    Role.GUEST: _(
+        "The e-mail address is not confirmed yet: you may look around the site, but not enter races or write."
+    ),
+    Role.PARTICIPANT: _(
+        "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and"
+        " parents need no other role."
+    ),
+    Role.ORGANIZER: _("Publishes their own events and runs their registration, and checks other people's events."),
+    Role.ADMIN: _(
+        "Looks after all of the site's content: every event, the news, the knowledge articles, places and the gallery."
+    ),
+    Role.OWNER: _("Runs the site: all an administrator does, and the home page and the site's statistics too."),
+}
 
 # The least role for each rule the site checks in more than one place, so that one line moves it.
 

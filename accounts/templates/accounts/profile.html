@@ -173,13 +173,14 @@
             <div class="card-body">
                 <ul class="list-unstyled mb-0">
                     {% for role in roles %}
-                    <li class="mb-1">
+                    <li class="mb-2">
                         {% if role.is_current %}
                         <strong>{{ role.label }}</strong>
                         <span class="badge bg-secondary ms-1">{% trans "your role" %}</span>
                         {% else %}
                         <span class="text-muted">{{ role.label }}</span>
                         {% endif %}
+                        <div class="small text-muted">{{ role.description }}</div>
                     </li>
                     {% endfor %}
                 </ul>

@@ -5620,3 +5620,35 @@ msgstr "Сілтемені болдырмау"
 #: accounts/templates/accounts/_virtual_members.html
 msgid "Cancel this link? It stops working, and you may then hand the person over again, either way."
 msgstr "Сілтемені болдырмау керек пе? Ол жұмыс істемей қалады, ал адамды қайтадан тапсыруға болады — тәлімгерге немесе иесіне."
+
+#: accounts/models.py
+msgid "Event organizer"
+msgstr "Іс-шара ұйымдастырушысы"
+
+#: accounts/models.py
+msgid "Site administrator"
+msgstr "Сайт әкімшісі"
+
+#: accounts/models.py
+msgid "Site owner"
+msgstr "Сайт иесі"
+
+#: accounts/roles.py
+msgid "The e-mail address is not confirmed yet: you may look around the site, but not enter races or write."
+msgstr "Пошта әлі расталмаған: сайтты қарауға болады, бірақ жарыстарға тіркелуге және ештеңе жазуға болмайды."
+
+#: accounts/roles.py
+msgid "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and parents need no other role."
+msgstr "Өзін, балаларын және спортшыларын жарыстарға тіркейді және олардың фотоларын қарайды. Жаттықтырушылар мен ата-аналарға басқа рөл қажет емес."
+
+#: accounts/roles.py
+msgid "Publishes their own events and runs their registration, and checks other people's events."
+msgstr "Өз іс-шараларын жариялайды және олардың тіркелуін жүргізеді, басқалардың іс-шараларын тексереді."
+
+#: accounts/roles.py
+msgid "Looks after all of the site's content: every event, the news, the knowledge articles, places and the gallery."
+msgstr "Сайттың бүкіл мазмұнын қадағалайды: іс-шараларды, жаңалықтарды, білім базасының мақалаларын, орындарды және галереяны."
+
+#: accounts/roles.py
+msgid "Runs the site: all an administrator does, and the home page and the site's statistics too."
+msgstr "Сайтты жүргізеді: әкімшінің бәрін істейді, сондай-ақ басты бет пен сайт статистикасын."
