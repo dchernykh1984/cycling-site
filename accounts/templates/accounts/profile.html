@@ -171,16 +171,19 @@
         <div class="card mb-4" id="role">
             <div class="card-header">{% trans "Role" %}</div>
             <div class="card-body">
-                <ul class="list-unstyled mb-0">
+                {% comment %}A role's name in the page's own text colour -- the reader's own in bold, with its badge --,
+                and below it, smaller and muted, the line on what it may do: the line is a hint, the name is the
+                role, and the two must not read alike.{% endcomment %}
+                <ul class="list-unstyled mb-0 role-ladder">
                     {% for role in roles %}
                     <li class="mb-2">
                         {% if role.is_current %}
-                        <strong>{{ role.label }}</strong>
+                        <strong class="role-name">{{ role.label }}</strong>
                         <span class="badge bg-secondary ms-1">{% trans "your role" %}</span>
                         {% else %}
-                        <span class="text-muted">{{ role.label }}</span>
+                        <span class="role-name">{{ role.label }}</span>
                         {% endif %}
-                        <div class="small text-muted">{{ role.description }}</div>
+                        <div class="small text-muted role-about">{{ role.description }}</div>
                     </li>
                     {% endfor %}
                 </ul>
