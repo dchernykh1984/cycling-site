@@ -5595,8 +5595,8 @@ msgstr "%(person)s үшін тәлімгер болу керек пе?"
 
 #: accounts/templates/accounts/virtual_member_claim.html
 #, python-format
-msgid "%(name)s hands %(person)s (%(gender)s, born on %(born)s) over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and %(name)s no longer sees them."
-msgstr "%(name)s сізге %(person)s адамын береді (жынысы: %(gender)s, туған күні %(born)s): ол тіркелгісі жоқ адам болып, сіздің тізіміңізде тіркелулерімен және фото үшін аталған нөмірлерімен бірге қалады. Сіз оны жарыстарға тіркейсіз және фотоларын қадағалайсыз, ал %(name)s оны бұдан былай көрмейді."
+msgid "%(name)s hands %(person)s over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and %(name)s no longer sees them."
+msgstr "%(name)s сізге %(person)s адамын береді: ол тіркелгісі жоқ адам болып, сіздің тізіміңізде тіркелулерімен және фото үшін аталған нөмірлерімен бірге қалады. Сіз оны жарыстарға тіркейсіз және фотоларын қадағалайсыз, ал %(name)s оны бұдан былай көрмейді."
 
 #: accounts/templates/accounts/virtual_member_claim.html
 #, python-format
