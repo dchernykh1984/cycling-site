@@ -5643,21 +5643,21 @@ msgid "Site owner"
 msgstr "Владелец сайта"
 
 #: accounts/roles.py
-msgid "The e-mail address is not confirmed yet: looks around the site, but does not enter races or write."
-msgstr "Почта ещё не подтверждена: можно смотреть сайт, но не записываться на старты и ничего не писать."
+msgid "E-mail not confirmed yet: can only look around the site."
+msgstr "Почта не подтверждена: можно только смотреть сайт."
 
 #: accounts/roles.py
-msgid "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and parents need no other role."
-msgstr "Записывает на старты себя, своих детей и спортсменов и смотрит их фото. Тренерам и родителям другая роль не нужна."
+msgid "Enters races -- themselves, children, athletes -- and adds events, published after moderation."
+msgstr "Записывает на старты себя, детей и спортсменов; добавляет мероприятия — их публикуют после модерации."
 
 #: accounts/roles.py
-msgid "Publishes their own events and runs their registration, and checks other people's events."
-msgstr "Публикует свои мероприятия и ведёт их регистрацию, проверяет мероприятия других."
+msgid "Publishes their events at once, runs their registration and checks other people's events."
+msgstr "Публикует свои мероприятия сразу, ведёт их регистрацию и проверяет чужие."
 
 #: accounts/roles.py
-msgid "Looks after all of the site's content: every event, the news, the knowledge articles, places and the gallery."
-msgstr "Следит за всем содержимым сайта: мероприятиями, новостями, статьями базы знаний, местами и галереей."
+msgid "Looks after all content: events, news, articles, places and the gallery."
+msgstr "Следит за всем содержимым: мероприятиями, новостями, статьями, местами и галереей."
 
 #: accounts/roles.py
-msgid "Runs the site: all an administrator does, and the home page and the site's statistics too."
-msgstr "Ведёт сайт: всё, что делает администратор, а также главная страница и статистика сайта."
+msgid "Runs the site: all an administrator does, plus the home page and statistics."
+msgstr "Ведёт сайт: всё, что администратор, плюс главная страница и статистика."
