@@ -275,6 +275,8 @@ an account of their own (8 below).
   sign-in to while `privacy_consent_pending`; a `next` to another site leads to the profile instead.
 - **FR-ACC-014**: One sign-in address per member (allauth's change mode, `ACCOUNT_CHANGE_EMAIL`):
   a new address waits beside the old one until the link sent to it is opened, then replaces it.
+  An address written without allauth (`createsuperuser`, the admin) gets its record, unconfirmed, as
+  the page opens (allauth's `sync_user_email_address`), so the page shows it and it changes the same way.
 
 ## Key Entities
 

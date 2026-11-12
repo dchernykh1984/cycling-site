@@ -11,6 +11,7 @@ from allauth.account.models import EmailAddress
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.translation import gettext
 
 from accounts.models import User
 
@@ -92,6 +93,22 @@ class ChangeEmailTests(TestCase):
         page = self.client.get(reverse("account_email")).content.decode()
         actions = [tag for tag in re.findall(r"<button\b[^>]*>", page) if 'name="action_' in tag]
         self.assertEqual(sum("btn-primary" in tag for tag in actions), 1, actions)
+
+    def test_an_address_written_without_allauth_shows_and_changes_like_any_other(self):
+        # createsuperuser and the admin keep no allauth record of the address (the owner's account is one);
+        # allauth makes it, unconfirmed, as the page opens.
+        owner = User.objects.create_user(
+            username="boss", email="Boss@example.com", password=PASSWORD, role=User.Role.OWNER
+        )
+        self.client.force_login(owner)
+        page = self.client.get(reverse("account_email")).content.decode()
+        self.assertIn('value="boss@example.com"', page)
+        self.assertNotIn(gettext("Warning:"), page)
+        self._ask_for("new@example.com")
+        self._open_the_link()
+        owner.refresh_from_db()
+        self.assertEqual(owner.email, "new@example.com")
+        self.assertEqual(self._addresses(owner), [("new@example.com", True, True)])
 
     def test_an_address_another_account_confirmed_is_not_taken_over(self):
         other = self._member("owner-of-it", "taken@example.com", verified=True, role=User.Role.PARTICIPANT)
