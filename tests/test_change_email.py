@@ -33,8 +33,8 @@ class ChangeEmailTests(TestCase):
         self.client.post(reverse("account_email"), {"action_add": "", "email": address})
         self.assertEqual(mail.outbox[-1].to, [address])
 
-    def _open_the_link(self):
-        key = re.search(r"/accounts/confirm-email/([^/\s]+)/", mail.outbox[-1].body).group(1)
+    def _open_the_link(self, message=None):
+        key = re.search(r"/accounts/confirm-email/([^/\s]+)/", (message or mail.outbox[-1]).body).group(1)
         return self.client.post(reverse("account_confirm_email", args=[key]), follow=True)
 
     def _addresses(self, user):
@@ -61,6 +61,15 @@ class ChangeEmailTests(TestCase):
         self.assertEqual(self._addresses(self.member), [("new@example.com", True, True)])
         self.assertTrue(self._signs_in("new@example.com"))
         self.assertFalse(self._signs_in("old@example.com"))
+
+    def test_a_link_sent_for_a_change_asked_for_again_confirms_nothing(self):
+        self._ask_for("first@example.com")
+        first = mail.outbox[-1]
+        self._ask_for("second@example.com")
+        self._open_the_link(first)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.email, "old@example.com")
+        self.assertIn(("second@example.com", False, False), self._addresses(self.member))
 
     def test_a_change_cancelled_before_it_is_confirmed_leaves_the_old_address(self):
         self._ask_for("new@example.com")
