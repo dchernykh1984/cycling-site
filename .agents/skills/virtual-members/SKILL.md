@@ -1,6 +1,6 @@
 ---
 name: virtual-members
-description: People without accounts a member adds to enter them for races and look after their photos (issue 438) - the member's word, the limits, adding hundreds from a list in one request with the member's own token, entering them for races, naming their bibs and handing them over to an account of their own. Read before adding or entering people for a member, by hand or from a list.
+description: People without accounts a member adds to enter them for races and look after their photos (issue 438) - the member's word, the limits, adding hundreds from a list in one request with the member's own token, entering them for races, naming their bibs and handing them over to an account of their own or to another mentor. Read before adding or entering people for a member, by hand or from a list.
 ---
 
 # People without accounts
@@ -11,7 +11,8 @@ them and exists only in that member's profile card "People without an account" a
 The member enters them for races on the registration page, events that take only one's own data
 included, and looks after their race photos: the albums of their entries and a bib named for them.
 A person without an account is never turned into an account by itself; the member may hand them
-over to an account the person has (below).
+over to an account the person has, or to another mentor -- a coach, a parent -- as a person still
+without an account (below).
 
 Everything below is done with **the member's own token**: profile, "API access", "Generate token",
 then `Authorization: Bearer <token>`. The token is the member's; it goes into one command's
@@ -114,6 +115,22 @@ their named bibs too (the same number at the same event once, a different one as
 account's empty profile fields are filled from the person, and the person leaves the member's list.
 `accounts/transfers.py` holds the rules; a table that comes to point at people fails
 `tests/test_virtual_member_transfer.py` until `hand_over` moves it.
+
+## Handing a person over to another mentor
+
+When the person is to stay without an account but go to another coach or a parent, the member hands
+them over to that member as their mentor -- the same steps, the same rule that nothing moves until the
+member confirms:
+
+1. `POST /api/v1/virtual-members/{id}/transfer?to=mentor`: the link, with `to: "mentor"`. It replaces a
+   link of either kind.
+2. The mentor opens it signed in and asks on the page -- giving their word about such people's data
+   there if they have not yet -- or through `.../transfers/claim` with their own token, after
+   `POST /api/v1/virtual-members/consent` (403 without it). A full list, or the same names and date of
+   birth in it already, refuses (409).
+3. The member confirms or rejects as above. On confirming, the person, with their entries and named
+   bibs, is in the mentor's list and leaves the member's; nothing of the mentor's profile changes. A
+   mentor whose list filled up since asking is refused at the confirmation (409), and the request stays.
 
 ## Privacy
 
