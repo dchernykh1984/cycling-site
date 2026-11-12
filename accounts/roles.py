@@ -25,9 +25,7 @@ Role = User.Role
 #: leaves a reader guessing, and a parent asked for the site owner's role to look after a child. Each line
 #: says what the rules below give the role, in short.
 DESCRIPTIONS: dict[str, Promise] = {
-    Role.GUEST: _(
-        "The e-mail address is not confirmed yet: you may look around the site, but not enter races or write."
-    ),
+    Role.GUEST: _("The e-mail address is not confirmed yet: looks around the site, but does not enter races or write."),
     Role.PARTICIPANT: _(
         "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and"
         " parents need no other role."
