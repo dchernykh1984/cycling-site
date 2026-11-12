@@ -87,6 +87,12 @@ class ChangeEmailTests(TestCase):
                 labels = [" ".join(label.split()) for label in re.findall(r"<label[^>]*>(.*?)</label>", page, re.S)]
                 self.assertEqual(len(labels), len(set(labels)), labels)
 
+    def test_the_change_page_has_one_main_action(self):
+        EmailAddress.objects.create(user=self.member, email="new@example.com", verified=False, primary=False)
+        page = self.client.get(reverse("account_email")).content.decode()
+        main = page[page.index("<main") : page.index("</main>")]
+        self.assertEqual(main.count("btn-primary"), 1)
+
     def test_an_address_another_account_confirmed_is_not_taken_over(self):
         other = self._member("owner-of-it", "taken@example.com", verified=True, role=User.Role.PARTICIPANT)
         self._ask_for("taken@example.com")
