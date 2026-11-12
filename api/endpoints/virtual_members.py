@@ -333,7 +333,7 @@ def cancel_transfer(request, virtual_member_id: int):
     """The link stops working, and the person may be handed over again, either way. A request already waiting
     is answered instead -- confirmed or rejected --, so there is nothing to take back then (404)."""
     if not transfers.cancel(request.auth, _person(request.auth, virtual_member_id).pk):
-        raise HttpError(HTTPStatus.NOT_FOUND, "No link nobody has asked through waits for this person")
+        raise HttpError(HTTPStatus.NOT_FOUND, "Nothing to take back: no link waits to be sent for this person")
     return Status(HTTPStatus.NO_CONTENT, None)
 
 
