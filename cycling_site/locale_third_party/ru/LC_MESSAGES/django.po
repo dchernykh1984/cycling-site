@@ -12,3 +12,9 @@ msgstr ""
 #: django/db/models/fields/__init__.py
 msgid "- Select an option -"
 msgstr "- Выберите вариант -"
+
+#: allauth/templates/account/email_change.html
+# allauth's Russian calls the address waiting for confirmation and the field for another one the
+# same, "Change to"; this one is the new address.
+msgid "Changing to"
+msgstr "Новый адрес"
