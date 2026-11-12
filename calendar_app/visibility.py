@@ -67,16 +67,20 @@ def can_manage_or_own(user, competition) -> bool:
 
 
 def _let_in(user) -> Q:
-    """Events this signed-in user was let into: by opening the link, or by being registered.
+    """Events this signed-in user was let into: by opening the link, or by being registered -- they, or
+    a person without an account they look after.
 
     A registration counts because an event can turn invite-only after people signed up for it while
-    it was public, and its own riders must not lose the page of the race they are entered in.
+    it was public, and its own riders must not lose the page of the race they are entered in. Nor must
+    the mentor of a person without an account, who may have taken them over from the one who entered them.
     """
     from calendar_app.models import CompetitionInvite
     from registrations.models import CompetitionRegistration
 
     invited = CompetitionInvite.objects.filter(user=user).values("competition_id")
-    registered = CompetitionRegistration.objects.filter(user=user, is_rejected=False).values("competition_id")
+    registered = CompetitionRegistration.objects.filter(
+        Q(user=user) | Q(virtual_member__owner=user), is_rejected=False
+    ).values("competition_id")
     return Q(pk__in=invited) | Q(pk__in=registered)
 
 
