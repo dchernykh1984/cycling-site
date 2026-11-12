@@ -104,6 +104,8 @@ member confirms, so never confirm a request for them because one arrived.
 
 1. `POST /api/v1/virtual-members/{id}/transfer` (member's token): the link, in `url`. One per person,
    a week long, one request; a new one stops the old and drops a request waiting.
+   `DELETE /api/v1/virtual-members/{id}/transfer` takes back a link nobody has asked through (404 when
+   there is none), as the card's "Cancel the link" does.
 2. The member sends it. The person opens it signed in and asks -- on the page, or
    `POST /api/v1/virtual-members/transfers/claim` with `{"key": ..., "keep_manager": false}` and their
    own token. `keep_manager: true` lets the member go on managing their registrations and photos.

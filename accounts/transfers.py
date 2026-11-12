@@ -208,6 +208,15 @@ def _stays(why: str, person: VirtualMember, mentor) -> str:
     return gettext("%(name)s already has %(person)s in their list, so they stay with you.") % names
 
 
+def cancel(owner, person_id) -> bool:
+    """``owner`` takes back the link of one of their people that nobody has asked through: it stops working, and
+    the person may be handed over again, either way. A request already waiting is answered instead."""
+    deleted, _ = VirtualMemberTransfer.objects.filter(
+        person__owner=owner, person_id=person_id, claimed_by__isnull=True
+    ).delete()
+    return bool(deleted)
+
+
 def reject(owner, person_id) -> bool:
     """The request goes, and its link with it: the manager makes a new link to try again."""
     deleted, _ = VirtualMemberTransfer.objects.filter(

@@ -192,8 +192,10 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
    member they manage.
 8. **Given** a person who has an account of their own (maintainer, 2026-11-06), **Then** the member
    hands them over: "Hand over to the owner" by the person makes a link to send -- one per person, a new
-   one, of either kind, stops the old and drops a request waiting, it lasts a week and takes one request;
-   while a link is live, either button asks before making a new one. The account that opens
+   one, of either kind, stops the old and drops a request waiting, it lasts a week and takes one request.
+   A live link is named for whom it is -- the owner or a mentor --, and while it is live the two buttons
+   give way to "Cancel the link", which takes it back (it stops working) and brings them back; a request
+   waiting is answered instead. The account that opens
    it signed in sees who hands whom over and the names, not the values, of its empty profile fields
    that get filled, may tick -- unticked at first -- to let the member go on managing its registrations
    and photos, and asks by a button; the member's own link, or an account whose address is not
@@ -213,8 +215,9 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
    is in the mentor's list instead, and the mentor enters them, looks after their photos and sees the
    invite-only events they are entered for; nothing of the mentor's own profile changes. A mentor whose
    list filled up, or came to hold the person, since asking is refused at the confirmation, and the
-   request stays to be rejected. Through the API, `POST /{id}/transfer?to=mentor` makes the link, the
-   claim takes the word given before (`POST /consent`, else 403), and each link says what it is for (`to`).
+   request stays to be rejected. Through the API, `POST /{id}/transfer?to=mentor` makes the link,
+   `DELETE /{id}/transfer` takes back one nobody has asked through, the claim takes the word given before
+   (`POST /consent`, else 403), and each link says what it is for (`to`).
 
 ### Edge Cases
 

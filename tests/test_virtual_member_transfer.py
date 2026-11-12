@@ -197,10 +197,11 @@ class HandOverTests(TestCase):
             link = VirtualMemberTransfer.objects.get(person=self.kid)
             page = self.client.get(_url("account_profile"))
         self.assertContains(page, _url("account_virtual_claim", key=link.key))
+        # One state at a time: the link, named for whom it is, and the one button that takes it back
+        self.assertContains(page, "Link for the owner")
         self.assertContains(page, "Send this link to the owner of the account the data of Kim Dana moves to")
-        # Pressed again while the link is live, either button makes a new link, of its kind, and says so first
-        self.assertContains(page, 'aria-label="Hand over to a mentor: Kim Dana"')
-        self.assertContains(page, "Make a new link? This one will stop working.", count=2)
+        self.assertContains(page, 'aria-label="Cancel the link: Kim Dana"')
+        self.assertNotContains(page, "Hand over to a mentor: Kim Dana")
         self._ask(keep_manager=True)
         self.client.force_login(self.coach)
         with translation.override("en"):
@@ -420,6 +421,7 @@ class HandToMentorTests(TestCase):
         self.assertTrue(first.to_mentor)
         with translation.override("en"):
             page = self.client.get(_url("account_profile"))
+            self.assertContains(page, "Link for a mentor")
             self.assertContains(page, "Send this link to the mentor who takes Kim Dana over")
             self.assertContains(self.client.get(_url("account_virtual_claim", key=first.key)), "send it to the mentor")
         self.client.post(transfer, {"to": VirtualMemberTransfer.To.OWNER})
@@ -427,6 +429,29 @@ class HandToMentorTests(TestCase):
         self.assertEqual((second.to_mentor, second.pk == first.pk), (False, True))
         self.assertNotEqual(second.key, first.key)
         self.assertEqual(self.client.post(transfer, {"to": "nobody"}).status_code, HTTPStatus.BAD_REQUEST)
+
+    def test_cancelling_a_live_link_stops_it_and_brings_the_two_buttons_back(self):
+        link = transfers.issue(self.kid, MENTOR)
+        self.client.force_login(self.coach)
+        answer = self.client.post(_url("account_virtual_transfer_cancel", pk=self.kid.pk))
+        self.assertRedirects(answer, f"{_url('account_profile')}#vm-{self.kid.pk}", fetch_redirect_response=False)
+        self.assertFalse(VirtualMemberTransfer.objects.exists())
+        with translation.override("en"):
+            page = self.client.get(_url("account_profile"))
+        self.assertContains(page, 'aria-label="Hand over to a mentor: Kim Dana"')
+        self.assertContains(page, 'aria-label="Hand over to the owner: Kim Dana"')
+        self.client.force_login(self.mentor)
+        self.assertEqual(self.client.get(_url("account_virtual_claim", key=link.key)).status_code, 404)
+
+    def test_a_request_waiting_is_answered_not_cancelled(self):
+        link, _answer = self._ask()
+        self.client.force_login(self.coach)
+        self.client.post(_url("account_virtual_transfer_cancel", pk=self.kid.pk))
+        self.assertTrue(VirtualMemberTransfer.objects.filter(pk=link.pk, claimed_by=self.mentor).exists())
+        stranger = make_user("stranger", first_name="Ivan", last_name="Petrov")
+        self.client.force_login(stranger)
+        cancelled = self.client.post(_url("account_virtual_transfer_cancel", pk=self.kid.pk))
+        self.assertEqual(cancelled.status_code, HTTPStatus.NOT_FOUND)
 
 
 class HandToMentorApiTests(TestCase):
@@ -479,3 +504,16 @@ class HandToMentorApiTests(TestCase):
         self.kid.refresh_from_db()
         self.assertEqual(self.kid.owner, self.coach)
         self.assertEqual(self._post(f"/{self.kid.pk}/transfer?to=nobody", self.as_coach).status_code, 422)
+
+    def test_a_live_link_is_taken_back_through_the_api_and_a_request_waiting_is_not(self):
+        transfers.issue(self.kid, MENTOR)
+        path = f"{API}/{self.kid.pk}/transfer"
+        self.assertEqual(self.client.delete(path, **self.as_mentor).status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(self.client.delete(path, **self.as_coach).status_code, HTTPStatus.NO_CONTENT)
+        self.assertFalse(VirtualMemberTransfer.objects.exists())
+        self.assertEqual(self.client.delete(path, **self.as_coach).status_code, HTTPStatus.NOT_FOUND)
+        virtual_members.consent(self.mentor)
+        link = transfers.issue(self.kid, MENTOR)
+        self._post("/transfers/claim", self.as_mentor, {"key": str(link.key)})
+        self.assertEqual(self.client.delete(path, **self.as_coach).status_code, HTTPStatus.NOT_FOUND)
+        self.assertTrue(VirtualMemberTransfer.objects.filter(pk=link.pk, claimed_by=self.mentor).exists())

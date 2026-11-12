@@ -68,5 +68,10 @@ urlpatterns = [
         views.VirtualMemberTransferView.as_view(action="reject"),
         name="account_virtual_transfer_reject",
     ),
+    path(
+        "virtual-members/<int:pk>/transfer/cancel/",
+        views.VirtualMemberTransferView.as_view(action="cancel"),
+        name="account_virtual_transfer_cancel",
+    ),
     path("virtual-members/take/<uuid:key>/", views.VirtualMemberClaimView.as_view(), name="account_virtual_claim"),
 ]
