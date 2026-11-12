@@ -158,6 +158,27 @@ class RegisteredRidersTests(_Cast):
         self.assertEqual(self.client.get(reverse("competition_detail", args=[self.public.pk])).status_code, 200)
         self.assertIn("Public race", self.client.get(reverse("calendar_list")).content.decode())
 
+    def test_the_member_whose_person_without_an_account_is_entered_keeps_the_page(self):
+        from accounts.models import VirtualMember
+        from registrations.models import CompetitionRegistration
+
+        kid = VirtualMember.objects.create(
+            owner=self.stranger, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+        )
+        CompetitionRegistration.objects.create(
+            competition=self.public,
+            virtual_member=kid,
+            first_name="Dana",
+            last_name="Kim",
+            birth_date=kid.birth_date,
+            gender="F",
+        )
+        self._go_private()
+        self.as_(self.stranger)
+        self.assertEqual(self.client.get(reverse("competition_detail", args=[self.public.pk])).status_code, 200)
+        self.as_(self.invitee)
+        self.assertNotIn("Public race", self.client.get(reverse("calendar_list")).content.decode())
+
     def test_a_rejected_registration_lets_nobody_in(self):
         self._register(self.stranger, is_rejected=True)
         self._go_private()

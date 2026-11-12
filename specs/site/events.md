@@ -204,7 +204,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 - **FR-EVT-003**: Deleting is soft (`is_deleted`); a deleted event is seen by nobody.
 - **FR-EVT-004**: Who sees a published event: everybody, unless it is hidden (managers on its page,
   admins in listings) or invite-only (managers, invitees, registered riders whose entry is not
-  rejected).
+  rejected, and the member whose person without an account has such an entry -- who may have taken the
+  person over from the one who entered them).
 - **FR-EVT-005**: Rich descriptions are sanitised on save and in the admin; translations do not leak
   across locales on save.
 - **FR-EVT-006**: Redirects after moderation follow only a safe `next`, never downgrading https.
