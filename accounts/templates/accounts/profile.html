@@ -52,10 +52,12 @@
         <div class="card mb-4">
             <div class="card-body">
                 {% comment %}The change sits beside the address it changes, where a typo shows. The new
-                address counts only once confirmed, through the link sent to it (ACCOUNT_CHANGE_EMAIL).{% endcomment %}
+                address counts only once confirmed, through the link sent to it (ACCOUNT_CHANGE_EMAIL).
+                Offered while any address is on file: allauth clears an unconfirmed one, a guest's, as soon
+                as another is asked for, and the guest may need to put that one right too.{% endcomment %}
                 <p class="mb-1 d-flex flex-wrap align-items-center column-gap-2">
                     <span><strong>{% trans "Email" %}:</strong> {{ user.email }}</span>
-                    {% if user.email %}
+                    {% if signin_methods.has_email %}
                     <a href="{% url 'account_email' %}" class="btn btn-sm btn-outline-secondary">{% trans "Change email" %}</a>
                     {% endif %}
                 </p>
