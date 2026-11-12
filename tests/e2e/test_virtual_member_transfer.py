@@ -111,3 +111,34 @@ def test_a_person_goes_from_the_managers_card_to_another_mentor(page: Page, live
     _sign_in(page, live_server, mentor)
     page.goto(f"{live_server.url}/en/accounts/profile/")
     expect(page.locator(f"#vm-{kid.pk}")).to_contain_text("Kim Dana")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("language", ["ru", "kk", "en"])
+def test_the_two_ways_to_hand_over_stay_in_one_row_on_a_phone(page: Page, live_server, language):
+    """A pair of buttons that belong together keeps one row at 360px, the words wrapping inside each, two lines
+    at most; at 320px, the narrowest, nothing spills over a button's frame (the interface rules, 10)."""
+    coach = _member("coach", "Ivan", "Petrov")
+    virtual_members.consent(coach)
+    kid = VirtualMember.objects.create(
+        owner=coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+    )
+    _sign_in(page, live_server, coach)
+    shapes = {}
+    for width in (360, 320):
+        page.set_viewport_size({"width": width, "height": 900})
+        page.goto(f"{live_server.url}/{language}/accounts/profile/")
+        buttons = page.locator(f"#vm-{kid.pk} .virtual-transfer-kinds button")
+        expect(buttons).to_have_count(2)
+        shapes[width] = buttons.evaluate_all(
+            """els => els.map(e => {
+                const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+                const text = r.height - parseFloat(s.paddingTop) - parseFloat(s.paddingBottom) - 2;
+                return {top: Math.round(r.top), height: Math.round(r.height),
+                        lines: Math.round(text / parseFloat(s.lineHeight)), spills: e.scrollWidth > e.clientWidth};
+            })"""
+        )
+    phone = shapes[360]
+    assert phone[0]["top"] == phone[1]["top"] and phone[0]["height"] == phone[1]["height"], phone
+    assert all(shape["lines"] <= 2 for shape in phone), phone
+    assert not any(shape["spills"] for shape in shapes[360] + shapes[320]), shapes

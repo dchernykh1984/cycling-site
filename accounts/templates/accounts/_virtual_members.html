@@ -102,13 +102,15 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
                     <p class="text-muted mb-0">{% blocktrans with date=link.expires_at|date:"d.m.Y" %}Valid until {{ date }}.{% endblocktrans %}</p>
                 </div>
                 {% endif %}
-                <span class="d-flex flex-wrap gap-2">
+                {% comment %}One row on a phone too, as a pair of buttons that belong together: the words wrap inside
+                each button rather than the second button onto a row of its own.{% endcomment %}
+                <span class="d-flex gap-2 w-100 virtual-transfer-kinds">
                     {% for to, label in virtual.transfer_kinds %}
-                    <form method="post" action="{% url 'account_virtual_transfer' person.pk %}"
+                    <form method="post" action="{% url 'account_virtual_transfer' person.pk %}" class="d-flex flex-fill"
                           {% if person.transfer_url %}data-confirm="{% trans 'Make a new link? This one will stop working.' %}" onsubmit="return confirm(this.dataset.confirm)"{% endif %}>
                         {% csrf_token %}
                         <input type="hidden" name="to" value="{{ to }}">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="{{ label }}: {{ person }}">{{ label }}</button>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary flex-fill text-wrap" aria-label="{{ label }}: {{ person }}">{{ label }}</button>
                     </form>
                     {% endfor %}
                 </span>
