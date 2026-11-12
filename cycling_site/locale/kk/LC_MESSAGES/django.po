@@ -5518,3 +5518,7 @@ msgstr "%(number)s-бөлімді жою"
 #: accounts/templates/socialaccount/snippets/login.html:13
 msgid "Or sign in with another service"
 msgstr "Немесе басқа сервис арқылы кіріңіз"
+
+#: accounts/templates/accounts/profile.html:123
+msgid "Change email"
+msgstr "Email-ді өзгерту"

@@ -3,7 +3,8 @@
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29; the role checks in one module
 against branch `roles-in-one-module` on 2026-10-31; people without accounts and the privacy question (issue #438)
-against branch `438-virtual-members` on 2026-11-05
+against branch `438-virtual-members` on 2026-11-05; changing the sign-in address against branch
+`profile-change-email` on 2026-11-12
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/transfers.py`, `accounts/forms.py`,
@@ -15,7 +16,8 @@ against branch `438-virtual-members` on 2026-11-05
 `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
-`tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`
+`tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
+`tests/test_change_email.py`, `tests/e2e/test_change_email.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
@@ -81,6 +83,10 @@ once; confirming the address unlocks everything that writes.
    organizer's tools or their own event under review -- gives way to the home page in the page's
    language, whatever a profile or the language cookie names: signed out, the reader is a guest,
    and the profile no longer speaks for them (`cycling_site.middleware.SignedOutMiddleware`).
+6. **Given** a member with an address opens the profile, **Then** a button beside the address opens
+   its change: the new address is sent a link and replaces the old one only once confirmed. Until
+   then the old one still signs in and the change can be cancelled; an address another account has
+   confirmed is never taken over, and a guest who confirms the new one becomes a participant.
 
 ### Story 4 -- The role ladder (P2)
 
@@ -267,6 +273,8 @@ an account of their own (8 below).
   (`accounts.forms.SignupForm`, `ACCOUNT_SIGNUP_FORM_CLASS`) or, for an account a provider made, the
   page `account_privacy_consent` that `accounts.middleware.PrivacyConsentMiddleware` sends its first
   sign-in to while `privacy_consent_pending`; a `next` to another site leads to the profile instead.
+- **FR-ACC-014**: One sign-in address per member (allauth's change mode, `ACCOUNT_CHANGE_EMAIL`):
+  a new address waits beside the old one until the link sent to it is opened, then replaces it.
 
 ## Key Entities
 
@@ -303,7 +311,7 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - Editing the profile (names, gender, birth date, team, city, Strava link).
 - Asking for another role and writing to the owners.
 - **Exception**: signing up -- the privacy question at a provider's first sign-in included --,
-  signing in, confirming the address, connecting sign-in providers,
+  signing in, confirming the address, changing it, connecting sign-in providers,
   connecting Strava for uploads (a browser round trip through Strava) and generating the API token. They establish who an API caller is, so they come before the API
   rather than through it.
 - **Exception**: the skin, saved calendar filters and dismissed setup hints. They only change how

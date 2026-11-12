@@ -51,7 +51,14 @@
 
         <div class="card mb-4">
             <div class="card-body">
-                <p class="mb-1"><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
+                {% comment %}The change sits beside the address it changes, where a typo shows. The new
+                address counts only once confirmed, through the link sent to it (ACCOUNT_CHANGE_EMAIL).{% endcomment %}
+                <p class="mb-1 d-flex flex-wrap align-items-center column-gap-2">
+                    <span><strong>{% trans "Email" %}:</strong> {{ user.email }}</span>
+                    {% if user.email %}
+                    <a href="{% url 'account_email' %}" class="btn btn-sm btn-outline-secondary">{% trans "Change email" %}</a>
+                    {% endif %}
+                </p>
                 {% if user.first_name or user.last_name %}
                 <p class="mb-1"><strong>{% trans "Name" %}:</strong> {{ user.first_name }} {{ user.last_name }}</p>
                 {% endif %}
