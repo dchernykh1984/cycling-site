@@ -241,6 +241,10 @@ class ProfileView(TemplateView):
         )
         context["email_confirmation_required_message"] = EMAIL_CONFIRMATION_REQUIRED_MESSAGE
         context["signin_methods"] = signin_methods(user)
+        # allauth drops an unconfirmed address -- a guest's -- as soon as another is asked for, and
+        # user.email goes empty until that one is confirmed: the one asked for is shown meanwhile
+        waiting = EmailAddress.objects.filter(user=user, verified=False).order_by("pk")
+        context["pending_email"] = "" if user.email else (waiting.values_list("email", flat=True).last() or "")
         cooldown_remaining = 0
         sent_at = self.request.user.last_mail_action_at
         if sent_at:

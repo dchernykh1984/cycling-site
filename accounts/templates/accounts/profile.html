@@ -56,7 +56,7 @@
                 Offered while any address is on file: allauth clears an unconfirmed one, a guest's, as soon
                 as another is asked for, and the guest may need to put that one right too.{% endcomment %}
                 <p class="mb-1 d-flex flex-wrap align-items-center column-gap-2">
-                    <span><strong>{% trans "Email" %}:</strong> {{ user.email }}</span>
+                    <span><strong>{% trans "Email" %}:</strong> {% if user.email %}{{ user.email }}{% elif pending_email %}{{ pending_email }} <span class="text-muted small">{% trans "Waiting for confirmation" %}</span>{% endif %}</span>
                     {% if signin_methods.has_email %}
                     <a href="{% url 'account_email' %}" class="btn btn-sm btn-outline-secondary">{% trans "Change email" %}</a>
                     {% endif %}
