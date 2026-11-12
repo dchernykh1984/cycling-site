@@ -67,10 +67,10 @@ def _finish_live_requests():
     """Let the live server finish what a closed page left running before the tables are flushed.
 
     A request still inside a transaction while the flush truncates its tables deadlocks the flush, and
-    the next tests then fail on rows the flush left behind. pytest sets up a conftest's autouse
-    fixtures in name order, so this name sorts before ``_generous_ci_timeouts``, the first to open
-    ``page``: set up before the page, it is torn down after the page has closed and before the
-    database fixture, which pytest-django sets up first and tears down last.
+    the next tests then fail on rows the flush left behind. ``page`` below asks for this fixture first,
+    so it is set up before the page and torn down after the page has closed -- whatever fixture opens
+    the page, under whatever name -- and before the database fixture, which pytest-django sets up first
+    and tears down last.
 
     It waits for the requests in progress, not for the server's threads: a thread lives as long as the
     browser keeps its connection open, and Firefox keeps an idle one open well past the test.
@@ -78,6 +78,17 @@ def _finish_live_requests():
     yield
     with _live_requests_changed:
         _live_requests_changed.wait_for(lambda: not any(t.is_alive() for t in _live_requests), timeout=10)
+
+
+@pytest.fixture
+def page(_finish_live_requests, page):
+    """pytest-playwright's page, opened only once the wait for the live server's requests is in place.
+
+    The wait used to stand on autouse fixtures being set up in name order, and ``_cdn_files_from_memory``
+    sorts before it: the page opened first and closed last, so a request it started between the wait and
+    its closing could meet the flush halfway -- a deadlock, and the next test failing on the rows left.
+    """
+    return page
 
 
 @pytest.fixture(autouse=True)
