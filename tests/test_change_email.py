@@ -1,8 +1,9 @@
 """Changing the address a member signs in with (allauth's change mode, ACCOUNT_CHANGE_EMAIL).
 
 The new address replaces the old one only once it is confirmed through the link sent to it. Until
-then the old one still signs in, so a typo never locks anybody out, and an address another account
-has confirmed is never taken over.
+then a confirmed old address still signs in, so a typo never locks anybody out, and an address
+another account has confirmed is never taken over. An unconfirmed old address, a guest's, is
+dropped as soon as another is asked for: nothing showed it was theirs.
 """
 
 import re

@@ -85,8 +85,10 @@ once; confirming the address unlocks everything that writes.
    and the profile no longer speaks for them (`cycling_site.middleware.SignedOutMiddleware`).
 6. **Given** a member with an address opens the profile, **Then** a button beside the address opens
    its change: the new address is sent a link and replaces the old one only once confirmed. Until
-   then the old one still signs in and the change can be cancelled; an address another account has
-   confirmed is never taken over, and a guest who confirms the new one becomes a participant.
+   then a confirmed old address still signs in and the change can be cancelled, while an unconfirmed
+   one -- a guest's -- is dropped at once and the button stays; a link sent for a change asked for
+   again confirms nothing; an address another account has confirmed is never taken over, and a guest
+   who confirms the new one becomes a participant.
 
 ### Story 4 -- The role ladder (P2)
 
