@@ -323,6 +323,20 @@ def issue_transfer(request, virtual_member_id: int, to: VirtualMemberTransfer.To
     return Status(HTTPStatus.CREATED, _transfer_out(request, link))
 
 
+@router.delete(
+    "/{virtual_member_id}/transfer",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=member_auth,
+    summary="Take back a hand-over link nobody has asked through",
+)
+def cancel_transfer(request, virtual_member_id: int):
+    """The link stops working, and the person may be handed over again, either way. A request already waiting
+    is answered instead -- confirmed or rejected --, so there is nothing to take back then (404)."""
+    if not transfers.cancel(request.auth, _person(request.auth, virtual_member_id).pk):
+        raise HttpError(HTTPStatus.NOT_FOUND, "No link nobody has asked through waits for this person")
+    return Status(HTTPStatus.NO_CONTENT, None)
+
+
 @router.post(
     "/{virtual_member_id}/transfer/confirm",
     response={HTTPStatus.NO_CONTENT: None},

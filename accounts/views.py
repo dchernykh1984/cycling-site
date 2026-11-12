@@ -878,30 +878,42 @@ class VirtualMemberTransferView(ParticipantRequiredMixin, View):
         if person is None:
             raise Http404
         if self.action == "issue":
-            to = request.POST.get("to", transfers.To.OWNER)
-            if to not in transfers.To.values:
-                return HttpResponseBadRequest()
-            refusal = transfers.why_no_link(request.user)
-            if refusal:
-                messages.error(request, refusal)
-            else:
-                transfers.issue(person, to)
-            return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
+            return self._issue(request, person)
         if self.action == "confirm":
-            try:
-                done = transfers.confirm(request.user, person.pk)
-            except transfers.RefusedError as refused:
-                messages.error(request, str(refused))
-                return redirect(_to_virtual_members())
-            if done is not None:
-                names = {"person": done.person, "name": done.claimed_by.public_display_name}
-                if done.to_mentor:
-                    messages.success(request, gettext("%(person)s is now in the list of %(name)s.") % names)
-                else:
-                    messages.success(request, gettext("%(person)s is now in the account of %(name)s.") % names)
+            self._confirm(request, person)
         elif self.action == "reject":
             transfers.reject(request.user, person.pk)
+        elif self.action == "cancel":
+            transfers.cancel(request.user, person.pk)
+            return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
         return redirect(_to_virtual_members())
+
+    @staticmethod
+    def _issue(request, person):
+        to = request.POST.get("to", transfers.To.OWNER)
+        if to not in transfers.To.values:
+            return HttpResponseBadRequest()
+        refusal = transfers.why_no_link(request.user)
+        if refusal:
+            messages.error(request, refusal)
+        else:
+            transfers.issue(person, to)
+        return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
+
+    @staticmethod
+    def _confirm(request, person) -> None:
+        try:
+            done = transfers.confirm(request.user, person.pk)
+        except transfers.RefusedError as refused:
+            messages.error(request, str(refused))
+            return
+        if done is None or done.claimed_by is None:
+            return
+        names = {"person": done.person, "name": done.claimed_by.public_display_name}
+        if done.to_mentor:
+            messages.success(request, gettext("%(person)s is now in the list of %(name)s.") % names)
+        else:
+            messages.success(request, gettext("%(person)s is now in the account of %(name)s.") % names)
 
 
 class VirtualMemberClaimView(LoginRequiredMixin, View):

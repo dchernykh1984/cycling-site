@@ -5619,3 +5619,19 @@ msgstr "<strong>Передача другому наставнику.</strong> �
 #: accounts/templates/accounts/virtual_member_claim.html
 msgid "Becoming a person's mentor"
 msgstr "Стать наставником человека"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Link for a mentor"
+msgstr "Ссылка для наставника"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Link for the owner"
+msgstr "Ссылка для владельца"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Cancel the link"
+msgstr "Отменить ссылку"
+
+#: accounts/templates/accounts/_virtual_members.html
+msgid "Cancel this link? It stops working, and you may then hand the person over again, either way."
+msgstr "Отменить ссылку? Она перестанет работать, и человека можно будет передать заново — наставнику или владельцу."

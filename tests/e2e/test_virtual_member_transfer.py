@@ -89,6 +89,7 @@ def test_a_person_goes_from_the_managers_card_to_another_mentor(page: Page, live
     page.goto(f"{live_server.url}/en/accounts/profile/")
     page.get_by_role("button", name="Hand over to a mentor: Kim Dana").click()
     row = page.locator(f"#vm-{kid.pk}")
+    expect(row).to_contain_text("Link for a mentor")
     expect(row).to_contain_text("Send this link to the mentor who takes Kim Dana over")
     link = row.locator("code").inner_text()
 
@@ -142,3 +143,25 @@ def test_the_two_ways_to_hand_over_stay_in_one_row_on_a_phone(page: Page, live_s
     assert phone[0]["top"] == phone[1]["top"] and phone[0]["height"] == phone[1]["height"], phone
     assert all(shape["lines"] <= 2 for shape in phone), phone
     assert not any(shape["spills"] for shape in shapes[360] + shapes[320]), shapes
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_live_link_is_named_for_whom_it_is_and_one_button_takes_it_back(page: Page, live_server):
+    coach = _member("coach", "Ivan", "Petrov")
+    virtual_members.consent(coach)
+    kid = VirtualMember.objects.create(
+        owner=coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+    )
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    row = page.locator(f"#vm-{kid.pk}")
+    row.get_by_role("button", name="Hand over to the owner: Kim Dana").click()
+    row = page.locator(f"#vm-{kid.pk}")
+    expect(row).to_contain_text("Link for the owner")
+    # One state at a time: while the link is live, it alone is on offer, and the hand-over buttons wait
+    expect(row.get_by_role("button", name="Hand over to a mentor: Kim Dana")).to_have_count(0)
+    page.once("dialog", lambda dialog: dialog.accept())
+    row.get_by_role("button", name="Cancel the link: Kim Dana").click()
+    row = page.locator(f"#vm-{kid.pk}")
+    expect(row.get_by_role("button", name="Hand over to a mentor: Kim Dana")).to_be_visible()
+    expect(row.locator("code")).to_have_count(0)
