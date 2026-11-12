@@ -1,15 +1,36 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% comment %}A link that hands a person without an account over to the account that opens it (issue #438):
-who hands whom over, what moves, a box -- unticked -- to keep the manager, and one button. Opening it
-changes nothing; a link that cannot be used says why.{% endcomment %}
+who hands whom over and what moves, and one button. To the owner, a box -- unticked -- keeps the manager;
+to a mentor, the person stays without an account, and a mentor who has not said yet that they may handle
+such people's data says it here. Opening it changes nothing; a link that cannot be used says why.{% endcomment %}
 
 {% block title %}{% trans "Taking over a person's data" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center virtual-claim">
   <div class="col-md-8 col-lg-6">
-    {% if asked %}
+    {% if asked and link.to_mentor %}
+    {% with name=link.person.owner.public_display_name person=link.person %}
+    <h1 class="h3 mb-3">{% blocktrans %}Become the mentor of {{ person }}?{% endblocktrans %}</h1>
+    <p>{% blocktrans with born=person.birth_date|date:"d.m.Y" gender=person.get_gender_display %}{{ name }} hands {{ person }} ({{ gender }}, born on {{ born }}) over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and {{ name }} no longer sees them.{% endblocktrans %}</p>
+    <p class="small text-muted">{% blocktrans %}Nothing moves until {{ name }} confirms that this account is the mentor they meant.{% endblocktrans %}</p>
+    {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      {% if needs_word %}
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="consent" id="vm-consent" required>
+        <label class="form-check-label" for="vm-consent">{% trans "I am authorized to handle their personal data" %}</label>
+      </div>
+      {% endif %}
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <button type="submit" class="btn btn-primary">{% trans "Accept" %}</button>
+        <a href="{% url 'account_profile' %}" class="btn btn-link">{% trans "Not now" %}</a>
+      </div>
+    </form>
+    {% endwith %}
+    {% elif asked %}
     {% with name=link.person.owner.public_display_name person=link.person %}
     <h1 class="h3 mb-3">{% blocktrans %}Take {{ person }} into your account?{% endblocktrans %}</h1>
     <p>{% blocktrans %}{{ name }} hands {{ person }} over to you: their registrations and the bibs named for their photos go into your account, and {{ name }} no longer sees them.{% endblocktrans %}</p>

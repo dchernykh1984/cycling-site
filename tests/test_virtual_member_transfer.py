@@ -188,13 +188,19 @@ class HandOverTests(TestCase):
     def test_the_card_offers_the_link_then_shows_it_then_the_request_to_answer(self):
         self.client.force_login(self.coach)
         with translation.override("en"):
-            self.assertContains(self.client.get(_url("account_profile")), ">Hand over</button>")
-            self.client.post(_url("account_virtual_transfer", pk=self.kid.pk))
+            # Every row has these buttons: a screen reader hears whose each one is, as with "Edit" and "Delete"
+            page = self.client.get(_url("account_profile"))
+            self.assertContains(page, 'aria-label="Hand over to a mentor: Kim Dana"')
+            self.assertContains(page, 'aria-label="Hand over to the owner: Kim Dana"')
+            self.assertNotContains(page, "Make a new link?")
+            self.client.post(_url("account_virtual_transfer", pk=self.kid.pk), {"to": VirtualMemberTransfer.To.OWNER})
             link = VirtualMemberTransfer.objects.get(person=self.kid)
             page = self.client.get(_url("account_profile"))
         self.assertContains(page, _url("account_virtual_claim", key=link.key))
-        # Every row has these buttons: a screen reader hears whose each one is, as with "Edit" and "Delete"
-        self.assertContains(page, 'aria-label="New link: Kim Dana"')
+        self.assertContains(page, "Send this link to the owner of the account the data of Kim Dana moves to")
+        # Pressed again while the link is live, either button makes a new link, of its kind, and says so first
+        self.assertContains(page, 'aria-label="Hand over to a mentor: Kim Dana"')
+        self.assertContains(page, "Make a new link? This one will stop working.", count=2)
         self._ask(keep_manager=True)
         self.client.force_login(self.coach)
         with translation.override("en"):
@@ -203,7 +209,7 @@ class HandOverTests(TestCase):
         self.assertContains(page, "They let you go on managing their registrations and photos.")
         self.assertContains(page, 'aria-label="Confirm: Kim Dana"')
         self.assertContains(page, 'aria-label="Reject: Kim Dana"')
-        self.assertNotContains(page, ">Hand over</button>")
+        self.assertNotContains(page, "Hand over to the owner: Kim Dana")
 
     def test_a_manager_without_a_name_is_asked_for_one_before_a_link(self):
         """Whoever opens the link must see who hands the person over, as with a manager's own link."""
@@ -254,7 +260,7 @@ class HandOverApiTests(TestCase):
         self.assertEqual(own.status_code, HTTPStatus.CONFLICT)
         asked = self._post("/transfers/claim", self.as_rider, {"key": str(link.key), "keep_manager": True})
         self.assertEqual(asked.status_code, HTTPStatus.CREATED)
-        self.assertEqual(asked.json(), {"person": "Kim Dana", "manager": "Anna Coach"})
+        self.assertEqual(asked.json(), {"person": "Kim Dana", "manager": "Anna Coach", "to": "owner"})
         again = self._post("/transfers/claim", self.as_rider, {"key": str(link.key)})
         self.assertEqual(again.status_code, HTTPStatus.NOT_FOUND)
         waiting = self.client.get(f"{API}/", **self.as_coach).json()["people"][0]["transfer"]
@@ -275,3 +281,196 @@ class HandOverApiTests(TestCase):
         self.assertEqual(self._post(f"/{self.kid.pk}/transfer/reject", self.as_coach).status_code, 204)
         self.assertFalse(VirtualMemberTransfer.objects.exists())
         self.assertTrue(VirtualMember.objects.filter(pk=self.kid.pk).exists())
+
+
+MENTOR = VirtualMemberTransfer.To.MENTOR
+
+
+class HandToMentorTests(TestCase):
+    """Handing a person over to another mentor: they stay a person without an account, in that member's list."""
+
+    def setUp(self):
+        self.coach = make_user("coach", first_name="Anna", last_name="Coach")
+        virtual_members.consent(self.coach)
+        self.kid = VirtualMember.objects.create(
+            owner=self.coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+        )
+        self.mentor = make_user("mentor", first_name="Olga", last_name="Mentor", city="Taraz")
+
+    def _ask(self, consent=True):
+        link = transfers.issue(self.kid, MENTOR)
+        self.client.force_login(self.mentor)
+        answer = self.client.post(_url("account_virtual_claim", key=link.key), {"consent": "on"} if consent else {})
+        link.refresh_from_db()
+        return link, answer
+
+    def _confirm(self):
+        self.client.force_login(self.coach)
+        with translation.override("en"):
+            return self.client.post(_url("account_virtual_transfer_confirm", pk=self.kid.pk), follow=True)
+
+    def _fill_up(self, account, count):
+        VirtualMember.objects.bulk_create(
+            VirtualMember(owner=account, last_name=f"Pupil{n}", first_name="X", gender="M", birth_date="2012-01-01")
+            for n in range(count)
+        )
+
+    def test_the_mentor_gives_their_word_on_the_page_and_the_request_waits_for_the_manager(self):
+        link = transfers.issue(self.kid, MENTOR)
+        self.client.force_login(self.mentor)
+        with translation.override("en"):
+            page = self.client.get(_url("account_virtual_claim", key=link.key))
+            self.assertContains(page, "Become the mentor of Kim Dana?")
+            self.assertContains(page, "Anna Coach hands Kim Dana (Female, born on 04.03.2012) over to you")
+            self.assertContains(page, 'name="consent"')
+            self.assertNotContains(page, 'name="keep_manager"')
+            refused = self.client.post(_url("account_virtual_claim", key=link.key))
+        self.assertContains(refused, "Confirm first that you may handle the personal data of Kim Dana")
+        link.refresh_from_db()
+        self.assertIsNone(link.claimed_by)
+        self.assertFalse(virtual_members.consented(self.mentor))
+
+        link, answer = self._ask()
+        self.assertRedirects(answer, _url("account_profile"), fetch_redirect_response=False)
+        self.assertEqual(link.claimed_by, self.mentor)
+        self.mentor.refresh_from_db()
+        self.assertTrue(virtual_members.consented(self.mentor))
+        self.kid.refresh_from_db()
+        self.assertEqual(self.kid.owner, self.coach)
+        self.client.force_login(self.coach)
+        with translation.override("en"):
+            self.assertContains(
+                self.client.get(_url("account_profile")), "Olga Mentor asks to become the mentor of Kim Dana."
+            )
+
+    def test_once_confirmed_the_person_with_their_entries_and_bibs_is_in_the_mentors_list(self):
+        competition = make_open_competition()
+        entry = make_registration(competition, virtual_member=self.kid, registered_by=self.coach)
+        bib = DeclaredBib.objects.create(
+            competition=make_open_competition(title="Bib"), virtual_member=self.kid, bib="7"
+        )
+        self._ask()
+        answer = self._confirm()
+        self.assertContains(answer, "Kim Dana is now in the list of Olga Mentor.")
+        self.kid.refresh_from_db()
+        self.assertEqual(self.kid.owner, self.mentor)
+        self.assertFalse(VirtualMemberTransfer.objects.exists())
+        entry.refresh_from_db()
+        bib.refresh_from_db()
+        self.assertEqual((entry.virtual_member, entry.user, entry.registered_by), (self.kid, None, self.coach))
+        self.assertEqual((bib.virtual_member, bib.user), (self.kid, None))
+        self.assertTrue(can_self_edit(self.mentor, competition, entry))
+        self.assertFalse(can_self_edit(self.coach, competition, entry))
+        # Nothing of an account's: no profile filled, nobody managed
+        self.mentor.refresh_from_db()
+        self.assertEqual((self.mentor.city, self.mentor.birth_date), ("Taraz", None))
+        self.assertFalse(ManagedMember.objects.exists())
+
+    def test_the_mentor_sees_the_invite_only_events_their_person_is_entered_for(self):
+        race = make_open_competition(invite_only=True)
+        make_registration(race, virtual_member=self.kid, first_name="Dana", last_name="Kim")
+        self.assertFalse(can_see(self.mentor, race))
+        self._ask()
+        self._confirm()
+        self.assertTrue(can_see(self.mentor, race))
+        self.assertIn(race, listed_events(self.mentor))
+        self.client.force_login(self.mentor)
+        self.assertEqual(self.client.get(race.get_absolute_url()).status_code, HTTPStatus.OK)
+
+    def test_a_full_list_or_a_copy_of_the_person_keeps_them_with_their_manager(self):
+        virtual_members.consent(self.mentor)
+        self._fill_up(self.mentor, virtual_members.room(self.mentor))
+        link = transfers.issue(self.kid, MENTOR)
+        self.client.force_login(self.mentor)
+        with translation.override("en"):
+            self.assertContains(
+                self.client.get(_url("account_virtual_claim", key=link.key)), "is full", status_code=200
+            )
+        VirtualMember.objects.filter(owner=self.mentor).delete()
+        VirtualMember.objects.create(
+            owner=self.mentor, last_name="KIM", first_name="dana", gender="F", birth_date=self.kid.birth_date
+        )
+        with translation.override("en"):
+            page = self.client.get(_url("account_virtual_claim", key=link.key))
+        self.assertContains(page, "You already have Kim Dana, born on 04.03.2012, in your list")
+        self.client.post(_url("account_virtual_claim", key=link.key), {"consent": "on"})
+        link.refresh_from_db()
+        self.assertIsNone(link.claimed_by)
+
+        # Room when asked, none left when the manager answers: the person stays, and so does the request
+        VirtualMember.objects.filter(owner=self.mentor).delete()
+        link, _answer = self._ask()
+        self._fill_up(self.mentor, virtual_members.room(self.mentor))
+        answer = self._confirm()
+        self.assertContains(answer, "Olga Mentor has no room left for people without an account")
+        self.kid.refresh_from_db()
+        self.assertEqual(self.kid.owner, self.coach)
+        self.assertTrue(VirtualMemberTransfer.objects.filter(pk=link.pk, claimed_by=self.mentor).exists())
+
+    def test_either_button_makes_a_link_of_its_kind_in_place_of_the_last(self):
+        self.client.force_login(self.coach)
+        transfer = _url("account_virtual_transfer", pk=self.kid.pk)
+        self.client.post(transfer, {"to": MENTOR})
+        first = VirtualMemberTransfer.objects.get(person=self.kid)
+        self.assertTrue(first.to_mentor)
+        with translation.override("en"):
+            page = self.client.get(_url("account_profile"))
+            self.assertContains(page, "Send this link to the mentor who takes Kim Dana over")
+            self.assertContains(self.client.get(_url("account_virtual_claim", key=first.key)), "send it to the mentor")
+        self.client.post(transfer, {"to": VirtualMemberTransfer.To.OWNER})
+        second = VirtualMemberTransfer.objects.get(person=self.kid)
+        self.assertEqual((second.to_mentor, second.pk == first.pk), (False, True))
+        self.assertNotEqual(second.key, first.key)
+        self.assertEqual(self.client.post(transfer, {"to": "nobody"}).status_code, HTTPStatus.BAD_REQUEST)
+
+
+class HandToMentorApiTests(TestCase):
+    def setUp(self):
+        self.coach = make_user("coach", first_name="Anna", last_name="Coach")
+        virtual_members.consent(self.coach)
+        self.kid = VirtualMember.objects.create(
+            owner=self.coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+        )
+        self.mentor = make_user("mentor", first_name="Olga", last_name="Mentor")
+        self.as_coach, self.as_mentor = _bearer(self.coach), _bearer(self.mentor)
+
+    def _post(self, path, auth, data=None):
+        return self.client.post(f"{API}{path}", data or {}, content_type="application/json", **auth)
+
+    def test_the_mentor_link_the_word_the_request_and_the_answer_go_through_the_api(self):
+        made = self._post(f"/{self.kid.pk}/transfer?to=mentor", self.as_coach)
+        self.assertEqual(made.status_code, HTTPStatus.CREATED)
+        self.assertEqual(made.json()["to"], "mentor")
+        key = str(VirtualMemberTransfer.objects.get(person=self.kid).key)
+
+        unsaid = self._post("/transfers/claim", self.as_mentor, {"key": key})
+        self.assertEqual(unsaid.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(self._post("/consent", self.as_mentor).status_code, HTTPStatus.NO_CONTENT)
+        asked = self._post("/transfers/claim", self.as_mentor, {"key": key, "keep_manager": True})
+        self.assertEqual(asked.status_code, HTTPStatus.CREATED)
+        self.assertEqual(asked.json(), {"person": "Kim Dana", "manager": "Anna Coach", "to": "mentor"})
+        waiting = self.client.get(f"{API}/", **self.as_coach).json()["people"][0]["transfer"]
+        self.assertEqual(
+            (waiting["to"], waiting["claimed_by"]["name"], waiting["keep_manager"]), ("mentor", "Olga Mentor", False)
+        )
+
+        self.assertEqual(
+            self._post(f"/{self.kid.pk}/transfer/confirm", self.as_coach).status_code, HTTPStatus.NO_CONTENT
+        )
+        people = self.client.get(f"{API}/", **self.as_mentor).json()["people"]
+        self.assertEqual([(p["id"], p["transfer"]) for p in people], [(self.kid.pk, None)])
+        self.assertEqual(self.client.get(f"{API}/", **self.as_coach).json()["people"], [])
+
+    def test_a_mentor_whose_list_filled_up_since_asking_is_refused_at_the_answer(self):
+        virtual_members.consent(self.mentor)
+        link = transfers.issue(self.kid, MENTOR)
+        self._post("/transfers/claim", self.as_mentor, {"key": str(link.key)})
+        VirtualMember.objects.bulk_create(
+            VirtualMember(owner=self.mentor, last_name=f"Pupil{n}", first_name="X", gender="M", birth_date="2012-01-01")
+            for n in range(virtual_members.room(self.mentor))
+        )
+        refused = self._post(f"/{self.kid.pk}/transfer/confirm", self.as_coach)
+        self.assertEqual(refused.status_code, HTTPStatus.CONFLICT)
+        self.kid.refresh_from_db()
+        self.assertEqual(self.kid.owner, self.coach)
+        self.assertEqual(self._post(f"/{self.kid.pk}/transfer?to=nobody", self.as_coach).status_code, 422)
