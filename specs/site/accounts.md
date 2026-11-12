@@ -17,7 +17,7 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
-`tests/test_change_email.py`, `tests/e2e/test_change_email.py`
+`tests/test_change_email.py`, `tests/e2e/test_change_email.py`, `tests/e2e/test_role_ladder.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
@@ -98,7 +98,8 @@ once; confirming the address unlocks everything that writes.
    ladder without the button. Each role is named for what it is on this site -- Guest, Participant,
    Event organizer, Site administrator, Site owner -- with a line on what it may do
    (`accounts.roles.DESCRIPTIONS`; maintainer, 2026-11-12: a parent asked for the owner's role to
-   look after a child's account).
+   look after a child's account). The name is in the page's text colour, the line below it smaller
+   and muted, so the two never read alike.
 2. **Given** a member asks for a role, **Then** the page offers every other role with the same line,
    a reason is required, the owners get a mail (in English whatever the page language), nothing is
    granted, and further requests wait a minute.
