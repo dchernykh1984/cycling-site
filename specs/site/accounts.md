@@ -162,7 +162,7 @@ their consent. Not a role: a link between two accounts (issue #315; the decision
 A coach or a parent enters people who have no account -- the children of a section, a family -- for
 races and looks after their race photos (issue #438). They exist only in the member's profile and in
 `/api/v1/virtual-members/`, and never become an account by themselves: a person may be handed over to
-an account of their own (8 below).
+an account of their own, or to another mentor, staying without one (8 and 9 below).
 
 1. **Given** a confirmed member, **Then** the profile shows a card "People without an account" after
    the managing card; it folds by its header, and once folded stays folded in that browser.
@@ -190,8 +190,9 @@ an account of their own (8 below).
    and looks after their photos and names their bib ([event photos](event-photos.md)), as for a
    member they manage.
 8. **Given** a person who has an account of their own (maintainer, 2026-11-06), **Then** the member
-   hands them over: "Hand over" by the person makes a link to send -- one per person, a new one stops
-   the old and drops a request waiting, it lasts a week and takes one request. The account that opens
+   hands them over: "Hand over to the owner" by the person makes a link to send -- one per person, a new
+   one, of either kind, stops the old and drops a request waiting, it lasts a week and takes one request;
+   while a link is live, either button asks before making a new one. The account that opens
    it signed in sees who hands whom over and the names, not the values, of its empty profile fields
    that get filled, may tick -- unticked at first -- to let the member go on managing its registrations
    and photos, and asks by a button; the member's own link, or an account whose address is not
@@ -201,6 +202,17 @@ an account of their own (8 below).
    named at the same event once, a different one as a second), the account's empty profile fields
    are filled from the person, the box ticked makes the member its manager, and the person leaves the
    member's list. An account may take over several people, from several members.
+9. **Given** a person who is to stay without an account but go to another coach or a parent
+   (maintainer, 2026-11-12), **Then** "Hand over to a mentor" makes a link of the same kind. The member
+   who opens it signed in sees who hands whom over, with the person's gender and date of birth, gives
+   their word about such people's data on the page where they have not given it yet, and asks by
+   "Accept"; a full list or a person already in it (the same names and date of birth) is told why it
+   cannot. Once the member confirms, the person -- with their entries and named bibs, which stay theirs --
+   is in the mentor's list instead, and the mentor enters them, looks after their photos and sees the
+   invite-only events they are entered for; nothing of the mentor's own profile changes. A mentor whose
+   list filled up, or came to hold the person, since asking is refused at the confirmation, and the
+   request stays to be rejected. Through the API, `POST /{id}/transfer?to=mentor` makes the link, the
+   claim takes the word given before (`POST /consent`, else 403), and each link says what it is for (`to`).
 
 ### Edge Cases
 
@@ -269,8 +281,9 @@ an account of their own (8 below).
   first name and date of birth for a member (`virtual_members.key`). The pages, the registration
   page and the photos share `accounts/virtual_members.py` (`who` tells an account from a person
   without one), and so does `/api/v1/virtual-members/`. Handing a person over is
-  `accounts/transfers.py` (`VirtualMemberTransfer`): `hand_over` moves every table that points at a
-  person, and a test fails when a field or a table is added that it does not name.
+  `accounts/transfers.py` (`VirtualMemberTransfer`, its kind in `to`): to the owner, `hand_over` moves
+  every table that points at a person, and a test fails when a field or a table is added that it does
+  not name; to a mentor, `move_to_mentor` changes only the person's member.
 - **FR-ACC-013**: The privacy question (issue #438): the sign-up form's last field
   (`accounts.forms.SignupForm`, `ACCOUNT_SIGNUP_FORM_CLASS`) or, for an account a provider made, the
   page `account_privacy_consent` that `accounts.middleware.PrivacyConsentMiddleware` sends its first

@@ -249,13 +249,19 @@ class VirtualMember(models.Model):
 
 
 class VirtualMemberTransfer(models.Model):
-    """A person without an account handed over to an account of their own (issue #438): the link their
-    manager sends, then the request of the account that opened it, waiting for the manager to confirm.
+    """A person without an account handed over (issue #438): the link their manager sends, then the
+    request of the account that opened it, waiting for the manager to confirm. Handed to the owner, the
+    person goes into an account of their own; handed to a mentor -- another coach, a parent -- they stay
+    a person without an account, in that member's list instead.
 
     One per person: a new link replaces the key and drops a request waiting, so a leaked one stops
     working; a link lasts a week and takes one request. Opening it changes nothing: the account asks
-    by a button, and nothing moves until the manager confirms that the account is their person's.
+    by a button, and nothing moves until the manager confirms that the account is the one they meant.
     """
+
+    class To(models.TextChoices):
+        OWNER = "owner", _("The owner, into their own account")
+        MENTOR = "mentor", _("Another mentor, as a person without an account")
 
     LIFETIME = datetime.timedelta(days=7)
 
@@ -268,9 +274,14 @@ class VirtualMemberTransfer(models.Model):
     )
     claimed_at = models.DateTimeField(null=True, blank=True)
     keep_manager = models.BooleanField(default=False)
+    to = models.CharField(max_length=6, choices=To.choices, default=To.OWNER)
 
     def __str__(self) -> str:
         return f"transfer of v{self.person_id}" + (f" to {self.claimed_by_id}" if self.claimed_by_id else "")
+
+    @property
+    def to_mentor(self) -> bool:
+        return self.to == self.To.MENTOR
 
     @property
     def expires_at(self) -> datetime.datetime:

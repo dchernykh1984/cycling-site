@@ -5,8 +5,9 @@ Adding anyone takes the member's word, given once, that they may handle these pe
 people than the member may add, saves nobody and says why, row by row. Somebody already added -- the
 same names and date of birth -- is left as they are, so a batch sent twice adds nobody twice.
 
-A person may be handed over to an account of their own (``accounts.transfers``): the member makes a
-link, the account asks through it, and the member confirms -- the same rules as the profile's card.
+A person may be handed over (``accounts.transfers``) -- to the owner, into an account of their own, or to
+another mentor, staying without an account: the member makes a link, the account asks through it, and the
+member confirms -- the same rules as the profile's card.
 """
 
 import datetime
@@ -20,7 +21,7 @@ from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
 
 from accounts import roles, transfers, virtual_members
-from accounts.models import VIRTUAL_NAME_LENGTH, VirtualMember
+from accounts.models import VIRTUAL_NAME_LENGTH, VirtualMember, VirtualMemberTransfer
 from api.auth import member_auth
 
 router = Router(tags=["virtual members"])
@@ -65,10 +66,11 @@ class ClaimantOut(Schema):
 
 
 class TransferOut(Schema):
+    to: VirtualMemberTransfer.To  # the owner, into their own account, or a mentor, as a person without one
     url: str  # the link to send while it is live; empty once somebody asked through it, or it ran out
     expires_at: datetime.datetime
     claimed_by: ClaimantOut | None  # the account whose request waits for the member to confirm it
-    keep_manager: bool  # that account lets the member go on managing its registrations and photos
+    keep_manager: bool  # that account -- the owner -- lets the member go on managing its registrations and photos
 
 
 class VirtualMemberOut(Schema):
@@ -81,17 +83,18 @@ class VirtualMemberOut(Schema):
     city: str
     strava_link: str
     sports_achievements: str
-    transfer: TransferOut | None = None  # the link handing the person over to an account of their own
+    transfer: TransferOut | None = None  # the link handing the person over, or the request that came through it
 
 
 class ClaimIn(Schema):
     key: uuid.UUID
-    keep_manager: bool = False  # let the person's manager go on managing my registrations and photos
+    keep_manager: bool = False  # to the owner: let the person's manager go on managing my registrations and photos
 
 
 class ClaimOut(Schema):
     person: str  # last and first name
     manager: str  # who confirms it
+    to: VirtualMemberTransfer.To  # into my account, or into my list of people without an account
 
 
 class VirtualMembersOut(Schema):
@@ -120,6 +123,7 @@ class BatchRefusalOut(Schema):
 def _transfer_out(request, link) -> TransferOut:
     claimant = link.claimed_by
     return TransferOut(
+        to=link.to,
         url=request.build_absolute_uri(reverse("account_virtual_claim", kwargs={"key": link.key}))
         if link.is_live()
         else "",
@@ -277,32 +281,45 @@ def delete_person(request, virtual_member_id: int):
     summary="Ask, through a link, to take over a person somebody added",
 )
 def claim(request, payload: ClaimIn):
-    """The person's entries and named bibs come to my account, and my profile's empty fields are filled
-    from them, once their manager confirms it; a link takes one request."""
+    """To the owner: the person's entries and named bibs come to my account, and my profile's empty fields
+    are filled from them. To a mentor: the person, with them, comes into my list of people without an
+    account -- which takes my word about such people's data first (``POST /consent``), room for one more
+    and no copy of them (409). Either once their manager confirms it; a link takes one request."""
     link = transfers.find(payload.key)
+    if link is not None and link.to_mentor:
+        _consented(request.auth)
     outcome = transfers.ask(request.auth, payload.key, payload.keep_manager)
     if outcome != transfers.ASKED or link is None:
         raise HttpError(
             HTTPStatus.NOT_FOUND if outcome == transfers.INVALID else HTTPStatus.CONFLICT,
             transfers.refusal(outcome, link),
         )
-    return Status(HTTPStatus.CREATED, ClaimOut(person=str(link.person), manager=link.person.owner.public_display_name))
+    return Status(
+        HTTPStatus.CREATED,
+        ClaimOut(
+            person=str(link.person),
+            manager=link.person.owner.public_display_name,
+            to=VirtualMemberTransfer.To(link.to),
+        ),
+    )
 
 
 @router.post(
     "/{virtual_member_id}/transfer",
     response={HTTPStatus.CREATED: TransferOut},
     auth=member_auth,
-    summary="Make a link handing a person I added over to their own account",
+    summary="Make a link handing a person I added over: to the owner or to a mentor",
 )
-def issue_transfer(request, virtual_member_id: int):
-    """A new link replaces the old one and drops a request waiting; it lasts a week and takes one request.
-    A member without a name in their profile is asked for one first (409)."""
+def issue_transfer(request, virtual_member_id: int, to: VirtualMemberTransfer.To = VirtualMemberTransfer.To.OWNER):
+    """``to=owner`` (the default) hands the person into an account of their own, ``to=mentor`` to another
+    member's list, still without an account. A new link replaces the old one, whatever it was for, and
+    drops a request waiting; it lasts a week and takes one request. A member without a name in their
+    profile is asked for one first (409)."""
     person = _person(request.auth, virtual_member_id)
     refusal = transfers.why_no_link(request.auth)
     if refusal:
         raise HttpError(HTTPStatus.CONFLICT, refusal)
-    link = transfers.issue(person)
+    link = transfers.issue(person, to)
     return Status(HTTPStatus.CREATED, _transfer_out(request, link))
 
 
@@ -313,8 +330,14 @@ def issue_transfer(request, virtual_member_id: int):
     summary="Confirm the request: hand the person over",
 )
 def confirm_transfer(request, virtual_member_id: int):
-    """The person's entries and named bibs go to the account that asked, and the person leaves my list."""
-    if transfers.confirm(request.auth, _person(request.auth, virtual_member_id).pk) is None:
+    """To the owner, the person's entries and named bibs go to the account that asked; to a mentor, the
+    person goes into that account's list with them -- unless it has filled up, or come to hold the
+    person, since (409). Either way the person leaves my list."""
+    try:
+        done = transfers.confirm(request.auth, _person(request.auth, virtual_member_id).pk)
+    except transfers.RefusedError as refused:
+        raise HttpError(HTTPStatus.CONFLICT, str(refused)) from refused
+    if done is None:
         raise HttpError(HTTPStatus.NOT_FOUND, "No request waits for this person")
     return Status(HTTPStatus.NO_CONTENT, None)
 

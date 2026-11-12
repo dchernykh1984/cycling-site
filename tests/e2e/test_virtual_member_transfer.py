@@ -1,5 +1,5 @@
-"""E2E for handing a person without an account over to an account of their own (issue #438): the link's way
-from the manager's card to the account, and back to the manager's answer."""
+"""E2E for handing a person without an account over (issue #438) -- to an account of their own, or to another
+mentor: the link's way from the manager's card to the account, and back to the manager's answer."""
 
 import datetime
 import re
@@ -47,7 +47,7 @@ def test_a_person_goes_from_the_managers_card_into_their_own_account(page: Page,
 
     _sign_in(page, live_server, coach)
     page.goto(f"{live_server.url}/en/accounts/profile/")
-    page.get_by_role("button", name="Hand over: Kim Dana").click()
+    page.get_by_role("button", name="Hand over to the owner: Kim Dana").click()
     row = page.locator(f"#vm-{kid.pk}")
     link = row.locator("code").inner_text()
     assert re.search(r"/en/accounts/virtual-members/take/[0-9a-f-]{36}/$", link), link
@@ -74,3 +74,40 @@ def test_a_person_goes_from_the_managers_card_into_their_own_account(page: Page,
     entry.refresh_from_db()
     assert (entry.user_id, entry.virtual_member_id) == (dana.pk, None)
     assert ManagedMember.objects.filter(manager=coach, member=dana, accepted_at__isnull=False).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_person_goes_from_the_managers_card_to_another_mentor(page: Page, live_server):
+    coach = _member("coach", "Ivan", "Petrov")
+    virtual_members.consent(coach)
+    kid = VirtualMember.objects.create(
+        owner=coach, last_name="Kim", first_name="Dana", gender="F", birth_date=datetime.date(2012, 3, 4)
+    )
+    mentor = _member("mentor", "Olga", "Mentor")
+
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    page.get_by_role("button", name="Hand over to a mentor: Kim Dana").click()
+    row = page.locator(f"#vm-{kid.pk}")
+    expect(row).to_contain_text("Send this link to the mentor who takes Kim Dana over")
+    link = row.locator("code").inner_text()
+
+    _sign_in(page, live_server, mentor)
+    page.goto(link)
+    expect(page.get_by_role("heading", level=1)).to_have_text("Become the mentor of Kim Dana?")
+    page.get_by_label("I am authorized to handle their personal data").check()
+    page.get_by_role("button", name="Accept").click()
+    expect(page.get_by_text("Your request is waiting for Ivan Petrov to accept it.")).to_be_visible()
+
+    _sign_in(page, live_server, coach)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    row = page.locator(f"#vm-{kid.pk}")
+    expect(row).to_contain_text("Olga Mentor asks to become the mentor of Kim Dana.")
+    page.once("dialog", lambda dialog: dialog.accept())
+    row.get_by_role("button", name="Confirm").click()
+    expect(page.get_by_text("Kim Dana is now in the list of Olga Mentor.")).to_be_visible()
+    expect(page.locator(f"#vm-{kid.pk}")).to_have_count(0)
+
+    _sign_in(page, live_server, mentor)
+    page.goto(f"{live_server.url}/en/accounts/profile/")
+    expect(page.locator(f"#vm-{kid.pk}")).to_contain_text("Kim Dana")

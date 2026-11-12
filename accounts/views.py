@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.http import Http404, HttpResponseForbidden, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -199,7 +199,7 @@ class VirtualMemberForm(forms.ModelForm):
 def _virtual_context(request, form=None):
     """The profile's card of the people without accounts the reader added (issue #438): only the
     reader's word that they may handle these people's data until they give it, then the people --
-    each with ``transfer_link``, the link handing them over to an account of their own or the request
+    each with ``transfer_link``, the link handing them over -- to a mentor or to the owner -- or the request
     that came through it, and ``transfer_url``, the address to send while the link is live."""
     user = request.user
     consented = virtual_members.consented(user)
@@ -220,6 +220,11 @@ def _virtual_context(request, form=None):
         "limit": roles.virtual_members_limit(user),
         "room": virtual_members.room(user),
         "form": form or VirtualMemberForm(owner=user),
+        # The two ways to hand a person over, one button each, the person staying without an account first
+        "transfer_kinds": [
+            (transfers.To.MENTOR, gettext("Hand over to a mentor")),
+            (transfers.To.OWNER, gettext("Hand over to the owner")),
+        ],
     }
 
 
@@ -858,9 +863,9 @@ class VirtualMemberDeleteView(ParticipantRequiredMixin, View):
 
 
 class VirtualMemberTransferView(ParticipantRequiredMixin, View):
-    """The buttons that hand a person the reader added over to an account of their own (issue #438): a
-    link to send, and the answer to the request that came through it. Each reaches only the reader's own
-    people, so an id in the address can never touch anyone else's."""
+    """The buttons that hand a person the reader added over (issue #438) -- to the owner, into an account of
+    their own, or to another mentor: a link to send, and the answer to the request that came through it.
+    Each reaches only the reader's own people, so an id in the address can never touch anyone else's."""
 
     action = ""
 
@@ -869,20 +874,27 @@ class VirtualMemberTransferView(ParticipantRequiredMixin, View):
         if person is None:
             raise Http404
         if self.action == "issue":
+            to = request.POST.get("to", transfers.To.OWNER)
+            if to not in transfers.To.values:
+                return HttpResponseBadRequest()
             refusal = transfers.why_no_link(request.user)
             if refusal:
                 messages.error(request, refusal)
             else:
-                transfers.issue(person)
+                transfers.issue(person, to)
             return redirect(f"{reverse('account_profile')}#vm-{person.pk}")
         if self.action == "confirm":
-            done = transfers.confirm(request.user, person.pk)
+            try:
+                done = transfers.confirm(request.user, person.pk)
+            except transfers.RefusedError as refused:
+                messages.error(request, str(refused))
+                return redirect(_to_virtual_members())
             if done is not None:
-                messages.success(
-                    request,
-                    gettext("%(person)s is now in the account of %(name)s.")
-                    % {"person": done.person, "name": done.claimed_by.public_display_name},
-                )
+                names = {"person": done.person, "name": done.claimed_by.public_display_name}
+                if done.to_mentor:
+                    messages.success(request, gettext("%(person)s is now in the list of %(name)s.") % names)
+                else:
+                    messages.success(request, gettext("%(person)s is now in the account of %(name)s.") % names)
         elif self.action == "reject":
             transfers.reject(request.user, person.pk)
         return redirect(_to_virtual_members())
@@ -892,21 +904,25 @@ class VirtualMemberClaimView(LoginRequiredMixin, View):
     """A link that hands a person without an account over to the account that opens it (issue #438):
     taken by a button, never by opening, and moved only once the person's manager confirms it.
 
-    The page names who hands whom over, what moves, which empty fields of the profile get filled -- by
-    name, not value: the manager has not confirmed anything yet --, and asks; or says plainly why it
-    cannot. A visitor signs in first and comes back here, as with a manager's link.
+    The page names who hands whom over and what moves -- to the owner, which empty fields of the profile
+    get filled, by name, not value: the manager has not confirmed anything yet; to a mentor, the word about
+    the person's data where it is not given yet --, and asks; or says plainly why it cannot. A visitor
+    signs in first and comes back here, as with a manager's link.
     """
 
     template_name = "accounts/virtual_member_claim.html"
 
-    def _page(self, request, link, outcome):
+    def _page(self, request, link, outcome, error=""):
         asked = outcome == transfers.ASKED and link is not None
+        to_owner = asked and not link.to_mentor
         labels = VirtualMemberForm.Meta.labels
         context = {
             "link": link,
             "asked": asked,
             "refusal": transfers.refusal(outcome, link),
-            "filled": [labels[name] for name in transfers.fills(link.person, request.user)] if asked else [],
+            "error": error,
+            "needs_word": asked and link.to_mentor and not virtual_members.consented(request.user),
+            "filled": [labels[name] for name in transfers.fills(link.person, request.user)] if to_owner else [],
         }
         response = render(request, self.template_name, context)
         if outcome == transfers.INVALID:
@@ -924,6 +940,12 @@ class VirtualMemberClaimView(LoginRequiredMixin, View):
         if needs_email_confirmation(request.user):
             return redirect_to_profile_for_email_confirmation(request)
         link = transfers.find(key)
+        if link is not None and link.to_mentor and not virtual_members.consented(request.user):
+            if "consent" not in request.POST:
+                outcome = transfers.outcome_for(request.user, link)
+                return self._page(request, link, outcome, error=transfers.refusal(transfers.NO_WORD, link))
+            if transfers.outcome_for(request.user, link) == transfers.ASKED:
+                virtual_members.consent(request.user)
         outcome = transfers.ask(request.user, key, keep_manager="keep_manager" in request.POST)
         if outcome != transfers.ASKED or link is None:
             return self._page(request, link, outcome)

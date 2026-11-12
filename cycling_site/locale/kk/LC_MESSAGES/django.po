@@ -5522,3 +5522,87 @@ msgstr "Немесе басқа сервис арқылы кіріңіз"
 #: accounts/templates/accounts/profile.html:123
 msgid "Change email"
 msgstr "Email-ді өзгерту"
+
+#: accounts/models.py
+msgid "The owner, into their own account"
+msgstr "Иесіне, өз тіркелгісіне"
+
+#: accounts/models.py
+msgid "Another mentor, as a person without an account"
+msgstr "Басқа тәлімгерге, тіркелгісі жоқ адам ретінде"
+
+#: accounts/transfers.py
+msgid "This is the link of a person you added: send it to the mentor who takes them over."
+msgstr "Бұл — сіз қосқан адамның сілтемесі: оны адамды қабылдайтын тәлімгерге жіберіңіз."
+
+#: accounts/transfers.py
+#, python-format
+msgid "Confirm first that you may handle the personal data of %(person)s: you have their consent, or their legal representative's."
+msgstr "Алдымен %(person)s дербес деректерін өңдей алатыныңызды растаңыз: сізде оның немесе оның заңды өкілінің келісімі бар."
+
+#: accounts/transfers.py
+#, python-format
+msgid "Your list of people without an account is full, so %(person)s cannot join it. Delete somebody from it first."
+msgstr "Тіркелгісі жоқ адамдар тізіміңіз толы, сондықтан %(person)s оған қосыла алмайды. Алдымен одан біреуді жойыңыз."
+
+#: accounts/transfers.py
+#, python-format
+msgid "You already have %(person)s, born on %(date)s, in your list of people without an account."
+msgstr "%(person)s (туған күні %(date)s) тіркелгісі жоқ адамдар тізіміңізде бар."
+
+#: accounts/transfers.py
+#, python-format
+msgid "%(name)s has no room left for people without an account, so %(person)s stays with you."
+msgstr "%(name)s тізімінде тіркелгісі жоқ адамдарға орын қалмады, сондықтан %(person)s сізде қалады."
+
+#: accounts/transfers.py
+#, python-format
+msgid "%(name)s already has %(person)s in their list, so %(person)s stays with you."
+msgstr "%(name)s тізімінде %(person)s бар, сондықтан ол сізде қалады."
+
+#: accounts/views.py
+#, python-format
+msgid "%(person)s is now in the list of %(name)s."
+msgstr "%(person)s енді %(name)s тізімінде."
+
+#: accounts/views.py
+msgid "Hand over to a mentor"
+msgstr "Тәлімгерге тапсыру"
+
+#: accounts/views.py
+msgid "Hand over to the owner"
+msgstr "Иесіне тапсыру"
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "%(name)s asks to become the mentor of %(person)s."
+msgstr "%(name)s %(person)s үшін тәлімгер болуды сұрайды."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Hand %(person)s over to %(name)s? %(person)s leaves your list, with their registrations and named bibs, and is in theirs."
+msgstr "%(person)s адамын %(name)s тәлімгеріне тапсыру керек пе? %(person)s тіркелулерімен және аталған нөмірлерімен бірге сіздің тізіміңізден шығып, оның тізіміне өтеді."
+
+#: accounts/templates/accounts/_virtual_members.html
+#, python-format
+msgid "Send this link to the mentor who takes %(person)s over: they open it signed in, and then you confirm it here. %(person)s then leaves your list, with their registrations and named bibs, and is in theirs."
+msgstr "Бұл сілтемені %(person)s адамын қабылдайтын тәлімгерге жіберіңіз: ол сайтқа кіріп, сілтемені ашады, содан кейін сіз мұнда растайсыз. Осыдан кейін %(person)s тіркелулерімен және аталған нөмірлерімен бірге тізіміңізден шығып, оның тізіміне өтеді."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Become the mentor of %(person)s?"
+msgstr "%(person)s үшін тәлімгер болу керек пе?"
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "%(name)s hands %(person)s (%(gender)s, born on %(born)s) over to you: they stay a person without an account, in your list, with their registrations and the bibs named for their photos. You enter them for races and look after their photos, and %(name)s no longer sees them."
+msgstr "%(name)s сізге %(person)s адамын береді (%(gender)s, туған күні %(born)s): ол тіркелгісі жоқ адам болып, сіздің тізіміңізде тіркелулерімен және фото үшін аталған нөмірлерімен бірге қалады. Сіз оны жарыстарға тіркейсіз және фотоларын қадағалайсыз, ал %(name)s оны бұдан былай көрмейді."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+#, python-format
+msgid "Nothing moves until %(name)s confirms that this account is the mentor they meant."
+msgstr "%(name)s бұл тіркелгі дәл сол тәлімгердікі екенін растамайынша, ештеңе көшпейді."
+
+#: home/templates/home/privacy_page.html
+msgid "<strong>Handing a person to another mentor.</strong> The member may also hand a person they added over to another member -- a coach, a parent -- through such a link. Once the member confirms it, the person, with their registrations and the bibs named for their photos, is in the other member's list: that member has given the same word about the person's personal data and answers for it from then on, and the first member no longer sees or changes them."
+msgstr "<strong>Басқа тәлімгерге тапсыру.</strong> Қатысушы өзі қосқан адамды осындай сілтеме арқылы басқа қатысушыға — жаттықтырушыға, ата-анаға — да тапсыра алады. Қатысушы растағаннан кейін адам тіркелулерімен және фото үшін аталған нөмірлерімен бірге басқа қатысушының тізіміне өтеді: ол осы адамның дербес деректері туралы дәл сондай уәде берген және бұдан былай олар үшін жауап береді, ал бірінші қатысушы бұл деректерді енді көрмейді және өзгертпейді."
