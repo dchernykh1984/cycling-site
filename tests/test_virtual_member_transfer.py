@@ -386,7 +386,8 @@ class HandToMentorTests(TestCase):
             full = self.client.get(_url("account_virtual_claim", key=link.key))
         self.assertContains(full, "is full")
         # Named for what the page is about, in the tab and above the refusal: becoming a mentor, not taking data
-        self.assertContains(full, "Becoming a person&#x27;s mentor", count=2)
+        self.assertContains(full, "<title>Becoming a person's mentor</title>")
+        self.assertContains(full, '<h1 class="h3 mb-3">Becoming a person\'s mentor</h1>')
         VirtualMember.objects.filter(owner=self.mentor).delete()
         VirtualMember.objects.create(
             owner=self.mentor, last_name="KIM", first_name="dana", gender="F", birth_date=self.kid.birth_date
