@@ -383,9 +383,10 @@ class HandToMentorTests(TestCase):
         link = transfers.issue(self.kid, MENTOR)
         self.client.force_login(self.mentor)
         with translation.override("en"):
-            self.assertContains(
-                self.client.get(_url("account_virtual_claim", key=link.key)), "is full", status_code=200
-            )
+            full = self.client.get(_url("account_virtual_claim", key=link.key))
+        self.assertContains(full, "is full")
+        # Named for what the page is about, in the tab and above the refusal: becoming a mentor, not taking data
+        self.assertContains(full, "Becoming a person&#x27;s mentor", count=2)
         VirtualMember.objects.filter(owner=self.mentor).delete()
         VirtualMember.objects.create(
             owner=self.mentor, last_name="KIM", first_name="dana", gender="F", birth_date=self.kid.birth_date

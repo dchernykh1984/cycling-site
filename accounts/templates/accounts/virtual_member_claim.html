@@ -5,7 +5,7 @@ who hands whom over and what moves, and one button. To the owner, a box -- untic
 to a mentor, the person stays without an account, and a mentor who has not said yet that they may handle
 such people's data says it here. Opening it changes nothing; a link that cannot be used says why.{% endcomment %}
 
-{% block title %}{% trans "Taking over a person's data" %}{% endblock %}
+{% block title %}{% if link.to_mentor %}{% trans "Becoming a person's mentor" %}{% else %}{% trans "Taking over a person's data" %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center virtual-claim">
@@ -49,7 +49,7 @@ such people's data says it here. Opening it changes nothing; a link that cannot 
     </form>
     {% endwith %}
     {% else %}
-    <h1 class="h3 mb-3">{% trans "Taking over a person's data" %}</h1>
+    <h1 class="h3 mb-3">{% if link.to_mentor %}{% trans "Becoming a person's mentor" %}{% else %}{% trans "Taking over a person's data" %}{% endif %}</h1>
     <div class="alert alert-warning" role="alert">{{ refusal }}</div>
     <a href="{% url 'account_profile' %}" class="btn btn-link px-0">{% trans "To your profile" %}</a>
     {% endif %}

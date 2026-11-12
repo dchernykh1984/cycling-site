@@ -5615,3 +5615,7 @@ msgstr "Ничего не перейдёт, пока %(name)s не подтве�
 #: home/templates/home/privacy_page.html
 msgid "<strong>Handing a person to another mentor.</strong> The member may also hand a person they added over to another member -- a coach, a parent -- through such a link. Once the member confirms it, the person, with their registrations and the bibs named for their photos, is in the other member's list: that member has given the same word about the person's personal data and answers for it from then on, and the first member no longer sees or changes them."
 msgstr "<strong>Передача другому наставнику.</strong> Участник может также передать добавленного человека другому участнику — тренеру, родителю — по такой же ссылке. Когда участник подтвердит передачу, человек вместе с заявками и номерами, названными для фото, окажется в списке другого участника: тот дал такое же слово о персональных данных этого человека и с этого момента отвечает за них, а первый участник больше не видит и не меняет эти данные."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Becoming a person's mentor"
+msgstr "Стать наставником человека"

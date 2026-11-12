@@ -5606,3 +5606,7 @@ msgstr "%(name)s бұл тіркелгі дәл сол тәлімгердікі 
 #: home/templates/home/privacy_page.html
 msgid "<strong>Handing a person to another mentor.</strong> The member may also hand a person they added over to another member -- a coach, a parent -- through such a link. Once the member confirms it, the person, with their registrations and the bibs named for their photos, is in the other member's list: that member has given the same word about the person's personal data and answers for it from then on, and the first member no longer sees or changes them."
 msgstr "<strong>Басқа тәлімгерге тапсыру.</strong> Қатысушы өзі қосқан адамды осындай сілтеме арқылы басқа қатысушыға — жаттықтырушыға, ата-анаға — да тапсыра алады. Қатысушы растағаннан кейін адам тіркелулерімен және фото үшін аталған нөмірлерімен бірге басқа қатысушының тізіміне өтеді: ол осы адамның дербес деректері туралы дәл сондай уәде берген және бұдан былай олар үшін жауап береді, ал бірінші қатысушы бұл деректерді енді көрмейді және өзгертпейді."
+
+#: accounts/templates/accounts/virtual_member_claim.html
+msgid "Becoming a person's mentor"
+msgstr "Адамның тәлімгері болу"
