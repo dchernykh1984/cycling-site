@@ -5634,7 +5634,7 @@ msgid "Site owner"
 msgstr "Сайт иесі"
 
 #: accounts/roles.py
-msgid "The e-mail address is not confirmed yet: you may look around the site, but not enter races or write."
+msgid "The e-mail address is not confirmed yet: looks around the site, but does not enter races or write."
 msgstr "Пошта әлі расталмаған: сайтты қарауға болады, бірақ жарыстарға тіркелуге және ештеңе жазуға болмайды."
 
 #: accounts/roles.py
