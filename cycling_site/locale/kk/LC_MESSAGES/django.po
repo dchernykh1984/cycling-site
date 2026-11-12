@@ -5634,21 +5634,21 @@ msgid "Site owner"
 msgstr "Сайт иесі"
 
 #: accounts/roles.py
-msgid "The e-mail address is not confirmed yet: looks around the site, but does not enter races or write."
-msgstr "Пошта әлі расталмаған: сайтты қарауға болады, бірақ жарыстарға тіркелуге және ештеңе жазуға болмайды."
+msgid "E-mail not confirmed yet: can only look around the site."
+msgstr "Пошта расталмаған: сайтты тек қарауға болады."
 
 #: accounts/roles.py
-msgid "Enters races -- themselves, their children and athletes -- and looks after their photos. Coaches and parents need no other role."
-msgstr "Өзін, балаларын және спортшыларын жарыстарға тіркейді және олардың фотоларын қарайды. Жаттықтырушылар мен ата-аналарға басқа рөл қажет емес."
+msgid "Enters races -- themselves, children, athletes -- and adds events, published after moderation."
+msgstr "Өзін, балаларын және спортшыларын жарыстарға тіркейді; іс-шара қосады — олар модерациядан кейін жарияланады."
 
 #: accounts/roles.py
-msgid "Publishes their own events and runs their registration, and checks other people's events."
-msgstr "Өз іс-шараларын жариялайды және олардың тіркелуін жүргізеді, басқалардың іс-шараларын тексереді."
+msgid "Publishes their events at once, runs their registration and checks other people's events."
+msgstr "Өз іс-шараларын бірден жариялайды, тіркелуін жүргізеді және басқалардыкін тексереді."
 
 #: accounts/roles.py
-msgid "Looks after all of the site's content: every event, the news, the knowledge articles, places and the gallery."
-msgstr "Сайттың бүкіл мазмұнын қадағалайды: іс-шараларды, жаңалықтарды, білім базасының мақалаларын, орындарды және галереяны."
+msgid "Looks after all content: events, news, articles, places and the gallery."
+msgstr "Барлық мазмұнды қадағалайды: іс-шаралар, жаңалықтар, мақалалар, орындар және галерея."
 
 #: accounts/roles.py
-msgid "Runs the site: all an administrator does, and the home page and the site's statistics too."
-msgstr "Сайтты жүргізеді: әкімшінің бәрін істейді, сондай-ақ басты бет пен сайт статистикасын."
+msgid "Runs the site: all an administrator does, plus the home page and statistics."
+msgstr "Сайтты жүргізеді: әкімшінің бәрі, сондай-ақ басты бет пен статистика."
