@@ -95,9 +95,13 @@ once; confirming the address unlocks everything that writes.
 
 1. **Given** a participant opens the profile, **Then** they see all five roles weakest first,
    their own in bold, and a button to ask for another one (higher or lower); a guest sees the
-   ladder without the button.
-2. **Given** a member asks for a role, **Then** a reason is required, the owners get a mail (in
-   English whatever the page language), nothing is granted, and further requests wait a minute.
+   ladder without the button. Each role is named for what it is on this site -- Guest, Participant,
+   Event organizer, Site administrator, Site owner -- with a line on what it may do
+   (`accounts.roles.DESCRIPTIONS`; maintainer, 2026-11-12: a parent asked for the owner's role to
+   look after a child's account).
+2. **Given** a member asks for a role, **Then** the page offers every other role with the same line,
+   a reason is required, the owners get a mail (in English whatever the page language), nothing is
+   granted, and further requests wait a minute.
 
 ### Story 5 -- Reach the owners (P3)
 

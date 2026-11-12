@@ -44,7 +44,7 @@ class ProfileSectionTests(TestCase):
             self.assertContains(page, role[1])
 
     def test_the_current_role_is_the_bold_one(self):
-        self.assertContains(self._page(), "<strong>Organizer</strong>", html=False)
+        self.assertContains(self._page(), "<strong>Event organizer</strong>", html=False)
 
     def test_it_sits_between_the_sign_in_methods_and_contacting_the_owners(self):
         body = self._page().content.decode()
@@ -57,7 +57,7 @@ class ProfileSectionTests(TestCase):
     def test_a_guest_sees_the_ladder_without_the_button(self):
         self.client.force_login(_user("guest_role", role=User.Role.GUEST))
         page = self._page()
-        self.assertContains(page, "Organizer")
+        self.assertContains(page, "Event organizer")
         self.assertNotContains(page, reverse("account_request_role"))
 
 
@@ -84,7 +84,7 @@ class RequestRoleTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         sent = mail.outbox[0]
         self.assertIn("Role request", sent.subject)
-        self.assertIn("Organizer", sent.body)
+        self.assertIn("Requested role: Event organizer", sent.body)
         self.assertIn("I run two races a year.", sent.body)
         self.assertIn(self.user.email, sent.body)
 
@@ -153,15 +153,15 @@ class RoleNamesAreTranslatedTests(TestCase):
             with self.subTest(locale=locale):
                 page = self.client.get(in_language(reverse("account_profile"), locale))
                 with translation.override(locale):
-                    self.assertContains(page, gettext("Organizer"))
+                    self.assertContains(page, gettext("Event organizer"))
 
     def test_the_owner_mail_is_english_even_from_a_russian_page(self):
         self.client.post(
             in_language(reverse("account_request_role"), "ru"),
             {"role": User.Role.ADMIN, "reason": "Because."},
         )
-        self.assertIn("Requested role: Admin", mail.outbox[0].body)
-        self.assertIn("Current role: Organizer", mail.outbox[0].body)
+        self.assertIn("Requested role: Site administrator", mail.outbox[0].body)
+        self.assertIn("Current role: Event organizer", mail.outbox[0].body)
 
 
 class RequestButtonCooldownTests(TestCase):
@@ -198,3 +198,31 @@ class RequestButtonCooldownTests(TestCase):
             {"role": User.Role.ORGANIZER, "reason": "Just sent one."},
         )
         self.assertRegex(self._profile(), r'id="contact-btn"[\s\S]{0,400}?disabled')
+
+
+class RoleDescriptionTests(TestCase):
+    """Each role is named for what it is on this site, with a line on what it may do: a name alone was misread
+    -- a parent asked for the site owner's role to look after a child's account."""
+
+    def setUp(self):
+        self.user = _user("reader", role=User.Role.PARTICIPANT)
+        self.client.force_login(self.user)
+
+    def test_every_role_has_a_line_saying_what_it_is_for(self):
+        from accounts import roles
+
+        self.assertEqual(set(roles.DESCRIPTIONS), set(User.ROLE_HIERARCHY))
+
+    def test_the_ladder_and_the_request_show_each_roles_line(self):
+        from accounts import roles
+
+        with translation.override("ru"):
+            ladder = self.client.get(in_language(reverse("account_profile"), "ru"))
+            request = self.client.get(in_language(reverse("account_request_role"), "ru"))
+            for role in User.ROLE_HIERARCHY:
+                with self.subTest(role=str(role)):
+                    line = str(roles.DESCRIPTIONS[role])
+                    self.assertContains(ladder, User.Role(role).label)
+                    self.assertContains(ladder, line, html=False)
+                    if role != self.user.role:
+                        self.assertContains(request, line, html=False)
