@@ -80,6 +80,15 @@ class ChangeEmailTests(TestCase):
         self.assertEqual(self._addresses(guest), [("right@example.com", True, True)])
         self.assertEqual(guest.role, User.Role.PARTICIPANT)
 
+    def test_a_guest_waiting_for_the_new_address_can_still_change_it_from_the_profile(self):
+        # allauth clears an unconfirmed address as soon as another is asked for, so user.email is empty.
+        guest = self._member("waiting", "typo@exampel.com", verified=False)
+        self.client.force_login(guest)
+        self._ask_for("rihgt@example.com")
+        page = self.client.get(reverse("account_profile")).content.decode()
+        url, label = re.escape(reverse("account_email")), re.escape(gettext("Change email"))
+        self.assertRegex(page, rf'href="{url}"[^>]*>\s*{label}\s*</a>')
+
     def test_the_page_names_the_waiting_address_apart_from_the_field_for_another(self):
         EmailAddress.objects.create(user=self.member, email="new@example.com", verified=False, primary=False)
         for language in ("ru", "kk", "en"):
