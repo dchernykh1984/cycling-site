@@ -101,6 +101,9 @@ along them, each the object it is built from, a name, a place and the room it ta
 ru, kk and en. The page lists each map's file, a line each, in the order the menu shows the cities,
 so a new map is its folder and that line; a map without routes is shown as coming soon. A route's key
 is its own across every map and stays as it is: the members' saved rides and group races keep it.
+The objects the sights are built from are shared by every map, a file each in `objects/`, named after
+the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the page too; a
+new kind of sight is its object's file and that line.
 Tests: `tests/test_virtual_ride_maps.py`.
 
 ## User Scenarios
