@@ -4,7 +4,7 @@
 // build(G, lm, T, kit) adds one sight's meshes to its group G, which stands at the sight's place (lm: the
 // sight's data, T: the route's track). The kit, sizes in metres: lam(colour) is a material; box(w, h, d, colour,
 // x, y, z) and cyl(r1, r2, h, colour, x, y, z, segments) stand on y and return their mesh; onion(r, colour, x, y,
-// z, spire) is a dome. A colour is a number (0xRRGGBB) or a material.
+// z, spire) puts an onion dome on y, under a golden spire that tall when given. A colour is 0xRRGGBB or a material.
 const OBJECTS = {};
 function addObject(type, build) { OBJECTS[type] = build; }
 function addLandmark(grp, lm, T) {
