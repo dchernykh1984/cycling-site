@@ -263,6 +263,27 @@ def test_a_map_far_from_the_others_is_laid_out_from_its_own_origin(page: Page):
     assert laid["end"] == pytest.approx([51.17, 71.4443], abs=1e-6), laid
 
 
+def test_a_route_passes_the_sights_of_its_own_map_only(page: Page):
+    """Two maps may list one sight, each for its own routes: on either route it stands once, not twice."""
+    page.set_content("<!doctype html><title>map</title>")
+    page.add_script_tag(url="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js")
+    for name in _MAP_ALONE:
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    passed = page.evaluate(
+        """() => {
+            const named = n => ({ ru: n, kk: n, en: n }), origin = { lat: 51.16, lon: 71.43 };
+            const road = id => ({ id, name: named(id), desc: named('-'), loop: false, width: 9, lanes: 2,
+                                  scenery: 'city', pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] });
+            const tower = { type: 'glass', name: named('Tower'), lat: 51.1705, lon: 71.437, h: 90, r: 30 };
+            addMap({ id: 'one', name: named('One'), origin, routes: [road('a')], landmarks: [tower] });
+            addMap({ id: 'two', name: named('Two'), origin, routes: [road('b')], landmarks: [tower] });
+            const by = id => nearLandmarks(buildTrack(ROUTES.find(r => r.id === id))).map(l => l.name);
+            return { a: by('a'), b: by('b') };
+        }"""
+    )
+    assert passed == {"a": ["Tower"], "b": ["Tower"]}
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("connected", [False, True])
 def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_server, settings, connected: bool):
