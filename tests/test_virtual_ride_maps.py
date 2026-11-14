@@ -37,6 +37,13 @@ class MapsTests(SimpleTestCase):
         self.assertTrue(folders)
         self.assertEqual(sorted(_listed()), folders)
 
+    def test_the_maps_load_after_their_registry_and_before_the_route_is_picked(self):
+        files, code = trainer_page.local_files(), trainer_page.PAGE.parent / "alatau" / "js"
+        listed = [files.index(path) for path in files if path.parent.parent == trainer_page.MAPS]
+        # addMap is js/maps.js's; js/race.js picks the route out of ROUTES as it loads
+        self.assertLess(files.index(code / "maps.js"), min(listed))
+        self.assertLess(max(listed), files.index(code / "race.js"))
+
     def test_a_map_is_named_after_its_folder(self):
         for folder, data in trainer_page.maps().items():
             self.assertEqual(data["id"], folder)
