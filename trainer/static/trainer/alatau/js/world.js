@@ -109,7 +109,7 @@ function buildWorld(route) {
   // --- горы Заилийского Алатау на юге ---
   addMountains(grp, T);
   // --- ориентиры ---
-  lms.forEach(lm => addLandmark(grp, lm, lm, T));
+  lms.forEach(lm => addLandmark(grp, lm, T));
   // --- старт и финиш ---
   if (T.loop) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 

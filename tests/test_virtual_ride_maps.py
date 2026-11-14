@@ -1,5 +1,7 @@
-"""The virtual ride's maps: a city each, in a folder of the trainer's maps/ the page lists, and nothing but data."""
+"""The virtual ride's maps -- a city each, in a folder of the trainer's maps/, nothing but data -- and the objects
+their sights are built from, a file each in objects/, shared by every map. The page lists them all."""
 
+import re
 from numbers import Real
 
 from django.test import SimpleTestCase
@@ -11,6 +13,7 @@ from trainer.models import VirtualRide
 RIDDEN = {"center", "medeu", "oldtown", "farabi"}
 # What world.js draws along a route
 SCENERIES = {"city", "gorge"}
+OBJECTS = trainer_page.PAGE.parent / "alatau" / "objects"
 
 
 def _listed() -> list[str]:
@@ -67,3 +70,22 @@ class MapsTests(SimpleTestCase):
         self.assertLessEqual(RIDDEN, set(keys), "a route already ridden lost its key, and its records with it")
         longest = VirtualRide._meta.get_field("route").max_length
         self.assertTrue(all(0 < len(key) <= longest for key in keys), keys)
+
+
+class ObjectsTests(SimpleTestCase):
+    def test_the_page_loads_every_object_file_once_after_the_registry(self):
+        files = trainer_page.local_files()
+        listed = [path for path in files if path.parent == OBJECTS]
+        self.assertEqual(sorted(path.name for path in listed), sorted(path.name for path in OBJECTS.glob("*.js")))
+        registry = files.index(trainer_page.PAGE.parent / "alatau/js/landmarks.js")
+        self.assertTrue(all(files.index(path) > registry for path in listed))
+
+    def test_an_object_file_adds_the_one_object_it_is_named_after(self):
+        for path in OBJECTS.glob("*.js"):
+            added = re.findall(r"^addObject\('([\w-]+)', ", path.read_text(encoding="utf-8"), re.MULTILINE)
+            self.assertEqual(added, [path.stem])
+
+    def test_every_sight_is_built_from_an_object_the_page_loads(self):
+        used = {sight["type"] for data in trainer_page.maps().values() for sight in data.get("landmarks", [])}
+        self.assertTrue(used)
+        self.assertLessEqual(used, {path.stem for path in trainer_page.local_files() if path.parent == OBJECTS})
