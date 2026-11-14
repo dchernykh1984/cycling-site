@@ -9,6 +9,7 @@ from django.test import SimpleTestCase
 
 from api.endpoints.virtual_ride import _ROUTE
 from tests import trainer_page
+from trainer.models import VirtualRide
 
 # The members' saved rides and group races keep the key of the route they were ridden on
 RIDDEN = {"center", "medeu", "oldtown", "farabi"}
@@ -101,6 +102,13 @@ class MapsTests(SimpleTestCase):
         self.assertLessEqual(RIDDEN, set(keys), "a route already ridden lost its key, and its records with it")
         # the API saves a ride, a group race and a position only under a key like these
         self.assertEqual([key for key in keys if not re.fullmatch(_ROUTE, key)], [])
+
+    def test_a_route_s_name_fits_the_site_in_every_language(self):
+        # the page sends the name it shows with a saved ride and a group race, as it is
+        longest = VirtualRide._meta.get_field("route_name").max_length
+        names = [text for route in _routes() for text in route["name"].values()]
+        self.assertTrue(names)
+        self.assertEqual([name for name in names if len(name) > longest], [])
 
 
 class ObjectsTests(SimpleTestCase):
