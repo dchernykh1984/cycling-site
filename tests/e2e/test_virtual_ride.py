@@ -680,6 +680,15 @@ def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
+    page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
+    _trainer_in_its_menu(page, live_server)
+    assert page.evaluate("routeSel") == "center"
+    page.evaluate("startRace()")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

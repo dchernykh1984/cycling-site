@@ -102,7 +102,9 @@ key, a name and a description, the points (latitude, longitude, height in metres
 loop, the road's width and lanes and the scenery drawn along it (`city` or `gorge`); and the sights
 along them, each the object it is built from, a name, a place and the room it takes. Every name is in
 ru, kk and en. The page lists each map's file, a line each, in the order the menu shows the cities,
-so a new map is its folder and that line; a map without routes is shown as coming soon. A route's key
+so a new map is its folder and that line; a map without routes is shown as coming soon. A city's button
+lists its routes and picks the first of them; a first visit, or a remembered route no map has any more,
+starts on the first map's first route. A route's key
 is its own across every map and stays as it is: the members' saved rides and group races keep it.
 The objects the sights are built from are shared by every map, a file each in `objects/`, named after
 the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the page too; a
