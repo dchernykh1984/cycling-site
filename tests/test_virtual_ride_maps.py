@@ -7,8 +7,8 @@ from numbers import Real
 
 from django.test import SimpleTestCase
 
+from api.endpoints.virtual_ride import _ROUTE
 from tests import trainer_page
-from trainer.models import VirtualRide
 
 # The members' saved rides and group races keep the key of the route they were ridden on
 RIDDEN = {"center", "medeu", "oldtown", "farabi"}
@@ -95,12 +95,12 @@ class MapsTests(SimpleTestCase):
                 self.assertTrue(-90 <= sight["lat"] <= 90 and -180 <= sight["lon"] <= 180, sight["type"])
                 self.assertGreater(sight["r"], 0, sight["type"])
 
-    def test_a_route_s_key_is_its_own_across_every_map_and_fits_the_site(self):
+    def test_a_route_s_key_is_its_own_across_every_map_and_one_the_site_takes(self):
         keys = [route["id"] for route in _routes()]
         self.assertEqual(len(keys), len(set(keys)))
         self.assertLessEqual(RIDDEN, set(keys), "a route already ridden lost its key, and its records with it")
-        longest = VirtualRide._meta.get_field("route").max_length
-        self.assertTrue(all(0 < len(key) <= longest for key in keys), keys)
+        # the API saves a ride, a group race and a position only under a key like these
+        self.assertEqual([key for key in keys if not re.fullmatch(_ROUTE, key)], [])
 
 
 class ObjectsTests(SimpleTestCase):
