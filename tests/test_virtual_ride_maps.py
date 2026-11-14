@@ -78,7 +78,7 @@ class MapsTests(SimpleTestCase):
             origin = data["origin"]
             points = [p for route in data["routes"] for p in route["pts"] + route.get("extend", [])]
             points += [(sight["lat"], sight["lon"]) for sight in data.get("landmarks", [])]
-            # the scene is flat: some 50 km from its origin a map's east-west metres are half a per cent off
+            # the scene is flat: 50 km north or south of its origin a map's east-west metres are about 1 % off
             self.assertLess(max(_km(origin, point) for point in points), 50, folder)
 
     def test_a_map_s_mountains_say_how_far_south_they_rise(self):
