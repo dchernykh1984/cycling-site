@@ -258,7 +258,7 @@ def test_a_map_far_from_the_others_is_laid_out_from_its_own_origin(page: Page):
         }"""
     )
     lat, (lon1, lon2) = math.radians(51.17), (math.radians(71.43), math.radians(71.4443))
-    metres = 2 * 6371000 * math.asin(math.cos(lat) * math.sin((lon2 - lon1) / 2))  # along the parallel's chord
+    metres = 2 * 6371000 * math.asin(math.cos(lat) * math.sin((lon2 - lon1) / 2))  # the great circle between the ends
     assert laid["length"] == pytest.approx(metres, rel=0.002), laid
     assert laid["end"] == pytest.approx([51.17, 71.4443], abs=1e-6), laid
 
