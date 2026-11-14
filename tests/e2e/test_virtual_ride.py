@@ -654,6 +654,32 @@ def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            const named = n => ({ ru: n, kk: n, en: n });
+            const road = id => ({ id, name: named(id), desc: named('-'), loop: false, width: 9, lanes: 2,
+                                  scenery: 'city', pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] });
+            const routes = [road('east'), road('west')];
+            addMap({ id: 'steppe', name: named('Steppe'), origin: { lat: 51.16, lon: 71.43 }, routes });
+            renderMenu();
+        }"""
+    )
+    cities, routes = page.locator("#cities"), page.locator("#routes .route b")
+    almaty, steppe = cities.get_by_role("button", name="Almaty"), cities.get_by_role("button", name="Steppe")
+    expect(almaty).to_have_attribute("aria-pressed", "true")
+    steppe.click()
+    expect(steppe).to_have_attribute("aria-pressed", "true")
+    expect(almaty).to_have_attribute("aria-pressed", "false")
+    expect(routes).to_have_text(["east", "west"])
+    assert page.evaluate("routeSel") == "east"
+    almaty.click()
+    expect(routes).to_have_text(["Central loop", "Climb to Medeu", "Old centre", "Al-Farabi sprint"])
+    assert page.evaluate("routeSel") == "center"
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
