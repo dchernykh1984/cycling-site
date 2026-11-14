@@ -1,6 +1,6 @@
 """Virtual ride data kept on the site: finished rides (the member's records) and group rides.
 
-The trainer page itself owns the routes (static/trainer/alatau/data/routes.js); the site stores a
+The trainer page itself owns the routes (static/trainer/alatau/maps/, a folder per map); the site stores a
 route only as the key and name the page sent, so a new route or city needs no change here.
 """
 
