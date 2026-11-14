@@ -94,7 +94,9 @@ who asked for less motion (issue #434). Record labels keep the date and demo mar
 `tests/e2e/test_virtual_ride.py`.
 
 **Maps.** A map is a city, in a folder of its own: `maps/<id>/map.js`, one `addMap({...})` with the
-map's data and nothing else (`js/maps.js`) -- its id, the folder's name; its name; its routes, each a
+map's data and nothing else (`js/maps.js`) -- its id, the folder's name; its name; its origin, a point
+among its routes the scene is laid out from in metres east and south, so a map anywhere keeps its
+distances and a rider's track its coordinates; its routes, each a
 key, a name and a description, the points (latitude, longitude, height in metres), whether it is a
 loop, the road's width and lanes and the scenery drawn along it (`city` or `gorge`); and the sights
 along them, each the object it is built from, a name, a place and the room it takes. Every name is in

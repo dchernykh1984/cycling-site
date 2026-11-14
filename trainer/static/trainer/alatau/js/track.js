@@ -1,13 +1,13 @@
 'use strict';
 /* ---------------- Трасса: карта, профиль, уклон, старт, финиш и ориентиры ---------------- */
-const ORIGIN = { lat: 43.238, lon: 76.945 };
 // back from metres on the scene to the map: where the rider is, for the track a Strava upload carries
-function unproj(x, z) { const R = 6371000; return { lat: ORIGIN.lat - z / R * 180 / Math.PI, lon: ORIGIN.lon + x / (R * Math.cos(ORIGIN.lat * Math.PI / 180)) * 180 / Math.PI }; }
-function proj(lat, lon) { const R = 6371000; return { x: (lon - ORIGIN.lon) * Math.PI / 180 * R * Math.cos(ORIGIN.lat * Math.PI / 180), z: -(lat - ORIGIN.lat) * Math.PI / 180 * R }; }
+function unproj(x, z, O) { const R = 6371000; return { lat: O.lat - z / R * 180 / Math.PI, lon: O.lon + x / (R * Math.cos(O.lat * Math.PI / 180)) * 180 / Math.PI }; }
+function proj(lat, lon, O) { const R = 6371000; return { x: (lon - O.lon) * Math.PI / 180 * R * Math.cos(O.lat * Math.PI / 180), z: -(lat - O.lat) * Math.PI / 180 * R }; }
 
 function buildTrack(r) {
   const src = r.osm ? r.osm.path : r.pts; // если загружен файл OSM — точная ось настоящих улиц
-  const v = src.map(p => { const q = proj(p[0], p[1]); return new THREE.Vector3(q.x, p[2], q.z); });
+  const O = mapOf(r).origin; // the route's metres are its map's, so its sights and riders share them
+  const v = src.map(p => { const q = proj(p[0], p[1], O); return new THREE.Vector3(q.x, p[2], q.z); });
   const curve = new THREE.CatmullRomCurve3(v, !!r.loop, 'centripetal', .5);
   const n = Math.max(80, Math.round(curve.getLength() / 4));
   const sp = curve.getSpacedPoints(n);
@@ -23,12 +23,12 @@ function buildTrack(r) {
   for (let i = 0; i < N; i += 8) { cx.push(X[i]); cz.push(Z[i]); cy.push(Y[i]); cd.push(D[i]); }
   if (r.extend && !r.loop) { // продолжение долины за финишем (только для рельефа)
     let px = X[N - 1], pz = Z[N - 1], py = Y[N - 1], pd = D[N - 1];
-    r.extend.forEach(e => { const q = proj(e[0], e[1]), len = Math.hypot(q.x - px, q.z - pz), n = Math.max(1, Math.round(len / 30));
+    r.extend.forEach(e => { const q = proj(e[0], e[1], O), len = Math.hypot(q.x - px, q.z - pz), n = Math.max(1, Math.round(len / 30));
       for (let k = 1; k <= n; k++) { const f = k / n; cx.push(px + (q.x - px) * f); cz.push(pz + (q.z - pz) * f); cy.push(py + (e[2] - py) * f); cd.push(pd + len * f); }
       px = q.x; pz = q.z; py = e[2]; pd += len; });
   }
   const C = { x: Float32Array.from(cx), z: Float32Array.from(cz), y: Float32Array.from(cy), d: Float32Array.from(cd) };
-  return { route: r, N, X, Y, Z, D, L: D[N - 1], loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C };
+  return { route: r, origin: O, N, X, Y, Z, D, L: D[N - 1], loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C };
 }
 function sampleAt(T, s, o) {
   if (T.loop) s = ((s % T.L) + T.L) % T.L; else s = clamp(s, 0, T.L);
@@ -57,7 +57,7 @@ function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + 
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.forEach(lm => {
-    const q = proj(lm.lat, lm.lon); let best = 1e18, bi = 0;
+    const q = proj(lm.lat, lm.lon, T.origin); let best = 1e18, bi = 0;
     for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
     const dist = Math.sqrt(best); if (dist > (lm.far ? 14000 : 1300)) return;
     const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
