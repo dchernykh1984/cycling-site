@@ -8,11 +8,17 @@ function sparkline(cv, route) {
   g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--apple').trim() || '#C3323B'; g.globalAlpha = .85; g.fill();
   return T;
 }
+function pickRoute(id) { routeSel = id; store.set('route', id); renderMenu(); if (MP.status === 'on') mpSchedule(200); }
 function renderMenu() {
+  const city = (ROUTES.find(r => r.id === routeSel) || ROUTES[0]).city; // the map of the chosen route: its routes are listed
   $('#cities').innerHTML = '';
-  CITIES.forEach(c => { const b = document.createElement('button'); b.type = 'button'; b.className = 'city'; b.textContent = c.name; b.disabled = !c.ready; b.setAttribute('aria-pressed', c.id === 'almaty' ? 'true' : 'false'); $('#cities').appendChild(b); });
+  CITIES.forEach(c => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'city'; b.textContent = c.name; b.disabled = !c.ready; b.setAttribute('aria-pressed', c.id === city ? 'true' : 'false');
+    b.onclick = () => { if (c.id !== city) pickRoute(ROUTES.find(r => r.city === c.id).id); }; // another city: its first route
+    $('#cities').appendChild(b);
+  });
   const box = $('#routes'); box.innerHTML = '';
-  ROUTES.filter(r => r.city === 'almaty').forEach(r => {
+  ROUTES.filter(r => r.city === city).forEach(r => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'route'; b.setAttribute('aria-pressed', r.id === routeSel ? 'true' : 'false');
     const cv = document.createElement('canvas'); const T = sparkline(cv, r);
     const pb = Records.best(r.id);
@@ -20,7 +26,7 @@ function renderMenu() {
     b.querySelector('b').textContent = r.name;
     b.querySelector('.meta').textContent = t('route.meta', { d: fmt1(T.L / 1000), g: Math.round(T.gain) }) + (r.loop ? ', ' + t('route.loop') : '') + (r.osm ? ', ' + t('route.osm') : '') + (pb ? ', ' + t('route.record', { t: fmtTime(pb) }) : '');
     const sights = nearLandmarks(T).filter(l => l.dist <= 700).map(l => l.name); b.querySelector('.desc').textContent = r.desc + (sights.length ? t('route.sights', { list: sights.join(', ') }) : ''); b.appendChild(cv);
-    b.onclick = () => { routeSel = r.id; store.set('route', r.id); renderMenu(); if (MP.status === 'on') mpSchedule(200); };
+    b.onclick = () => pickRoute(r.id);
     box.appendChild(b);
   });
   renderStartSum();
