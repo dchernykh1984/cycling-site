@@ -7,6 +7,7 @@ from pathlib import Path
 from django.conf import settings
 
 PAGE = Path(settings.BASE_DIR) / "trainer" / "static" / "trainer" / "alatau.html"
+MAPS = PAGE.parent / "alatau" / "maps"
 
 
 def _attribute(attributes: str, name: str) -> str | None:
@@ -29,6 +30,20 @@ def local_files() -> list[Path]:
         if ref and _own(ref):
             refs.append(ref)
     return [PAGE.parent / ref for ref in refs]
+
+
+def maps() -> dict[str, dict]:
+    """The maps the page loads, by folder, in its order: the data each map's file hands to ``addMap(...)``."""
+    found = {}
+    for path in local_files():
+        if path.parent.parent == MAPS:
+            call = re.fullmatch(
+                r"'use strict';\n(?:/\*.*?\*/\n)?addMap\((\{.*\})\);\n", path.read_text(encoding="utf-8"), re.DOTALL
+            )
+            if call is None:
+                raise ValueError(f"{path} is not one addMap() of the map's data")
+            found[path.parent.name] = json.loads(call.group(1))
+    return found
 
 
 def scripts() -> list[str]:
