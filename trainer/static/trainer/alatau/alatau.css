@@ -33,8 +33,9 @@ button{cursor:pointer}
 .brand h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:-.02em;margin:0;line-height:1}
 .lead{color:var(--muted);margin:10px 0 22px;line-height:1.5;font-size:15px}
 .sheet h2{font-family:var(--display);font-weight:500;font-size:15px;margin:24px 0 10px}
-.cities{display:flex;gap:8px;flex-wrap:wrap}
-.city{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px;font-size:14px}
+.cities{display:flex;gap:12px 8px;flex-wrap:wrap}
+.city{position:relative;border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px;font-size:14px}
+.city::after{content:"";position:absolute;inset:-6px 0} /* a tap 44 px high; the rows keep 12 px apart */
 .city[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
 .city[disabled]{opacity:.45;cursor:not-allowed}
 .routes{display:grid;gap:10px}
