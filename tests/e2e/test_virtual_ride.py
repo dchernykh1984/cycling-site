@@ -701,6 +701,21 @@ def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [360, 320])
+def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server, width: int):
+    """A slim pill, tapped across 44 px: its zone reaches past its frame, and the rows keep apart so two zones
+    never meet (the interface rules, 9). Each city's is measured, the ones coming soon too."""
+    page.set_viewport_size({"width": width, "height": 740})
+    _trainer_in_its_menu(page, live_server)
+    cities = page.locator("#cities .city")
+    expect(cities).to_have_count(3)
+    for city in cities.all():
+        city.scroll_into_view_if_needed()
+        wide, high = city.evaluate(_REACH)
+        assert wide >= 44 and high >= 44, (city.text_content(), wide, high)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
     page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
     _trainer_in_its_menu(page, live_server)
