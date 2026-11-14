@@ -5,6 +5,8 @@
 // is laid out in metres east and south of the map's origin, a point among its routes. A map with mountains
 // ({ south: metres }) has a range rising to the south, its foot that far south of the origin or further.
 // A map without routes yet is shown as coming soon.
+// A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
+// objects/ and its line (js/landmarks.js).
 const CITIES = [], ROUTES = [], LANDMARKS = [];
 function addMap(map) {
   const routes = map.routes || [];

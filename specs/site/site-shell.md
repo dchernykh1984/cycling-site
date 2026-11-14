@@ -245,7 +245,9 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - The virtual ride page carries its own maps (`trainer/static/trainer/alatau/maps/`, a folder per
   city; only Almaty has routes so far) and the UBT kit its rider wears (`data/`). A new map comes with
   a new revision of the page -- its folder and a line in it; the site stores only the route key and
-  name the page sends.
+  name the page sends. Three of the page's words still name Almaty: its title and its loading line
+  ("title", "loading" in `text/<lang>.js`) and the site page's description (`trainer/views.py`);
+  NEEDS CLARIFICATION: their wording once a second map has routes.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.
