@@ -633,6 +633,27 @@ def _trainer_in_its_menu(page: Page, live_server) -> None:
 
 
 @pytest.mark.django_db(transaction=True)
+def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    ranges = page.evaluate(
+        """() => {
+            const named = { ru: 'n', kk: 'n', en: 'n' };
+            const flat = { id: 'flat', name: named, desc: named, loop: false, width: 9, lanes: 2, scenery: 'city',
+                           pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] };
+            addMap({ id: 'steppe', name: named, origin: { lat: 51.16, lon: 71.43 }, routes: [flat] });
+            // the range is the scenery's plane 90 km wide (addMountains)
+            const wide = o => o.geometry && o.geometry.parameters && o.geometry.parameters.width === 90000;
+            const range = id => {
+                buildWorld(ROUTES.find(r => r.id === id));
+                let n = 0; scenery.traverse(o => { if (wide(o)) n++; }); return n;
+            };
+            return { almaty: range('center'), steppe: range('flat') };
+        }"""
+    )
+    assert ranges == {"almaty": 1, "steppe": 0}
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_countdown_does_not_count_the_time_the_course_took_to_build(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

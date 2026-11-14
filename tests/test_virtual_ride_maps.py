@@ -74,6 +74,13 @@ class MapsTests(SimpleTestCase):
             # the scene is flat: some 50 km from its origin a map's east-west metres are half a per cent off
             self.assertLess(max(_km(origin, point) for point in points), 50, folder)
 
+    def test_a_map_s_mountains_say_how_far_south_they_rise(self):
+        ranges = {folder: data["mountains"] for folder, data in trainer_page.maps().items() if "mountains" in data}
+        self.assertTrue(ranges)
+        for folder, mountains in ranges.items():
+            self.assertEqual(set(mountains), {"south"}, folder)
+            self.assertGreater(mountains["south"], 0, folder)
+
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():
             for sight in data.get("landmarks", []):

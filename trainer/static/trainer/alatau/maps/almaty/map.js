@@ -4,6 +4,7 @@ addMap({
   "id": "almaty",
   "name": {"ru": "Алматы", "kk": "Алматы", "en": "Almaty"},
   "origin": {"lat": 43.238, "lon": 76.945},
+  "mountains": {"south": 9500},
   "routes": [
     {"id": "center", "name": {"ru": "Центральное кольцо", "kk": "Орталық шеңбер", "en": "Central loop"}, "loop": true, "width": 16, "lanes": 4, "scenery": "city",
      "desc": {"ru": "Абая, Достык, Аль-Фараби, Байтурсынова. Тополя, панельки и горы на горизонте.", "kk": "Абай, Достық, Әл-Фараби, Байтұрсынұлы. Терек ағаштары, панельді үйлер және көкжиектегі таулар.", "en": "Abay, Dostyk, Al-Farabi, Baitursynov. Poplars, panel blocks and mountains on the horizon."},
