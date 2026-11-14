@@ -12,6 +12,6 @@ function addMap(map) {
   const routes = map.routes || [];
   CITIES.push({ id: map.id, name: L(map.name) + (routes.length ? '' : ', ' + t('city.soon')), ready: routes.length > 0, origin: map.origin, mountains: map.mountains || null });
   routes.forEach(r => ROUTES.push(Object.assign({}, r, { city: map.id, name: L(r.name), desc: L(r.desc) })));
-  (map.landmarks || []).forEach(l => LANDMARKS.push(Object.assign({}, l, { name: L(l.name) })));
+  (map.landmarks || []).forEach(l => LANDMARKS.push(Object.assign({}, l, { city: map.id, name: L(l.name) })));
 }
 const mapOf = route => CITIES.find(c => c.id === route.city);

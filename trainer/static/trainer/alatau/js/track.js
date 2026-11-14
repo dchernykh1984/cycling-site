@@ -56,7 +56,7 @@ function nearest(T, x, z) {
 function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + o.rx * R.lane; o.pz = o.z + o.rz * R.lane; return o; }
 function nearLandmarks(T) {
   const out = [];
-  LANDMARKS.forEach(lm => {
+  LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each
     const q = proj(lm.lat, lm.lon, T.origin); let best = 1e18, bi = 0;
     for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
     const dist = Math.sqrt(best); if (dist > (lm.far ? 14000 : 1300)) return;
