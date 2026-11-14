@@ -7,7 +7,8 @@ function renderBodyHint() {
   el.textContent = t('body.hint', { a: numF(a.A, 2), cda: numF(cda, 3), total: fmt1(m + bk), bike: lc(bt.name), kg: fmt1(bk) }) + (bmi < 15 || bmi > 45 ? t('body.check') : '');
 } // игрок всегда в форме UBT
 let paused = false, photo = false, demoP = 150;
-let routeSel = store.get('route', 'center');
+let routeSel = store.get('route', null);
+if (!ROUTES.some(r => r.id === routeSel)) routeSel = ROUTES[0].id; // the first visit, or a route no map has any more
 const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
 settings.char = 'me'; // выбор героев убран: игрок всегда в форме UBT
