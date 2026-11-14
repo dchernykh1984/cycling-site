@@ -1,6 +1,7 @@
 """Record labels render independently of WebGL and external trainer sensors."""
 
 import json
+import math
 import re
 
 import pytest
@@ -223,17 +224,43 @@ def test_the_track_puts_the_rider_back_on_the_map_where_the_route_is(page: Page)
     source = _trainer_source()
     code = "\n".join(
         _cut(source, pattern)
-        for pattern in (
-            r"^const ORIGIN = .*?;$",
-            r"^function unproj\(x, z\) \{.*?\}$",
-            r"^function proj\(lat, lon\) \{.*?\}$",
-        )
+        for pattern in (r"^function unproj\(x, z, O\) \{.*?\}$", r"^function proj\(lat, lon, O\) \{.*?\}$")
     )
     back = page.evaluate(
-        "code => { eval(code); const q = proj(43.2402, 76.929); const p = unproj(q.x, q.z); return [p.lat, p.lon]; }",
+        """code => {
+            eval(code); const O = { lat: 43.238, lon: 76.945 };
+            const q = proj(43.2402, 76.929, O), p = unproj(q.x, q.z, O); return [p.lat, p.lon];
+        }""",
         code,
     )
     assert back == pytest.approx([43.2402, 76.929], abs=1e-9)
+
+
+# The files a map is laid out with, apart from the scene and the page
+_MAP_ALONE = ("text/ru.js", "text/kk.js", "text/en.js", "js/page.js", "js/i18n.js", "js/maps.js", "js/track.js")
+
+
+def test_a_map_far_from_the_others_is_laid_out_from_its_own_origin(page: Page):
+    """A kilometre's road east to west, a thousand kilometres north of the first map, is a kilometre on the scene:
+    laid out from the first map's origin it would come out 16 % longer, its latitude's degrees being shorter."""
+    page.set_content("<!doctype html><title>map</title>")
+    page.add_script_tag(url="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js")
+    for name in _MAP_ALONE:
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    laid = page.evaluate(
+        """() => {
+            const named = { ru: 'n', kk: 'n', en: 'n' };
+            const east = { id: 'east', name: named, desc: named, loop: false, width: 9, lanes: 2, scenery: 'city',
+                           pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] };
+            addMap({ id: 'north', name: named, origin: { lat: 51.16, lon: 71.43 }, routes: [east] });
+            const T = buildTrack(ROUTES.find(r => r.id === 'east')), end = unproj(T.X[T.N - 1], T.Z[T.N - 1], T.origin);
+            return { length: T.L, end: [end.lat, end.lon] };
+        }"""
+    )
+    lat, (lon1, lon2) = math.radians(51.17), (math.radians(71.43), math.radians(71.4443))
+    metres = 2 * 6371000 * math.asin(math.cos(lat) * math.sin((lon2 - lon1) / 2))  # along the parallel's chord
+    assert laid["length"] == pytest.approx(metres, rel=0.002), laid
+    assert laid["end"] == pytest.approx([51.17, 71.4443], abs=1e-6), laid
 
 
 @pytest.mark.django_db(transaction=True)
@@ -355,7 +382,8 @@ def _ride_alone(page: Page) -> list[str]:
         page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
     page.evaluate(
         """() => {
-            const L = 20000, T = { N: 2, X: [0, 0], Y: [800, 800], Z: [0, -L], D: [0, L], L, loop: false };
+            const L = 20000, origin = { lat: 0, lon: 0 };
+            const T = { N: 2, X: [0, 0], Y: [800, 800], Z: [0, -L], D: [0, L], L, loop: false, origin };
             world = { T, S0: 20, FIN: L - 8, route: { id: 'flat' }, lms: [] };
             me = startRider(newRider('me', 0, 75, world.S0, 2)); Object.assign(me, { bike: 8, CdA: .3, Crr: .004 });
             phase = 'race';

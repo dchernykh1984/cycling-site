@@ -1,6 +1,7 @@
 """The virtual ride's maps -- a city each, in a folder of the trainer's maps/, nothing but data -- and the objects
 their sights are built from, a file each in objects/, shared by every map. The page lists them all."""
 
+import math
 import re
 from numbers import Real
 
@@ -18,6 +19,12 @@ OBJECTS = trainer_page.PAGE.parent / "alatau" / "objects"
 
 def _listed() -> list[str]:
     return [path.parent.name for path in trainer_page.local_files() if path.parent.parent == trainer_page.MAPS]
+
+
+def _km(origin: dict, point) -> float:
+    lat1, lon1, lat2, lon2 = map(math.radians, (origin["lat"], origin["lon"], point[0], point[1]))
+    a = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+    return 2 * 6371 * math.asin(math.sqrt(a))
 
 
 def _routes():
@@ -56,6 +63,16 @@ class MapsTests(SimpleTestCase):
             self.assertIsInstance(route["loop"], bool)
             self.assertIn(route["scenery"], SCENERIES)
             self.assertTrue(route["width"] > 0 and route["lanes"] > 0, route["id"])
+
+    def test_a_map_with_routes_is_laid_out_from_a_point_among_them(self):
+        for folder, data in trainer_page.maps().items():
+            if not data.get("routes"):
+                continue
+            origin = data["origin"]
+            points = [p for route in data["routes"] for p in route["pts"] + route.get("extend", [])]
+            points += [(sight["lat"], sight["lon"]) for sight in data.get("landmarks", [])]
+            # the scene is flat: some 50 km from its origin a map's east-west metres are half a per cent off
+            self.assertLess(max(_km(origin, point) for point in points), 50, folder)
 
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():

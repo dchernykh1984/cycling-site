@@ -19,7 +19,7 @@ function startRider(r) {
 const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
 // [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
 function trackPoint(inp) {
-  const o = riderPos(me, {}), ll = unproj(o.px, o.pz);
+  const o = riderPos(me, {}), ll = unproj(o.px, o.pz, world.T.origin);
   return [Math.round(raceT * 10) / 10, +ll.lat.toFixed(6), +ll.lon.toFixed(6), Math.round(o.y * 10) / 10, Math.round(me.stats.dist * 10) / 10,
     Math.round(clamp(me.v, 0, 40) * 100) / 100, Math.round(clamp(inp.P || 0, 0, 3000)), Math.round(clamp(inp.cad || 0, 0, 250)), Math.round(clamp(inp.hr || 0, 0, 260))];
 }
