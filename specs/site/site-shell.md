@@ -30,8 +30,8 @@ home page, Map, Knowledge Base) is addressed under its own language's prefix
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen; a link opens the same page on its own. The page is a static file that loads
 its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
-words (`text/<lang>.js`), its route and rider catalogues (`data/`) and its code, a file per part of
-it (`js/`: the physics, the ride, the scene, the riders, the devices, the HUD, the site's API and the
+words (`text/<lang>.js`), its maps (`maps/`, below), its rider catalogue (`data/`) and its code, a file
+per part of it (`js/`: the physics, the ride, the scene, the riders, the devices, the HUD, the site's API and the
 rest). The ride is stepped apart from its drawing: the physics (`js/physics.js` -- the speed from
 power or gear, the riders' drag, the bots, what a smart trainer is set to) and the ride's state and
 step (`js/ride.js` -- the countdown, the rider, the bots, laps, sights, the finish, a plan's steps)
@@ -53,7 +53,7 @@ runs in the browser: the page talks to the site only through `Site.req` (`js/sit
 finished ride and its Strava upload. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
 site's page passes from its own; Russian without one): its texts, units, number and date formats
 and the names of its routes, landmarks and riders come from the page itself -- its words in `text/`,
-the names in `data/`, the formats from its language and locale (`LANG`, `LOCALE` in `js/page.js`) --
+the names in `maps/` and `data/`, the formats from its language and locale (`LANG`, `LOCALE` in `js/page.js`) --
 rather than from the translation catalogues: an exception to FR-SHL-006 that keeps the page standing on its own, apart
 from the site's templates. A route name the page sends with a saved ride or a group race is in the
 language the page spoke then; the page itself shows the routes it knows in its current language,
@@ -92,6 +92,16 @@ the road. A phone held upright gets one column, a tablet keeps the blocks apart,
 who asked for less motion (issue #434). Record labels keep the date and demo marker distinct. Tests:
 `tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/test_static_storage.py`,
 `tests/e2e/test_virtual_ride.py`.
+
+**Maps.** A map is a city, in a folder of its own: `maps/<id>/map.js`, one `addMap({...})` with the
+map's data and nothing else (`js/maps.js`) -- its id, the folder's name; its name; its routes, each a
+key, a name and a description, the points (latitude, longitude, height in metres), whether it is a
+loop, the road's width and lanes and the scenery drawn along it (`city` or `gorge`); and the sights
+along them, each the object it is built from, a name, a place and the room it takes. Every name is in
+ru, kk and en. The page lists each map's file, a line each, in the order the menu shows the cities,
+so a new map is its folder and that line; a map without routes is shown as coming soon. A route's key
+is its own across every map and stays as it is: the members' saved rides and group races keep it.
+Tests: `tests/test_virtual_ride_maps.py`.
 
 ## User Scenarios
 
@@ -224,9 +234,10 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   `home/forms.py`, `locations/forms.py`, `api/schemas.py` and their templates), and helpers loop over
   a literal `("ru", "kk", "en")` (`api/endpoints/content.py`, `locations/models.py`,
   `cycling_site/skins.py`). A fourth language would need changes in each.
-- The virtual ride page carries its own catalogue (`trainer/static/trainer/alatau/data/`): the
-  routes, cities and landmarks of Almaty and the UBT kit its rider wears. A route elsewhere comes with
-  a new revision of the page; the site stores only the route key and name the page sends.
+- The virtual ride page carries its own maps (`trainer/static/trainer/alatau/maps/`, a folder per
+  city; only Almaty has routes so far) and the UBT kit its rider wears (`data/`). A new map comes with
+  a new revision of the page -- its folder and a line in it; the site stores only the route key and
+  name the page sends.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to
   "Cycling" and the footer to "Cycling events" when the site content has no title.
