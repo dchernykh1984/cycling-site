@@ -106,8 +106,8 @@ function buildWorld(route) {
   }
   addTrees(grp, trees);
 
-  // --- горы Заилийского Алатау на юге ---
-  addMountains(grp, T);
+  // --- a mountain range to the south, on a map that has one ---
+  const range = mapOf(route).mountains; if (range) addMountains(grp, T, range.south);
   // --- ориентиры ---
   lms.forEach(lm => addLandmark(grp, lm, T));
   // --- старт и финиш ---
@@ -132,8 +132,8 @@ function addTrees(grp, list) {
   crowns(sG, kinds.s, (t, i, im) => { P.set(t.x, t.y + 1.2 * t.s, t.z); S.set(2.6 * t.s, 15 * t.s, 2.6 * t.s); M.compose(P, Q.identity(), S); im.setMatrixAt(i, M); col.setHSL(.38 + Math.random() * .05, .3, .17 + Math.random() * .06); im.setColorAt(i, col); });
   trunks.count = ti; trunks.frustumCulled = false; grp.add(trunks);
 }
-function addMountains(grp, T) {
-  const zStart = Math.max(T.maxZ + 2600, 9500), W = 90000, D = 36000;
+function addMountains(grp, T, south) {
+  const zStart = Math.max(T.maxZ + 2600, south), W = 90000, D = 36000;
   const g = new THREE.PlaneGeometry(W, D, 220, 90); g.rotateX(-Math.PI / 2); g.translate(0, 0, zStart + D / 2 - 800);
   const p = g.attributes.position, cols = new Float32Array(p.count * 3), c = new THREE.Color(), forest = new THREE.Color(0x40563a), rock = new THREE.Color(0x7d766c), snow = new THREE.Color(0xf3f6f8);
   for (let i = 0; i < p.count; i++) {
