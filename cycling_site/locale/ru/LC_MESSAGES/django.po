@@ -4896,6 +4896,30 @@ msgstr "Дата регистрации"
 msgid "Nobody signed up in this period."
 msgstr "За этот период никто не зарегистрировался."
 
+#: stats/templates/stats/dashboard.html
+msgid "Server"
+msgstr "Сервер"
+
+#: stats/templates/stats/dashboard.html
+msgid "As it is now, whatever the period."
+msgstr "Текущее состояние, от периода не зависит."
+
+#: stats/views.py
+msgid "Disk space used"
+msgstr "Занято на диске"
+
+#: stats/views.py
+msgid "Memory used"
+msgstr "Занято памяти"
+
+#: stats/views.py
+msgid "Processor load"
+msgstr "Загрузка процессора"
+
+#: stats/templates/stats/dashboard.html
+msgid "Database, MB"
+msgstr "База данных, МБ"
+
 #: stats/views.py
 msgid "30 days"
 msgstr "30 дней"

@@ -4893,6 +4893,30 @@ msgstr "Тіркелген уақыты"
 msgid "Nobody signed up in this period."
 msgstr "Бұл кезеңде ешкім тіркелмеді."
 
+#: stats/templates/stats/dashboard.html
+msgid "Server"
+msgstr "Сервер"
+
+#: stats/templates/stats/dashboard.html
+msgid "As it is now, whatever the period."
+msgstr "Қазіргі күйі, кезеңге байланысты емес."
+
+#: stats/views.py
+msgid "Disk space used"
+msgstr "Дискідегі пайдаланылған орын"
+
+#: stats/views.py
+msgid "Memory used"
+msgstr "Пайдаланылған жад"
+
+#: stats/views.py
+msgid "Processor load"
+msgstr "Процессор жүктемесі"
+
+#: stats/templates/stats/dashboard.html
+msgid "Database, MB"
+msgstr "Дерекқор, МБ"
+
 #: stats/views.py
 msgid "30 days"
 msgstr "30 күн"

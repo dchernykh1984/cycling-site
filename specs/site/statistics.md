@@ -1,9 +1,11 @@
 # Site Specification: The site's own statistics
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: branch `184-site-statistics` on 2026-11-04
+**Verified against**: branch `184-site-statistics` on 2026-11-04; the server's resources against branch
+feat/stats-server-resources on 2026-11-15
 **Code**: `stats/` (`models.py`, `robots.py`, `counting.py`, `middleware.py`, `report.py`, `views.py`,
-templates), `stats/static/stats/dashboard.js`, `api/endpoints/stats.py`, the page's ping in
+templates), `stats/static/stats/dashboard.js`, `api/endpoints/stats.py`, `cycling_site/system.py` (the
+server's resources), the page's ping in
 `cycling_site/static/js/cycling_site.js`, the rules `SEE_SITE_STATS` and `COUNTED_AS_TEAM` in
 `accounts/roles.py`
 **Tests**: `tests/test_stats.py`, `tests/test_role_matrix.py`, `tests/e2e/test_stats.py`,
@@ -15,8 +17,9 @@ templates), `stats/static/stats/dashboard.js`, `api/endpoints/stats.py`, the pag
 
 The owners see how the site is used: how many people come, from where, on what, in which language and
 what they read; which robots read it and of what kind; what the owners and the admins themselves did;
-and what happened on the site -- who joined, events added and approved, registrations, virtual rides.
-The site counts this itself, with no third party, and keeps only daily sums.
+what happened on the site -- who joined, events added and approved, registrations, virtual rides; and
+what the server has left right now -- disk, database, memory, processor. The site counts this itself,
+with no third party, and keeps only daily sums.
 
 ## User Scenarios
 
@@ -39,7 +42,10 @@ The site counts this itself, with no third party, and keeps only daily sums.
      chart, and each member's two numbers -- every member of the team listed, idle ones too;
    - **On the site**: members, new and all; members who signed in; Strava connected, new and all;
      registrations for events; events added and approved; events waiting for review now; virtual
-     rides finished; and the newest 20 members who signed up, with the date.
+     rides finished; and the newest 20 members who signed up, with the date;
+   - **Server**, as it is now whatever the period: the disk the site keeps its files on, the memory
+     and the processor, each as a share of what there is, with a bar as long and "used / of what"
+     (sizes in bytes' units, processors as numbers: "0.02 / 0.5 CPU"); and the database's size in MB.
 4. A chart of one point (today's robots, a first day) is not drawn: its tile says the number.
 
 ### Story 2 -- The site counts a page (P1)
@@ -59,7 +65,9 @@ The site counts this itself, with no third party, and keeps only daily sums.
 
 1. **Given** an owner's personal token, **Then** `GET /api/v1/stats/?period=` returns what the page
    shows, in the same structure: dates in ISO 8601, a point of a chart as the first day of its
-   bucket or "HH:00".
+   bucket or "HH:00"; and under `system` the server's resources -- `disk` (`total`, `used`, `free`,
+   `percent`), `database` (`size`), `memory` (`used`, `limit`, `percent`), `cpu` (`used`, `limit`,
+   `percent`) -- in bytes and processors, null where the system does not say.
 
 ### Edge Cases
 
@@ -75,6 +83,8 @@ The site counts this itself, with no third party, and keeps only daily sums.
   and a day takes at most 500 new keys of each of these three: past that, a new key is not counted
   under its own name, while the day's totals still count the view.
 - Counting never costs the page: a database error while counting is logged and the page served.
+- A resource the system does not report -- memory and processor on a machine with neither control
+  groups nor `/proc`, the database's size outside PostgreSQL -- shows as a dash, and null in the API.
 
 ## Functional Requirements
 
@@ -88,6 +98,17 @@ The site counts this itself, with no third party, and keeps only daily sums.
   a second line grey and dashed, text in its text colours; Chart.js 4.4.1 is loaded on this page alone.
 - **FR-STA-005**: Every robot the calendar treats as one (`BOT_USER_AGENT_MARKERS`) is a robot here
   too (`tests/test_stats.py`).
+- **FR-STA-006**: The server's resources are read when the page or the API is asked, never stored
+  (`cycling_site/system.py`). Inside a container the machine's totals are the host's, so memory and
+  processor are the process's control group's (cgroup v2 at the folder `/proc/self/cgroup` names,
+  else v1), and the machine's only where the group sets no limit or there is no group:
+  - **Disk**: the one `MEDIA_ROOT` is on, as `df` counts it -- the share is used of used and free,
+    so the blocks the system keeps for itself count as neither.
+  - **Memory**: in use less the inactive file cache the system drops when it needs the room, against
+    the group's limit or the machine's memory, whichever is less.
+  - **Processor**: the group's processor time over `CPU_SAMPLE_SECONDS` (one second, which the page
+    and the API wait), against its quota or the processors the process may run on, whichever is less.
+  - **Database**: `pg_database_size` of the site's database.
 
 ## Key Entities
 
@@ -109,6 +130,8 @@ The site counts this itself, with no third party, and keeps only daily sums.
   visits, and people are not counted as unique.
 - A browser with scripts off is not counted; a robot that runs scripts and calls itself a browser is
   counted as a person.
+- The server's resources are a moment's: the processor's load is that of one second, and no history
+  is kept -- the host's own dashboard has the curves.
 - The ping is open, as a page's own script needs it to be: a script that sends it again and again
   inflates the numbers. It cannot fill the database (the day's limit of new keys), and nothing stops
   it yet.

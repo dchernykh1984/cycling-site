@@ -1,8 +1,13 @@
 """The owners' statistics (issue #184): who is a robot, what one page view adds, what a period sums to,
-and who may read it all."""
+what the server has left, and who may read it all."""
 
 import datetime
+import itertools
+import re
+import shutil
+import tempfile
 import uuid
+from pathlib import Path
 from unittest import mock
 
 from django.conf import settings
@@ -13,6 +18,7 @@ from django.utils import timezone, translation
 from accounts.models import User
 from audit.models import AuditLog
 from calendar_app.models import Competition
+from cycling_site import system
 from locations.models import Location
 from news.models import NewsArticle
 from stats import counting, report
@@ -344,6 +350,153 @@ class ReportTests(TestCase):
         self.assertEqual([row["name"] for row in site["newcomers"]], ["newcomer@example.com"])
 
 
+class ServerTests(TestCase):
+    """What the server has, read off files written as the kernel writes them, under a folder of the test's."""
+
+    MEMINFO = "MemTotal:       16384000 kB\nMemFree:          1000000 kB\nMemAvailable:    8192000 kB\n"
+
+    def _root(self, files: dict[str, str]) -> Path:
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        for name, text in files.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_text(text)
+        return root
+
+    def _read(self, root: Path, machine_cpus: int = 4) -> dict:
+        with mock.patch("cycling_site.system.os.process_cpu_count", return_value=machine_cpus):
+            return system.read(root)
+
+    def test_memory_is_the_containers_own_less_the_cache_it_can_drop_against_its_limit(self):
+        root = self._root(
+            {
+                "proc/self/cgroup": "0::/\n",
+                "proc/meminfo": self.MEMINFO,
+                "sys/fs/cgroup/memory.current": "300000000\n",
+                "sys/fs/cgroup/memory.stat": "anon 150000000\nfile 150000000\ninactive_file 100000000\n",
+                "sys/fs/cgroup/memory.max": "536870912\n",
+            }
+        )
+        self.assertEqual(self._read(root)["memory"], {"used": 200000000, "limit": 536870912, "percent": 37.3})
+
+    def test_a_group_with_no_limit_of_its_own_is_measured_against_the_machine(self):
+        root = self._root(
+            {
+                "proc/self/cgroup": "0::/\n",
+                "proc/meminfo": self.MEMINFO,
+                "sys/fs/cgroup/memory.current": "200000000\n",
+                "sys/fs/cgroup/memory.max": "max\n",
+            }
+        )
+        self.assertEqual(self._read(root)["memory"], {"used": 200000000, "limit": 16384000 * 1024, "percent": 1.2})
+
+    def test_the_group_is_the_one_proc_self_cgroup_names(self):
+        # Without a cgroup namespace of its own the mount's top is the whole machine's, and has no limits.
+        own = "sys/fs/cgroup/kubepods/pod1/site"
+        root = self._root(
+            {
+                "proc/self/cgroup": "0::/kubepods/pod1/site\n",
+                "proc/meminfo": self.MEMINFO,
+                "sys/fs/cgroup/cpu.stat": "usage_usec 999000000\n",
+                f"{own}/memory.current": "100000000\n",
+                f"{own}/memory.max": "200000000\n",
+                f"{own}/cpu.stat": "usage_usec 1000000\n",
+                f"{own}/cpu.max": "200000 100000\n",
+            }
+        )
+
+        def a_second_later(_seconds):
+            (root / own / "cpu.stat").write_text("usage_usec 1500000\n")
+
+        with (
+            mock.patch("cycling_site.system.time.sleep", side_effect=a_second_later),
+            mock.patch("cycling_site.system.time.monotonic", side_effect=itertools.count(100.0)),
+        ):
+            server = self._read(root)
+        self.assertEqual(server["memory"], {"used": 100000000, "limit": 200000000, "percent": 50.0})
+        self.assertEqual(server["cpu"], {"used": 0.5, "limit": 2.0, "percent": 25.0})
+
+    def test_the_processor_is_watched_for_a_while_against_the_groups_quota(self):
+        root = self._root(
+            {
+                "proc/self/cgroup": "0::/\n",
+                "sys/fs/cgroup/cpu.stat": "usage_usec 5000000\nuser_usec 4000000\n",
+                "sys/fs/cgroup/cpu.max": "50000 100000\n",
+            }
+        )
+
+        def a_second_later(_seconds):
+            (root / "sys/fs/cgroup/cpu.stat").write_text("usage_usec 5250000\nuser_usec 4200000\n")
+
+        with (
+            mock.patch("cycling_site.system.time.sleep", side_effect=a_second_later) as sleep,
+            mock.patch("cycling_site.system.time.monotonic", side_effect=itertools.count(100.0)),
+        ):
+            cpu = self._read(root)["cpu"]
+        sleep.assert_called_once_with(system.CPU_SAMPLE_SECONDS)
+        self.assertEqual(cpu, {"used": 0.25, "limit": 0.5, "percent": 50.0})
+
+    def test_a_quota_is_never_more_than_the_processors_the_site_may_run_on(self):
+        root = self._root({"proc/self/cgroup": "0::/\n", "sys/fs/cgroup/cpu.max": "800000 100000\n"})
+        self.assertEqual(self._read(root, machine_cpus=2)["cpu"]["limit"], 2)
+
+    def test_cgroup_v1_is_read_where_there_is_no_v2(self):
+        root = self._root(
+            {
+                "proc/meminfo": self.MEMINFO,
+                "sys/fs/cgroup/memory/memory.usage_in_bytes": "300000000\n",
+                "sys/fs/cgroup/memory/memory.stat": "cache 120000000\ntotal_inactive_file 100000000\n",
+                # What v1 writes when the group has no limit: a number past any machine's memory.
+                "sys/fs/cgroup/memory/memory.limit_in_bytes": "9223372036854771712\n",
+                "sys/fs/cgroup/cpuacct/cpuacct.usage": "2000000000\n",
+                "sys/fs/cgroup/cpu/cpu.cfs_quota_us": "-1\n",
+                "sys/fs/cgroup/cpu/cpu.cfs_period_us": "100000\n",
+            }
+        )
+
+        def a_second_later(_seconds):
+            (root / "sys/fs/cgroup/cpuacct/cpuacct.usage").write_text("3000000000\n")
+
+        with (
+            mock.patch("cycling_site.system.time.sleep", side_effect=a_second_later),
+            mock.patch("cycling_site.system.time.monotonic", side_effect=itertools.count(100.0)),
+        ):
+            server = self._read(root)
+        self.assertEqual(server["memory"], {"used": 200000000, "limit": 16384000 * 1024, "percent": 1.2})
+        self.assertEqual(server["cpu"], {"used": 1.0, "limit": 4, "percent": 25.0})
+
+    def test_with_no_group_the_memory_is_the_machines(self):
+        root = self._root({"proc/meminfo": self.MEMINFO})
+        self.assertEqual(
+            self._read(root)["memory"], {"used": 8192000 * 1024, "limit": 16384000 * 1024, "percent": 50.0}
+        )
+
+    def test_what_the_system_does_not_say_is_none_and_nothing_waits_for_it(self):
+        with mock.patch("cycling_site.system.time.sleep") as sleep:
+            server = self._read(self._root({}))
+        sleep.assert_not_called()
+        self.assertEqual(server["memory"], {"used": None, "limit": None, "percent": None})
+        self.assertEqual(server["cpu"], {"used": None, "limit": 4, "percent": None})
+
+    def test_the_disk_is_the_one_the_files_go_to_even_before_their_folder_exists(self):
+        folder = self._root({})
+        with override_settings(MEDIA_ROOT=folder / "not" / "yet"):
+            disk = self._read(self._root({}))["disk"]
+        self.assertEqual(disk["total"], shutil.disk_usage(folder).total)
+        self.assertEqual(disk["percent"], round(disk["used"] * 100 / (disk["used"] + disk["free"]), 1))
+
+    def test_the_database_says_how_much_it_takes(self):
+        self.assertGreater(self._read(self._root({}))["database"]["size"], 0)
+
+
+SERVER = {
+    "disk": {"total": 10 * 2**30, "used": 3 * 2**30, "free": 7 * 2**30, "percent": 30.0},
+    "database": {"size": 85 * 2**20},
+    "memory": {"used": 200000000, "limit": 536870912, "percent": 37.3},
+    "cpu": {"used": 0.25, "limit": 0.5, "percent": 50.0},
+}
+
+
 @override_settings(ALLOWED_HOSTS=[HOST])
 class DashboardTests(TestCase):
     def test_an_owner_sees_the_period_they_chose(self):
@@ -358,6 +511,49 @@ class DashboardTests(TestCase):
         # Thousands grouped as the language groups them, to be read at a glance.
         self.assertContains(page, '<div class="stats-tile-value">12,345</div>')
         self.assertContains(self.client.get("/ru/stats/?period=week"), '<div class="stats-tile-value">12\xa0345</div>')
+
+    def test_the_server_is_shown_as_it_is_now(self):
+        self.client.force_login(_member("owner", User.Role.OWNER))
+        with mock.patch("cycling_site.system.read", return_value=SERVER):
+            page = self.client.get("/en/stats/?period=week")
+            russian = self.client.get("/ru/stats/?period=week")
+        self.assertEqual(
+            page.context["server"],
+            [
+                {"name": "Disk space used", "percent": 30.0, "detail": "3.0\xa0GB / 10.0\xa0GB"},
+                {"name": "Memory used", "percent": 37.3, "detail": "190.7\xa0MB / 512.0\xa0MB"},
+                {"name": "Processor load", "percent": 50.0, "detail": "0.25 / 0.5 CPU"},
+            ],
+        )
+        self.assertContains(page, '<div class="stats-tile-value">37%</div>')
+        self.assertContains(page, 'style="width: 37%"')
+        self.assertContains(page, '<div class="stats-tile-value">85</div><div class="stats-tile-label">Database, MB')
+        self.assertContains(russian, "0,25 / 0,5 CPU")
+        self.assertContains(russian, 'style="width: 37%"')
+
+    def test_the_servers_words_are_in_every_language(self):
+        words = ("Server", "As it is now, whatever the period.", "Disk space used", "Memory used", "Processor load")
+        for locale in ("ru", "kk"):
+            with translation.override(locale):
+                for msgid in (*words, "Database, MB"):
+                    with self.subTest(locale=locale, msgid=msgid):
+                        self.assertNotEqual(translation.gettext(msgid), msgid)
+
+    def test_what_the_server_does_not_say_is_a_dash(self):
+        self.client.force_login(_member("owner", User.Role.OWNER))
+        unknown = {
+            **SERVER,
+            "database": {"size": None},
+            "memory": {"used": None, "limit": None, "percent": None},
+            "cpu": {"used": None, "limit": 4, "percent": None},
+        }
+        with mock.patch("cycling_site.system.read", return_value=unknown):
+            html = self.client.get("/en/stats/").content.decode()
+        for name in ("Memory used", "Processor load", "Database, MB"):
+            self.assertRegex(
+                html, rf'stats-tile-value">&ndash;</div>\s*<div class="stats-tile-label">{re.escape(name)}<'
+            )
+        self.assertNotIn("CPU", html)
 
     def test_every_period_and_every_kind_of_robot_has_a_name(self):
         self.assertEqual(set(PERIOD_NAMES), set(report.PERIODS))
@@ -381,7 +577,9 @@ class StatisticsApiTests(TestCase):
         self.assertEqual(answer.status_code, 200)
         body = answer.json()
         self.assertEqual((body["period"], body["bucket"]), ("today", "hour"))
-        self.assertEqual(set(body), {"period", "start", "end", "bucket", "people", "bots", "team", "site"})
+        self.assertEqual(set(body), {"period", "start", "end", "bucket", "people", "bots", "team", "site", "system"})
+        self.assertEqual(set(body["system"]), {"disk", "database", "memory", "cpu"})
+        self.assertEqual(set(body["system"]["memory"]), {"used", "limit", "percent"})
 
     def test_an_admin_does_not(self):
         answer = self._get(_member("admin", User.Role.ADMIN))

@@ -1,14 +1,20 @@
 """The owners' statistics page (issue #184): who came, from where, what they read, what the robots and
-the team did, and what happened on the site -- for a period, the same numbers as GET /api/v1/stats/."""
+the team did, and what happened on the site -- for a period, the same numbers as GET /api/v1/stats/ --
+and what the server has left right now."""
+
+from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
+from django.template.defaultfilters import filesizeformat
 from django.utils import dateformat
+from django.utils.formats import number_format
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
 from accounts import roles
+from cycling_site import system
 from stats import report
 from stats.models import Tally
 
@@ -60,12 +66,32 @@ def _chart(series: list[dict], lines: list[tuple[str, str]], bucket: str) -> dic
     }
 
 
+def _processors(value: float) -> str:
+    """A number of processors as the language writes it, with no trailing zeros: 0.5, 1, 0.25."""
+    return number_format(Decimal(f"{value:g}"))
+
+
+def _server(resources: dict) -> list[dict]:
+    """A tile per resource: how full it is and what of what; a dash where the system does not say."""
+    disk, memory, cpu = resources["disk"], resources["memory"], resources["cpu"]
+    tiles = (
+        (_("Disk space used"), disk["percent"], disk["used"], disk["total"], filesizeformat, ""),
+        (_("Memory used"), memory["percent"], memory["used"], memory["limit"], filesizeformat, ""),
+        (_("Processor load"), cpu["percent"], cpu["used"], cpu["limit"], _processors, " CPU"),
+    )
+    return [
+        {"name": name, "percent": percent, "detail": "" if percent is None else f"{shown(used)} / {shown(whole)}{unit}"}
+        for name, percent, used, whole, shown, unit in tiles
+    ]
+
+
 @login_required
 def dashboard(request):
     if not roles.at_least(request.user, roles.SEE_SITE_STATS):
         raise PermissionDenied
     data = report.build(request.GET.get("period", report.DEFAULT_PERIOD))
     people, bots, bucket = data["people"], data["bots"], data["bucket"]
+    resources = system.read()
     return render(
         request,
         "stats/dashboard.html",
@@ -88,6 +114,8 @@ def dashboard(request):
                     data["team"]["series"], [("views", _("Pages opened")), ("actions", _("Changes made"))], bucket
                 ),
             },
+            "server": _server(resources),
+            "database_mb": None if resources["database"]["size"] is None else resources["database"]["size"] / 2**20,
             "meta_title": _("Statistics"),
         },
     )
