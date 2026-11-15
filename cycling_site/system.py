@@ -47,67 +47,70 @@ def _percent(part: float | None, whole: float | None) -> float | None:
     return round(part * 100 / whole, 1) if part is not None and whole else None
 
 
-def _unified(root: Path) -> Path:
-    """The process's own folder of cgroup v2, as /proc/self/cgroup names it ("0::<path>"), where this mount
-    has it; else the mount's top, which is the container's own group when it has a cgroup namespace."""
+def _groups(root: Path) -> list[Path]:
+    """The process's own folder of cgroup v2 and those above it within the mount, nearest first: a limit
+    set on any of them holds for the process. /proc/self/cgroup names the folder ("0::<path>"); where this
+    mount has no such folder, its top is the container's own group, as with a cgroup namespace."""
     top = root / "sys/fs/cgroup"
     for line in (_read(root / "proc/self/cgroup") or "").splitlines():
         if line.startswith("0::") and (folder := top / line[3:].lstrip("/")).is_dir():
-            return folder
-    return top
+            return [folder, *(parent for parent in folder.parents if parent == top or top in parent.parents)]
+    return [top]
 
 
-def _memory(root: Path, group: Path) -> dict:
+def _memory(root: Path, groups: list[Path]) -> dict:
     """The memory in use, less the cache of files the system drops when it needs the room (the limit
-    counts it the same way), and the most the site may take: its group's limit, never more than the
-    machine has."""
-    legacy = root / "sys/fs/cgroup/memory"
+    counts it the same way), and the most the site may take: the least of its groups' limits and the
+    machine's memory."""
+    group, legacy = groups[0], root / "sys/fs/cgroup/memory"
     machine = _fields(_read(root / "proc/meminfo"))  # in kB
     if (current := _number(_read(group / "memory.current"))) is not None:
         used = current - _fields(_read(group / "memory.stat")).get("inactive_file", 0)
-        limit = _number(_read(group / "memory.max"))  # "max" when there is none
     elif (current := _number(_read(legacy / "memory.usage_in_bytes"))) is not None:
         used = current - _fields(_read(legacy / "memory.stat")).get("total_inactive_file", 0)
-        limit = _number(_read(legacy / "memory.limit_in_bytes"))  # past any machine's memory when there is none
     elif {"MemTotal", "MemAvailable"} <= machine.keys():
-        used, limit = (machine["MemTotal"] - machine["MemAvailable"]) * 1024, None
+        used = (machine["MemTotal"] - machine["MemAvailable"]) * 1024
     else:
         return {"used": None, "limit": None, "percent": None}
-    total = machine.get("MemTotal", 0) * 1024
-    if total and (limit is None or limit > total):
-        limit = total
+    # A group with no limit writes "max" (v2), or a number past any machine's memory (v1).
+    limits = [_number(_read(folder / "memory.max")) for folder in groups]
+    limits += [_number(_read(legacy / "memory.limit_in_bytes")), machine.get("MemTotal", 0) * 1024]
+    limit = min((n for n in limits if n), default=None)
     used = max(used, 0)
     return {"used": used, "limit": limit, "percent": _percent(used, limit)}
 
 
-def _cpu_time(root: Path, group: Path) -> float | None:
-    """The processor time the group has taken so far, in seconds."""
-    if (usec := _fields(_read(group / "cpu.stat")).get("usage_usec")) is not None:
+def _cpu_time(root: Path, groups: list[Path]) -> float | None:
+    """The processor time the process's group has taken so far, in seconds."""
+    if (usec := _fields(_read(groups[0] / "cpu.stat")).get("usage_usec")) is not None:
         return usec / 1e6
     if (nsec := _number(_read(root / "sys/fs/cgroup/cpuacct/cpuacct.usage"))) is not None:
         return nsec / 1e9
     return None
 
 
-def _cpu_limit(root: Path, group: Path) -> float:
-    """How many processors the group may keep busy at once: its quota, never more than it may run on."""
-    quota, _, period = (_read(group / "cpu.max") or "").partition(" ")  # "max 100000" when none
-    if not quota.isdecimal():
-        legacy = root / "sys/fs/cgroup/cpu"
-        quota, period = _read(legacy / "cpu.cfs_quota_us") or "", _read(legacy / "cpu.cfs_period_us") or ""
-    machine = os.process_cpu_count() or 1
-    if quota.isdecimal() and period.isdecimal() and int(period):  # cgroup v1 writes -1 when there is none
-        return min(int(quota) / int(period), machine)
-    return machine
+def _quota(text: str) -> float | None:
+    """Processors from "<quota> <period>" in microseconds; none for "max" (v2) or -1 (v1), meaning no quota."""
+    quota, _, period = text.partition(" ")
+    return int(quota) / int(period) if quota.isdecimal() and period.isdecimal() and int(period) else None
 
 
-def _cpu(root: Path, group: Path) -> dict:
+def _cpu_limit(root: Path, groups: list[Path]) -> float:
+    """How many processors the process may keep busy at once: the least of its groups' quotas and the
+    processors it may run on."""
+    legacy = root / "sys/fs/cgroup/cpu"
+    quotas = [_quota(_read(folder / "cpu.max") or "") for folder in groups]
+    quotas.append(_quota(f"{_read(legacy / 'cpu.cfs_quota_us')} {_read(legacy / 'cpu.cfs_period_us')}"))
+    return min([os.process_cpu_count() or 1, *(quota for quota in quotas if quota is not None)])
+
+
+def _cpu(root: Path, groups: list[Path]) -> dict:
     """How busy the processor is: the group's processor time over CPU_SAMPLE_SECONDS, against its limit."""
-    limit, used = _cpu_limit(root, group), None
-    before, started = _cpu_time(root, group), time.monotonic()
+    limit, used = _cpu_limit(root, groups), None
+    before, started = _cpu_time(root, groups), time.monotonic()
     if before is not None:
         time.sleep(CPU_SAMPLE_SECONDS)
-        after = _cpu_time(root, group)
+        after = _cpu_time(root, groups)
         used = None if after is None else (after - before) / (time.monotonic() - started)
     return {
         "used": None if used is None else round(used, 2),
@@ -132,7 +135,7 @@ def read(root: Path = Path("/")) -> dict:
     The disk's share is counted as ``df`` counts it: the blocks the system keeps for itself are neither
     used nor free, so a full disk reads 100% though they are left.
     """
-    disk, group = media_disk(), _unified(root)
+    disk, groups = media_disk(), _groups(root)
     return {
         "disk": {
             "total": disk.total,
@@ -141,6 +144,6 @@ def read(root: Path = Path("/")) -> dict:
             "percent": _percent(disk.used, disk.used + disk.free),
         },
         "database": {"size": _database_size()},
-        "memory": _memory(root, group),
-        "cpu": _cpu(root, group),
+        "memory": _memory(root, groups),
+        "cpu": _cpu(root, groups),
     }
