@@ -45,7 +45,7 @@ with no third party, and keeps only daily sums.
      rides finished; and the newest 20 members who signed up, with the date;
    - **Server**, as it is now whatever the period: the disk the site keeps its files on, the memory
      and the processor, each as a share of what there is, with a bar as long and "used / of what"
-     (sizes in bytes' units, processors as numbers: "0.02 / 0.5 CPU"); and the database's size in MB.
+     (sizes in MB or GB, processors in CPUs: "0.02 / 0.5 CPU"); and the database's size in MB.
 4. A chart of one point (today's robots, a first day) is not drawn: its tile says the number.
 
 ### Story 2 -- The site counts a page (P1)
@@ -101,13 +101,15 @@ with no third party, and keeps only daily sums.
 - **FR-STA-006**: The server's resources are read when the page or the API is asked, never stored
   (`cycling_site/system.py`). Inside a container the machine's totals are the host's, so memory and
   processor are the process's control group's (cgroup v2 at the folder `/proc/self/cgroup` names,
-  else v1), and the machine's only where the group sets no limit or there is no group:
+  else v1), and the machine's only where no group sets a limit or there is no group. A limit is the
+  least of those set on the group and on the groups above it within the mount:
   - **Disk**: the one `MEDIA_ROOT` is on, as `df` counts it -- the share is used of used and free,
     so the blocks the system keeps for itself count as neither.
-  - **Memory**: in use less the inactive file cache the system drops when it needs the room, against
-    the group's limit or the machine's memory, whichever is less.
+  - **Memory**: in use less the inactive file cache the system drops before the group would run
+    short (the working set), against the groups' limit or the machine's memory, whichever is less.
   - **Processor**: the group's processor time over `CPU_SAMPLE_SECONDS` (one second, which the page
-    and the API wait), against its quota or the processors the process may run on, whichever is less.
+    and the API wait), against the groups' quota or the processors the process may run on, whichever
+    is less.
   - **Database**: `pg_database_size` of the site's database.
 
 ## Key Entities
