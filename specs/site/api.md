@@ -73,9 +73,10 @@ and protocols with the event's upload token. The API has no language prefix.
    given, counted from 0 --, changes it, moves it (`position`) and deletes it; a card with no heading
    and no text in any language is refused with a 422, as on the site.
 10. **Given** the site's statistics ([statistics](statistics.md), issue #184), **Then** an owner's
-   token reads what the statistics page shows for a period (`GET /stats/?period=`): 401 without a
-   token, 403 for anybody below an owner. A page of the site says it was opened in a browser
-   (`POST /stats/hit`, no token, always 204): that is how people are counted.
+   token reads what the statistics page shows for a period, the server's resources included
+   (`GET /stats/?period=`): 401 without a token, 403 for anybody below an owner. A page of the site
+   says it was opened in a browser (`POST /stats/hit`, no token, always 204): that is how people are
+   counted.
 11. **Given** the people without accounts a member adds ([accounts](accounts.md), issue #438),
    **Then** a confirmed member (session or token) reads them with their word, limit and room
    (`GET /virtual-members/`), gives the word (`POST /virtual-members/consent`: 403 for a role that

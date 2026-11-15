@@ -1,5 +1,5 @@
 """The site's own statistics over the API (issue #184): a person's browser saying it opened a page,
-and the owners reading what the statistics page shows."""
+and the owners reading what the statistics page shows, the server's resources included."""
 
 import logging
 from http import HTTPStatus
@@ -11,6 +11,7 @@ from ninja.errors import HttpError
 
 from accounts import roles
 from api.auth import ApiTokenAuth
+from cycling_site import system
 from stats import counting, report
 from stats.robots import robot
 
@@ -54,7 +55,9 @@ def hit(request, payload: HitIn):
 
 @router.get("/", auth=auth, summary="What the owners' statistics page shows")
 def statistics(request, period: str = report.DEFAULT_PERIOD):
-    """The numbers of the statistics page for a period: today, week, month, quarter, ytd, year or all."""
+    """The numbers of the statistics page for a period: today, week, month, quarter, ytd, year or all; and
+    under ``system`` the server's disk, database, memory and processor as they are now, whatever the
+    period (bytes and processors, null where the system does not say)."""
     if not roles.at_least(request.auth, roles.SEE_SITE_STATS):
         raise HttpError(HTTPStatus.FORBIDDEN, "Only the site's owners read its statistics")
-    return report.build(period)
+    return {**report.build(period), "system": system.read()}

@@ -17,7 +17,8 @@
   .stats-bars .track { grid-column: 1 / -1; height: .5rem; }
   /* On the page's own background, in the colour of links, which every skin keeps readable on it
      (stats/dashboard.js); a track of another grey under it fell below 3:1 in the dark skin. */
-  .stats-bars .fill { display: block; height: 100%; border-radius: .25rem; background: var(--bs-link-color); }
+  .stats-bars .fill, .stats-meter .fill { display: block; height: 100%; max-width: 100%; border-radius: .25rem; background: var(--bs-link-color); }
+  .stats-meter { display: block; height: .5rem; margin: .375rem 0; }
 </style>
 {% endblock %}
 
@@ -131,6 +132,22 @@
 {% else %}
 <p class="text-muted">{% trans "Nobody signed up in this period." %}</p>
 {% endif %}
+
+<h2 class="h5 mt-4">{% trans "Server" %}</h2>
+<p class="text-muted small">{% trans "As it is now, whatever the period." %}</p>
+<div class="stats-tiles mb-3">
+  {% for tile in server %}
+  <div class="stats-tile">
+    <div class="stats-tile-value">{% if tile.percent is None %}&ndash;{% else %}{{ tile.percent|floatformat:"0" }}%{% endif %}</div>
+    <div class="stats-tile-label">{{ tile.name }}</div>
+    {% if tile.percent is not None %}
+    <span class="stats-meter" aria-hidden="true"><span class="fill" style="width: {{ tile.percent|floatformat:"0u" }}%"></span></span>
+    <div class="stats-tile-label">{{ tile.detail }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <div class="stats-tile"><div class="stats-tile-value">{% if database_mb is None %}&ndash;{% else %}{{ database_mb|floatformat:"0g" }}{% endif %}</div><div class="stats-tile-label">{% trans "Database, MB" %}</div></div>
+</div>
 {{ charts|json_script:"stats-charts" }}
 {% endwith %}
 {% endblock %}
