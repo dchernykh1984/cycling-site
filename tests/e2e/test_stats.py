@@ -39,7 +39,8 @@ def test_a_page_a_person_opens_counts_itself(page: Page, live_server):
     assert pages == {"/ru/calendar/": 1}
 
 
-# The widest the server's numbers come: a full terabyte disk, a gigabyte of memory, sixteen processors.
+# The widest the server's numbers come: sizes just short of the next unit ("1023.5 GB" is wider than the
+# "1.0 TB" a round terabyte would draw), a full disk and memory, sixteen processors.
 WIDEST_SERVER = {
     "disk": {"total": 1023 * 2**30 + 2**29, "used": 1023 * 2**30 + 2**29, "free": 0, "percent": 100.0},
     "database": {"size": 99999 * 2**20},
