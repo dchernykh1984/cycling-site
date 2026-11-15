@@ -597,6 +597,10 @@ class StatisticsApiTests(TestCase):
         self.assertEqual(set(body), {"period", "start", "end", "bucket", "people", "bots", "team", "site", "system"})
         self.assertEqual(set(body["system"]), {"disk", "database", "memory", "cpu"})
         self.assertEqual(set(body["system"]["memory"]), {"used", "limit", "percent"})
+        # The disk is read on every machine, so its numbers are in the answer wherever the test runs.
+        disk = body["system"]["disk"]
+        self.assertEqual(disk["total"], system.media_disk().total)
+        self.assertTrue(0 <= disk["percent"] <= 100)
 
     def test_an_admin_does_not(self):
         answer = self._get(_member("admin", User.Role.ADMIN))
