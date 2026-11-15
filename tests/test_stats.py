@@ -549,12 +549,18 @@ class DashboardTests(TestCase):
         self.assertContains(russian, 'style="width: 37%"')
 
     def test_the_servers_words_are_in_every_language(self):
-        words = ("Server", "As it is now, whatever the period.", "Disk space used", "Memory used", "Processor load")
+        words = (
+            "Server",
+            "As it is now, whatever the period.",
+            "Disk space used",
+            "Memory used",
+            "Processor load",
+            "Database, MB",
+        )
         for locale in ("ru", "kk"):
-            with translation.override(locale):
-                for msgid in (*words, "Database, MB"):
-                    with self.subTest(locale=locale, msgid=msgid):
-                        self.assertNotEqual(translation.gettext(msgid), msgid)
+            for msgid in words:
+                with self.subTest(locale=locale, msgid=msgid), translation.override(locale):
+                    self.assertNotEqual(translation.gettext(msgid), msgid)
 
     def test_what_the_server_does_not_say_is_a_dash(self):
         self.client.force_login(_member("owner", User.Role.OWNER))
