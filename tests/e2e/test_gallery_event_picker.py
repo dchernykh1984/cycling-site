@@ -34,10 +34,12 @@ def _open(page, live_server, admin_user, path="/ru/gallery/albums/new/"):
 
 
 def _save(page):
+    # Pressed from the keyboard: a tap aimed while the page still scrolls the button into view lands
+    # wherever the scroll left it, and nothing is sent (webkit, iPhone, CI). The keyboard has no place to miss.
     with page.expect_response(
         lambda response: response.request.method == "POST" and "/gallery/albums/" in response.url
     ):
-        page.locator('#album-form button[type="submit"]').click()
+        page.locator('#album-form button[type="submit"]').press("Enter")
     page.wait_for_url("**/gallery/albums/*/edit/")
 
 
