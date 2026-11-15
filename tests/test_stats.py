@@ -416,6 +416,23 @@ class ServerTests(TestCase):
         self.assertEqual(server["memory"], {"used": 100000000, "limit": 200000000, "percent": 50.0})
         self.assertEqual(server["cpu"], {"used": 0.5, "limit": 2.0, "percent": 25.0})
 
+    def test_a_limit_set_on_a_group_above_holds(self):
+        own = "sys/fs/cgroup/system.slice/site.service"
+        root = self._root(
+            {
+                "proc/self/cgroup": "0::/system.slice/site.service\n",
+                "proc/meminfo": self.MEMINFO,
+                f"{own}/memory.current": "100000000\n",
+                f"{own}/memory.max": "max\n",
+                f"{own}/cpu.max": "max 100000\n",
+                "sys/fs/cgroup/system.slice/memory.max": "400000000\n",
+                "sys/fs/cgroup/system.slice/cpu.max": "150000 100000\n",
+            }
+        )
+        server = self._read(root)
+        self.assertEqual(server["memory"], {"used": 100000000, "limit": 400000000, "percent": 25.0})
+        self.assertEqual(server["cpu"]["limit"], 1.5)
+
     def test_the_processor_is_watched_for_a_while_against_the_groups_quota(self):
         root = self._root(
             {
