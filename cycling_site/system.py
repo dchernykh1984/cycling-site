@@ -130,7 +130,7 @@ def _database_size() -> int | None:
 
 def read(root: Path = Path("/")) -> dict:
     """The server's resources at this moment, in bytes and in processors; what the system does not say is
-    None. It takes CPU_SAMPLE_SECONDS, for which the processor is watched.
+    None. Where the processor's time can be read, this waits CPU_SAMPLE_SECONDS to watch it.
 
     The disk's share is counted as ``df`` counts it: the blocks the system keeps for itself are neither
     used nor free, so a full disk reads 100% though they are left.
