@@ -59,9 +59,9 @@ def _groups(root: Path) -> list[Path]:
 
 
 def _memory(root: Path, groups: list[Path]) -> dict:
-    """The memory in use, less the cache of files the system drops when it needs the room (the limit
-    counts it the same way), and the most the site may take: the least of its groups' limits and the
-    machine's memory."""
+    """The memory in use less the inactive file cache, which the system drops before the group would run
+    short -- the working set, as container platforms count it --, and the most the site may take: the
+    least of its groups' limits and the machine's memory."""
     group, legacy = groups[0], root / "sys/fs/cgroup/memory"
     machine = _fields(_read(root / "proc/meminfo"))  # in kB
     if (current := _number(_read(group / "memory.current"))) is not None:
