@@ -57,11 +57,11 @@ def _unified(root: Path) -> Path:
     return top
 
 
-def _memory(root: Path) -> dict:
+def _memory(root: Path, group: Path) -> dict:
     """The memory in use, less the cache of files the system drops when it needs the room (the limit
     counts it the same way), and the most the site may take: its group's limit, never more than the
     machine has."""
-    group, legacy = _unified(root), root / "sys/fs/cgroup/memory"
+    legacy = root / "sys/fs/cgroup/memory"
     machine = _fields(_read(root / "proc/meminfo"))  # in kB
     if (current := _number(_read(group / "memory.current"))) is not None:
         used = current - _fields(_read(group / "memory.stat")).get("inactive_file", 0)
@@ -80,18 +80,18 @@ def _memory(root: Path) -> dict:
     return {"used": used, "limit": limit, "percent": _percent(used, limit)}
 
 
-def _cpu_time(root: Path) -> float | None:
+def _cpu_time(root: Path, group: Path) -> float | None:
     """The processor time the group has taken so far, in seconds."""
-    if (usec := _fields(_read(_unified(root) / "cpu.stat")).get("usage_usec")) is not None:
+    if (usec := _fields(_read(group / "cpu.stat")).get("usage_usec")) is not None:
         return usec / 1e6
     if (nsec := _number(_read(root / "sys/fs/cgroup/cpuacct/cpuacct.usage"))) is not None:
         return nsec / 1e9
     return None
 
 
-def _cpu_limit(root: Path) -> float:
+def _cpu_limit(root: Path, group: Path) -> float:
     """How many processors the group may keep busy at once: its quota, never more than it may run on."""
-    quota, _, period = (_read(_unified(root) / "cpu.max") or "").partition(" ")  # "max 100000" when none
+    quota, _, period = (_read(group / "cpu.max") or "").partition(" ")  # "max 100000" when none
     if not quota.isdecimal():
         legacy = root / "sys/fs/cgroup/cpu"
         quota, period = _read(legacy / "cpu.cfs_quota_us") or "", _read(legacy / "cpu.cfs_period_us") or ""
@@ -101,13 +101,13 @@ def _cpu_limit(root: Path) -> float:
     return machine
 
 
-def _cpu(root: Path) -> dict:
+def _cpu(root: Path, group: Path) -> dict:
     """How busy the processor is: the group's processor time over CPU_SAMPLE_SECONDS, against its limit."""
-    limit, used = _cpu_limit(root), None
-    before, started = _cpu_time(root), time.monotonic()
+    limit, used = _cpu_limit(root, group), None
+    before, started = _cpu_time(root, group), time.monotonic()
     if before is not None:
         time.sleep(CPU_SAMPLE_SECONDS)
-        after = _cpu_time(root)
+        after = _cpu_time(root, group)
         used = None if after is None else (after - before) / (time.monotonic() - started)
     return {
         "used": None if used is None else round(used, 2),
@@ -132,7 +132,7 @@ def read(root: Path = Path("/")) -> dict:
     The disk's share is counted as ``df`` counts it: the blocks the system keeps for itself are neither
     used nor free, so a full disk reads 100% though they are left.
     """
-    disk = media_disk()
+    disk, group = media_disk(), _unified(root)
     return {
         "disk": {
             "total": disk.total,
@@ -141,6 +141,6 @@ def read(root: Path = Path("/")) -> dict:
             "percent": _percent(disk.used, disk.used + disk.free),
         },
         "database": {"size": _database_size()},
-        "memory": _memory(root),
-        "cpu": _cpu(root),
+        "memory": _memory(root, group),
+        "cpu": _cpu(root, group),
     }
