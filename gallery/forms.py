@@ -1,5 +1,3 @@
-import shutil
-from pathlib import Path
 from typing import ClassVar
 
 from django import forms
@@ -8,6 +6,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from calendar_app.models import Competition
+from cycling_site import system
 from gallery.events import public_events
 from gallery.models import Album
 
@@ -122,14 +121,6 @@ def disk_reserve_mb() -> int:
     return settings.GALLERY_DISK_RESERVE_MB
 
 
-def free_media_bytes() -> int:
-    """Free space on the disk MEDIA_ROOT is on, measured at its nearest folder that exists yet."""
-    path = Path(settings.MEDIA_ROOT)
-    while not path.exists() and path != path.parent:
-        path = path.parent
-    return shutil.disk_usage(path).free
-
-
 class PhotoUploadForm(forms.Form):
     photos = MultipleImageField(
         label=_("Photos"),
@@ -156,7 +147,7 @@ class PhotoUploadForm(forms.Form):
         # Originals are kept as they came, and the disk is the one every other upload uses too --
         # event posters, news pictures, protocols. The gallery never takes the last of it.
         reserve = disk_reserve_mb() * 1024 * 1024
-        if files and free_media_bytes() - sum(f.size for f in files) < reserve:
+        if files and system.media_disk().free - sum(f.size for f in files) < reserve:
             raise forms.ValidationError(
                 _("Not enough room left on the site's disk for these photos. Ask the owner to make room.")
             )

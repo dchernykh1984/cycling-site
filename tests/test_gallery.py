@@ -223,7 +223,7 @@ class DiskReserveTests(GalleryTestCase):
         album = self._album()
         self.client.force_login(self.admin)
         nearly_full = shutil._ntuple_diskusage(total=10**9, used=10**9 - 150 * 1024 * 1024, free=150 * 1024 * 1024)
-        with mock.patch("gallery.forms.shutil.disk_usage", return_value=nearly_full):
+        with mock.patch("cycling_site.system.shutil.disk_usage", return_value=nearly_full):
             response = self.client.post(
                 reverse("gallery_album_edit", args=[album.pk]),
                 {"title_ru": album.title, "date": "2026-09-06", "photos": [_jpeg()]},
