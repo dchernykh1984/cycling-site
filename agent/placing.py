@@ -77,16 +77,17 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     """Concrete start venue when the city is known and named; else the city's catch-all.
 
     A city the tree does not have yet is proposed rather than skipped, so the event is placed from
-    the start and the reviewer only has to confirm the geography.
+    the start and the reviewer only has to confirm the geography. A known region named without a
+    town takes that region's catch-all city, as the event form files it.
     """
     city_id = locations.match_city(cities, candidate.city, candidate.region, candidate.country)
     if city_id is None:
         city_id = propose_city(client, tree, cities, candidate, created)
     if city_id is None:
-        # Nothing to hang the event on: an unnamed or ambiguous city, or no country/region to
-        # place it under. The event is still worth proposing -- the guidance asks the model to
-        # repeat the place in the description, so a reviewer can set the location by hand.
-        return None
+        # Nothing to hang the event on but, at best, its region: an unnamed or ambiguous city, or no
+        # country/region to place it under. The event is still worth proposing -- the guidance asks
+        # the model to repeat the place in the description, so a reviewer can set the location by hand.
+        return _region_catch_all(client, tree, candidate)
     if not candidate.venue:
         return client.fallback_venue(city_id)
     # A venue the site already carries is reused rather than added again. Without this every
@@ -106,6 +107,21 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     )
     _remember_venue(tree, city_id, venue_id, candidate)
     return venue_id
+
+
+def _region_catch_all(client, tree: list, candidate: Candidate) -> int | None:
+    """The catch-all venue of a known region for a candidate that names no town in it, else None.
+
+    A named town that came to nothing -- ambiguous, a placeholder -- is the reviewer's to place, and
+    a region the tree lacks is never proposed without a town to put in it.
+    """
+    if locations.has_real_name(candidate.city):
+        return None
+    country = locations.match_country(tree, candidate.country)
+    if country is None or locations.is_catch_all_country(country):
+        return None
+    region = locations.match_region(country, candidate.region)
+    return None if region is None else client.region_fallback_venue(region["id"])
 
 
 def _remember_venue(tree: list, city_id: int, venue_id: int, candidate: Candidate) -> None:
