@@ -84,9 +84,10 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     if city_id is None:
         city_id = propose_city(client, tree, cities, candidate, created)
     if city_id is None:
-        # Nothing to hang the event on but, at best, its region: an unnamed or ambiguous city, or no
-        # country/region to place it under. The event is still worth proposing -- the guidance asks
-        # the model to repeat the place in the description, so a reviewer can set the location by hand.
+        # No city to hang the event on: none named, an ambiguous one, or no country/region to put it
+        # under. A known region with no town named still places it; otherwise the event is proposed
+        # unplaced -- the guidance asks the model to repeat the place in the description, so a
+        # reviewer can set the location by hand.
         return _region_catch_all(client, tree, candidate)
     if not candidate.venue:
         return client.fallback_venue(city_id)
