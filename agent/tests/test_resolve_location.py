@@ -2,7 +2,7 @@
 
 from agent.locations import flatten_cities, match_city
 from agent.models import Candidate
-from agent.placing import resolve_location
+from agent.placing import resolve_location, with_default_city
 
 
 def _tree():
@@ -59,6 +59,42 @@ def _resolve(candidate, tree=None):
 
 def _candidate(**kwargs):
     return Candidate(title="Race", date_start="2026-08-01", **kwargs)
+
+
+def _tree_with_kyrgyzstan():
+    """The tree plus a country beside it whose region has a town of its own."""
+    kyrgyz_region = {"id": 8, "name": {"ru": "Chuy Region", "kk": "", "en": ""}, "children": []}
+    kyrgyz_region["children"].append({"id": 9, "name": {"ru": "Kant", "kk": "", "en": ""}, "children": []})
+    return [*_tree(), {"id": 7, "name": {"ru": "Kyrgyzstan", "kk": "", "en": ""}, "children": [kyrgyz_region]}]
+
+
+def test_a_default_city_stands_in_where_the_post_names_no_place():
+    cities = flatten_cities(_tree())
+    placed = with_default_city(_candidate(), "Almaty", cities)
+    assert (placed.city, placed.city_en) == ("Almaty", "Almaty")
+
+
+def test_a_default_city_stands_in_where_the_post_names_the_place_it_lies_in():
+    cities = flatten_cities(_tree())
+    assert with_default_city(_candidate(country="Kazakhstan"), "Almaty", cities).city == "Almaty"
+    assert with_default_city(_candidate(region="Almaty-region"), "Almaty", cities).city == "Almaty"
+
+
+def test_a_post_about_a_region_of_another_country_keeps_the_default_city_out():
+    """The Almaty chat reposted a Kyrgyz calendar: "Chuy Region", no town -- and got an "Almaty" there."""
+    cities = flatten_cities(_tree_with_kyrgyzstan())
+    placed = with_default_city(_candidate(country="Kyrgyzstan", region="Chuy Region"), "Almaty", cities)
+    assert (placed.city, placed.city_en) == ("", "")
+
+
+def test_a_post_about_another_region_of_the_same_country_keeps_the_default_city_out():
+    cities = flatten_cities(_tree())
+    assert with_default_city(_candidate(country="Kazakhstan", region="Zhetysu"), "Almaty", cities).city == ""
+
+
+def test_a_post_naming_its_own_city_keeps_it():
+    cities = flatten_cities(_tree())
+    assert with_default_city(_candidate(city="Talgar"), "Almaty", cities).city == "Talgar"
 
 
 def test_known_city_with_a_venue_proposes_only_the_venue():

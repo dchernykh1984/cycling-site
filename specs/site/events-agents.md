@@ -30,6 +30,9 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
    a GPS track the page links to, or -- for Instagram posts -- from geocoding the address given.
 3. **Given** the maintainer reads a run, **Then** its summary names every proposed event with link
    and place, every skipped candidate with its reason, and per-source counts.
+4. **Given** a channel or an account the maintainers gave a city, **Then** a post that names no
+   place is filed in that city; one that names a region or a country takes the city only where the
+   tree has it there, so a club chat reposting another country's calendar does not file it at home.
 
 ### Story 2 -- Each event links to itself (P2)
 

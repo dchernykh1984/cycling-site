@@ -5,7 +5,7 @@
 #   - ubtalmaty                                  # simple form
 #   - username: ubtalmaty                        # with options:
 #     hint: "an Almaty club; rides start in the city"  #   free-text nudge passed to the model
-#     city: "Almaty"                             #   where this club rides, when its posts leave it out
+#     city: "Almaty"                             #   where this club rides, for a post naming no other place
 #     enabled: false                             #   set false to pause the account without losing it
 #
 # WHAT BELONGS HERE. Only a club that announces its rides NOWHERE ELSE. Anything with a website, a

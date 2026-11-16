@@ -171,7 +171,8 @@ def _run(
                 )
             by_id = {message.id: message for message in batch}
             found.extend(
-                _with_post_link(credit_source(_scrubbed(_with_channel_city(c, channel)), label), by_id) for c in parsed
+                _with_post_link(credit_source(_scrubbed(_with_channel_city(c, channel, cities)), label), by_id)
+                for c in parsed
             )
         return found
 
@@ -233,13 +234,13 @@ def _scrubbed(candidate: Candidate) -> Candidate:
     )
 
 
-def _with_channel_city(candidate: Candidate, channel: Channel) -> Candidate:
+def _with_channel_city(candidate: Candidate, channel: Channel, cities: list) -> Candidate:
     """Fall back to the city the maintainers gave the channel when a message never names one.
 
     Inside a club's own chat nobody says which city they are in -- everyone knows. The maintainers
-    do too, and wrote it next to the channel.
+    do too, and wrote it next to the channel. A message naming another region or country keeps it out.
     """
-    return with_default_city(candidate, channel.city)
+    return with_default_city(candidate, channel.city, cities)
 
 
 if __name__ == "__main__":

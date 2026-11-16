@@ -146,8 +146,17 @@ def create_placed(
     known.existing.append({"title": candidate.title, "titles": candidate.titles, "date_start": candidate.date_start})
 
 
-def with_default_city(candidate: Candidate, city: str) -> Candidate:
-    """The candidate in ``city`` when it names no city of its own; the maintainers write it in English."""
+def with_default_city(candidate: Candidate, city: str, cities: list) -> Candidate:
+    """The candidate in ``city`` when it names no city of its own; the maintainers write it in English.
+
+    A post that names a region or a country is about that place, so the city stands in only where the
+    tree has it there. Without that check the Almaty chat's repost of the Kyrgyz federation's calendar
+    put two races in an "Almaty" that the agent then proposed inside Kyrgyzstan's Chuy Region.
+    """
     if candidate.city or not city:
+        return candidate
+    if (candidate.region or candidate.country) and not locations.lies_in(
+        cities, city, candidate.region, candidate.country
+    ):
         return candidate
     return replace(candidate, city=city, city_en=city)
