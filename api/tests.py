@@ -698,7 +698,7 @@ class CompetitionLocationValidationTest(TestCase, ApiTestMixin):
 
 
 class CityFallbackVenueTest(TestCase, ApiTestMixin):
-    """POST /locations/{city_id}/fallback-venue/ returns a city's catch-all venue (organizer+)."""
+    """POST /locations/{id}/fallback-venue/ returns a city's catch-all venue, or a region's (organizer+)."""
 
     def setUp(self):
         self.organizer = _user("fv_org", role=User.Role.ORGANIZER)
@@ -724,9 +724,35 @@ class CityFallbackVenueTest(TestCase, ApiTestMixin):
         self.city.refresh_from_db()
         self.assertEqual(self.city.get_children().filter(is_hidden=True).count(), 1)
 
-    def test_non_city_depth_returns_404(self):
+    def _catch_all_city(self, **kwargs):
+        from locations.models import CATCH_ALL_SORT_ORDER, add_location_child
+
+        fields = {"is_hidden": True, "sort_order": CATCH_ALL_SORT_ORDER, **kwargs}
+        return add_location_child(self.city.get_parent(), name="Other city", name_ru="Other city", **fields)
+
+    def test_a_region_answers_with_the_venue_of_its_catch_all_city(self):
+        """An announcement naming a region and no town is filed where the event form files it."""
+        other_city = self._catch_all_city()
+        resp = self.post(self._url(self.city.get_parent().pk), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual((body["depth"], body["parent_id"], body["is_hidden"]), (4, other_city.pk, True))
+        again = self.post(self._url(self.city.get_parent().pk), {}, user=self.organizer).json()
+        self.assertEqual(again["id"], body["id"])
+
+    def test_a_region_without_a_catch_all_city_returns_404(self):
         region = self.city.get_parent()  # depth 2
         resp = self.post(self._url(region.pk), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_a_city_an_admin_hid_is_not_taken_for_the_regions_catch_all(self):
+        self._catch_all_city(sort_order=1)
+        resp = self.post(self._url(self.city.get_parent().pk), {}, user=self.organizer)
+        self.assertEqual(resp.status_code, 404)
+
+    def test_a_country_returns_404(self):
+        country = self.city.get_parent().get_parent()  # depth 1
+        resp = self.post(self._url(country.pk), {}, user=self.organizer)
         self.assertEqual(resp.status_code, 404)
 
     def test_nonexistent_city_returns_404(self):

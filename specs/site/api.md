@@ -40,7 +40,8 @@ and protocols with the event's upload token. The API has no language prefix.
    GeoJSON feature (a MultiLineString, longitude first) with the file's address, to whoever may
    read the event; an event whose route file draws nothing, or that has none, answers 404.
 3. **Given** locations, **Then** the tree can be read; an organizer may get or create a city's
-   catch-all venue; a venue is created approved by an organizer and proposed by a participant;
+   catch-all venue, and a region's -- the one of its hidden catch-all city, a 404 where the region
+   has none; a venue is created approved by an organizer and proposed by a participant;
    regions and cities are always proposed (organizer and up), countries created by admins only;
    updating and deleting is admin and up.
 4. **Given** news, **Then** admins create, update and soft-delete articles; **given** the knowledge
