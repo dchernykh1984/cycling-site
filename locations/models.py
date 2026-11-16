@@ -306,6 +306,14 @@ class Location(MP_Node, index.Indexed):
             LocationProposal.objects.create(location=venue, submitted_by=submitted_by)
         return venue
 
+    def catch_all_city(self) -> "Location | None":
+        """This region's "Other city", where a race in a town nobody named is filed; None if it has none.
+
+        The seed migrations gave every region one, hidden and pinned last; a region proposed since has
+        none. A real city an admin hid keeps its own place in the list, which tells the two apart.
+        """
+        return self.get_children().filter(is_deleted=False, is_hidden=True, sort_order=CATCH_ALL_SORT_ORDER).first()
+
     @classmethod
     def get_or_create_other_location(cls, city) -> "Location":
         """Return the city's unique system fallback venue, creating it under a city row lock."""

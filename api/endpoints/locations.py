@@ -174,26 +174,33 @@ def get_location(request, location_id: int):
 
 
 @router.post(
-    "/{city_id}/fallback-venue/",
+    "/{location_id}/fallback-venue/",
     response=LocationOut,
     auth=auth,
-    summary="Get or create a city's catch-all venue (organizer+)",
+    summary="Get or create the catch-all venue of a city, or of a region's catch-all city (organizer+)",
 )
-def city_fallback_venue(request, city_id: int):
+def fallback_venue(request, location_id: int):
     """Return the hidden system fallback venue for a depth-3 city, creating it on first use.
 
     Lets an organizer (e.g. the events agent) attach a competition to a city when it cannot pin
     down a concrete start venue, without cluttering the tree with a fresh venue on every run. The
     venue is idempotent -- one per city -- and named in all three locales by the site.
+
+    A region answers for its own catch-all city, as the event form does when only a region is picked:
+    that city is hidden, so an organizer reading the tree cannot ask for it by id. A region without
+    one is a 404.
     """
     if not roles.at_least(request.auth, roles.ADD_PLACES):
         raise HttpError(HTTPStatus.FORBIDDEN, "ORGANIZER role or higher is required")
     try:
-        city = Location.objects.get(pk=city_id, is_deleted=False, depth=Level.CITY)
+        node = Location.objects.get(pk=location_id, is_deleted=False, depth__in=(Level.REGION, Level.CITY))
     except Location.DoesNotExist:
-        raise HttpError(HTTPStatus.NOT_FOUND, "City (depth-3 location) not found") from None
-    if not location_visible_to(city, request.auth):
-        raise HttpError(HTTPStatus.NOT_FOUND, "City (depth-3 location) not found")
+        raise HttpError(HTTPStatus.NOT_FOUND, "City or region not found") from None
+    if not location_visible_to(node, request.auth):
+        raise HttpError(HTTPStatus.NOT_FOUND, "City or region not found")
+    city = node if node.depth == Level.CITY else node.catch_all_city()
+    if city is None:
+        raise HttpError(HTTPStatus.NOT_FOUND, "The region has no catch-all city")
     try:
         venue = Location.get_or_create_other_location(city)
     except LocationConflictError as exc:
