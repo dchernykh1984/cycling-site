@@ -158,6 +158,9 @@ def lies_in(cities: list[dict], city: str, region: str = "", country: str = "") 
     hint that names none of its own, since sources give the oblast around a capital. Here that would
     let a channel's capital stand in for a race its post placed in a region of another country.
     """
+    # shortcut: a post naming only the oblast around a capital that shares no opening with it (Bishkek
+    # in the Chuy Region) keeps the channel's capital out; teach this the oblast around a capital once
+    # a channel based in such a capital is listed -- every channel's city is Almaty today.
     target = fold_name(city)
     return bool(target) and any(
         target in record["names"]
