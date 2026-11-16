@@ -150,7 +150,7 @@ def _run(
         # declining -- surface it so the two are told apart without another run.
         if not parsed and raw.strip() not in ("", "[]"):
             print(f"  . {source.ref}: {len(raw)}-char reply parsed to 0: {pipeline.reply_preview(raw)}", flush=True)
-        placed = (_located(_with_account_city(candidate, account), tree, cities) for candidate in parsed)
+        placed = (_located(_with_account_city(candidate, account, cities), tree, cities) for candidate in parsed)
         return [credit_account(candidate, account) for candidate in placed]
 
     def city_of(candidate: Candidate) -> int | None:
@@ -232,13 +232,14 @@ def _venue_already_there(tree: list, cities: list, candidate: Candidate) -> int 
     return geo.existing_venue(geo.venues_of(tree, city_id), candidate.venue, point)
 
 
-def _with_account_city(candidate: Candidate, account: Account) -> Candidate:
+def _with_account_city(candidate: Candidate, account: Account, cities: list) -> Candidate:
     """Fall back to the city the maintainers gave the account when a post never names one.
 
     A club posts "we meet at the Giant store" because everyone following it knows which city that
-    is; the calendar does not, and an event with no place lands nowhere.
+    is; the calendar does not, and an event with no place lands nowhere. A post naming another region
+    or country keeps it out.
     """
-    return with_default_city(candidate, account.city)
+    return with_default_city(candidate, account.city, cities)
 
 
 if __name__ == "__main__":

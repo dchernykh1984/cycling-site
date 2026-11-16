@@ -151,6 +151,22 @@ def is_ambiguous_city(cities: list[dict], city: str, region: str = "", country: 
     return len(city_matches(cities, city, region, country)) > 1
 
 
+def lies_in(cities: list[dict], city: str, region: str = "", country: str = "") -> bool:
+    """Whether the tree holds ``city`` inside the region and country named; a hint left empty holds.
+
+    Stricter than ``city_matches`` on purpose: there a city that is its own region survives a region
+    hint that names none of its own, since sources give the oblast around a capital. Here that would
+    let a channel's capital stand in for a race its post placed in a region of another country.
+    """
+    target = fold_name(city)
+    return bool(target) and any(
+        target in record["names"]
+        and (not country or _hint_matches(canonical_country(country), record["country_names"]))
+        and (not region or _hint_matches(region, record["region_names"]))
+        for record in cities
+    )
+
+
 # The tree's catch-all nodes, matched on their English name (this module must stay ASCII-only).
 _OTHER_COUNTRY = "other country"
 

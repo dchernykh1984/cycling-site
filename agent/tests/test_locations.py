@@ -1,6 +1,7 @@
 from agent.locations import (
     city_record,
     flatten_cities,
+    lies_in,
     match_city,
     match_country,
     match_region,
@@ -170,6 +171,40 @@ def test_a_city_that_is_its_own_region_survives_an_oblast_hint():
     )
     cities = flatten_cities(tree)
     assert match_city(cities, "Capitalcity", region="Surrounding-oblast") == 31
+
+
+def _capital_cities():
+    """The tree's cities with a capital modelled as its own region, as the site models Almaty."""
+    tree = _tree()
+    tree[0]["children"].append(
+        {
+            "id": 30,
+            "name": {"ru": "Capitalcity", "kk": "", "en": ""},
+            "children": [{"id": 31, "name": {"ru": "Capitalcity", "kk": "", "en": ""}, "children": []}],
+        }
+    )
+    return flatten_cities(tree)
+
+
+def test_a_city_lies_in_its_own_region_and_country():
+    cities = _capital_cities()
+    assert lies_in(cities, "Capitalcity")
+    assert lies_in(cities, "Capitalcity", region="Capitalcity", country="Kazakhstan")
+    assert lies_in(cities, "Capitalcity", region="Capitalcity-oblast", country="KZ")
+
+
+def test_a_capital_does_not_lie_in_a_region_of_another_country():
+    """Where match_city lets a capital through a region hint naming somewhere else, this does not."""
+    cities = _capital_cities()
+    assert match_city(cities, "Capitalcity", region="chuy-region") == 31
+    assert not lies_in(cities, "Capitalcity", region="chuy-region")
+    assert not lies_in(cities, "Capitalcity", region="chuy-region", country="Kyrgyzstan")
+    assert not lies_in(cities, "Capitalcity", country="Kyrgyzstan")
+
+
+def test_a_city_the_tree_lacks_lies_nowhere():
+    assert not lies_in(_capital_cities(), "Nowhere-town")
+    assert not lies_in(_capital_cities(), "")
 
 
 def test_a_country_named_in_its_long_form_still_finds_the_real_node():

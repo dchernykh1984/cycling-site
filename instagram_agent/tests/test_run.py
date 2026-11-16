@@ -59,18 +59,18 @@ def test_a_dry_run_proposes_without_posting_anything():
 
 def test_a_ride_with_no_city_takes_the_one_the_account_was_given():
     account = Account("ubtalmaty", city="Almaty")
-    placed = _with_account_city(_candidate(), account)
+    placed = _with_account_city(_candidate(), account, [])
     assert (placed.city, placed.city_en) == ("Almaty", "Almaty")
 
 
 def test_a_city_the_post_named_is_not_overwritten():
     account = Account("ubtalmaty", city="Almaty")
-    placed = _with_account_city(_candidate(city="Talgar"), account)
+    placed = _with_account_city(_candidate(city="Talgar"), account, [])
     assert placed.city == "Talgar"
 
 
 def test_an_account_without_a_city_leaves_the_candidate_alone():
-    assert _with_account_city(_candidate(), Account("ubtalmaty")).city == ""
+    assert _with_account_city(_candidate(), Account("ubtalmaty"), []).city == ""
 
 
 def _config(**overrides):

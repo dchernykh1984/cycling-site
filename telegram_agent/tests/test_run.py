@@ -2,6 +2,7 @@
 
 import datetime
 
+from agent.locations import flatten_cities
 from agent.models import Candidate, KnownEvents, RunReport, Taxonomy
 from agent.pipeline import run_pipeline
 from telegram_agent.channels import Channel
@@ -101,13 +102,32 @@ def test_a_dry_run_proposes_without_posting_anything():
 
 def test_a_ride_with_no_city_takes_the_one_the_channel_was_given():
     channel = Channel(ref="+abc", city="Almaty")
-    placed = _with_channel_city(_candidate(), channel)
+    placed = _with_channel_city(_candidate(), channel, [])
     assert (placed.city, placed.city_en) == ("Almaty", "Almaty")
 
 
 def test_a_ride_that_names_its_own_city_keeps_it():
     channel = Channel(ref="+abc", city="Almaty")
-    assert _with_channel_city(_candidate(city="Talgar"), channel).city == "Talgar"
+    assert _with_channel_city(_candidate(city="Talgar"), channel, []).city == "Talgar"
+
+
+def test_a_race_the_message_places_in_another_country_does_not_take_the_channel_s_city():
+    """The Almaty chat reposted the Kyrgyz federation's calendar; two races landed in an "Almaty" in Chuy."""
+    tree = [
+        {
+            "id": 1,
+            "name": "Kazakhstan",
+            "children": [{"id": 2, "name": "Almaty", "children": [{"id": 3, "name": "Almaty"}]}],
+        },
+        {
+            "id": 4,
+            "name": "Kyrgyzstan",
+            "children": [{"id": 5, "name": "Chuy Region", "children": [{"id": 6, "name": "Kant"}]}],
+        },
+    ]
+    channel = Channel(ref="@almatyriders", city="Almaty")
+    race = _candidate(country="Kyrgyzstan", region="Chuy Region")
+    assert _with_channel_city(race, channel, flatten_cities(tree)).city == ""
 
 
 def test_nothing_pointing_back_at_the_channel_survives_scrubbing():
