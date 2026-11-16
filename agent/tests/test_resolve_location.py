@@ -169,6 +169,7 @@ def test_a_region_the_site_gave_no_catch_all_city_leaves_the_event_unplaced():
     client.regions_without_catch_all.add(2)
     candidate = _candidate(country="Kazakhstan", region="Almaty-region")
     assert resolve_location(client, tree, flatten_cities(tree), candidate) is None
+    assert client.region_fallbacks == [2]  # asked, and took the site's "none" for an answer
     assert client.places == []
 
 
