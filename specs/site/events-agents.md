@@ -33,6 +33,9 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 4. **Given** a channel or an account the maintainers gave a city, **Then** a post that names no
    place is filed in that city; one that names a region or a country takes the city only where the
    tree has it there, so a club chat reposting another country's calendar does not file it at home.
+5. **Given** an announcement that names a region the tree knows and no town in it, **Then** the
+   event takes that region's catch-all city, as the event form files it; a named town that comes to
+   nothing, or a region the tree lacks, leaves the event for a reviewer to place.
 
 ### Story 2 -- Each event links to itself (P2)
 
@@ -59,8 +62,8 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 
 ## Functional Requirements
 
-- **FR-AGT-001**: Agents only read and create through the API (events, locations, a city's
-  catch-all venue); they never update, approve or delete anything.
+- **FR-AGT-001**: Agents only read and create through the API (events, locations, the catch-all
+  venue of a city or of a region); they never update, approve or delete anything.
 - **FR-AGT-002**: A run is started by the schedule or on the maintainer's request only; every run
   costs money at the language-model provider.
 - **FR-AGT-003**: The model never supplies a URL or a date of its own: links come from the page,

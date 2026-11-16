@@ -34,6 +34,8 @@ class _FakeClient:
         self.places: list[tuple[int, str]] = []
         self.venues: list[tuple[int, str]] = []
         self.fallbacks: list[int] = []
+        self.region_fallbacks: list[int] = []
+        self.regions_without_catch_all: set[int] = set()
         self.locales: list[tuple] = []
         self._next_id = 100
 
@@ -50,6 +52,10 @@ class _FakeClient:
     def fallback_venue(self, city_id):
         self.fallbacks.append(city_id)
         return 999
+
+    def region_fallback_venue(self, region_id):
+        self.region_fallbacks.append(region_id)
+        return None if region_id in self.regions_without_catch_all else 888
 
 
 def _resolve(candidate, tree=None):
@@ -149,6 +155,44 @@ def test_candidate_without_a_city_gets_no_location():
     client, location_id = _resolve(_candidate(country="Kazakhstan", venue="Somewhere"))
     assert location_id is None
     assert client.places == [] and client.venues == [] and client.fallbacks == []
+
+
+def test_a_known_region_named_without_a_town_lands_in_its_catch_all_city():
+    client, location_id = _resolve(_candidate(country="Kazakhstan", region="Almaty-region"))
+    assert location_id == 888
+    assert client.region_fallbacks == [2]
+    assert client.places == [] and client.fallbacks == []
+
+
+def test_a_region_the_site_gave_no_catch_all_city_leaves_the_event_unplaced():
+    client, tree = _FakeClient(), _tree()
+    client.regions_without_catch_all.add(2)
+    candidate = _candidate(country="Kazakhstan", region="Almaty-region")
+    assert resolve_location(client, tree, flatten_cities(tree), candidate) is None
+    assert client.places == []
+
+
+def test_an_unknown_region_named_without_a_town_is_not_proposed():
+    client, location_id = _resolve(_candidate(country="Kazakhstan", region="Zhetysu"))
+    assert location_id is None
+    assert client.places == [] and client.region_fallbacks == []
+
+
+def test_a_named_town_that_comes_to_nothing_is_not_filed_under_its_region():
+    """A town the agent refused to propose is the reviewer's to place, not the region's bucket."""
+    client, location_id = _resolve(_candidate(country="Kazakhstan", region="Almaty-region", city="Other city"))
+    assert location_id is None
+    assert client.region_fallbacks == []
+
+
+def test_the_kyrgyz_calendar_race_lands_in_its_region_not_in_the_channels_city():
+    """Chuy Region and no town, posted in the Almaty chat: the region's bucket, no "Almaty" proposed."""
+    client, tree = _FakeClient(), _tree_with_kyrgyzstan()
+    cities = flatten_cities(tree)
+    race = with_default_city(_candidate(country="Kyrgyzstan", region="Chuy Region"), "Almaty", cities)
+    assert resolve_location(client, tree, cities, race) == 888
+    assert client.region_fallbacks == [8]
+    assert client.places == []
 
 
 def test_second_candidate_in_the_run_reuses_the_city_just_proposed():
@@ -284,13 +328,17 @@ def test_a_placeholder_in_any_locale_blocks_the_proposal():
 
 
 def test_a_punctuation_only_region_or_city_is_refused():
-    """ "-" and "()" are non-empty but normalize to nothing; they must not become locations."""
-    for kwargs in (
-        {"country": "Kazakhstan", "region": "-", "city": "Almaty-town"},
-        {"country": "Kazakhstan", "region": "Almaty-region", "city": "()"},
+    """ "-" and "()" are non-empty but normalize to nothing; they must not become locations.
+
+    A city of "()" names no town, so the event takes its known region's catch-all, as one with no
+    city at all does.
+    """
+    for kwargs, placed in (
+        ({"country": "Kazakhstan", "region": "-", "city": "Almaty-town"}, None),
+        ({"country": "Kazakhstan", "region": "Almaty-region", "city": "()"}, 888),
     ):
         client, location_id = _resolve(_candidate(**kwargs))
-        assert location_id is None
+        assert location_id == placed
         assert client.places == []
 
 

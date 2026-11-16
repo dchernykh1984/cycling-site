@@ -1,6 +1,7 @@
 """The API client's handling of malformed responses, where a silent default would do damage."""
 
 import io
+import urllib.error
 
 import pytest
 
@@ -58,6 +59,32 @@ def test_propose_place_returns_the_new_id_and_posts_one_name_in_three_locales():
     assert path == "/api/v1/locations/"
     assert payload["parent_id"] == 7
     assert payload["name"] == {"ru": "Kobona", "kk": "Kobona", "en": "Kobona"}
+
+
+def test_a_region_fallback_venue_is_the_id_the_site_answers():
+    client = _Client({"id": 77})
+    assert client.region_fallback_venue(8) == 77
+    assert client.calls[0][:2] == ("POST", "/api/v1/locations/8/fallback-venue/")
+
+
+class _FailingClient(SiteApiClient):
+    """A client whose every request fails with the given status."""
+
+    def __init__(self, status):
+        super().__init__("https://example.test", "token")
+        self._status = status
+
+    def _request(self, method, path, payload=None):
+        raise urllib.error.HTTPError(path, self._status, "failed", hdrs=None, fp=None)  # type: ignore[arg-type]
+
+
+def test_a_region_without_a_catch_all_city_gives_no_venue():
+    assert _FailingClient(404).region_fallback_venue(8) is None
+
+
+def test_a_server_error_is_not_taken_for_a_region_without_a_catch_all_city():
+    with pytest.raises(urllib.error.HTTPError):
+        _FailingClient(500).region_fallback_venue(8)
 
 
 class _ListingClient(SiteApiClient):

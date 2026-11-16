@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import urllib.error
 import urllib.request
+from http import HTTPStatus
 
 from agent.links import MAX_URL_LENGTH, fits, strip_tracking
 from agent.models import Candidate, KnownEvents, Taxonomy
@@ -164,6 +166,16 @@ class SiteApiClient:
         """Get (or create) the city's hidden catch-all venue and return its id."""
         result = self._request("POST", f"/api/v1/locations/{city_id}/fallback-venue/", {})
         return int(result["id"]) if isinstance(result, dict) else 0
+
+    def region_fallback_venue(self, region_id: int) -> int | None:
+        """The catch-all venue of the region's own catch-all city, or None where the region has none."""
+        try:
+            result = self._request("POST", f"/api/v1/locations/{region_id}/fallback-venue/", {})
+        except urllib.error.HTTPError as exc:
+            if exc.code == HTTPStatus.NOT_FOUND:
+                return None
+            raise
+        return int(result["id"]) if isinstance(result, dict) and result.get("id") else None
 
     def create(self, candidate: Candidate, location_id: int | None = None) -> None:
         payload: dict = {
