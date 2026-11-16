@@ -46,6 +46,14 @@ class LocationModelTests(TestCase):
         loc = Location.add_root(name_ru="Test Location", name_en="Test Location")
         self.assertIn("Test Location", str(loc))
 
+    def test_only_a_region_has_a_catch_all_city(self):
+        """A city's catch-all venue is hidden and pinned last as well, yet it is no city."""
+        region = Location.add_root(name_ru="Country").add_child(name_ru="Region")
+        other_city = add_location_child(region, name_ru="Other city", is_hidden=True, sort_order=9999)
+        Location.get_or_create_other_location(other_city)
+        self.assertEqual(region.catch_all_city(), other_city)
+        self.assertIsNone(other_city.catch_all_city())
+
     def test_locations_without_coordinates_excluded_from_map(self):
         # The seeds fill the tree with coordinate-bearing countries, so assert on these two nodes
         # rather than on the whole table.

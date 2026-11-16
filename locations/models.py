@@ -312,7 +312,12 @@ class Location(MP_Node, index.Indexed):
         The seed migrations gave every region one, hidden and pinned last; a region proposed since has
         none. A real city an admin hid keeps its own place in the list, which tells the two apart.
         """
-        return self.get_children().filter(is_deleted=False, is_hidden=True, sort_order=CATCH_ALL_SORT_ORDER).first()
+        # The depth keeps a city's own catch-all venue, hidden and pinned last too, from answering here.
+        return (
+            self.get_children()
+            .filter(depth=Level.CITY, is_deleted=False, is_hidden=True, sort_order=CATCH_ALL_SORT_ORDER)
+            .first()
+        )
 
     @classmethod
     def get_or_create_other_location(cls, city) -> "Location":
