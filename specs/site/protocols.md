@@ -75,7 +75,7 @@ their heats (issue #454).
 6. **Given** a program, **Then** it reads what the pages show through the API, under the same rule:
    `GET /api/v1/protocols/?competition_id=` lists an event's protocols in the order of its sections,
    each with its section's name in every language; `GET /api/v1/protocols/{id}` gives one with its
-   document as the site keeps it (null after an upload of HTML alone) and its update history, the
+   document as the site keeps it (null when the last upload brought none it took) and its update history, the
    latest first; `GET /api/v1/protocols/{id}/html` gives its HTML file as uploaded, as an attachment
    under the policy the page frames it with. A published event's protocols are anybody's; an
    invite-only event's only the people it lets in and its managers, by their own token; an
