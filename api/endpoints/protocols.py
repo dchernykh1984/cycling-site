@@ -351,8 +351,8 @@ def _protocol_out(protocol: Protocol, names: dict[int, dict[str, str]]) -> dict:
 )
 def list_protocols(request, competition_id: int):
     """An event's protocols as its page links them. A published event's are anybody's; an invite-only
-    event's only the people it lets in, by their token; a hidden, unpublished or deleted event answers
-    404, as one that does not exist does."""
+    event's only its managers' and the people it lets in, by their token; a hidden, unpublished or
+    deleted event answers 404, as one that does not exist does."""
     competition = Competition.objects.filter(pk=competition_id).first()
     if competition is None or not access.shows_protocols(request.auth, competition):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
