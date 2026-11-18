@@ -157,8 +157,10 @@ class ProtocolReadApiTest(TestCase):
                         HTML.format(self.absolute.pk),
                     ):
                         self.assertEqual(self._get(url, user).status_code, 404)
-        for missing in (LIST.format(10**9), DETAIL.format(10**9), HTML.format(10**9)):
-            self.assertEqual(self._get(missing).status_code, 404)
+        # Beyond the database's integers too: a 404 like any other id, never a failed query.
+        for number in (10**9, 10**20):
+            for missing in (LIST.format(number), DETAIL.format(number), HTML.format(number)):
+                self.assertEqual(self._get(missing).status_code, 404)
 
     def test_an_invite_only_events_protocols_are_for_those_it_lets_in(self):
         Competition.objects.filter(pk=self.race.pk).update(invite_only=True)
