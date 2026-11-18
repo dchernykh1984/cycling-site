@@ -168,11 +168,25 @@ class ProtocolReadApiTest(TestCase):
                     self.assertEqual(self._get(url, user).status_code, status)
 
     def test_the_api_and_the_protocol_page_let_in_the_same_readers(self):
-        stranger = _member("stranger")
-        for invite_only in (False, True):
-            Competition.objects.filter(pk=self.race.pk).update(invite_only=invite_only)
-            for user in (None, stranger, self.author):
-                with self.subTest(invite_only=invite_only, user=user and user.username):
+        stranger, invited, admin = _member("stranger"), _member("invited"), _member("admin", User.Role.ADMIN)
+        CompetitionInvite.objects.create(competition=self.race, user=invited)
+        states = {
+            "published": {},
+            "invite-only": {"invite_only": True},
+            "hidden": {"is_hidden": True},
+            "unpublished": {"status": Competition.Status.PENDING_APPROVAL},
+            "deleted": {"is_deleted": True},
+        }
+        published = {
+            "status": Competition.Status.APPROVED,
+            "is_hidden": False,
+            "is_deleted": False,
+            "invite_only": False,
+        }
+        for label, change in states.items():
+            Competition.objects.filter(pk=self.race.pk).update(**{**published, **change})
+            for user in (None, stranger, invited, self.author, admin):
+                with self.subTest(event=label, user=user and user.username):
                     browser = Client()
                     if user is not None:
                         browser.force_login(user)
