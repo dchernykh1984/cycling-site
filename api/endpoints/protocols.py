@@ -373,7 +373,9 @@ def get_protocol(request, protocol_id: int):
     return {
         **_protocol_out(protocol, _section_names(protocol.competition)),
         "document": protocol.document,
-        "versions": list(protocol.versions.values("saved_at", "file_hash")[:_MAX_VERSIONS]),
+        "versions": list(
+            protocol.versions.order_by("-saved_at", "-pk").values("saved_at", "file_hash")[:_MAX_VERSIONS]
+        ),
     }
 
 

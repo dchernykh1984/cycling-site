@@ -104,6 +104,12 @@ class ProtocolReadApiTest(TestCase):
         self.assertEqual(len(answer["versions"]), 2)
         self.assertGreaterEqual(answer["versions"][0]["saved_at"], answer["versions"][1]["saved_at"])
 
+    def test_two_uploads_saved_in_the_same_instant_come_the_later_first(self):
+        again = self._upload(html=HTML_FILE)
+        again.versions.update(saved_at=again.versions.first().saved_at)
+        hashes = [version["file_hash"] for version in self._get(DETAIL.format(again.pk)).json()["versions"]]
+        self.assertEqual(hashes, list(again.versions.order_by("-pk").values_list("file_hash", flat=True)))
+
     def test_html_alone_gives_no_document(self):
         answer = self._get(DETAIL.format(self.all_round.pk)).json()
         self.assertIsNone(answer["document"])
