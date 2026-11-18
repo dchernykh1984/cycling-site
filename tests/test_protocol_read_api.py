@@ -20,7 +20,10 @@ DETAIL = "/api/v1/protocols/{}"
 HTML = "/api/v1/protocols/{}/html"
 PAGE = "/en/protocols/{}/"
 
-HTML_FILE = b"<html><body><table><tr><td>8,4</td></tr></table><script>1</script></body></html>"
+# The page strips a script that loads from elsewhere; the API gives the file exactly as it came.
+HTML_FILE = (
+    b'<html><body><table><tr><td>8,4</td></tr></table><script src="https://example.com/x.js"></script></body></html>'
+)
 DOCUMENT = {
     "schema": 1,
     "sections": [
