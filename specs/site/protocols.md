@@ -6,8 +6,8 @@
 `protocols/access.py`, `protocols/static/protocols/`, `protocols/schema/protocol-document-v1.json`,
 `api/endpoints/protocols.py`
 **Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
-`tests/test_protocol_upload.py`, `tests/test_protocol_sections.py`, `tests/test_protocol_read_api.py`,
-`tests/e2e/test_competition_result_emphasis.py`,
+`tests/test_protocol_upload.py`, `tests/test_protocol_sections.py`,
+`tests/test_protocol_read_api.py`, `tests/e2e/test_competition_result_emphasis.py`,
 `tests/e2e/test_protocol_sections.py`,
 `tests/e2e/test_protocol_live.py`, `tests/e2e/test_protocol_document.py`, `tests/e2e/test_protocol_ladder.py`,
 `api/tests.py`
@@ -75,11 +75,12 @@ their heats (issue #454).
 6. **Given** a program, **Then** it reads what the pages show through the API, under the same rule:
    `GET /api/v1/protocols/?competition_id=` lists an event's protocols in the order of its sections,
    each with its section's name in every language; `GET /api/v1/protocols/{id}` gives one with its
-   document as the site keeps it (null when the last upload brought none it took) and its update history, the
-   latest first; `GET /api/v1/protocols/{id}/html` gives its HTML file as uploaded, as an attachment
-   under the policy the page frames it with. A published event's protocols are anybody's; an
-   invite-only event's only the people it lets in and its managers, by their own token; an
-   unpublished, hidden or deleted event's nobody's -- a 404, as for a protocol that does not exist.
+   document as the site keeps it (null when the last upload brought none it took) and its update
+   history, the latest first; `GET /api/v1/protocols/{id}/html` gives its HTML file as uploaded, as
+   an attachment under the policy the page frames it with. A published event's protocols are
+   anybody's; an invite-only event's only the people it lets in and its managers, by their own
+   token; an unpublished, hidden or deleted event's nobody's -- a 404, as for a protocol that does
+   not exist.
 
 ### Story 3 -- Read a drawn protocol on a phone (P1)
 
