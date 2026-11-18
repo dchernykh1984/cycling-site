@@ -131,6 +131,7 @@ class ProtocolReadApiTest(TestCase):
 
     def test_a_protocol_without_an_html_file_has_none_to_give(self):
         drawn = self._upload(document=DOCUMENT, protocol_type="group")
+        self.assertFalse(self._get(DETAIL.format(drawn.pk)).json()["has_html"])
         self.assertEqual(self._get(HTML.format(drawn.pk)).status_code, 404)
 
     def test_a_file_gone_from_the_storage_is_a_404(self):
