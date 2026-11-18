@@ -22,15 +22,13 @@ from protocols import access, sections
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
 from protocols.forms import SectionNamesForm
-from protocols.models import Protocol, ProtocolSection, ProtocolVersion
+from protocols.models import VERSIONS_KEPT, Protocol, ProtocolSection, ProtocolVersion
 from protocols.views import content_security_policy, protocol_state
 
 router = Router(tags=["protocols"])
 logger = logging.getLogger(__name__)
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
-
-_MAX_VERSIONS = 10
 
 
 class ProtocolUploadOut(Schema):
@@ -160,7 +158,7 @@ def _replace_protocol(
                 html_file=version_name,
                 document=protocol.document,
             )
-            old = list(ProtocolVersion.objects.filter(protocol=protocol).order_by("-saved_at", "-pk")[_MAX_VERSIONS:])
+            old = list(ProtocolVersion.objects.filter(protocol=protocol).order_by("-saved_at", "-pk")[VERSIONS_KEPT:])
             displaced += [v.html_file.name for v in old if v.html_file]
             ProtocolVersion.objects.filter(pk__in=[v.pk for v in old]).delete()
             transaction.on_commit(lambda: _delete_files(displaced))
@@ -375,7 +373,7 @@ def get_protocol(request, protocol_id: int):
         **_protocol_out(protocol, _section_names(protocol.competition)),
         "document": protocol.document,
         "versions": list(
-            protocol.versions.order_by("-saved_at", "-pk").values("saved_at", "file_hash")[:_MAX_VERSIONS]
+            protocol.versions.order_by("-saved_at", "-pk").values("saved_at", "file_hash")[:VERSIONS_KEPT]
         ),
     }
 
