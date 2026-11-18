@@ -77,7 +77,7 @@ class ProtocolVersionOut(Schema):
 
 class ProtocolDetailOut(ProtocolOut):
     # The structured document as the site keeps it -- the fields of protocols/schema/protocol-document-v1.json,
-    # defaults filled in, what the site does not know left out; null when the last upload was HTML alone.
+    # defaults filled in, what the site does not know left out; null when the last upload brought none it took.
     document: dict | None = None
     # The update history the protocol's page lists, the latest first.
     versions: list[ProtocolVersionOut]
@@ -367,8 +367,9 @@ def list_protocols(request, competition_id: int):
     summary="A protocol: its structured document and its update history",
 )
 def get_protocol(request, protocol_id: int):
-    """The protocol with the document the site draws (null when the last upload was HTML alone) and the
-    times of its last uploads, as its page lists them; its HTML file is at ``/{protocol_id}/html``."""
+    """The protocol with the document the site draws -- null when the last upload brought none it took,
+    HTML alone or with a document it refused -- and the times of its last uploads, as its page lists them;
+    its HTML file is at ``/{protocol_id}/html``."""
     protocol = _readable(request, protocol_id)
     return {
         **_protocol_out(protocol, _section_names(protocol.competition)),
