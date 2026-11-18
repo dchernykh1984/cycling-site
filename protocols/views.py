@@ -19,9 +19,7 @@ from calendar_app.visibility import can_manage_or_own
 
 from . import access, rendering, sections
 from .forms import SectionNamesForm
-from .models import Protocol, ProtocolSection
-
-_MAX_VERSIONS = 10
+from .models import VERSIONS_KEPT, Protocol, ProtocolSection
 
 # Strip elements that could redirect or load external code.
 # CSP (default-src 'none') already blocks most attack vectors; these regexes
@@ -197,7 +195,7 @@ def protocol_html(request, pk):
 
 def protocol_detail(request, pk):
     protocol = _published_protocol(request, pk)
-    versions = protocol.versions.all()[:_MAX_VERSIONS]
+    versions = protocol.versions.all()[:VERSIONS_KEPT]
     absolute = protocol.protocol_type == protocol.ProtocolType.ABSOLUTE
     kind = gettext("Absolute results") if absolute else gettext("Group results")
     section_name = sections.name_of(protocol)

@@ -65,6 +65,10 @@ class ProtocolSection(models.Model):
         return f"{self.competition} - section {self.number}"
 
 
+#: The uploads a protocol keeps -- the oldest goes when one more lands -- and its page and the API list.
+VERSIONS_KEPT = 10
+
+
 class ProtocolVersion(models.Model):
     objects: ClassVar[models.Manager[ProtocolVersion]]
 
