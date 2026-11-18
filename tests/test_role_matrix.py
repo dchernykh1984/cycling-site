@@ -30,6 +30,7 @@ from cycling_site.context_processors import moderation_tasks
 from knowledge.models import DraftSubmission, KnowledgeArticle, KnowledgeIndexPage
 from locations.models import Location, LocationsMapPage
 from news.models import NewsArticle, NewsIndexPage, NewsPage
+from protocols.models import Protocol
 from registrations.wagtail_hooks import TeamViewSet
 from stats.counting import is_team
 
@@ -64,6 +65,8 @@ EVENTS_API = {
     "own event: hidden":            "-       403   403       403       200     200     200",
     "another's pending event":      "404     404   404       404       200     200     200",
     "another's protocol sections":  "401     404   404       404       200     200     200",
+    # read by its managers and the people it lets in, as its protocol pages are
+    "invite-only protocols":        "404     404   404       404       200     200     200",
 }
 
 NEWS_AND_KNOWLEDGE = {
@@ -273,6 +276,10 @@ def api_pending_event(site, v):
 def api_others_protocol_sections(site, v):
     url = f"/api/v1/protocols/competitions/{site.public.pk}/sections"
     return str(v.program.get(url, **v.headers).status_code)
+
+
+def api_invite_only_protocols(site, v):
+    return str(v.program.get(f"/api/v1/protocols/?competition_id={site.invite_only.pk}", **v.headers).status_code)
 
 
 # -- news and knowledge ------------------------------------------------------------------------------
@@ -497,6 +504,10 @@ class RoleMatrixTests(TestCase):
         cls.hidden = Competition.objects.create(
             title_ru="Hidden", status=Competition.Status.APPROVED, is_hidden=True, **event
         )
+        cls.invite_only = Competition.objects.create(
+            title_ru="Invite only", status=Competition.Status.APPROVED, invite_only=True, **event
+        )
+        Protocol.objects.create(competition=cls.invite_only, protocol_type=Protocol.ProtocolType.ABSOLUTE)
         CompetitionReport.objects.create(competition=cls.public, reported_by=author, reason="Wrong date")
 
         cls.news = NewsArticle.objects.create(title_ru="News", body_ru="<p>Text</p>")
@@ -559,6 +570,7 @@ class RoleMatrixTests(TestCase):
                 "own event: hidden": api_own_event("is_hidden"),
                 "another's pending event": api_pending_event,
                 "another's protocol sections": api_others_protocol_sections,
+                "invite-only protocols": api_invite_only_protocols,
             },
             EVENTS_API,
         )
