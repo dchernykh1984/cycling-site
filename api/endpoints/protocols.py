@@ -384,8 +384,8 @@ def get_protocol(request, protocol_id: int):
     "/{protocol_id}/html", auth=optional_auth, summary="A protocol's HTML file, as the timing software wrote it"
 )
 def get_protocol_html(request, protocol_id: int):
-    """The file as uploaded, served under the policy the protocol's page frames it with: it is somebody
-    else's markup on this site's address, so it may run nothing that reaches outside or this site."""
+    """The file as uploaded, as an attachment, under the policy the protocol's page frames it with: it is
+    somebody else's markup on this site's address, so it may run nothing that reaches outside or this site."""
     protocol = _readable(request, protocol_id)
     if not protocol.html_file:
         raise HttpError(HTTPStatus.NOT_FOUND, "The protocol has no HTML file")
