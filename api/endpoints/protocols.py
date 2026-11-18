@@ -1,30 +1,34 @@
 import hashlib
 import logging
+from datetime import datetime
 from http import HTTPStatus
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils.text import get_valid_filename
 from django.utils.translation import override
 from ninja import File, Form, Router, Schema, Status
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
-from api.auth import ApiTokenAuth, competition_by_token
+from api.auth import ApiTokenAuth, OptionalApiTokenAuth, competition_by_token
 from api.schemas import LocalizedStr
 from calendar_app.models import Competition
 from calendar_app.visibility import can_manage_or_own
-from protocols import sections
+from protocols import access, sections
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
 from protocols.forms import SectionNamesForm
 from protocols.models import Protocol, ProtocolSection, ProtocolVersion
+from protocols.views import content_security_policy, protocol_state
 
 router = Router(tags=["protocols"])
 logger = logging.getLogger(__name__)
 auth = ApiTokenAuth()
+optional_auth = OptionalApiTokenAuth()
 
 _MAX_VERSIONS = 10
 
@@ -48,6 +52,35 @@ class SectionOut(Schema):
     number: int
     name: LocalizedStr
     protocols: int
+
+
+class ProtocolOut(Schema):
+    id: int
+    competition_id: int
+    section: int
+    # The section's name in every language, as the event's page heads its block.
+    section_name: LocalizedStr
+    protocol_type: str
+    stage_label: str
+    is_live: bool
+    last_updated: datetime
+    file_hash: str
+    # "document" when the last upload carried a structured document, which the site draws; else "html".
+    shown: str
+    has_html: bool
+
+
+class ProtocolVersionOut(Schema):
+    saved_at: datetime
+    file_hash: str
+
+
+class ProtocolDetailOut(ProtocolOut):
+    # The structured document as the site keeps it -- the fields of protocols/schema/protocol-document-v1.json,
+    # defaults filled in, what the site does not know left out; null when the last upload was HTML alone.
+    document: dict | None = None
+    # The update history the protocol's page lists, the latest first.
+    versions: list[ProtocolVersionOut]
 
 
 def _delete_files(names: list) -> None:
@@ -278,6 +311,92 @@ def delete_protocol(
         protocol.delete()
         transaction.on_commit(lambda: _delete_files(files))
     return {"deleted": True}
+
+
+# -- Reading: what the protocol pages show, under their rule (protocols/access.py) --------------------
+
+
+def _readable(request, protocol_id: int) -> Protocol:
+    protocol = access.readable_protocol(request.auth, protocol_id)
+    if protocol is None:
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+    return protocol
+
+
+def _section_names(competition: Competition) -> dict[int, dict[str, str]]:
+    return {row["number"]: row["names"] for row in sections.listing(competition)}
+
+
+def _protocol_out(protocol: Protocol, names: dict[int, dict[str, str]]) -> dict:
+    return {
+        "id": protocol.pk,
+        "competition_id": protocol.competition_id,
+        "section": protocol.section,
+        "section_name": names.get(protocol.section) or sections.names(None),
+        "protocol_type": protocol.protocol_type,
+        "stage_label": protocol.stage_label,
+        "is_live": protocol.is_live,
+        "last_updated": protocol.last_updated,
+        "file_hash": protocol.file_hash,
+        "shown": protocol_state(protocol)["shown"],
+        "has_html": bool(protocol.html_file),
+    }
+
+
+@router.get(
+    "/",
+    response=list[ProtocolOut],
+    auth=optional_auth,
+    summary="List an event's protocols, in the order of its sections (whoever may read its protocol pages)",
+)
+def list_protocols(request, competition_id: int):
+    """An event's protocols as its page links them. A published event's are anybody's; an invite-only
+    event's only the people it lets in, by their token; a hidden, unpublished or deleted event answers
+    404, as one that does not exist does."""
+    competition = Competition.objects.filter(pk=competition_id).first()
+    if competition is None or not access.shows_protocols(request.auth, competition):
+        raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
+    names = _section_names(competition)
+    return [_protocol_out(protocol, names) for protocol in competition.protocols.order_by("section", "pk")]
+
+
+@router.get(
+    "/{protocol_id}",
+    response=ProtocolDetailOut,
+    auth=optional_auth,
+    summary="A protocol: its structured document and its update history",
+)
+def get_protocol(request, protocol_id: int):
+    """The protocol with the document the site draws (null when the last upload was HTML alone) and the
+    times of its last uploads, as its page lists them; its HTML file is at ``/{protocol_id}/html``."""
+    protocol = _readable(request, protocol_id)
+    return {
+        **_protocol_out(protocol, _section_names(protocol.competition)),
+        "document": protocol.document,
+        "versions": list(protocol.versions.values("saved_at", "file_hash")[:_MAX_VERSIONS]),
+    }
+
+
+@router.get(
+    "/{protocol_id}/html", auth=optional_auth, summary="A protocol's HTML file, as the timing software wrote it"
+)
+def get_protocol_html(request, protocol_id: int):
+    """The file as uploaded, served under the policy the protocol's page frames it with: it is somebody
+    else's markup on this site's address, so it may run nothing that reaches outside or this site."""
+    protocol = _readable(request, protocol_id)
+    if not protocol.html_file:
+        raise HttpError(HTTPStatus.NOT_FOUND, "The protocol has no HTML file")
+    try:
+        with protocol.html_file.open("rb") as stored:
+            content = stored.read()
+    except OSError:
+        raise HttpError(HTTPStatus.NOT_FOUND, "The protocol has no HTML file") from None
+    response = HttpResponse(content, content_type="text/html; charset=utf-8")
+    response["Content-Security-Policy"] = content_security_policy(request)
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Content-Disposition"] = f'attachment; filename="protocol-{protocol.pk}.html"'
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 # -- Sections (issue #452): what the organizer does on the event's page of its protocol sections -----
