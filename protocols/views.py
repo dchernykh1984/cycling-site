@@ -15,9 +15,9 @@ from django.utils.translation import gettext
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from calendar_app.models import Competition
-from calendar_app.visibility import can_manage_or_own, can_see
+from calendar_app.visibility import can_manage_or_own
 
-from . import rendering, sections
+from . import access, rendering, sections
 from .forms import SectionNamesForm
 from .models import Protocol, ProtocolSection
 
@@ -132,16 +132,9 @@ def content_security_policy(request) -> str:
 
 
 def _published_protocol(request, pk) -> Protocol:
-    """A protocol of a published event, or 404 -- including for an invite-only event the reader
-    has not been let into, whose results are as private as its page (issue #313)."""
-    protocol = get_object_or_404(
-        Protocol.objects.select_related("competition__submitted_by"),
-        pk=pk,
-        competition__status=Competition.Status.APPROVED,
-        competition__is_hidden=False,
-        competition__is_deleted=False,
-    )
-    if protocol.competition.invite_only and not can_see(request.user, protocol.competition):
+    """A protocol the reader may read (``access.shows_protocols``, which the API asks too), or 404."""
+    protocol = access.readable_protocol(request.user, pk)
+    if protocol is None:
         raise Http404
     return protocol
 
