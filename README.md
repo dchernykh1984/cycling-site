@@ -74,10 +74,23 @@ dashboard - see [Deployment](#deployment).
 
 ## Deployment
 
-Hosted on [Render](https://render.com/): a push to `main` triggers the CI workflow,
-and Render auto-deploys the new commit, running `python manage.py migrate` as a
-pre-deploy step. Configuration comes from environment variables set in the Render
-dashboard:
+Hosted on [Render](https://render.com/). A push to `main` runs the CI workflow; the site itself is
+deployed at night (issue #153). The web service keeps its media on a persistent disk, and with a
+disk Render stops the running instance before it starts the new one, so every deploy takes the
+site down for up to a minute.
+
+- **Render's auto-deploy is off.** `.github/workflows/deploy.yml` deploys `main` at 21:07 UTC
+  (02:07 in Almaty) when the site names another commit at `/api/v1/version/` and `main`'s CI
+  passed, then waits until the site names `main`'s commit: a deploy that fails turns the run red.
+- **GitHub starts a cron when it has capacity.** A night run that starts after 01:00 UTC (06:00
+  in Almaty) leaves the deploy to the next night.
+- **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
+  or with Render's Manual Deploy. Both take the site down for up to a minute.
+- **The workflow needs** the service's deploy hook (Render: Settings -> Deploy Hook) in the
+  repository secret `RENDER_DEPLOY_HOOK_URL`.
+- **Render runs `python manage.py migrate`** as a pre-deploy step.
+
+Configuration comes from environment variables set in the Render dashboard:
 
 - `DATABASE_URL` - PostgreSQL connection (Render Postgres); `prod.py` also accepts
   discrete `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` as a fallback
@@ -86,6 +99,7 @@ dashboard:
   admin); the custom `migrate` command syncs the Wagtail Site and the
   `django.contrib.sites` Site to it on every deploy
 - `MEDIA_ROOT` - path to the mounted persistent disk that stores uploaded media
+- `RELEASE_COMMIT` - the commit `/api/v1/version/` names; unset, Render's own `RENDER_GIT_COMMIT`
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` - SMTP (Gmail)
 - `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
   `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);

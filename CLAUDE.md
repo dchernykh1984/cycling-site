@@ -57,3 +57,6 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
   it), and `tests/test_role_matrix.py` pins what each kind of visitor may do.
 - Every reader-facing URL carries a language prefix (`/ru/`, `/kk/`, `/en/`); machine-facing ones
   (`/api/v1/`, admin, media, sitemap, robots) do not.
+- A merged change goes live at night: `.github/workflows/deploy.yml` deploys `main` at 02:07 in
+  Almaty (21:07 UTC), and `/api/v1/version/` names the commit the site runs. Run that workflow only
+  on the maintainer's word -- every deploy takes the site down for up to a minute.
