@@ -112,8 +112,9 @@ def run(
         return 1
     try:
         deploy(hook, sha)
-    except urllib.error.HTTPError as error:  # its text never carries the hook's secret address
-        print(f"::error::The deploy hook answered {error.code}; nothing deployed.")
+    except OSError as error:  # said in words of our own: the hook's address carries its secret key
+        answer = f"answered {error.code}" if isinstance(error, urllib.error.HTTPError) else "could not be reached"
+        print(f"::error::The deploy hook {answer}; nothing deployed.")
         return 1
     print(f"Deploying {sha[:8]} over {live[:8] or 'an unnamed commit'}.")
     if wait_until_live(site, sha, fetch, sleep):

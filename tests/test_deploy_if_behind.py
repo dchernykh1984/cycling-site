@@ -87,6 +87,18 @@ def test_a_hook_that_refuses_turns_the_run_red_without_printing_its_address(caps
     assert "key=secret" not in out
 
 
+def test_a_hook_that_cannot_be_reached_turns_the_run_red_in_a_sentence(capsys):
+    site = Site()
+
+    def unreachable(hook, sha):
+        raise urllib.error.URLError(TimeoutError("timed out"))
+
+    assert deploy.run({**ENV, "RENDER_DEPLOY_HOOK_URL": HOOK}, NIGHT, site.fetch, unreachable, lambda s: None) == 1
+    out = capsys.readouterr().out
+    assert "could not be reached" in out
+    assert "key=secret" not in out
+
+
 def test_a_deploy_the_site_never_shows_turns_the_run_red():
     site = Site(takes=False)
     assert site.run() == 1
