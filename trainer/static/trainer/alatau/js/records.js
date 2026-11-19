@@ -13,7 +13,7 @@ const Records = {
     try {
       const me = await Site.get('/me'); this.me = me; this.loginUrl = langPath(me.login_url || '');
       if (!me.authenticated) return;
-      this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote();
+      this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote(); renderIntervalsNote();
       await this.pull(); renderMenu();
       if (!$('#recM').classList.contains('hidden')) renderRecords();
     } catch (e) { this.me = null; }
@@ -37,7 +37,7 @@ const Records = {
       track: !ride.demo && me && me.track && me.track.length > 1 ? me.track : null
     };
     Site.post('/rides', body)
-      .then(res => { if (phase === 'done') { showServerRecords(res.records, ride, peaks); stravaShow(res.ride.id, res.strava); } return this.pull(); })
+      .then(res => { if (phase === 'done') { showServerRecords(res.records, ride, peaks); stravaShow(res.ride.id, res.strava); intervalsShow(res.ride.id, res.intervals); } return this.pull(); })
       .then(() => { if (phase === 'menu') renderMenu(); })
       .catch(e => { const box = $('#resRec'); box.innerHTML = '<b>' + t('rec.notSaved') + '</b><ul><li>' + escapeHTML(e.message) + '</li></ul>'; box.classList.remove('hidden'); });
   },

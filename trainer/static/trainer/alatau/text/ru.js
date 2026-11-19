@@ -296,5 +296,15 @@ const TEXT_RU = {
     "strava.done": "Заезд в Strava как виртуальный заезд.",
     "strava.failed": "Заезд не ушёл в Strava: {msg}",
     "strava.retry": "Отправить ещё раз",
-    "strava.later": "Strava ещё обрабатывает заезд — загляните в Strava чуть позже."
+    "strava.later": "Strava ещё обрабатывает заезд — загляните в Strava чуть позже.",
+    "strava.off": "Strava подключена, но заезды туда не отправляются.",
+    "intervals.offer": "Подключите intervals.icu своим API-ключом — и заезды смогут уходить туда.",
+    "intervals.connect": "Подключить в личном кабинете",
+    "intervals.on": "Заезды уходят в intervals.icu.",
+    "intervals.off": "intervals.icu подключён, но заезды туда не отправляются.",
+    "intervals.manage": "Настроить в личном кабинете",
+    "intervals.done": "Заезд в intervals.icu.",
+    "intervals.view": "Открыть в intervals.icu",
+    "intervals.failed": "Заезд не ушёл в intervals.icu: {msg}",
+    "intervals.retry": "Отправить ещё раз"
 };

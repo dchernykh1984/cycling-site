@@ -115,6 +115,10 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.GroupIn": GroupRide,
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
+    # A box on or off is a flag; nothing lands in a text column (issue #471).
+    "api.endpoints.virtual_ride.SendIn": None,
+    # The intervals.icu key is bounded at 200 and kept sealed in a text column, never as given.
+    "api.endpoints.virtual_ride.IntervalsConnectIn": None,
     "api.endpoints.locations.LocationPatchIn": Location,
     "api.endpoints.virtual_members.VirtualMemberPatchIn": VirtualMember,
     "api.endpoints.registrations.EntryPatchIn": CompetitionRegistration,

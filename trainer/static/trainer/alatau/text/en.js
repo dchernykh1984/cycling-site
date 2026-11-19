@@ -296,5 +296,15 @@ const TEXT_EN = {
     "strava.done": "The ride is on Strava as a virtual ride.",
     "strava.failed": "The ride did not reach Strava: {msg}",
     "strava.retry": "Send again",
-    "strava.later": "Strava is still processing the ride — look in Strava a little later."
+    "strava.later": "Strava is still processing the ride — look in Strava a little later.",
+    "strava.off": "Strava is connected, but your rides are not sent there.",
+    "intervals.offer": "Connect intervals.icu with your API key, and your rides can go there.",
+    "intervals.connect": "Connect in your profile",
+    "intervals.on": "Your rides go to intervals.icu.",
+    "intervals.off": "intervals.icu is connected, but your rides are not sent there.",
+    "intervals.manage": "Manage in your profile",
+    "intervals.done": "The ride is on intervals.icu.",
+    "intervals.view": "View on intervals.icu",
+    "intervals.failed": "The ride did not reach intervals.icu: {msg}",
+    "intervals.retry": "Send again"
 };

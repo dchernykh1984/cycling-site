@@ -9,3 +9,6 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
 # No test reaches the model: a key from a developer's .env would offer the chat everywhere, and the
 # tests that need it set a key of their own and replace the call.
 ASSISTANT_LLM_API_KEY = ""
+
+# A key of the tests' own, so sealing works whatever a developer's .env holds; no real secret.
+INTEGRATIONS_ENCRYPTION_KEY = "dGVzdHMtb25seS1pbnRlZ3JhdGlvbnMta2V5LTMyYjo="

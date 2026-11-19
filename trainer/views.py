@@ -16,8 +16,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.access import needs_email_confirmation
 
-from . import strava
-from .models import StravaConnection
+from . import intervals, services, strava
+from .models import IntervalsConnection, StravaConnection
 
 # What the Strava round trip keeps in the session: the state it must come back with and where to go after
 _PENDING = "virtual_ride_strava"
@@ -101,3 +101,54 @@ def strava_disconnect(request):
         strava.disconnect(connection)
     messages.success(request, _("Strava is disconnected: rides are no longer sent there."))
     return redirect(_profile_card())
+
+
+def _services_card() -> str:
+    return reverse("account_profile") + "#virtual-rides-services"
+
+
+_SERVICE_NAMES = {services.STRAVA: "Strava", services.INTERVALS: "intervals.icu"}
+
+
+@login_required
+@require_POST
+def service_sending(request, service):
+    """The profile's box "Send my rides to ...": off keeps the service connected and sends nothing."""
+    if service not in services.SERVICES or needs_email_confirmation(request.user):
+        raise Http404
+    on = request.POST.get("send_rides") == "on"
+    if services.set_sending(request.user, service, on):
+        name = {"service": _SERVICE_NAMES[service]}
+        if on:
+            messages.success(request, _("Your rides now go to %(service)s.") % name)
+        else:
+            messages.success(request, _("Your rides no longer go to %(service)s; it stays connected.") % name)
+    return redirect(_services_card())
+
+
+@login_required
+@require_POST
+def intervals_connect(request):
+    """The member's own API key: checked with intervals.icu, then kept sealed and never shown again."""
+    if needs_email_confirmation(request.user) or not intervals.available():
+        raise Http404
+    try:
+        intervals.connect(request.user, request.POST.get("api_key", "")[:200], request.POST.get("send_rides") == "on")
+    except intervals.IntervalsError as exc:
+        if exc.revoked:
+            messages.error(request, _("intervals.icu does not accept this key. Check it and try again."))
+        else:
+            messages.error(request, _("intervals.icu was not connected: %(reason)s") % {"reason": exc})
+        return redirect(_services_card())
+    messages.success(request, _("intervals.icu is connected."))
+    return redirect(_services_card())
+
+
+@login_required
+@require_POST
+def intervals_disconnect(request):
+    connection = IntervalsConnection.objects.filter(user=request.user).first()
+    if connection is not None:
+        intervals.disconnect(connection)
+    messages.success(request, _("intervals.icu is disconnected: the key is deleted from this site."))
+    return redirect(_services_card())

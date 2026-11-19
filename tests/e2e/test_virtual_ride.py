@@ -286,8 +286,10 @@ def test_a_route_passes_the_sights_of_its_own_map_only(page: Page):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("connected", [False, True])
-def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_server, settings, connected: bool):
-    from trainer.models import StravaConnection
+def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_server, settings, connected: bool):
+    """Strava and intervals.icu (issue #471): every button, field and box line answers a tap across 44 px."""
+    from trainer import secret_box
+    from trainer.models import IntervalsConnection, StravaConnection
 
     settings.SOCIALACCOUNT_PROVIDERS = {
         **settings.SOCIALACCOUNT_PROVIDERS,
@@ -300,13 +302,20 @@ def test_the_profile_s_strava_controls_are_big_enough_to_tap(page: Page, live_se
         StravaConnection.objects.create(
             user=member, athlete_id=1, access_token="a", refresh_token="r", expires_at="2099-01-01T00:00:00Z"
         )
+        IntervalsConnection.objects.create(user=member, athlete_id="i1", api_key=secret_box.seal("k"))
     inject_session(page, live_server, member)
     page.set_viewport_size({"width": 360, "height": 740})
     page.goto(f"{live_server.url}/kk/accounts/profile/")
-    control = page.locator("#virtual-rides-strava button" if connected else "#virtual-rides-strava a")
-    control.scroll_into_view_if_needed()
-    wide, high = control.evaluate(_REACH)
-    assert wide >= 44 and high >= 44, (wide, high)
+    controls = page.locator(
+        "#virtual-rides-services button, #virtual-rides-services a, #virtual-rides-services .form-check, "
+        "#virtual-rides-services .form-control"
+    )
+    assert controls.count() == (6 if connected else 4)
+    for i in range(controls.count()):
+        control = controls.nth(i)
+        control.scroll_into_view_if_needed()
+        wide, high = control.evaluate(_REACH)
+        assert wide >= 44 and high >= 44, (i, wide, high)
 
 
 def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
@@ -324,6 +333,29 @@ def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
         {"words": _language_block(source), "show": show},
     )
     expect(page.locator("#resStrava")).to_have_text(page.evaluate("t('strava.later')"))
+
+
+def test_a_ride_s_intervals_icu_result_links_it_or_offers_another_try(page: Page):
+    """Issue #471: the results say the ride is on intervals.icu with a link, or why not with "Send again"."""
+    source = _trainer_source()
+    show = _cut(source, r"^let intervalsFor = null;.*?^function intervalsShow\(rideId, s\) \{.*?^\}")
+    page.set_content('<p id="resIntervals" class="hidden"></p>')
+    page.evaluate(
+        """({words, show}) => {
+            const $ = s => document.querySelector(s);
+            window.sent = [];
+            const done = {status: 'done', activity_url: 'https://intervals.icu/activities/i9'};
+            const Site = {post: async path => { window.sent.push(path); return done; }};
+            eval(words + show + '; window.intervalsShow = intervalsShow; window.t = t;');
+            intervalsShow(5, {status: 'failed', error: 'slow'});
+        }""",
+        {"words": _language_block(source), "show": show},
+    )
+    result = page.locator("#resIntervals")
+    expect(result).to_contain_text(page.evaluate("t('intervals.failed', {msg: 'slow'})"))
+    result.locator("button").click()
+    expect(result.locator("a")).to_have_attribute("href", "https://intervals.icu/activities/i9")
+    assert page.evaluate("window.sent") == ["/rides/5/intervals"]
 
 
 def test_every_button_of_the_setup_page_is_big_enough_to_tap_on_a_phone(page: Page, live_server):

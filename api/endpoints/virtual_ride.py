@@ -19,10 +19,12 @@ from pydantic import field_validator
 from accounts import roles
 from accounts.access import needs_email_confirmation
 from api.auth import OptionalApiTokenAuth, member_auth
-from trainer import live, records, strava
+from trainer import intervals, live, records, services, strava
 from trainer.models import (
     GroupRide,
     GroupRideMember,
+    IntervalsConnection,
+    IntervalsUpload,
     LiveRider,
     RideTrack,
     StravaConnection,
@@ -67,6 +69,12 @@ class MeOut(Schema):
     strava_connected: bool = False
     strava_athlete: str = ""
     strava_connect_url: str = ""
+    # whether the member's box sends their rides there (issue #471)
+    strava_send: bool = False
+    intervals_available: bool = False
+    intervals_connected: bool = False
+    intervals_athlete: str = ""
+    intervals_send: bool = False
 
 
 class RideIn(Schema):
@@ -137,10 +145,40 @@ class StravaOut(Schema):
     error: str = ""
 
 
+class IntervalsOut(Schema):
+    status: str
+    activity_url: str = ""
+    error: str = ""
+
+
 class SavedRideOut(Schema):
     ride: RideOut
     records: list[str]
     strava: StravaOut | None = None
+    intervals: IntervalsOut | None = None
+
+
+class ServiceOut(Schema):
+    available: bool
+    connected: bool
+    athlete: str = ""
+    send_rides: bool = False
+
+
+class ServicesOut(Schema):
+    strava: ServiceOut
+    intervals: ServiceOut
+    # where a browser starts the Strava round trip; intervals.icu is connected with a key instead
+    strava_connect_url: str = ""
+
+
+class SendIn(Schema):
+    send_rides: bool
+
+
+class IntervalsConnectIn(Schema):
+    api_key: str = Field(..., min_length=1, max_length=200)
+    send_rides: bool = False
 
 
 class RouteBestOut(Schema):
@@ -285,6 +323,7 @@ def me(request):
     if not user.is_authenticated or needs_email_confirmation(user):
         return MeOut(authenticated=False, login_url=reverse("account_login"), page_url=reverse("virtual_ride"))
     connection = StravaConnection.objects.filter(user=user).first()
+    sent = services.state(user)
     return MeOut(
         authenticated=True,
         user_id=user.pk,
@@ -295,6 +334,11 @@ def me(request):
         strava_connected=connection is not None,
         strava_athlete=connection.athlete_name if connection else "",
         strava_connect_url=reverse("virtual_ride_strava_connect") if strava.available() else "",
+        strava_send=sent[services.STRAVA]["send_rides"],
+        intervals_available=sent[services.INTERVALS]["available"],
+        intervals_connected=sent[services.INTERVALS]["connected"],
+        intervals_athlete=sent[services.INTERVALS]["athlete"],
+        intervals_send=sent[services.INTERVALS]["send_rides"],
     )
 
 
@@ -322,11 +366,17 @@ def save_ride(request, payload: RideIn):
         if group is not None:
             records.rank_group(group)
             ride.refresh_from_db(fields=["place", "field_size"])
-    sent = None
-    # a member who connected Strava gets every real ride there; demo power is not a ride to show anyone
-    if track and ride.power_source != VirtualRide.PowerSource.DEMO and _strava_on(request.auth):
-        sent = _strava_out(strava.upload(ride))
-    return Status(HTTPStatus.CREATED, SavedRideOut(ride=RideOut.from_orm(ride), records=found, strava=sent))
+    # every service the member connected with its box on gets the ride; demo power is not a ride to show
+    to_strava, to_intervals = services.send_saved(ride)
+    return Status(
+        HTTPStatus.CREATED,
+        SavedRideOut(
+            ride=RideOut.from_orm(ride),
+            records=found,
+            strava=_strava_out(to_strava) if to_strava else None,
+            intervals=_intervals_out(to_intervals) if to_intervals else None,
+        ),
+    )
 
 
 def _strava_on(user) -> bool:
@@ -359,6 +409,109 @@ def send_to_strava(request, ride_id: int):
 def strava_status(request, ride_id: int):
     upload = get_object_or_404(StravaUpload.objects.select_related("ride"), ride_id=ride_id, ride__user=request.auth)
     return _strava_out(strava.refresh(upload))
+
+
+def _intervals_out(upload: IntervalsUpload) -> IntervalsOut:
+    return IntervalsOut(status=upload.status, activity_url=upload.activity_url, error=upload.error)
+
+
+@router.post(
+    "/rides/{ride_id}/intervals",
+    response=IntervalsOut,
+    auth=member_auth,
+    summary="Send one of my rides to intervals.icu",
+)
+def send_to_intervals(request, ride_id: int):
+    """Again after a failure, or a ride saved before intervals.icu was connected or its box turned on."""
+    ride = get_object_or_404(VirtualRide, pk=ride_id, user=request.auth)
+    sent = IntervalsUpload.objects.filter(ride=ride).first()
+    if sent is not None and sent.status == IntervalsUpload.Status.DONE:
+        return _intervals_out(sent)  # there already: sending it again would only make a second activity
+    if not (intervals.available() and IntervalsConnection.objects.filter(user=request.auth).exists()):
+        raise HttpError(HTTPStatus.CONFLICT, _("Connect intervals.icu in your profile first"))
+    if not services.sendable(ride):
+        raise HttpError(
+            HTTPStatus.CONFLICT,
+            _("This ride has no track to send: rides in demo mode and rides saved without one stay here"),
+        )
+    return _intervals_out(intervals.upload(ride))
+
+
+@router.get(
+    "/rides/{ride_id}/intervals",
+    response=IntervalsOut,
+    auth=member_auth,
+    summary="How my ride's intervals.icu upload went",
+)
+def intervals_status(request, ride_id: int):
+    return _intervals_out(get_object_or_404(IntervalsUpload, ride_id=ride_id, ride__user=request.auth))
+
+
+# -- Where my rides go -----------------------------------------------------
+
+
+def _services_out(user) -> ServicesOut:
+    sent = services.state(user)
+    return ServicesOut(
+        strava=ServiceOut(**sent[services.STRAVA]),
+        intervals=ServiceOut(**sent[services.INTERVALS]),
+        strava_connect_url=reverse("virtual_ride_strava_connect") if strava.available() else "",
+    )
+
+
+@router.get("/services", response=ServicesOut, auth=member_auth, summary="Where my rides go")
+def my_services(request):
+    return _services_out(request.auth)
+
+
+def _sending(request, service: str, payload: SendIn) -> ServicesOut:
+    if not services.set_sending(request.auth, service, payload.send_rides):
+        raise HttpError(HTTPStatus.CONFLICT, _("Connect the service in your profile first"))
+    return _services_out(request.auth)
+
+
+# One path per service, not "/services/{service}": a pattern would take POST and DELETE on
+# /services/intervals too, and answer them 405
+@router.patch("/services/strava", response=ServicesOut, auth=member_auth, summary="Send my rides to Strava, or not")
+def set_strava_sending(request, payload: SendIn):
+    return _sending(request, services.STRAVA, payload)
+
+
+@router.patch(
+    "/services/intervals", response=ServicesOut, auth=member_auth, summary="Send my rides to intervals.icu, or not"
+)
+def set_intervals_sending(request, payload: SendIn):
+    return _sending(request, services.INTERVALS, payload)
+
+
+@router.post(
+    "/services/intervals",
+    response={HTTPStatus.CREATED: ServicesOut},
+    auth=member_auth,
+    summary="Connect my intervals.icu with my API key",
+)
+def connect_intervals(request, payload: IntervalsConnectIn):
+    """The key is checked with intervals.icu, then kept sealed; it is never given back."""
+    if not intervals.available():
+        raise HttpError(HTTPStatus.CONFLICT, _("intervals.icu is not offered on this site"))
+    try:
+        intervals.connect(request.auth, payload.api_key, payload.send_rides)
+    except intervals.IntervalsError as exc:
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc)) from None
+    return Status(HTTPStatus.CREATED, _services_out(request.auth))
+
+
+@router.delete(
+    "/services/intervals",
+    response={HTTPStatus.NO_CONTENT: None},
+    auth=member_auth,
+    summary="Disconnect my intervals.icu",
+)
+def disconnect_intervals(request):
+    connection = IntervalsConnection.objects.filter(user=request.auth).first()
+    if connection is not None:
+        intervals.disconnect(connection)
+    return Status(HTTPStatus.NO_CONTENT, None)
 
 
 @router.delete(

@@ -80,7 +80,7 @@ function startRace() {
     world.lms.forEach(l => { l.done = false; });
     me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5)));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
-    stravaShow(null, null);
+    stravaShow(null, null); intervalsShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
     spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
     Work.active = false;

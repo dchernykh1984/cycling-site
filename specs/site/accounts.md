@@ -12,7 +12,7 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
-`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_managing.py`,
+`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_virtual_ride_intervals.py`, `tests/test_managing.py`,
 `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
@@ -125,6 +125,14 @@ once; confirming the address unlocks everything that writes.
 5. **Given** a member has finished rides on the virtual ride page, **Then** the profile shows their
    totals, best time per route with attempts, peak power over 5 s, 1, 5 and 20 min, top speed and the
    latest rides; demo rides are listed but never count ([site shell](site-shell.md)).
+6. **Given** the "Virtual rides" card (issue #471), **Then** its "Where your rides go" block lists
+   Strava and intervals.icu, each as the site offers it: connected or not.
+   - A connected one carries the box "Send my rides to ..."; off keeps it connected and sends
+     nothing on its own.
+   - Strava connections from before the box were left on.
+   - intervals.icu is connected with the member's own API key, and its box starts off unless the
+     member ticks it while connecting.
+   - A recent ride links to its activity on each service that has it.
 
 ### Story 7 -- Manage another member's registrations and photos (P2)
 
@@ -271,7 +279,8 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   "Virtual rides" card with Strava's own "Connect with Strava" button; its tokens live in
   `trainer.StravaConnection`, are refreshed when they expire, and are revoked at Strava and deleted
   when the member disconnects it there or through the API, or their account is deleted. Nothing
-  reads the member's Strava activities.
+  reads the member's Strava activities. Its box "Send my rides to Strava" (`send_rides`) is on for a new
+  connection; turned off, rides are not sent on their own, though "Send again" still sends one ride.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
   first) and their registrations: open entries as cards with approval and payment badges as their
   event requires -- with those of the members they manage, under the member's name -- and every own
@@ -302,6 +311,13 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   a new address waits beside the old one until the link sent to it is opened, then replaces it.
   An address written without allauth (`createsuperuser`, the admin) gets its record, unconfirmed, as
   the page opens (allauth's `sync_user_email_address`), so the page shows it and it changes the same way.
+- **FR-ACC-015**: intervals.icu (issue #471) is connected from the profile or through
+  `/api/v1/virtual-ride/services/intervals` with the member's own API key.
+  - The key is checked with intervals.icu (`GET /api/v1/athlete/0`) and kept sealed with the site's
+    `INTEGRATIONS_ENCRYPTION_KEY` in `trainer.IntervalsConnection`. It is never returned or shown
+    again, and is deleted when the member disconnects or their account goes.
+  - Without that setting intervals.icu is not offered. A key the site can no longer read, or that
+    intervals.icu no longer takes, drops the connection.
 
 ## Key Entities
 
