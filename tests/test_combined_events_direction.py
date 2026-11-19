@@ -54,7 +54,9 @@ class CombinedEventsDirectionTests(TestCase):
             self.assertIn("Disciplines: Combined Events.", event.search_summary())
 
     def test_the_api_the_agents_read_lists_it_in_every_language(self):
-        listed = next(c for c in self.client.get("/api/v1/disciplines/").json() if c["name"]["en"] == DIRECTION)
+        directions = self.client.get("/api/v1/disciplines/").json()
+        listed = next((c for c in directions if c["name"]["en"] == DIRECTION), None)
+        self.assertIsNotNone(listed, "the API should list the direction")
         self.assertTrue(listed["name"]["ru"] and listed["name"]["kk"])
         self.assertEqual([d["name"]["en"] for d in listed["disciplines"]], KINDS)
         for discipline in listed["disciplines"]:
