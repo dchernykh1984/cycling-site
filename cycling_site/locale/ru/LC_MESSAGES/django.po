@@ -5791,11 +5791,6 @@ msgid "intervals.icu does not accept this key. Check it and try again."
 msgstr ""
 "intervals.icu не принимает этот ключ. Проверьте его и попробуйте ещё раз."
 
-#: trainer/views.py:141
-#, python-format
-msgid "intervals.icu was not connected: %(reason)s"
-msgstr "intervals.icu не подключён: %(reason)s"
-
 #: trainer/views.py:153
 msgid "intervals.icu is disconnected: the key is deleted from this site."
 msgstr "intervals.icu отключён: ключ удалён с сайта."
@@ -5807,3 +5802,11 @@ msgstr "Сохранить для Strava"
 #: accounts/templates/accounts/profile.html
 msgid "Save for intervals.icu"
 msgstr "Сохранить для intervals.icu"
+
+#: trainer/views.py
+msgid "Too many keys tried in a row: wait a few minutes, then give yours again."
+msgstr "Слишком много ключей подряд: подождите несколько минут и введите свой ещё раз."
+
+#: trainer/views.py
+msgid "intervals.icu could not check the key just now. Try connecting again later."
+msgstr "intervals.icu сейчас не смог проверить ключ. Попробуйте подключить позже."

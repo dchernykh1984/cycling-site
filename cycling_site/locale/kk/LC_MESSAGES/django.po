@@ -5783,11 +5783,6 @@ msgid "intervals.icu does not accept this key. Check it and try again."
 msgstr ""
 "intervals.icu бұл кілтті қабылдамайды. Оны тексеріп, қайтадан көріңіз."
 
-#: trainer/views.py:141
-#, python-format
-msgid "intervals.icu was not connected: %(reason)s"
-msgstr "intervals.icu қосылмады: %(reason)s"
-
 #: trainer/views.py:153
 msgid "intervals.icu is disconnected: the key is deleted from this site."
 msgstr "intervals.icu ажыратылды: кілт сайттан жойылды."
@@ -5799,3 +5794,11 @@ msgstr "Strava үшін сақтау"
 #: accounts/templates/accounts/profile.html
 msgid "Save for intervals.icu"
 msgstr "intervals.icu үшін сақтау"
+
+#: trainer/views.py
+msgid "Too many keys tried in a row: wait a few minutes, then give yours again."
+msgstr "Қатарынан тым көп кілт енгізілді: бірнеше минут күтіп, өз кілтіңізді қайта енгізіңіз."
+
+#: trainer/views.py
+msgid "intervals.icu could not check the key just now. Try connecting again later."
+msgstr "intervals.icu қазір кілтті тексере алмады. Кейінірек қайта қосып көріңіз."
