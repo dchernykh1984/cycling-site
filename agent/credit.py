@@ -1,4 +1,4 @@
-"""The one line that credits an event to where it was announced, shared by the agents that add one.
+"""The one line that credits an event to where it was announced, as the Telegram agent adds it.
 
 The Telegram agent credits a proposed event to the channel it came from, in these words, so events
 read the same however they arrived. What may be named in the label is the agent's own rule (see its
