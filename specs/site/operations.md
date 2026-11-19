@@ -11,8 +11,8 @@ backups)
 
 ## Overview
 
-The site runs on Render behind Cloudflare. A push to `main` runs CI and Render deploys the commit,
-migrating the database before it serves. Backups of the database and media can be taken and
+The site runs on Render behind Cloudflare. A push to `main` runs CI; the site is deployed at night
+(issue #153), migrating the database before it serves. Backups of the database and media can be taken and
 restored, locally or onto production.
 
 ## User Scenarios
@@ -22,8 +22,14 @@ restored, locally or onto production.
 1. **Given** a pull request, **Then** CI runs pre-commit (ruff, mypy, ASCII, requirements export),
    commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
    suite on five browser/device combinations and once per skin.
-2. **Given** a merge to `main`, **Then** Render deploys it, running `migrate` as a pre-deploy step;
-   configuration comes from environment variables set on Render.
+2. **Given** a merge to `main`, **Then** it reaches the site at night. Render's auto-deploy is off.
+   `.github/workflows/deploy.yml` deploys `main` at 21:07 UTC (02:07 in Almaty), and only when two
+   things hold: the site names another commit at `/api/v1/version/`, and `main`'s CI passed. It
+   then waits until the site names the new commit, so a deploy that fails turns the run red.
+   - A night run GitHub starts after 01:00 UTC leaves the deploy to the next night.
+   - An urgent change goes out by running the workflow by hand, or with Render's Manual Deploy.
+   - Render runs `migrate` as a pre-deploy step.
+   - Configuration comes from environment variables set on Render.
 3. **Given** a reader's request, **Then** it passes through the site's Cloudflare zone -- the apex
    record is proxied -- which adds the visitor location headers the guest's region is read from
    (#332, [calendar](calendar.md)) and gives up on an answer after 100 seconds (the README's
