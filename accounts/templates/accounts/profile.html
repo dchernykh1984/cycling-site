@@ -364,7 +364,8 @@
                         <form method="post" action="{% url 'virtual_ride_intervals_connect' %}">
                             {% csrf_token %}
                             <label class="form-label small" for="intervals-key">{% trans "intervals.icu API key" %}</label>
-                            <input class="form-control mb-2" type="password" name="api_key" id="intervals-key" required maxlength="200" autocomplete="off">
+                            {% comment %}A text field, not a password one: a password manager fills its own password into those whatever autocomplete says, and the member's password for this site would go to intervals.icu as a key.{% endcomment %}
+                            <input class="form-control mb-2" type="text" name="api_key" id="intervals-key" required maxlength="200" autocomplete="off" autocapitalize="off" spellcheck="false">
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="send_rides" id="send-intervals-new">
                                 <label class="form-check-label small" for="send-intervals-new">{% trans "Send my rides to intervals.icu" %}</label>
