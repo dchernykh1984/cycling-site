@@ -110,6 +110,7 @@ class BLEDev {
   }
   // one setting for the trainer, as its controller: true once it took it (or never answers, as some do)
   async control(cmd) {
+    this.answer = undefined; // what the trainer answered this command, for the caller to read
     if (!this.ctrl || this.busy) return false; this.busy = true;
     const link = this.link;
     try {
@@ -118,6 +119,7 @@ class BLEDev {
         if (await this.takeControl()) r = await this.command(cmd);
         else { this.ctrl = false; Sensors.changed(); return false; }
       }
+      this.answer = r;
       return link === this.link && (r === 1 || r === null);
     } finally { this.busy = false; }
   }
@@ -125,10 +127,13 @@ class BLEDev {
     const v = Math.round(clamp(g, -10, 20) * 100);
     return this.control([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
   }
-  // ERG: the trainer holds the power whatever the cadence (FTMS Set Target Power, watts within its range)
-  setPower(w) {
-    const v = Math.round(clamp(w, this.ergRange[0], this.ergRange[1]));
-    return this.control([0x05, v & 255, (v >> 8) & 255]);
+  // ERG: the trainer holds the power whatever the cadence (FTMS Set Target Power, watts within its range). One
+  // that said it can and still refuses the command (Op Code Not Supported, Invalid Parameter) is ridden by the
+  // grade from then on, rather than told the power every second and moved by nothing
+  async setPower(w) {
+    const v = Math.round(clamp(w, this.ergRange[0], this.ergRange[1])), ok = await this.control([0x05, v & 255, (v >> 8) & 255]);
+    if (!ok && (this.answer === 2 || this.answer === 3)) { this.ergRange = null; Sensors.changed(); }
+    return ok;
   }
   onIBD(dv) {
     const r = parseIBD(dv), now = performance.now();

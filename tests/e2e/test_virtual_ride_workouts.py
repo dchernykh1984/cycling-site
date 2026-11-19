@@ -243,3 +243,27 @@ def test_a_workout_by_power_shows_its_watts_and_cadence_on_the_hud(page: Page, l
     expect(page.locator("#plItems li")).to_have_count(2)
     # no trainer that holds a power is connected: no ERG switch to offer
     expect(page.locator("#btnErg")).to_be_hidden()
+
+
+def test_a_trainer_that_refuses_to_hold_a_power_is_ridden_by_the_grade(page: Page):
+    errors = _with_bluetooth(page)
+    found = page.evaluate(
+        """async () => {
+            // it said it holds a power, then answers Set Target Power "Op Code Not Supported" (2)
+            const trainer = new BLEDev({ name: 'trainer' }), sent = [];
+            trainer.ctrl = true; trainer.roles.add('trainer'); trainer.ergRange = [0, 2000];
+            trainer.write = async bytes => {
+                sent.push(bytes[0]);
+                const result = bytes[0] === 0x05 ? 2 : 1;
+                setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], result]).buffer)), 5);
+            };
+            Sensors.devs.push(trainer);
+            const settle = () => new Promise(done => setTimeout(done, 60));
+            Trainer.update(10, 4, me, 250); await settle();
+            Trainer.update(12, 4, me, 250); await settle();
+            return { sent, range: trainer.ergRange, grade: Trainer.sent };
+        }"""
+    )
+    # refused once, then no more power asked of it: the route's grade instead
+    assert found == {"sent": [0x05, 0x11], "range": None, "grade": 4}, found
+    assert errors == [], errors
