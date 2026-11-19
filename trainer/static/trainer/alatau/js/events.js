@@ -1,7 +1,11 @@
 'use strict';
 /* ---------------- События ---------------- */
 $('#btnConnect').onclick = () => Sensors.add();
-$('#btnStart').onclick = async () => { groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace(); };
+$('#btnStart').onclick = async () => {
+  // a workout picked from intervals.icu that has not loaded: the line under the list says why, and nothing starts
+  if (settings.mode === 'plan' && planWaits()) { $('#plIcuInfo').scrollIntoView({ block: 'center' }); return; }
+  groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace();
+};
 $('#mpCreate').onclick = mpCreateGroup;
 // когда шрифт загрузится, перерисовываем форму, чтобы надпись была нужным шрифтом
 try { document.fonts && document.fonts.ready.then(() => { if (!renderer) return; setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {} // no 3D on this device: the page already said so
@@ -25,6 +29,8 @@ $('#plStartF').onchange = e => shiftPlan(+e.target.value - settings.plan.steps[0
 $('#plStartR').onchange = e => shiftPlan(0, +e.target.value - settings.plan.steps[0].r);
 $('#plAdd').onclick = () => { const st = settings.plan.steps, l = st[st.length - 1]; st.push({ f: l.f, r: Math.min(bikeR().length, l.r + 1), cad: l.cad, min: l.min }); savePlan(); renderPlanEditor(); };
 $('#plTpl').onclick = () => { const d = defaultPlan(); settings.plan.steps = d.steps; savePlan(); renderPlanEditor(); };
+// ERG on or off for the rest of the workout: the trainer holds the power, or follows the grade while the rider holds it
+$('#btnErg').onclick = () => { settings.erg = settings.erg === false; store.set('settings', settings); Trainer.last = -10; updateModeUI(); toast(settings.erg ? t('erg.on') : t('erg.off'), 3); };
 $('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') { paused = !groupRide; $('#pauseM').classList.remove('hidden'); } };
 $('#btnResume').onclick = () => { paused = false; $('#pauseM').classList.add('hidden'); };
 $('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (rideMode === 'free') finishFree(); else if (rideMode === 'plan' && phase === 'race') finishWorkout(); };

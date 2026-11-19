@@ -37,11 +37,18 @@
     <div class="field"><label for="level" data-t="race.level"></label>
       <select id="level"><option value="easy" data-t="level.easy"></option><option value="mid" selected data-t="level.mid"></option><option value="hard" data-t="level.hard"></option></select></div></div>
     <div id="planEd" class="hidden">
+      <div id="plIcu" class="hidden">
+        <p class="hint" id="plIcuHint"></p>
+        <div class="icu-list" id="plIcuList"></div>
+        <p class="hint" id="plIcuInfo" role="status"></p>
+      </div>
+      <div id="plOwn">
       <p class="hint" data-t="plan.hint"></p>
       <div class="field"><label data-t="plan.startGear"></label><span class="gearpick"><select id="plStartF" data-t-label="plan.startFront"></select><span>×</span><select id="plStartR" data-t-label="plan.startRear"></select></span></div>
       <ol class="steps" id="plSteps"></ol>
       <div class="row2"><button class="btn" id="plAdd" type="button" data-t="plan.add"></button><button class="btn" id="plTpl" type="button" data-t="plan.example"></button></div>
       <p class="hint" id="plTotal"></p>
+      </div>
     </div>
 
       </section>
@@ -133,7 +140,7 @@
     <div class="prow">
       <div class="panel target hidden" id="target">
         <div class="t1" id="tTitle"></div>
-        <div class="t2"><b id="tVal">0</b><span data-t="u.rpm"></span></div>
+        <div class="t2"><b id="tVal">0</b><span id="tUnit" data-t="u.rpm"></span></div>
         <div class="t3" id="tSub"></div>
         <div class="tb" aria-hidden="true"><i id="tProg"></i></div>
       </div>
@@ -164,6 +171,7 @@
     <div class="ctrls">
       <button class="ib" id="btnView" type="button" data-t-label="view.toThird"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.5" r="2.6"/><path d="M6 20c.6-4.2 2.8-7 6-7s5.4 2.8 6 7"/><path d="M3 12l2.5-2.5M21 12l-2.5-2.5"/></svg></button>
       <button class="ib" id="btnPhoto" type="button" data-t-label="photo.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <button class="ib erg hidden" id="btnErg" type="button" aria-pressed="true" data-t-label="erg.label">ERG</button>
       <button class="ib" id="btnPause" type="button" data-t-label="pause.title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
     </div>
   </div>
@@ -292,6 +300,7 @@
 <script src="alatau/js/workout.js"></script>
 <script src="alatau/js/site.js"></script>
 <script src="alatau/js/strava.js"></script>
+<script src="alatau/js/workouts.js"></script>
 <script src="alatau/js/site-records.js"></script>
 <script src="alatau/js/group-ride.js"></script>
 <script src="alatau/js/photo.js"></script>

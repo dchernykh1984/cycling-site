@@ -63,7 +63,7 @@ function startMenu() { // страница 1: настройки (3D-сцена 
 function renderStartSum() {
   const el = $('#startSum'); if (!el) return;
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? t('sum.group') : settings.mode === 'plan' ? t('sum.plan', { t: fmtTime(planTotalMin() * 60) }) : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
+  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? t('sum.group') : settings.mode === 'plan' ? planSummary() : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
   const sm = Sensors.mode(), dev = sm === 'demo' ? t('sum.demo') : sm === 'power' ? t('sum.power') : sm === 'speed' ? t('sum.speed') : t('sum.cadence');
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
   el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', ' + t('sum.hr') : '') + ', ' + lc(bikeType().name) + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' ' + t('u.kg') + '.';
@@ -84,8 +84,10 @@ function startRace() {
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
     spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
     Work.active = false;
-    if (planMode) { Work.start(settings.plan.steps); gearF = settings.plan.steps[0].f; gearR = settings.plan.steps[0].r; }
-    else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
+    const plan = planMode ? planToRide() : null, first = plan && plan.steps[0];
+    if (plan) Work.start(plan.steps, plan.cues, plan.name);
+    // the own plan starts on its first step's gear; any other ride, a workout by power too, on a middle one
+    if (first && first.f != null) { gearF = first.f; gearR = first.r; } else { gearF = bikeF().length; gearR = Math.ceil(bikeR().length / 2); }
     $('#planList').classList.toggle('hidden', !planMode); $('#target').classList.toggle('hidden', !planMode); planListIdx = -2;
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
     $('#pauseHint').textContent = freeMode ? t('pause.free') : planMode ? t('pause.plan') : t('pause.race');
@@ -94,7 +96,7 @@ function startRace() {
     $('#btnPhoto').classList.toggle('hidden', !!groupRide);
     raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
-    applyLook('clean'); setView(settings.view, true); Trainer.sent = null; drawProfileBase(); updateModeUI(); showLoading(false);
+    applyLook('clean'); setView(settings.view, true); Trainer.sent = Trainer.held = null; drawProfileBase(); updateModeUI(); showLoading(false);
     last = performance.now(); // the next frame counts from here: the time the course took to build is not the countdown's
     try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
   }, 30);

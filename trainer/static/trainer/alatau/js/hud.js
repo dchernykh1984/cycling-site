@@ -59,7 +59,7 @@ function updateHUD(inp, grade) {
   // the power, big, with the heart rate and the cadence beside it
   $('#vPower').textContent = Math.round(inp.P);
   $('#vCad').textContent = inp.cad != null && inp.cad > 0 ? Math.round(inp.cad) : (inp.mode === 'speed' ? '—' : '0');
-  if (rideMode !== 'plan') $('#vCad').className = '';
+  if (rideMode !== 'plan') { $('#vCad').className = ''; $('#vPower').className = ''; } // against a target in a plan only
   const hr = Sensors.hr(), hb = $('#hrBox'); hb.classList.toggle('hidden', hr == null);
   if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); hb.style.setProperty('--zone', ZONE_BG[z].replace(/,[\d.]+\)$/, ',1)')); }
   // the grade strip over the map
@@ -71,7 +71,7 @@ function updateHUD(inp, grade) {
   if (rideMode === 'plan' && Work.active && Work.idx >= 0) { const x = Work.ss[Work.idx]; if (x && x.n > 3) avg = t('hud.avgCad', { c: Math.round(x.sumCad / x.n) }); }
   else if (st.t > 10) avg = t('hud.avgPower', { w: Math.round(st.sumP / st.t) });
   $('#avgLine').textContent = avg;
-  if (rideMode === 'plan') updatePlanHUD(inp.cad);
+  if (rideMode === 'plan') updatePlanHUD(inp.cad, inp.P);
   // the riders nearby: this rider and up to six around them, with the gap in seconds
   const board = $('#board'); board.classList.toggle('hidden', !bots.length);
   if (bots.length) {
