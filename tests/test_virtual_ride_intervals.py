@@ -135,7 +135,7 @@ class SendingTests(MemberClientMixin, TestCase):
         name, content, _type = post.kwargs["files"]["file"]
         self.assertTrue(name.endswith(".tcx"))
         self.assertTrue(content.startswith(b"<?xml"), "sent unpacked: intervals.icu does not document gzip")
-        self.assertIn(b"<ns1:Watts>200</ns1:Watts>", content.replace(b"tpx:", b"ns1:"))
+        self.assertIn(b"<tpx:Watts>200</tpx:Watts>", content, "the power of every point goes too")
         put = _calls(call, "PUT")[0]
         self.assertEqual((put.args[1], put.kwargs["json"]["type"]), (f"{intervals.API}/activity/i9876", "VirtualRide"))
         self.assertLess(put.kwargs["timeout"], post.kwargs["timeout"], "the mark holds the save less than the upload")
