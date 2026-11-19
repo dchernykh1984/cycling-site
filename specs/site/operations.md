@@ -64,7 +64,10 @@ restored, locally or onto production.
 ## Functional Requirements
 
 - **FR-OPS-001**: Secrets come from the environment, never from the repository; so do the hosts,
-  apart from the site's own names listed under "Local assumptions".
+  apart from the site's own names listed under "Local assumptions". The secrets of GitHub Actions
+  are the `production` environment's, whose deployment branches are `main` only: no workflow on
+  another branch receives them, none is a repository secret, and the jobs that use them run by
+  hand, or run again, for the repository's owner only.
 - **FR-OPS-002**: Dependencies are locked with uv; `requirements.txt` is exported from the lock.
 
 ## Key Entities

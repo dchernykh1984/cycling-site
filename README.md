@@ -87,8 +87,14 @@ site down for up to a minute.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
 - **Setting it up:** the service's deploy hook (Render: Settings -> Deploy Hook) goes into the
-  repository secret `RENDER_DEPLOY_HOOK_URL`, and Render's Auto-Deploy (Settings -> Build & Deploy)
-  is set to Off.
+  secret `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and Render's Auto-Deploy
+  (Settings -> Build & Deploy) is set to Off.
+- **The secrets of GitHub Actions** live in the repository's `production` environment (Settings ->
+  Environments), whose deployment branches are `main` only. A job receives them only when it names
+  the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
+  fork's, gets none, and `main` changes only through a reviewed pull request. None is kept as a
+  repository secret, which every branch's workflow could read. The jobs that use them run by hand,
+  or run again, for the repository's owner only.
 - **Render runs `python manage.py migrate`** as a pre-deploy step.
 
 Configuration comes from environment variables set in the Render dashboard:
@@ -140,11 +146,12 @@ storage downloads, leaving capacity for form submissions. On the small Render in
 handler as Django 500s. Proxy errors without a running application require external monitoring.
 
 The read-only `Dropbox Integration` workflow checks a real index and decodes one thumbnail on
-trusted pull requests, pushes to main, or manual dispatch. Set repository secrets
-`DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` and `DROPBOX_TEST_FOLDER_URL` (a shared folder containing
-`photo-index.v1.json` and at least one usable photo/preview). Keep that fixture available; a
-dedicated small album is preferable. Fork pull requests never receive these secrets. Normal
-unit tests skip this network check; no race photos or shared links are committed as fixtures.
+pushes to main and on manual dispatch. Set `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` and
+`DROPBOX_TEST_FOLDER_URL` (a shared folder containing `photo-index.v1.json` and at least one usable
+photo/preview) as secrets of the `production` environment. Keep that fixture available; a
+dedicated small album is preferable. No pull request receives these secrets, so a change is
+checked once it is merged. Normal unit tests skip this network check; no race photos or shared
+links are committed as fixtures.
 
 Live site: <https://universalbicycle.team>.
 

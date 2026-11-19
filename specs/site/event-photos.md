@@ -142,8 +142,8 @@ start list's bib: marks still do.
   site and API. Index imports retain their own timeout.
 - **FR-EVP-012**: A separate opt-in integration check uses real Dropbox app authentication to read
   a secret-configured fixture index and decode one thumbnail, without writing storage or the
-  site's database. CI runs it on trusted pull requests and main; fork code receives no credentials,
-  and Dependabot's pull requests, which get no Actions secrets, skip it.
+  site's database. CI runs it on main, or the owner by hand, with the `production` environment's
+  secrets, which only `main` may use: no pull request's code receives the credentials.
 - **FR-EVP-013**: "Download all" streams a ZIP of the originals as they are read from storage, writing
   nothing to disk: a registration's album (its owner, whoever manages the owner's photos, and the
   event's managers) or a bib's search
