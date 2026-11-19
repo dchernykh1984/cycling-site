@@ -307,8 +307,8 @@ class StravaProfileTests(TestCase):
         self.assertContains(page, f'action="{reverse("virtual_ride_strava_disconnect")}"')
         self.assertContains(
             page,
-            '<a href="https://www.strava.com/activities/77" class="fw-semibold" target="_blank" rel="noopener">'
-            "View on Strava</a>",
+            '<a href="https://www.strava.com/activities/77" class="fw-semibold text-nowrap" target="_blank" '
+            'rel="noopener">View on Strava</a>',
             html=True,
         )
 
