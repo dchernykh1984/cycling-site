@@ -158,29 +158,52 @@ sibling), with "Send again".
 - The profile's block in every state.
 - The trainer page's results, in an e2e test.
 
-### Phase 2 -- workouts and ERG
+### Phase 2 -- workouts and ERG (as built)
 
-**Listing workouts.** `GET /api/v1/virtual-ride/intervals/workouts` reads the events from today to
-seven days ahead with `category=WORKOUT`, keeps the cycling ones, and answers their id, date, name
-and duration.
+**Listing workouts.** `GET /api/v1/virtual-ride/intervals/workouts?oldest=` reads
+`/athlete/{id}/events` with `oldest`, `newest` (eight days) and `category=WORKOUT`.
+- `oldest` is the rider's own today, which the page sends; without it, the site's today.
+- Only intervals.icu's cycling types are kept: Ride, VirtualRide, MountainBikeRide, GravelRide,
+  TrackRide, Cyclocross, EBikeRide, EMountainBikeRide (its sport enum).
+- Each comes as its id, date, name and duration, by date, at most fifty.
 
-**Loading a workout.** `GET .../intervals/workouts/{eventId}` downloads the ZWO and parses it safely
-(defusedxml, or a bounded parser). It turns each element into steps, with power in watts from the
-FTP:
+**Loading a workout.** `GET .../intervals/workouts/{id}` reads the event and refuses one that is not a
+cycling `WORKOUT` (404). It then downloads `download.zwo`, asking for any type rather than JSON.
+- The FTP is the event's `icu_ftp`, else the indoor FTP of the member's ride settings, else their
+  FTP; a file's own `ftpOverride` wins. A workout by power with no FTP at all is refused with where
+  to set one.
+- `trainer/zwo.py` parses the file with defusedxml, no DTD, at most 512 KB. Power is a share of FTP.
+  `Warmup`, `Cooldown` and `Ramp` go from `PowerLow` at their start to `PowerHigh` at their end, as
+  the reference's examples say. A range on a steady step is ridden at its middle. `IntervalsT`
+  unfolds into its repeats, with `Cadence` on and `CadenceResting` off. `FreeRide`, `MaxEffort` and
+  a step this page does not know keep their time without power. A `textevent` falls `timeoffset`
+  seconds into the element holding it.
+- Bounds: six hours (a ride's track), 500 steps, 100 repeats, 200 cues of 200 characters, 3000 W,
+  cadence 20-200 rpm.
 
-- SteadyState, Warmup, Cooldown and Ramp;
-- IntervalsT, which repeats;
-- FreeRide;
-- Cadence and textevent.
+**Reads** are held to sixty a member in ten minutes (429): each is one to three calls from the
+site's one address. A key no longer taken drops the connection (409); intervals.icu failing is 503.
 
 **The trainer page.**
+- `js/workouts.js` lists the workouts beside "My plan by gears and cadence" and loads the picked one.
+  Only its id is kept in the browser.
+- `Work` (`js/ride.js`) takes a workout's steps (`w`, `w2`, `cad`, `min`) beside gear steps.
+  `Work.target()` gives the power this second. The time on target counts power within 5 %, or else
+  cadence within 5 rpm. Cues reach the page as `planCue`.
+- The HUD shows the target in watts (a ramp's end, "ERG" when the trainer holds it) and colours the
+  power and the cadence against it. The results show each step's average power and its share on
+  target.
+- The demo rides a workout's power. A rider by cadence or speed sees the target beside their
+  estimated power.
 
-- The plan model accepts power steps beside gear steps.
-- The display shows the target in watts.
-- `bluetooth.js` sends FTMS Set Target Power (0x05) where the trainer reports Power Target Setting.
-  It falls back to SIM (0x11) on steps without power and when the rider switches ERG off.
+**ERG.**
+- `bluetooth.js` reads the Fitness Machine Feature (0x2ACC): bit 3 of its second field is Power
+  Target Setting. It then reads the Supported Power Range (0x2AD8) and clamps to it.
+- While ERG is on and the step sets a power, it sends Set Target Power (0x05) at most once a second,
+  again every five seconds. Otherwise, and in the menu, it sends the grade (0x11).
+- The HUD's ERG switch (on by default, kept in the browser) turns it off.
 
-**Saving.** The saved ride is a plan ride. FTP and the workout are not stored.
+**Saving.** The ride is a plan ride. Neither the workout nor the FTP is stored.
 
 ### Phase 3 -- mechanics
 

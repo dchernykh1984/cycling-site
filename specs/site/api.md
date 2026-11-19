@@ -149,8 +149,8 @@ and protocols with the event's upload token. The API has no language prefix.
 - **FR-API-001**: Routers: `/competitions/`, `/news/`, `/knowledge/`, `/locations/`, `/disciplines/`,
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/home/`, `/event-photos/`
-  ([event photos](event-photos.md)), `/virtual-ride/` (with `/services/`, where a member's rides go:
-  [accounts](accounts.md), FR-ACC-015), `/managing/` ([accounts](accounts.md)),
+  ([event photos](event-photos.md)), `/virtual-ride/` (with `/services/`, where a member's rides go,
+  and `/intervals/workouts`, the workouts planned there: [accounts](accounts.md), FR-ACC-015), `/managing/` ([accounts](accounts.md)),
   `/assistant/` ([event assistant](assistant.md)), `/stats/` ([statistics](statistics.md)),
   `/version/` (the commit the site runs). A
   start-list upload also records which registration got which bib, from the lines' trailing `r<id>`

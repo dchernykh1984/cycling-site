@@ -13,6 +13,7 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_virtual_ride_intervals.py`,
+`tests/test_virtual_ride_workouts.py`, `tests/e2e/test_virtual_ride_workouts.py`,
 `tests/test_managing.py`, `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
@@ -133,6 +134,8 @@ once; confirming the address unlocks everything that writes.
    - intervals.icu is connected with the member's own API key, and its box starts off unless the
      member ticks it while connecting.
    - A recent ride links to its activity on each service that has it.
+   - Once intervals.icu is connected, the workouts planned there for today and the next seven days
+     are offered on the virtual ride's plan screen and ridden by their power ([site shell](site-shell.md)).
 
 ### Story 7 -- Manage another member's registrations and photos (P2)
 
@@ -322,6 +325,14 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   - A member tries at most five keys in ten minutes; the next is held back before intervals.icu is
     asked (the API answers 429), since every try comes from the site's one address. A key not
     connected is told in the member's language: refused, not checkable just now, or too many tries.
+  - With the key the site also reads, for the virtual ride, the member's cycling workouts planned for
+    eight days from their own today (`GET /api/v1/virtual-ride/intervals/workouts?oldest=`) and one
+    workout's steps and cues (`.../intervals/workouts/{id}`): the ZWO file intervals.icu hands out,
+    its shares of FTP turned into watts with the FTP intervals.icu gives the workout, else the indoor
+    FTP of the member's ride settings, else their FTP (`trainer/zwo.py`). Nothing of them is kept.
+    A member reads at most sixty times in ten minutes (429); a workout intervals.icu does not have,
+    or one a bike does not ride, is 404; intervals.icu failing is 503; a key it no longer takes drops
+    the connection and answers 409.
 
 ## Key Entities
 
