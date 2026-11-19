@@ -38,8 +38,8 @@ pattern Telegram's anti-spam exists to catch.
        print(client.session.save())"
    ```
 
-5. Store the three values as GitHub secrets: `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`,
-   `TELEGRAM_SESSION`. The session string never goes into the repository. If Telegram ever
+5. Store the three values as secrets of the repository's `production` environment (Settings ->
+   Environments; only `main` may use it): `TELEGRAM_API_ID`, `TELEGRAM_API_HASH`, `TELEGRAM_SESSION`. The session string never goes into the repository. If Telegram ever
    revokes the session (a run will say so), mint a new one the same way and update the secret.
 
 Until the secrets are set, a run reports that and exits cleanly -- private sources simply stay

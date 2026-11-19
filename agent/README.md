@@ -66,7 +66,8 @@ python -m agent.run
 ```
 (only `beautifulsoup4` is needed beyond the standard library)
 
-## Secrets / variables (GitHub -> Settings -> Secrets and variables -> Actions)
+## Secrets (GitHub -> Settings -> Environments -> `production`)
+The environment's deployment branches are `main` only, so no other branch's workflow receives them.
 - `AGENT_API_TOKEN` (secret) - API token of a dedicated **organizer** account (the "bot").
 - `LLM_API_KEY` (secret) - DeepSeek (or other) API key.
 - `LLM_BASE_URL` (secret) - e.g. `https://api.deepseek.com`.

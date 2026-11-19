@@ -130,6 +130,7 @@ it a local run reads every enabled account in turn -- fine from a home address, 
 allowance of its own, and the reason the code still handles a list.
 
 ## Secrets
+All of them are secrets of the repository's `production` environment, which only `main` may use.
 The same ones the events agent uses -- `AGENT_API_TOKEN`, `LLM_API_KEY`, `LLM_BASE_URL`,
 `SITE_BASE_URL` -- and the same model, named in `agent/config.py`. It posts as the same organizer
 account.
