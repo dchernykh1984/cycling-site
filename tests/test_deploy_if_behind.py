@@ -1,4 +1,4 @@
-"""The nightly deploy deploys main only when the site runs another commit and main's CI passed (#153)."""
+"""The nightly deploy deploys main only when the site runs another commit and main is green (#153)."""
 
 import urllib.error
 from datetime import UTC, datetime
@@ -10,6 +10,15 @@ MAIN, OLD = "a" * 40, "b" * 40
 HOOK = "https://api.render.com/deploy/srv-x?key=secret"
 ENV = {"GITHUB_REPOSITORY": "owner/site", "GITHUB_TOKEN": "t", "SITE_BASE_URL": "https://site.test/"}
 NIGHT = datetime(2026, 11, 19, 21, 7, tzinfo=UTC)
+CI = (".github/workflows/ci.yml", "CI")
+DROPBOX = (".github/workflows/dropbox-integration.yml", "Dropbox Integration")
+
+
+def ran(workflow, conclusion="success"):
+    """One run of a workflow on main's push, as GitHub lists it; ``None`` is a run still going."""
+    path, name = workflow
+    status = "in_progress" if conclusion is None else "completed"
+    return {"path": path, "name": name, "status": status, "conclusion": conclusion}
 
 
 class Answer:
@@ -28,9 +37,12 @@ class Answer:
 class Site:
     """GitHub and the site as the script sees them; a deploy makes the site name main."""
 
-    def __init__(self, live=OLD, conclusion="success", runs=True, answers=True, takes=True):
-        self.live, self.conclusion, self.runs, self.answers, self.takes = live, conclusion, runs, answers, takes
+    def __init__(self, live=OLD, runs=None, answers=True, takes=True):
+        # what GitHub lists for main's push, ask after ask; the last list stays
+        self.runs = runs if runs is not None else [[ran(CI), ran(DROPBOX)]]
+        self.live, self.answers, self.takes, self.asked = live, answers, takes, 0
         self.deployed: list[tuple[str, str]] = []
+        self.slept: list[float] = []
 
     def fetch(self, url, token=""):
         if url == "https://site.test/api/v1/version/":
@@ -42,9 +54,12 @@ class Site:
         if url.endswith("/commits/main"):
             return {"sha": MAIN}
         path, _, query = url.partition("?")
-        assert path.endswith("/actions/workflows/ci.yml/runs"), url
-        assert parse_qs(query) == {"head_sha": [MAIN], "event": ["push"], "branch": ["main"]}, "main's own CI"
-        return {"workflow_runs": [{"conclusion": self.conclusion}] if self.runs else []}
+        assert path.endswith("/repos/owner/site/actions/runs"), url
+        # main's own push only: the agents and the deploy run on main's commit too, and check nothing of it
+        assert parse_qs(query) == {"head_sha": [MAIN], "event": ["push"], "branch": ["main"], "per_page": ["100"]}
+        listed = self.runs[min(self.asked, len(self.runs) - 1)]
+        self.asked += 1
+        return {"workflow_runs": listed}
 
     def deploy(self, hook, sha):
         self.deployed.append((hook, sha))
@@ -53,7 +68,7 @@ class Site:
 
     def run(self, env=None, now=NIGHT):
         return deploy.run(
-            {**ENV, "RENDER_DEPLOY_HOOK_URL": HOOK, **(env or {})}, now, self.fetch, self.deploy, lambda s: None
+            {**ENV, "RENDER_DEPLOY_HOOK_URL": HOOK, **(env or {})}, now, self.fetch, self.deploy, self.slept.append
         )
 
 
@@ -76,10 +91,50 @@ def test_a_site_that_cannot_answer_counts_as_behind():
     assert site.deployed == [(HOOK, MAIN)]
 
 
-def test_a_red_or_unfinished_ci_deploys_nothing():
-    for site in (Site(conclusion="failure"), Site(conclusion=None), Site(runs=False)):
+def test_a_red_check_on_main_deploys_nothing_and_names_it(capsys):
+    for red in ([ran(CI, "failure"), ran(DROPBOX)], [ran(CI), ran(DROPBOX, "failure")], [ran(CI, "cancelled")]):
+        site = Site(runs=[red])
         assert site.run() == 1
         assert site.deployed == []
+    out = capsys.readouterr().out
+    assert "Dropbox Integration (failure)" in out and "CI (cancelled)" in out
+
+
+def test_a_red_check_deploys_nothing_without_waiting_for_the_others():
+    site = Site(runs=[[ran(CI, None), ran(DROPBOX, "failure")]])
+    assert site.run() == 1
+    assert (site.deployed, site.slept) == ([], [])
+
+
+def test_a_check_still_running_is_waited_for_then_main_deploys():
+    site = Site(runs=[[ran(CI, None), ran(DROPBOX, None)], [ran(CI), ran(DROPBOX, None)], [ran(CI), ran(DROPBOX)]])
+    assert site.run() == 0
+    assert site.deployed == [(HOOK, MAIN)]
+    assert site.slept[:2] == [deploy.POLL_SECONDS] * 2
+
+
+def test_checks_that_never_finish_or_a_ci_that_never_starts_deploy_nothing(capsys):
+    for runs in ([ran(CI, None), ran(DROPBOX)], [ran(DROPBOX)], []):
+        site = Site(runs=[runs])
+        assert site.run() == 1
+        assert site.deployed == []
+        assert sum(site.slept) <= deploy.CHECKS_WAIT_SECONDS
+    out = capsys.readouterr().out
+    assert "did not finish" in out and "CI has not started" in out
+
+
+def test_a_skipped_check_counts_as_green():
+    site = Site(runs=[[ran(CI), ran(DROPBOX, "skipped"), ran((".github/workflows/x.yml", "X"), "neutral")]])
+    assert site.run() == 0
+    assert site.deployed == [(HOOK, MAIN)]
+
+
+def test_a_check_started_again_counts_by_its_last_run():
+    # GitHub lists the newest run first: a red Dropbox check started again and passed lets main deploy
+    again = Site(runs=[[ran(CI), ran(DROPBOX), ran(DROPBOX, "failure")]])
+    assert again.run() == 0
+    still_red = Site(runs=[[ran(CI), ran(DROPBOX, "failure"), ran(DROPBOX)]])
+    assert still_red.run() == 1
 
 
 def test_without_the_hook_nothing_is_deployed():
