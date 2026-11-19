@@ -127,9 +127,9 @@ def test_the_hook_is_given_the_commit_as_ref(monkeypatch):
     monkeypatch.setattr(deploy.urllib.request, "urlopen", lambda request, timeout: sent.append(request) or Answer())
     deploy.trigger(HOOK, MAIN)
     deploy.trigger("https://hook.test/deploy", MAIN)
-    assert [(r.full_url, r.get_method()) for r in sent] == [
-        (f"{HOOK}&ref={MAIN}", "POST"),
-        (f"https://hook.test/deploy?ref={MAIN}", "POST"),
+    assert [(r.full_url, r.get_method(), r.data) for r in sent] == [
+        (f"{HOOK}&ref={MAIN}", "POST", b""),
+        (f"https://hook.test/deploy?ref={MAIN}", "POST", b""),
     ]
 
 

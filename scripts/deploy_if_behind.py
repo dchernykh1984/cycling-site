@@ -62,7 +62,10 @@ def ci_conclusion(repo: str, sha: str, token: str, fetch: Fetch = fetch_json) ->
 
 def trigger(hook: str, sha: str) -> None:
     separator = "&" if "?" in hook else "?"
-    request = urllib.request.Request(f"{hook}{separator}ref={sha}", method="POST", headers={"User-Agent": USER_AGENT})
+    # An empty body still sends "Content-Length: 0", which a server may require of a POST.
+    request = urllib.request.Request(
+        f"{hook}{separator}ref={sha}", data=b"", method="POST", headers={"User-Agent": USER_AGENT}
+    )
     with urllib.request.urlopen(request, timeout=30):
         pass
 
