@@ -138,6 +138,7 @@ class SendingTests(MemberClientMixin, TestCase):
         self.assertIn(b"<ns1:Watts>200</ns1:Watts>", content.replace(b"tpx:", b"ns1:"))
         put = _calls(call, "PUT")[0]
         self.assertEqual((put.args[1], put.kwargs["json"]["type"]), (f"{intervals.API}/activity/i9876", "VirtualRide"))
+        self.assertLess(put.kwargs["timeout"], post.kwargs["timeout"], "the mark holds the save less than the upload")
         self.assertEqual(ride.intervals.status, IntervalsUpload.Status.DONE)
 
     @mock.patch("trainer.intervals.requests.request")
