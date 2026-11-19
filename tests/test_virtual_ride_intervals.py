@@ -403,6 +403,9 @@ class ProfileTests(TestCase):
         self.assertIn('id="virtual-rides-services"', html)
         self.assertIn('id="virtual-rides-strava"', html)
         self.assertIn('id="intervals-key"', html)
+        # a password manager would fill the member's own password into a password field
+        self.assertNotIn('type="password" name="api_key"', html)
+        self.assertIn('name="api_key" id="intervals-key" required maxlength="200" autocomplete="off"', html)
         _connect(self.user)
         _connected(self.user, send_rides=False)
         html = self.card()
