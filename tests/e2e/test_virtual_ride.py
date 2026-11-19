@@ -321,6 +321,27 @@ def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_s
     assert len(names) == len(set(names)), names
 
 
+@pytest.mark.parametrize("width", [360, 320])
+def test_a_recent_ride_on_both_services_fits_a_phone(page: Page, live_server, width: int):
+    """Issue #471: a ride linked on Strava and on intervals.icu, in the longest words, scrolls nothing sideways."""
+    from trainer.models import IntervalsUpload, StravaUpload, VirtualRide
+
+    member = User.objects.create_user(
+        username="e2e_both", email="e2e_both@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    ride = VirtualRide.objects.create(
+        user=member, route="center", route_name="Center loop", duration_s=3725, distance_m=31400
+    )
+    StravaUpload.objects.create(ride=ride, status=StravaUpload.Status.DONE, activity_id="12345678901")
+    IntervalsUpload.objects.create(ride=ride, status=IntervalsUpload.Status.DONE, activity_id="i98765432")
+    inject_session(page, live_server, member)
+    page.set_viewport_size({"width": width, "height": 740})
+    page.goto(f"{live_server.url}/kk/accounts/profile/")
+    expect(page.locator('a[href="https://intervals.icu/activities/i98765432"]')).to_be_visible()
+    wide = page.evaluate("() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]")
+    assert wide[0] <= wide[1], wide
+
+
 def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):
     source = _trainer_source()
     show = _cut(source, r"^let stravaFor = null;.*?^function stravaShow\(rideId, s, tries = 0\) \{.*?^\}")
