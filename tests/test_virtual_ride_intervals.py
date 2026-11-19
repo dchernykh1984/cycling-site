@@ -9,6 +9,7 @@ from unittest import mock
 
 import requests
 from django.contrib.messages import get_messages
+from django.core import checks
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
@@ -58,6 +59,19 @@ class SecretBoxTests(TestCase):
                 self.assertIsNone(secret_box.open_sealed("anything"))
                 with self.assertRaises(RuntimeError):
                     secret_box.seal(KEY)
+
+
+def _startup_warnings():
+    return [message.id for message in checks.run_checks() if message.id and message.id.startswith("trainer.")]
+
+
+class StartupCheckTests(TestCase):
+    def test_a_key_set_but_unusable_is_said_at_startup(self):
+        self.assertEqual(_startup_warnings(), [])
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY="pasted-with-a-typo"):
+            self.assertEqual(_startup_warnings(), ["trainer.W001"])
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""):
+            self.assertEqual(_startup_warnings(), [], "no key is a site without intervals.icu, by choice")
 
 
 class ConnectTests(TestCase):
