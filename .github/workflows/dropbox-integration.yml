@@ -1,7 +1,6 @@
 name: Dropbox Integration
 
 on:
-  pull_request:
   push:
     branches: [main]
   workflow_dispatch:
@@ -15,14 +14,22 @@ concurrency:
 
 jobs:
   dropbox-integration:
-    # Fork code must never receive storage credentials. No pull_request_target.
-    # Dependabot's runs get no Actions secrets, so the check could only fail there.
-    if: >-
-      github.actor != 'dependabot[bot]' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    # The storage credentials are secrets of the production environment, which only main may use
+    # (Settings -> Environments): a pull request is checked once it is merged, and no branch's
+    # workflow, a fork's or this repository's, receives them. No pull_request_target.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Fail a run started by hand, or started again, by anyone other than the owner before any secret is
+      # used: a re-run keeps the first run's actor, so the one who started it again is the triggering actor.
+      - name: Restrict manual runs to the repository owner
+        if: >-
+          ${{ github.triggering_actor != github.repository_owner &&
+          (github.event_name == 'workflow_dispatch' || github.run_attempt != '1') }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow by hand (started by: ${{ github.triggering_actor }})."
+          exit 1
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
         with:

@@ -61,8 +61,11 @@ jobs:
 
   # The agents call their model by name every night, and a provider retiring the name fails them
   # all. Its list of models is free to read, so the pipeline checks the name in agent/config.py
-  # against it (agent/check_model.py), on every pull request and on main.
+  # against it (agent/check_model.py) on main: the key is a secret of the production environment,
+  # which only main may use, so a pull request is checked once it is merged.
   llm-model:
+    if: github.event_name == 'push'
+    environment: production
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

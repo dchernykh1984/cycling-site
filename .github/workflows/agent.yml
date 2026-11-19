@@ -40,16 +40,22 @@ permissions:
 
 jobs:
   run:
+    # The secrets are the production environment's, which only main may use (Settings -> Environments):
+    # a workflow pushed on any other branch gets none of them.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 60 # sources may retry with a 10s backoff, and each placed event now downloads a
     # GPS track for its start coordinate; a 10-event run took 25 minutes, so the 25-event default
     # (and a larger manual run) needs the headroom
     steps:
-      # Fail a manual run started by anyone other than the owner before any secret is used.
+      # Fail a run started by hand, or started again, by anyone other than the owner before any secret is
+      # used: a re-run keeps the first run's actor, so the one who started it again is the triggering actor.
       - name: Restrict manual runs to the repository owner
-        if: ${{ github.event_name == 'workflow_dispatch' && github.actor != github.repository_owner }}
+        if: >-
+          ${{ github.triggering_actor != github.repository_owner &&
+          (github.event_name == 'workflow_dispatch' || github.run_attempt != '1') }}
         run: |
-          echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow by hand (started by: ${{ github.triggering_actor }})."
           exit 1
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
