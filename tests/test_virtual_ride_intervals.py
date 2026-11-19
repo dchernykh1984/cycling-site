@@ -74,6 +74,24 @@ class ConnectTests(TestCase):
             self.assertTrue(caught.exception.revoked)
         self.assertFalse(IntervalsConnection.objects.exists())
 
+    @override_settings(
+        CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "tries"}}
+    )
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_member_trying_key_after_key_is_held_back_before_intervals_icu_is_asked(self, call):
+        call.return_value = _answer(401)
+        for _ in range(5):
+            with self.assertRaises(intervals.IntervalsError):
+                intervals.connect(self.user, KEY)
+        call.reset_mock()
+        with self.assertRaises(intervals.IntervalsError) as caught:
+            intervals.connect(self.user, KEY)
+        self.assertIn("Too many tries", str(caught.exception))
+        call.assert_not_called()
+        # another member is not held back by this one
+        call.return_value = _answer(200, {"id": "i9", "name": "Boris"})
+        intervals.connect(_user("boris"), KEY)
+
     @mock.patch("trainer.intervals.requests.request")
     def test_an_answer_without_an_athlete_or_no_answer_keeps_nothing(self, call):
         for answer in (_answer(200, {"name": "nobody"}), _answer(500), _answer(429), requests.ConnectionError("down")):

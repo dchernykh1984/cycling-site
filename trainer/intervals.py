@@ -11,6 +11,7 @@ import gzip
 from http import HTTPStatus
 
 import requests
+from django.core.cache import cache
 from django.utils.html import strip_tags
 
 from . import secret_box, strava
@@ -23,6 +24,9 @@ _TIMEOUT = 10
 # intervals.icu sits behind Cloudflare, which may challenge a library's own user agent
 _HEADERS = {"User-Agent": "UniversalBicycleTeam/1.0 (+https://universalbicycle.team)", "Accept": "application/json"}
 _REFUSED = (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)
+# Keys a member may try in a window: intervals.icu answers ten calls a second per address, and every try
+# is one from the site's own, so one member trying keys in a loop would hold up everyone's uploads
+_TRIES, _TRIES_WINDOW_S = 5, 10 * 60
 
 
 class IntervalsError(Exception):
@@ -52,11 +56,25 @@ def _call(key: str, method: str, path: str, **kwargs) -> requests.Response:
     return response
 
 
+def _may_try(user) -> bool:
+    """Count one more key the member tries; False past the window's allowance."""
+    slot = f"intervals-connect-tries:{user.pk}"
+    if cache.add(slot, 1, _TRIES_WINDOW_S):
+        return True
+    try:
+        return cache.incr(slot) <= _TRIES
+    except ValueError:  # the window ran out between the two calls: this try opens a new one
+        cache.add(slot, 1, _TRIES_WINDOW_S)
+        return True
+
+
 def connect(user, key: str, send_rides: bool = False) -> IntervalsConnection:
     """Check the key with intervals.icu, then keep it sealed with the athlete it belongs to."""
     key = key.strip()
     if not key:
         raise IntervalsError("No key given")
+    if not _may_try(user):
+        raise IntervalsError("Too many tries: wait a few minutes before giving a key again")
     response = _call(key, "GET", "/athlete/0")
     if response.status_code != HTTPStatus.OK:
         raise IntervalsError(f"intervals.icu answered {response.status_code}")
