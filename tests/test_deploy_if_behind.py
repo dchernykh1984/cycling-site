@@ -12,6 +12,19 @@ ENV = {"GITHUB_REPOSITORY": "owner/site", "GITHUB_TOKEN": "t", "SITE_BASE_URL": 
 NIGHT = datetime(2026, 11, 19, 21, 7, tzinfo=UTC)
 
 
+class Answer:
+    """What urlopen hands back, as the script reads it."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return b'{"commit": "x"}'
+
+
 class Site:
     """GitHub and the site as the script sees them; a deploy makes the site name main."""
 
@@ -129,13 +142,6 @@ def test_the_window_may_cross_midnight():
 def test_the_hook_is_given_the_commit_as_ref(monkeypatch):
     sent = []
 
-    class Answer:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return False
-
     monkeypatch.setattr(deploy.urllib.request, "urlopen", lambda request, timeout: sent.append(request) or Answer())
     deploy.trigger(HOOK, MAIN)
     deploy.trigger("https://hook.test/deploy", MAIN)
@@ -147,16 +153,6 @@ def test_the_hook_is_given_the_commit_as_ref(monkeypatch):
 
 def test_a_request_carries_the_token_only_when_given(monkeypatch):
     sent = []
-
-    class Answer:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return False
-
-        def read(self):
-            return b'{"commit": "x"}'
 
     monkeypatch.setattr(deploy.urllib.request, "urlopen", lambda request, timeout: sent.append(request) or Answer())
     assert deploy.fetch_json("https://site.test/api/v1/version/") == {"commit": "x"}
