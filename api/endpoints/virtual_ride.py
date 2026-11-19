@@ -556,6 +556,8 @@ def _from_intervals(read):
         raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
     except intervals.NotFoundError as exc:
         raise HttpError(HTTPStatus.NOT_FOUND, str(exc)) from None
+    except intervals.NotRideableError as exc:  # no steps, or power without an FTP: trying again changes nothing
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc)) from None
     except intervals.TooManyTriesError as exc:
         raise HttpError(HTTPStatus.TOO_MANY_REQUESTS, str(exc)) from None
     except intervals.IntervalsError as exc:

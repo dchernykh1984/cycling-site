@@ -331,8 +331,8 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
     its shares of FTP turned into watts with the FTP intervals.icu gives the workout, else the indoor
     FTP of the member's ride settings, else their FTP (`trainer/zwo.py`). Nothing of them is kept.
     A member reads at most sixty times in ten minutes (429); a workout intervals.icu does not have,
-    or one a bike does not ride, is 404; intervals.icu failing is 503; a key it no longer takes drops
-    the connection and answers 409.
+    or one a bike does not ride, is 404; one without steps, or by power with no FTP, is 422;
+    intervals.icu failing is 503; a key it no longer takes drops the connection and answers 409.
 
 ## Key Entities
 
