@@ -318,6 +318,9 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
     again, and is deleted when the member disconnects or their account goes.
   - Without that setting intervals.icu is not offered. A key the site can no longer read, or that
     intervals.icu no longer takes, drops the connection.
+  - A member tries at most five keys in ten minutes; the next is held back before intervals.icu is
+    asked (the API answers 429), since every try comes from the site's one address. A key not
+    connected is told in the member's language: refused, not checkable just now, or too many tries.
 
 ## Key Entities
 
