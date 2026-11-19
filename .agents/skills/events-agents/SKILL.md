@@ -28,10 +28,10 @@ which link to take.
 ## No Instagram agent
 
 Instagram closed its logged-out endpoint in September 2026, and Meta's Graph API reads other
-accounts only for a business account linked to a Facebook page, which the site's owner cannot use. So the
-Instagram agent was removed on 2026-11-20 (#475). An event a club announces only on Instagram is
-added by hand (`calendar-curation`), with its credit line and no link. Ask whether the club has a
-Telegram channel or chat: the Telegram agent reads those.
+accounts only for a business account linked to a Facebook page, which the site's owner cannot
+use. So the Instagram agent was removed on 2026-11-20 (#475). An event a club announces only on
+Instagram is added by hand (`calendar-curation`), with its credit line and no link. Ask whether
+the club has a Telegram channel or chat: the Telegram agent reads those.
 
 ## Reading a run
 

@@ -8,8 +8,8 @@ on:
   schedule:
     # Mondays and Fridays, 11:17 UTC (16:17 Almaty). Websites announce their races weeks ahead, so
     # reading them twice a week costs nothing in lead time -- and this is the expensive agent: it
-    # reads 27 sources and runs 20-40 minutes, against 1-4 minutes for the Telegram
-    # one. Friday catches what appeared during the week, Monday what appeared over the weekend.
+    # reads 27 sources and runs 20-40 minutes, against 1-4 minutes for the Telegram one. Friday
+    # catches what appeared during the week, Monday what appeared over the weekend.
     #
     # 11:17 UTC leaves 13 hours before the model's next peak window (01:00-04:00 UTC, 2x pricing).
     # GitHub starts a cron when it has capacity -- our own runs have drifted five hours on a bad
