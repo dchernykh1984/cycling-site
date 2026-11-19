@@ -62,6 +62,10 @@ class NotFoundError(IntervalsError):
     """intervals.icu has no such planned workout for the member, or not one a bike rides."""
 
 
+class NotRideableError(IntervalsError):
+    """The workout is there, but not one the trainer page can ride: no steps, or power without an FTP."""
+
+
 def available() -> bool:
     """The site can keep a member's key, so it offers intervals.icu."""
     return secret_box.available()
@@ -224,7 +228,9 @@ def _member(user) -> tuple[IntervalsConnection, str]:
 
 
 @sensitive_variables("key")
-def _get(connection: IntervalsConnection, key: str, path: str, **kwargs) -> requests.Response:
+def _get(
+    connection: IntervalsConnection, key: str, path: str, missing: str = "intervals.icu has no such workout", **kwargs
+) -> requests.Response:
     """A read with the member's key. A key intervals.icu no longer takes drops the connection, as an upload does."""
     try:
         response = _call(key, "GET", path, **kwargs)
@@ -234,7 +240,7 @@ def _get(connection: IntervalsConnection, key: str, path: str, **kwargs) -> requ
             raise NotConnectedError("intervals.icu no longer accepts your key: connect intervals.icu again") from None
         raise
     if response.status_code == HTTPStatus.NOT_FOUND:
-        raise NotFoundError("intervals.icu has no such workout")
+        raise NotFoundError(missing)
     if response.status_code != HTTPStatus.OK:
         raise IntervalsError(f"intervals.icu answered {response.status_code}")
     return response
@@ -299,11 +305,12 @@ def planned_workout(user, event_id: int) -> dict:
     if listed is None or event.get("category") != "WORKOUT":
         raise NotFoundError("This is not a cycling workout")
     ftp = _ftp(event.get("icu_ftp")) or _ride_ftp(connection, key)
-    file = _get(connection, key, f"{path}/download.zwo", accept="*/*")  # a file, not JSON
+    missing = "intervals.icu hands out no steps for this workout"
+    file = _get(connection, key, f"{path}/download.zwo", missing, accept="*/*")  # a file, not JSON
     try:
         steps = zwo.parse(file.content, ftp)
     except zwo.NoFtpError:
-        raise IntervalsError("intervals.icu gives no FTP for your rides: set it there to ride this workout") from None
+        raise NotRideableError("intervals.icu gives no FTP for your rides: set it there to ride this workout") from None
     except zwo.ZwoError as exc:
-        raise IntervalsError(str(exc)) from None
+        raise NotRideableError(str(exc)) from None
     return {**listed, "ftp_w": ftp, **steps}

@@ -182,7 +182,8 @@ cycling `WORKOUT` (404). It then downloads `download.zwo`, asking for any type r
   cadence 20-200 rpm.
 
 **Reads** are held to sixty a member in ten minutes (429): each is one to three calls from the
-site's one address. A key no longer taken drops the connection (409); intervals.icu failing is 503.
+site's one address. A key no longer taken drops the connection (409); a workout without steps, or
+by power with no FTP, is 422, since trying again changes nothing; intervals.icu failing is 503.
 
 **The trainer page.**
 - `js/workouts.js` lists the workouts beside "My plan by gears and cadence" and loads the picked one.

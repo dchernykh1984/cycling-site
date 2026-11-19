@@ -309,12 +309,19 @@ class PlannedWorkoutsTests(TestCase):
         self.assertEqual(call.call_count, 1, "no file is asked for once the event says no")
 
     @mock.patch("trainer.intervals.requests.request")
-    def test_a_file_that_is_no_workout_fails_the_reading(self, call):
+    def test_a_file_that_is_no_workout_is_one_this_page_cannot_ride(self, call):
         _connected(self.user)
         call.side_effect = [_json(_EVENT), _file(b"<html>One moment</html>")]
-        with self.assertRaises(intervals.IntervalsError) as caught:
+        with self.assertRaises(intervals.NotRideableError):
             intervals.planned_workout(self.user, 9)
-        self.assertNotIsInstance(caught.exception, intervals.NotFoundError)
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_workout_intervals_icu_hands_out_no_steps_for_says_so(self, call):
+        _connected(self.user)
+        call.side_effect = [_json(_EVENT), _file(b"", status=404)]
+        with self.assertRaises(intervals.NotFoundError) as caught:
+            intervals.planned_workout(self.user, 9)
+        self.assertIn("no steps", str(caught.exception))
 
     @override_settings(CACHES=COUNTING_CACHE)
     @mock.patch("trainer.intervals.requests.request")
@@ -387,6 +394,9 @@ class WorkoutsApiTests(MemberClientMixin, TestCase):
         _connected(self.user)
         call.return_value = _json({}, status=404)
         self.assertEqual(self.client_a.get(f"{workouts}/9").status_code, 404)
+        call.side_effect = [_json(_EVENT), _file(_zwo())]  # a workout with no steps: no use trying again
+        self.assertEqual(self.client_a.get(f"{workouts}/9").status_code, 422)
+        call.side_effect = None
         call.return_value = _json({}, status=503)
         response = self.client_a.get(workouts)
         self.assertEqual(response.status_code, 503)
