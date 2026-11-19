@@ -1,5 +1,5 @@
-# Telegram channels the Telegram agent reads, alongside events_sources.yaml (web agent) and
-# instagram_accounts.yaml (Instagram agent). Re-read on every run -- edit it freely.
+# Telegram channels the Telegram agent reads, alongside events_sources.yaml (web agent).
+# Re-read on every run -- edit it freely.
 #
 # Each entry is either a bare id/handle, or a mapping for extra control:
 #   - c/1234567890                               # private channel/chat, by its internal id

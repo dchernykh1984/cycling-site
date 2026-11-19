@@ -1,17 +1,16 @@
 ---
 name: events-agents
-description: The three import agents that find events and propose them to the site - what each reads, when they run, how to read their logs, and the rule about never starting one uninvited.
+description: The two import agents that find events and propose them to the site - what each reads, when they run, how to read their logs, and the rule about never starting one uninvited.
 ---
 
 # The import agents
 
-Three separate jobs, one shared pipeline (`agent/pipeline.py`), all posting through the site API as
+Two separate jobs, one shared pipeline (`agent/pipeline.py`), all posting through the site API as
 a service account. Everything they propose lands as `pending_approval` for a human.
 
 | Agent | Reads | Schedule (UTC) |
 | --- | --- | --- |
 | `agent/` (events) | web calendars, organizer sites, public Telegram feeds via `t.me/s/` | 11:17, Mondays and Fridays |
-| `instagram_agent/` | club accounts listed in `instagram_accounts.yaml`, via Meta's Graph API | 12:17 daily |
 | `telegram_agent/` | private channels and member-only groups, over MTProto | 13:17 daily |
 
 **Never start one without being asked.** Each run spends money at the LLM provider. When the
@@ -24,15 +23,15 @@ and each entry may carry a free-text `hint` passed to the model. That hint is th
 available when a source is being read badly: it can name where the race pages live, what to ignore,
 which link to take.
 
-`telegram_channels.yaml` and `instagram_accounts.yaml` do the same for the other two.
+`telegram_channels.yaml` does the same for the Telegram agent.
 
-## Instagram needs credentials
+## No Instagram agent
 
-Instagram closed the logged-out endpoint the agent used to read, so it now goes through Meta's
-Graph API (`business_discovery`) and needs `IG_GRAPH_USER_ID` and `IG_GRAPH_TOKEN` as secrets
-of the `production` environment. Without them every account reports "no Graph API credentials" and the run proposes nothing.
-The token is long-lived but expires about every 60 days; `Session has expired` in a run summary
-means it needs reissuing, not that anything is broken. `instagram_agent/README.md` has the setup.
+Instagram closed its logged-out endpoint in September 2026, and Meta's Graph API reads other
+accounts only for a business account linked to a Facebook page, which the site's owner cannot use. So the
+Instagram agent was removed on 2026-11-20 (#475). An event a club announces only on Instagram is
+added by hand (`calendar-curation`), with its credit line and no link. Ask whether the club has a
+Telegram channel or chat: the Telegram agent reads those.
 
 ## Reading a run
 

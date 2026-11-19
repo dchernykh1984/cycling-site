@@ -3,8 +3,8 @@
 A public group is credited by its handle -- "tg: @almatyriders" -- which anyone may search for. A
 private channel is credited by its display name alone ("Velosreda s Alatau Racing"), the way a
 member would say it aloud: no link, no invite, no id, because the name invites nobody in while an
-invite hash does. The wording of the credit line is the one the Instagram agent already publishes,
-so events read the same however they arrived.
+invite hash does. The wording of the credit line lives in `agent/credit.py`, so events read the same
+however they arrived.
 
 The name of a private channel is not in the channels file (the file carries bare ids on purpose);
 it is read from Telegram itself when the channel is opened, and threaded to here.

@@ -5,7 +5,7 @@ the model as instructions, so you can nudge it without changing code. You may wr
 
 This agent is **not cycling-only**, deliberately. Its channels are local outdoor communities of
 every kind -- cycling clubs, mountain-hiking groups, runners, skiers -- and the calendar carries
-categories for all of them. Like the Instagram agent's guidance (and unlike the events agent's),
+categories for all of them. Unlike the events agent's guidance,
 small community outings are welcome here: the Saturday ride, the Sunday hike, the "tomorrow at 7
 from the usual place" message that never reaches any calendar.
 

@@ -2,8 +2,8 @@
 
 An event is only useful on a calendar if it lands somewhere -- a start venue when the announcement
 names one, the city's catch-all otherwise -- and a city the tree does not carry yet is proposed for
-review rather than dropped. Both the web agent and the Instagram agent place events the same way, so
-this lives apart from either runner.
+review rather than dropped. Every agent places events the same way, so this lives apart from the
+runners.
 """
 
 from __future__ import annotations
@@ -94,8 +94,7 @@ def resolve_location(client, tree: list, cities: list, candidate: Candidate, cre
     # A venue the site already carries is reused rather than added again. Without this every
     # announcement grew another node: Almaty ended up carrying one shop twice over, the two spellings
     # differing only in the case of the first letter, and the second copy had no coordinates at all.
-    # The Instagram agent already checked for this; the web and Telegram agents came through here
-    # and did not.
+    # Every agent comes through here, so every one of them checks.
     point = venues.candidate_point(candidate)
     known = venues.venues_of(tree, city_id)
     existing = venues.existing_venue(known, candidate.venue, point)

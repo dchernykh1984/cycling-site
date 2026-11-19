@@ -6,7 +6,7 @@ import datetime
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-# DeepSeek's cheapest model, when LLM_MODEL is unset; the three agents share it so a rename lands once.
+# DeepSeek's cheapest model, when LLM_MODEL is unset; the two agents share it so a rename lands once.
 DEFAULT_LLM_MODEL = "deepseek-flash"
 _DEFAULT_MAX_EVENTS = 25
 _DEFAULT_MAX_PER_SOURCE = 5

@@ -75,13 +75,11 @@ The environment's deployment branches are `main` only, so no other branch's work
   (defaults to the production URL if unset).
 
 The model is no secret: it is named in code, `DEFAULT_LLM_MODEL` in `agent/config.py`, shared by the
-three agents, and a provider renaming its models is a one-line change there. `LLM_MODEL` in the
+two agents, and a provider renaming its models is a one-line change there. `LLM_MODEL` in the
 environment overrides it, to try another model in a local run. The pipeline's `llm-model` job asks
-the provider's list of models (`python -m agent.check_model`, no tokens spent) on every pull request
-and goes red when the name is no longer on it.
+the provider's list of models (`python -m agent.check_model`, no tokens spent) on main, where the
+key is, and goes red when the name is no longer on it.
 
 Runs on the schedule in `.github/workflows/agent.yml` (its comment says why that slot), and on
 demand via the **Run workflow** button (owner only). Scheduled runs only fire from the default
 branch (`main`).
-
-Club feeds are read by a separate agent -- see [instagram_agent/README.md](../instagram_agent/README.md).
