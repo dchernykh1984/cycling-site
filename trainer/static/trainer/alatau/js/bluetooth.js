@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Устройства Bluetooth: датчики CSC, пульсометры, измерители мощности, умные станки FTMS ---------------- */
-const UUID = { csc: 0x1816, hr: 0x180D, cp: 0x1818, ftms: 0x1826, cscMeas: 0x2A5B, cscFeat: 0x2A5C, hrMeas: 0x2A37, cpMeas: 0x2A63, ibd: 0x2AD2, ftmsCP: 0x2AD9 };
+const UUID = { csc: 0x1816, hr: 0x180D, cp: 0x1818, ftms: 0x1826, cscMeas: 0x2A5B, cscFeat: 0x2A5C, hrMeas: 0x2A37, cpMeas: 0x2A63, ibd: 0x2AD2, ftmsCP: 0x2AD9, ftmsFeat: 0x2ACC, powerRange: 0x2AD8 };
 const fits = (dv, o, n) => o + n <= dv.byteLength;
 const CONTROL_ANSWER_MS = 2000; // how long a trainer may take to answer a command
 function parseCSC(dv) {
@@ -38,7 +38,7 @@ class BLEDev {
   constructor(dev) {
     this.dev = dev; this.name = dev.name || t('dev.unnamed'); this.roles = new Set(); this.status = 'connecting'; this.retries = 0; this.ls = new WeakSet();
     this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
-    this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false;
+    this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false; this.ergRange = null;
   }
   role(r) { if (!this.roles.has(r)) { this.roles.add(r); Sensors.changed(); } }
   async svc(server, u) { try { return await server.getPrimaryService(u); } catch (e) { return null; } }
@@ -54,6 +54,7 @@ class BLEDev {
     if (ftms) {
       this.hasFtms = true;
       try { await this.sub(ftms, UUID.ibd, dv => this.onIBD(dv)); this.roles.add('trainer'); this.roles.add('power'); } catch (e) {}
+      await this.readTargets(ftms);
       try {
         this.cpt = await ftms.getCharacteristic(UUID.ftmsCP);
         if (!this.ls.has(this.cpt)) { this.ls.add(this.cpt); this.cpt.addEventListener('characteristicvaluechanged', e => this.onCtrl(e.target.value)); }
@@ -70,6 +71,18 @@ class BLEDev {
     if (!ftms && !cp && !csc && !hr) throw new Error('no supported services');
     if (!this._d) { this._d = () => this.onDisc(); this.dev.addEventListener('gattserverdisconnected', this._d); }
     this.status = 'online'; this.retries = 0; Sensors.changed();
+  }
+  // Whether the trainer holds a power itself (ERG): the second field of its Fitness Machine Feature (0x2ACC)
+  // has bit 3, Power Target Setting, and then it reports the watts it can hold (Supported Power Range, 0x2AD8)
+  async readTargets(ftms) {
+    this.ergRange = null;
+    try {
+      const f = await (await ftms.getCharacteristic(UUID.ftmsFeat)).readValue();
+      if (f.byteLength < 8 || !(f.getUint32(4, true) & 8)) return;
+      this.ergRange = [0, 2000];
+      const r = await (await ftms.getCharacteristic(UUID.powerRange)).readValue();
+      if (r.byteLength >= 4 && r.getInt16(2, true) > r.getInt16(0, true)) this.ergRange = [Math.max(0, r.getInt16(0, true)), r.getInt16(2, true)];
+    } catch (e) {}
   }
   async write(bytes) { const data = new Uint8Array(bytes); if (this.cpt.writeValueWithResponse) await this.cpt.writeValueWithResponse(data); else await this.cpt.writeValue(data); }
   // A command to the FTMS control point is answered by an indication [0x80, opcode, result]; until it is,
@@ -95,11 +108,11 @@ class BLEDev {
     await this.command([0x07]);
     return true;
   }
-  async setGrade(g, drag) {
+  // one setting for the trainer, as its controller: true once it took it (or never answers, as some do)
+  async control(cmd) {
     if (!this.ctrl || this.busy) return false; this.busy = true;
     const link = this.link;
     try {
-      const v = Math.round(clamp(g, -10, 20) * 100), cmd = [0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]; // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
       let r = await this.command(cmd);
       if (r === 5) { // the trainer let go of control (a reset, another app): ask once more, and if it says no, stop asking
         if (await this.takeControl()) r = await this.command(cmd);
@@ -107,6 +120,15 @@ class BLEDev {
       }
       return link === this.link && (r === 1 || r === null);
     } finally { this.busy = false; }
+  }
+  setGrade(g, drag) {
+    const v = Math.round(clamp(g, -10, 20) * 100);
+    return this.control([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
+  }
+  // ERG: the trainer holds the power whatever the cadence (FTMS Set Target Power, watts within its range)
+  setPower(w) {
+    const v = Math.round(clamp(w, this.ergRange[0], this.ergRange[1]));
+    return this.control([0x05, v & 255, (v >> 8) & 255]);
   }
   onIBD(dv) {
     const r = parseIBD(dv), now = performance.now();
@@ -149,7 +171,7 @@ class BLEDev {
       await new Promise(r => setTimeout(r, Math.min(1000 + this.retries * 1000, 5000)));
       if (this.manual) break;
       this.retries++;
-      try { await this.connect(); this.pw = this.pc = null; Trainer.sent = null; toast(t('dev.back', { name: this.name })); break; } catch (e) {}
+      try { await this.connect(); this.pw = this.pc = null; Trainer.sent = Trainer.held = null; toast(t('dev.back', { name: this.name })); break; } catch (e) {}
     }
     this.reconnecting = false;
   }
@@ -190,17 +212,23 @@ const Sensors = {
   changed() { renderDevs(); updateModeUI(); }
 };
 // Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении (и раз в 5 с без него);
-// сопротивление самого гонщика уходит вместе с каждым уклоном
+// сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG
+// on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it
 const Trainer = {
-  last: -10, sent: null,
-  update(t, grade, rider) {
+  last: -10, sent: null, held: null,
+  update(t, grade, rider, watts) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
-    const target = trainerGrade(grade, settings.difficulty);
     if (t - this.last < 1) return;
-    if (this.sent !== null && Math.abs(target - this.sent) < .2 && t - this.last < 5) return;
-    this.last = t; d.setGrade(target, trainerDrag(rider)).then(ok => { if (ok) this.sent = target; });
+    if (watts != null && d.ergRange) {
+      if (this.held !== null && Math.abs(watts - this.held) < 1 && t - this.last < 5) return;
+      this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) this.held = watts; }); return;
+    }
+    const target = trainerGrade(grade, settings.difficulty);
+    if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && t - this.last < 5) return;
+    this.last = t; d.setGrade(target, trainerDrag(rider)).then(ok => { if (ok) { this.sent = target; this.held = null; } });
   },
-  info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; }
+  info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
+  canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }
 };
 function isIOS() { return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 function btHint(t, warn) { const h = $('#btHint'); h.textContent = t; h.classList.toggle('warn', !!warn); }
@@ -208,7 +236,7 @@ function renderDevs() {
   const ul = $('#devList'); ul.innerHTML = '';
   Sensors.devs.forEach(d => {
     const li = document.createElement('li'); li.className = 'dev';
-    const tags = ROLE_NAMES.filter(r => d.roles.has(r[0])).map(r => '<span class="tag on">' + r[1] + '</span>').join('') + (d.roles.has('trainer') && !d.ctrl && d.status === 'online' ? '<span class="tag">' + t('dev.noCtrlTag') + '</span>' : '') || '<span class="tag">' + t('dev.detecting') + '</span>';
+    const tags = ROLE_NAMES.filter(r => d.roles.has(r[0])).map(r => '<span class="tag on">' + r[1] + '</span>').join('') + (d.ergRange ? '<span class="tag on">ERG</span>' : '') + (d.roles.has('trainer') && !d.ctrl && d.status === 'online' ? '<span class="tag">' + t('dev.noCtrlTag') + '</span>' : '') || '<span class="tag">' + t('dev.detecting') + '</span>';
     li.innerHTML = '<div><b></b><br><small></small><div class="tags">' + tags + '</div></div>';
     li.querySelector('b').textContent = d.name; li.querySelector('small').textContent = d.status === 'online' ? t('dev.online') : d.status === 'reconnecting' ? t('dev.reconnecting') : t('dev.connecting');
     const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = t('dev.disconnect'); btn.onclick = () => Sensors.remove(d);
