@@ -8,4 +8,7 @@ class TrainerConfig(AppConfig):
 
     def ready(self):
         # a member's Strava grant is revoked at Strava whatever deletes it, an account deletion too
-        from . import strava  # noqa: F401
+        from . import (
+            checks,  # noqa: F401 -- registers the startup checks
+            strava,  # noqa: F401
+        )
