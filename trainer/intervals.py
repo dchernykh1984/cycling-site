@@ -21,6 +21,8 @@ API = "https://intervals.icu/api/v1"
 # Saving a ride waits for the upload on one of the site's request threads: a slow intervals.icu fails
 # it, and the member sends it again, rather than holding the thread
 _TIMEOUT = 10
+# marking a ride virtual is a nicety on top of an upload already made: it holds the save less long
+_MARK_TIMEOUT = 5
 # intervals.icu sits behind Cloudflare, which may challenge a library's own user agent
 _HEADERS = {"User-Agent": "UniversalBicycleTeam/1.0 (+https://universalbicycle.team)", "Accept": "application/json"}
 _REFUSED = (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)
@@ -42,10 +44,10 @@ def available() -> bool:
     return secret_box.available()
 
 
-def _call(key: str, method: str, path: str, **kwargs) -> requests.Response:
+def _call(key: str, method: str, path: str, timeout: float = _TIMEOUT, **kwargs) -> requests.Response:
     try:
         response = requests.request(
-            method, f"{API}{path}", auth=("API_KEY", key), headers=_HEADERS, timeout=_TIMEOUT, **kwargs
+            method, f"{API}{path}", auth=("API_KEY", key), headers=_HEADERS, timeout=timeout, **kwargs
         )
     except requests.RequestException as exc:
         raise IntervalsError(f"intervals.icu could not be reached ({type(exc).__name__})") from None
@@ -152,6 +154,8 @@ def _mark_virtual(key: str, activity_id: str) -> None:
     Best effort: the ride is on intervals.icu either way, so a refusal here is let go.
     """
     try:
-        _call(key, "PUT", f"/activity/{activity_id}", json={"type": "VirtualRide", "trainer": True})
+        _call(
+            key, "PUT", f"/activity/{activity_id}", timeout=_MARK_TIMEOUT, json={"type": "VirtualRide", "trainer": True}
+        )
     except IntervalsError:
         pass
