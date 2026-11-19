@@ -86,6 +86,14 @@ jobs:
       matrix:
         account: ${{ fromJson(needs.plan.outputs.accounts) }}
     steps:
+      # Again here, where the secrets are: "Re-run failed jobs" starts this job without the plan.
+      - name: Restrict manual runs to the repository owner
+        if: >-
+          ${{ github.triggering_actor != github.repository_owner &&
+          (github.event_name == 'workflow_dispatch' || github.run_attempt != '1') }}
+        run: |
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow by hand (started by: ${{ github.triggering_actor }})."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v7
         with:
