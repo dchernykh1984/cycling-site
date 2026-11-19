@@ -300,32 +300,80 @@
                     {% for ride in virtual_ride.recent %}
                     <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
                         <span><span class="text-muted">{{ ride.finished_at|date:"d.m.Y" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}</span>
-                        <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">View on Strava</a>{% endif %}</span>
+                        <span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">View on Strava</a>{% endif %}{% if ride.intervals.activity_url %}, <a href="{{ ride.intervals.activity_url }}" class="fw-semibold" target="_blank" rel="noopener">{% trans "View on intervals.icu" %}</a>{% endif %}</span>
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
                 <p class="text-muted small mb-0">{% trans "Rides you finish on the virtual ride page are saved here, with your best times and peak power. Rides in demo mode are kept but never count as records." %}</p>
                 {% endif %}
-                {% comment %}Sending rides to Strava is a grant of its own (activity:write): signing in with Strava asks
-                for read only. The button keeps Strava's brand wording, as on the sign-in page, and "View on
-                Strava" is the wording its guidelines require for a link to an activity.{% endcomment %}
-                {% if virtual_ride.strava_available %}
-                <div class="border-top pt-3 mt-3" id="virtual-rides-strava">
-                    {% if virtual_ride.strava %}
-                    <p class="small mb-2">{% trans "Strava is connected: every ride you finish on the virtual ride page goes there as a virtual ride, along the streets of its route." %}</p>
-                    <form method="post" action="{% url 'virtual_ride_strava_disconnect' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary">{% trans "Disconnect Strava" %}</button>
-                    </form>
-                    {% else %}
-                    <p class="small mb-2">{% trans "Connect Strava, and every ride you finish on the virtual ride page goes there as a virtual ride, along the streets of its route. Rides in demo mode stay here." %}</p>
-                    <a href="{% url 'virtual_ride_strava_connect' %}" class="social-btn social-btn--strava">
-                        <svg class="social-btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                        </svg>
-                        <span>Connect with Strava</span>
-                    </a>
+                {% comment %}Where the rides go (issue #471): each service connected or not, with its box "Send my
+                rides to ...". Sending rides to Strava is a grant of its own (activity:write): signing in with
+                Strava asks for read only. Its button keeps Strava's brand wording, as on the sign-in page, and
+                "View on Strava" is the wording its guidelines require for a link to an activity. intervals.icu
+                is connected with the member's own API key, kept sealed and never shown again.{% endcomment %}
+                {% if virtual_ride.strava_available or virtual_ride.intervals_available %}
+                <div class="border-top pt-3 mt-3" id="virtual-rides-services">
+                    <h3 class="h6">{% trans "Where your rides go" %}</h3>
+                    {% if virtual_ride.strava_available %}
+                    <div class="mb-3" id="virtual-rides-strava">
+                        {% if virtual_ride.strava %}
+                        <p class="small mb-2">{% trans "Strava is connected." %}</p>
+                        <form method="post" action="{% url 'virtual_ride_service_sending' 'strava' %}" class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            {% csrf_token %}
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="send_rides" id="send-strava"{% if virtual_ride.strava.send_rides %} checked{% endif %}>
+                                <label class="form-check-label small" for="send-strava">{% trans "Send my rides to Strava as virtual rides" %}</label>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">{% trans "Save" %}</button>
+                        </form>
+                        <form method="post" action="{% url 'virtual_ride_strava_disconnect' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary">{% trans "Disconnect Strava" %}</button>
+                        </form>
+                        {% else %}
+                        <p class="small mb-2">{% trans "Connect Strava, and every ride you finish on the virtual ride page goes there as a virtual ride, along the streets of its route. Rides in demo mode stay here." %}</p>
+                        <a href="{% url 'virtual_ride_strava_connect' %}" class="social-btn social-btn--strava">
+                            <svg class="social-btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                            </svg>
+                            <span>Connect with Strava</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if virtual_ride.intervals_available %}
+                    <div id="virtual-rides-intervals">
+                        {% with service=virtual_ride.services.intervals %}
+                        {% if service.connected %}
+                        <p class="small mb-2">{% if service.athlete %}{% blocktrans with athlete=service.athlete %}intervals.icu is connected: {{ athlete }}.{% endblocktrans %}{% else %}{% trans "intervals.icu is connected." %}{% endif %}</p>
+                        <form method="post" action="{% url 'virtual_ride_service_sending' 'intervals' %}" class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            {% csrf_token %}
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="send_rides" id="send-intervals"{% if service.send_rides %} checked{% endif %}>
+                                <label class="form-check-label small" for="send-intervals">{% trans "Send my rides to intervals.icu" %}</label>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">{% trans "Save" %}</button>
+                        </form>
+                        <form method="post" action="{% url 'virtual_ride_intervals_disconnect' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary">{% trans "Disconnect intervals.icu" %}</button>
+                        </form>
+                        {% else %}
+                        <p class="small mb-2">{% trans "Connect intervals.icu with your API key: on intervals.icu it is under Settings, Developer Settings. The key is checked with intervals.icu and kept encrypted; this site never shows it again." %}</p>
+                        <form method="post" action="{% url 'virtual_ride_intervals_connect' %}">
+                            {% csrf_token %}
+                            <label class="form-label small" for="intervals-key">{% trans "intervals.icu API key" %}</label>
+                            <input class="form-control mb-2" type="password" name="api_key" id="intervals-key" required maxlength="200" autocomplete="off">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="send_rides" id="send-intervals-new">
+                                <label class="form-check-label small" for="send-intervals-new">{% trans "Send my rides to intervals.icu" %}</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">{% trans "Connect intervals.icu" %}</button>
+                        </form>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
                     {% endif %}
                 </div>
                 {% endif %}

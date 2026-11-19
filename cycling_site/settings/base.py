@@ -450,6 +450,12 @@ SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 # RELEASE_COMMIT when the host is told it, else the commit Render names on every deploy.
 RELEASE_COMMIT = env("RELEASE_COMMIT", default="") or env("RENDER_GIT_COMMIT", default="")
 
+# The Fernet key the site seals the keys members give it with -- their intervals.icu API keys
+# (trainer/secret_box.py, issue #471). Unset, intervals.icu is not offered. Generate one with
+#   python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+# Losing or changing it leaves the stored keys unreadable: those members connect again.
+INTEGRATIONS_ENCRYPTION_KEY = env("INTEGRATIONS_ENCRYPTION_KEY", default="")
+
 # IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
 # check that whoever submits URLs for this host controls it. Empty means no submissions at all.
 INDEXNOW_KEY = env("INDEXNOW_KEY", default="")

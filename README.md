@@ -101,6 +101,10 @@ Configuration comes from environment variables set in the Render dashboard:
   `django.contrib.sites` Site to it on every deploy
 - `MEDIA_ROOT` - path to the mounted persistent disk that stores uploaded media
 - `RELEASE_COMMIT` - the commit `/api/v1/version/` names; unset, Render's own `RENDER_GIT_COMMIT`
+- `INTEGRATIONS_ENCRYPTION_KEY` - the Fernet key members' intervals.icu API keys are sealed with
+  (issue #471); unset, intervals.icu is not offered. Generate it with
+  `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"` and keep a copy:
+  a lost key leaves the stored keys unreadable, and those members connect again.
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` - SMTP (Gmail)
 - `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
   `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);

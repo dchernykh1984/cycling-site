@@ -296,5 +296,15 @@ const TEXT_KK = {
     "strava.done": "Заезд Strava-ға виртуалды заезд ретінде жүктелді.",
     "strava.failed": "Заезд Strava-ға жіберілмеді: {msg}",
     "strava.retry": "Қайта жіберу",
-    "strava.later": "Strava заездті әлі өңдеп жатыр — Strava-ны сәл кейінірек қараңыз."
+    "strava.later": "Strava заездті әлі өңдеп жатыр — Strava-ны сәл кейінірек қараңыз.",
+    "strava.off": "Strava қосылған, бірақ заездтер оған жіберілмейді.",
+    "intervals.offer": "intervals.icu-ды өз API кілтіңізбен қосыңыз — заездтер соған жіберіле алады.",
+    "intervals.connect": "Жеке кабинетте қосу",
+    "intervals.on": "Заездтер intervals.icu-ға жіберіледі.",
+    "intervals.off": "intervals.icu қосылған, бірақ заездтер оған жіберілмейді.",
+    "intervals.manage": "Жеке кабинетте баптау",
+    "intervals.done": "Заезд intervals.icu-ға жүктелді.",
+    "intervals.view": "intervals.icu-да ашу",
+    "intervals.failed": "Заезд intervals.icu-ға жіберілмеді: {msg}",
+    "intervals.retry": "Қайта жіберу"
 };

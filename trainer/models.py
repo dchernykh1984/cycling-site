@@ -144,6 +144,8 @@ class StravaConnection(models.Model):
     refresh_token = models.CharField(max_length=255)
     expires_at = models.DateTimeField()
     connected_at = models.DateTimeField(auto_now_add=True)
+    # the member's box on the profile: off keeps the connection and sends nothing on its own (issue #471)
+    send_rides = models.BooleanField(default=True)
     # not stored: set before deleting a grant Strava itself refused, which leaves nothing to revoke there
     revoked = False
 
@@ -172,3 +174,43 @@ class StravaUpload(models.Model):
     @property
     def activity_url(self) -> str:
         return f"https://www.strava.com/activities/{self.activity_id}" if self.activity_id else ""
+
+
+class IntervalsConnection(models.Model):
+    """A member's intervals.icu, connected with their own API key (issue #471).
+
+    The key is the member's to give and to regenerate at intervals.icu; it is kept sealed
+    (``trainer.secret_box``), used only from the server and never shown again. Disconnecting deletes
+    the row: there is nothing to revoke at intervals.icu.
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="intervals_connection")
+    athlete_id = models.CharField(max_length=40)
+    athlete_name = models.CharField(max_length=120, blank=True, default="")
+    api_key = models.TextField()  # sealed
+    send_rides = models.BooleanField(default=False)
+    connected_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.user_id} -> intervals.icu {self.athlete_id}"
+
+
+class IntervalsUpload(models.Model):
+    """One ride sent to intervals.icu: the activity it became, or why there is none."""
+
+    class Status(models.TextChoices):
+        DONE = "done", _("On intervals.icu")
+        FAILED = "failed", _("Not uploaded")
+
+    ride = models.OneToOneField(VirtualRide, on_delete=models.CASCADE, primary_key=True, related_name="intervals")
+    status = models.CharField(max_length=12, choices=Status.choices)
+    activity_id = models.CharField(max_length=40, blank=True, default="")
+    error = models.CharField(max_length=300, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.ride_id} {self.status}"
+
+    @property
+    def activity_url(self) -> str:
+        return f"https://intervals.icu/activities/{self.activity_id}" if self.activity_id else ""
