@@ -12,8 +12,8 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 **Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
-`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_virtual_ride_intervals.py`, `tests/test_managing.py`,
-`tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
+`tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_virtual_ride_intervals.py`,
+`tests/test_managing.py`, `tests/test_managing_api.py`, `tests/e2e/test_managing.py`, `tests/test_signing_out.py`,
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
@@ -280,7 +280,8 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   `trainer.StravaConnection`, are refreshed when they expire, and are revoked at Strava and deleted
   when the member disconnects it there or through the API, or their account is deleted. Nothing
   reads the member's Strava activities. Its box "Send my rides to Strava" (`send_rides`) is on for a new
-  connection; turned off, rides are not sent on their own, though "Send again" still sends one ride.
+  connection; turned off, rides are not sent on their own, though the member can still send one
+  through `POST /api/v1/virtual-ride/rides/{id}/strava`.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
   first) and their registrations: open entries as cards with approval and payment badges as their
   event requires -- with those of the members they manage, under the member's name -- and every own
