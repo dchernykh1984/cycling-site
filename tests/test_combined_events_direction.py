@@ -17,7 +17,7 @@ from calendar_app.models import Competition, Discipline, DisciplineCategory
 
 DIRECTION = "Combined Events"
 KINDS = [
-    "General Physical Preparation (GPP)",
+    "General Physical Preparation",
     "Athletics Combined Events",
     "Polyathlon",
     "Modern Pentathlon",
