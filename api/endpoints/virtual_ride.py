@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from ninja import Field, Router, Schema, Status
 from ninja.errors import HttpError
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 
 from accounts import roles
 from accounts.access import needs_email_confirmation
@@ -177,7 +177,8 @@ class SendIn(Schema):
 
 
 class IntervalsConnectIn(Schema):
-    api_key: str = Field(..., min_length=1, max_length=200)
+    # secret: shown as stars wherever the payload is printed, an error report's frames too
+    api_key: SecretStr = Field(..., min_length=1, max_length=200)
     send_rides: bool = False
 
 
@@ -495,7 +496,7 @@ def connect_intervals(request, payload: IntervalsConnectIn):
     if not intervals.available():
         raise HttpError(HTTPStatus.CONFLICT, _("intervals.icu is not offered on this site"))
     try:
-        intervals.connect(request.auth, payload.api_key, payload.send_rides)
+        intervals.connect(request.auth, payload.api_key.get_secret_value(), payload.send_rides)
     except intervals.TooManyTriesError as exc:
         raise HttpError(HTTPStatus.TOO_MANY_REQUESTS, str(exc)) from None
     except intervals.IntervalsError as exc:
