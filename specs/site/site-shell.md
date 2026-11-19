@@ -43,14 +43,24 @@ through `rideHooks`. A smart trainer is sent one command at a time, each once it
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
 is shown as not under control and left alone; a grade sent before the trainer reconnected is sent
-again. A frame's time is ridden in steps of at most 50 ms, so the ride keeps real time on a device
+again. A trainer whose Fitness Machine Feature says it holds a power (Power Target Setting) is set to
+a workout step's power instead of the grade, within the range it reports, while the HUD's ERG switch
+is on (FTMS Set Target Power); off, it goes back to the grade and the rider holds the power by feel.
+Back on the setup page a trainer is set to a flat road, not left holding a power. The plan screen
+offers the member's own plan by gears and cadence and, once they connected intervals.icu, the cycling
+workouts planned there for today and the next seven days (issue #471). A picked workout is read in
+watts through the site and ridden step by step: its target (a ramp moves from one power to the
+other), the cadence it asks for, its cues as messages on the way, the time spent on the target; a
+rider without a smart trainer sees the target beside their estimated power, and the demo rides it.
+Only the picked workout's id is kept in the browser, and a workout that did not load holds the start
+until it loads or another plan is picked (`tests/e2e/test_virtual_ride_workouts.py`). A frame's time is ridden in steps of at most 50 ms, so the ride keeps real time on a device
 that draws two frames a second or more; a longer
 pause, such as a hidden page, counts as half a second. Production names each file after a hash of
 its content, as it names the page, and the page links those names (`cycling_site/storage.py`), so the
 page and its files are cached together. The ride
 runs in the browser: the page talks to the site only through `Site.req` (`js/site.js`), to
 `/api/v1/virtual-ride/` -- who rides, a member's records and rides, the lobby and group races, a
-finished ride and its Strava upload. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
+finished ride and its Strava upload, the workouts planned in intervals.icu. The page is updated from delivered revisions. It speaks the language its address names (`?lang=ru|kk|en`, which the
 site's page passes from its own; Russian without one): its texts, units, number and date formats
 and the names of its routes, landmarks and riders come from the page itself -- its words in `text/`,
 the names in `maps/` and `data/`, the formats from its language and locale (`LANG`, `LOCALE` in `js/page.js`) --

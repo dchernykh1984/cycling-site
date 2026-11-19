@@ -2,7 +2,7 @@
 
 **Feature Branch**: `471-intervals-icu`
 **Created**: 2026-11-19
-**Status**: Phase 1 (services) in progress; phases 2 and 3 follow in their own pull requests
+**Status**: Phase 1 (services) merged in #472; phase 2 (workouts and ERG) in its own pull request; phase 3 follows
 **Input**: Issue #471 asks the virtual ride to run the workouts planned in intervals.icu. It names
 four things: syncing workouts from there, recording rides, a trainer simulator by power if there is
 none, and a check that the virtual ride lacks no standard feature and gets its mechanics right. The
@@ -117,7 +117,7 @@ maintainer decided the points below in conversation on 2026-11-19; they are reco
 - **intervals.icu unavailable.** When intervals.icu cannot be reached or answers 429, the upload
   fails with the reason and can be sent again.
 - **A workout without power steps** (heart rate or pace only) is listed but cannot be ridden by
-  ERG. Its steps are shown as they are (phase 2).
+  ERG: a step without a power target is ridden by feel, with the cadence it asks for, if any.
 - **A workout longer than a ride may last** is cut where the ride ends, as a ride's track already is.
 
 ## Requirements
