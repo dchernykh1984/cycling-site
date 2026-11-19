@@ -132,15 +132,19 @@ def intervals_connect(request):
     """The member's own API key: checked with intervals.icu, then kept sealed and never shown again."""
     if needs_email_confirmation(request.user) or not intervals.available():
         raise Http404
+    key = request.POST.get("api_key", "")[:200]
     try:
-        intervals.connect(request.user, request.POST.get("api_key", "")[:200], request.POST.get("send_rides") == "on")
+        intervals.connect(request.user, key, request.POST.get("send_rides") == "on")
+    except intervals.TooManyTriesError:
+        messages.error(request, _("Too many keys tried in a row: wait a few minutes, then give yours again."))
     except intervals.IntervalsError as exc:
-        if exc.revoked:
+        # the reason itself is English, for the logs and the API: the member reads what to do next
+        if exc.revoked or not key.strip():
             messages.error(request, _("intervals.icu does not accept this key. Check it and try again."))
         else:
-            messages.error(request, _("intervals.icu was not connected: %(reason)s") % {"reason": exc})
-        return redirect(_services_card())
-    messages.success(request, _("intervals.icu is connected."))
+            messages.error(request, _("intervals.icu could not check the key just now. Try connecting again later."))
+    else:
+        messages.success(request, _("intervals.icu is connected."))
     return redirect(_services_card())
 
 

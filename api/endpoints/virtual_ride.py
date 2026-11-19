@@ -496,6 +496,8 @@ def connect_intervals(request, payload: IntervalsConnectIn):
         raise HttpError(HTTPStatus.CONFLICT, _("intervals.icu is not offered on this site"))
     try:
         intervals.connect(request.auth, payload.api_key, payload.send_rides)
+    except intervals.TooManyTriesError as exc:
+        raise HttpError(HTTPStatus.TOO_MANY_REQUESTS, str(exc)) from None
     except intervals.IntervalsError as exc:
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, str(exc)) from None
     return Status(HTTPStatus.CREATED, _services_out(request.auth))

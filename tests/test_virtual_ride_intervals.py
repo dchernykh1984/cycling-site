@@ -8,8 +8,11 @@ import json
 from unittest import mock
 
 import requests
+from django.contrib.messages import get_messages
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import translation
+from django.utils.translation import gettext
 
 from tests.test_virtual_ride_api import API, MemberClientMixin, _ride, _user
 from tests.test_virtual_ride_strava import STRAVA_ON, _answer, _connect, _track
@@ -18,6 +21,8 @@ from trainer.models import IntervalsConnection, IntervalsUpload, RideTrack, Stra
 
 KEY = "abc123-the-members-own-key"
 OTHER_SITE_KEY = "b3RoZXItc2l0ZS1rZXktb3BlbnMtbm90aGluZy0zMmI="  # a valid key, but not the one the tests seal with
+# the tests' own cache counts nothing; the tries a member is allowed need one that does
+COUNTING_CACHE = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "tries"}}
 
 
 def _connected(user, send_rides=True, athlete_id="i42"):
@@ -74,9 +79,7 @@ class ConnectTests(TestCase):
             self.assertTrue(caught.exception.revoked)
         self.assertFalse(IntervalsConnection.objects.exists())
 
-    @override_settings(
-        CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "tries"}}
-    )
+    @override_settings(CACHES=COUNTING_CACHE)
     @mock.patch("trainer.intervals.requests.request")
     def test_a_member_trying_key_after_key_is_held_back_before_intervals_icu_is_asked(self, call):
         call.return_value = _answer(401)
@@ -321,6 +324,14 @@ class ServicesApiTests(MemberClientMixin, TestCase):
         self.assertIn("does not accept this key", refused.json()["detail"])
         self.assertFalse(IntervalsConnection.objects.exists())
 
+    @override_settings(CACHES=COUNTING_CACHE)
+    @mock.patch("trainer.intervals.requests.request")
+    def test_key_after_key_is_answered_too_many_requests(self, call):
+        call.return_value = _answer(401)
+        for _ in range(5):
+            self.assertEqual(self.post(self.client_m, "/services/intervals", {"api_key": KEY}).status_code, 422)
+        self.assertEqual(self.post(self.client_m, "/services/intervals", {"api_key": KEY}).status_code, 429)
+
     def test_the_key_is_bounded_and_needed(self):
         for bad in ({"api_key": ""}, {"api_key": "k" * 201}, {}):
             self.assertEqual(self.post(self.client_m, "/services/intervals", bad).status_code, 422)
@@ -390,6 +401,39 @@ class ProfileTests(TestCase):
         self.assertTrue(IntervalsConnection.objects.get().send_rides)
         self.client.post(reverse("virtual_ride_intervals_disconnect"))
         self.assertFalse(IntervalsConnection.objects.exists())
+
+    def told(self, key):
+        """What the member reads after giving ``key`` on the Russian page: the newest message."""
+        with translation.override("ru"):
+            sent = self.client.post(reverse("virtual_ride_intervals_connect"), {"api_key": key})
+            return [str(message) for message in get_messages(sent.wsgi_request)][-1]
+
+    def said(self, text):
+        with translation.override("ru"):
+            translated = gettext(text)
+        self.assertNotEqual(translated, text, "the Russian catalogue lacks it")
+        return translated
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_key_not_connected_is_told_in_the_member_s_language(self, call):
+        refused = "intervals.icu does not accept this key. Check it and try again."
+        call.return_value = _answer(401)
+        self.assertEqual(self.told(KEY), self.said(refused))
+        self.assertEqual(self.told("   "), self.said(refused))
+        call.side_effect = requests.ConnectionError("down")
+        self.assertEqual(
+            self.told(KEY), self.said("intervals.icu could not check the key just now. Try connecting again later.")
+        )
+
+    @override_settings(CACHES=COUNTING_CACHE)
+    @mock.patch("trainer.intervals.requests.request")
+    def test_key_after_key_is_told_to_wait(self, call):
+        call.return_value = _answer(401)
+        for _ in range(5):
+            self.told(KEY)
+        self.assertEqual(
+            self.told(KEY), self.said("Too many keys tried in a row: wait a few minutes, then give yours again.")
+        )
 
     def test_a_recent_ride_links_to_its_activity_there(self):
         ride = VirtualRide.objects.create(

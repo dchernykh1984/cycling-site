@@ -39,6 +39,10 @@ class IntervalsError(Exception):
         self.revoked = revoked
 
 
+class TooManyTriesError(IntervalsError):
+    """The member gave key after key: held back here, before intervals.icu is asked again."""
+
+
 def available() -> bool:
     """The site can keep a member's key, so it offers intervals.icu."""
     return secret_box.available()
@@ -76,7 +80,7 @@ def connect(user, key: str, send_rides: bool = False) -> IntervalsConnection:
     if not key:
         raise IntervalsError("No key given")
     if not _may_try(user):
-        raise IntervalsError("Too many tries: wait a few minutes before giving a key again")
+        raise TooManyTriesError("Too many tries: wait a few minutes before giving a key again")
     response = _call(key, "GET", "/athlete/0")
     if response.status_code != HTTPStatus.OK:
         raise IntervalsError(f"intervals.icu answered {response.status_code}")
