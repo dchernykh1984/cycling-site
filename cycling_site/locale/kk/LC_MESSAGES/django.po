@@ -5791,3 +5791,11 @@ msgstr "intervals.icu қосылмады: %(reason)s"
 #: trainer/views.py:153
 msgid "intervals.icu is disconnected: the key is deleted from this site."
 msgstr "intervals.icu ажыратылды: кілт сайттан жойылды."
+
+#: accounts/templates/accounts/profile.html
+msgid "Save for Strava"
+msgstr "Strava үшін сақтау"
+
+#: accounts/templates/accounts/profile.html
+msgid "Save for intervals.icu"
+msgstr "intervals.icu үшін сақтау"

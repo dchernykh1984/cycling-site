@@ -325,7 +325,7 @@
                                 <input class="form-check-input" type="checkbox" name="send_rides" id="send-strava"{% if virtual_ride.strava.send_rides %} checked{% endif %}>
                                 <label class="form-check-label small" for="send-strava">{% trans "Send my rides to Strava as virtual rides" %}</label>
                             </div>
-                            <button type="submit" class="btn btn-outline-primary">{% trans "Save" %}</button>
+                            <button type="submit" class="btn btn-outline-primary">{% trans "Save for Strava" %}</button>
                         </form>
                         <form method="post" action="{% url 'virtual_ride_strava_disconnect' %}">
                             {% csrf_token %}
@@ -353,7 +353,7 @@
                                 <input class="form-check-input" type="checkbox" name="send_rides" id="send-intervals"{% if service.send_rides %} checked{% endif %}>
                                 <label class="form-check-label small" for="send-intervals">{% trans "Send my rides to intervals.icu" %}</label>
                             </div>
-                            <button type="submit" class="btn btn-outline-primary">{% trans "Save" %}</button>
+                            <button type="submit" class="btn btn-outline-primary">{% trans "Save for intervals.icu" %}</button>
                         </form>
                         <form method="post" action="{% url 'virtual_ride_intervals_disconnect' %}">
                             {% csrf_token %}
