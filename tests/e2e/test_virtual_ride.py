@@ -287,7 +287,7 @@ def test_a_route_passes_the_sights_of_its_own_map_only(page: Page):
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("connected", [False, True])
 def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_server, settings, connected: bool):
-    """Strava and intervals.icu (issue #471): every button, field and box line answers a tap across 44 px."""
+    """Strava and intervals.icu (issue #471): every control answers a tap across 44 px, each button its own name."""
     from trainer import secret_box
     from trainer.models import IntervalsConnection, StravaConnection
 
@@ -316,6 +316,9 @@ def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_s
         control.scroll_into_view_if_needed()
         wide, high = control.evaluate(_REACH)
         assert wide >= 44 and high >= 44, (i, wide, high)
+    # two buttons that act on different services never share a name (the interface's rule 12)
+    names = [name.strip() for name in page.locator("#virtual-rides-services button").all_inner_texts()]
+    assert len(names) == len(set(names)), names
 
 
 def test_a_ride_strava_keeps_processing_is_said_to_be_there_later(page: Page):

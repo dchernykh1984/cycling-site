@@ -5799,3 +5799,11 @@ msgstr "intervals.icu не подключён: %(reason)s"
 #: trainer/views.py:153
 msgid "intervals.icu is disconnected: the key is deleted from this site."
 msgstr "intervals.icu отключён: ключ удалён с сайта."
+
+#: accounts/templates/accounts/profile.html
+msgid "Save for Strava"
+msgstr "Сохранить для Strava"
+
+#: accounts/templates/accounts/profile.html
+msgid "Save for intervals.icu"
+msgstr "Сохранить для intervals.icu"
