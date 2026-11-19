@@ -26,7 +26,6 @@ _TIMEOUT = 10
 _MARK_TIMEOUT = 5
 # intervals.icu sits behind Cloudflare, which may challenge a library's own user agent
 _HEADERS = {"User-Agent": "UniversalBicycleTeam/1.0 (+https://universalbicycle.team)", "Accept": "application/json"}
-_REFUSED = (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN)
 # Keys a member may try in a window: intervals.icu answers ten calls a second per address, and every try
 # is one from the site's own, so one member trying keys in a loop would hold up everyone's uploads
 _TRIES, _TRIES_WINDOW_S = 5, 10 * 60
@@ -58,8 +57,12 @@ def _call(key: str, method: str, path: str, timeout: float = _TIMEOUT, **kwargs)
         )
     except requests.RequestException as exc:
         raise IntervalsError(f"intervals.icu could not be reached ({type(exc).__name__})") from None
-    if response.status_code in _REFUSED:
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
         raise IntervalsError("intervals.icu does not accept this key", revoked=True)
+    if response.status_code == HTTPStatus.FORBIDDEN:
+        # not a verdict on the key: the proxy in front of intervals.icu turns an address away with 403 too,
+        # and dropping every member's connection for it would be wrong
+        raise IntervalsError("intervals.icu refused the request (403)")
     if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
         raise IntervalsError("intervals.icu asks to wait: too many requests")
     return response

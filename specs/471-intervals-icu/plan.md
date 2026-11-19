@@ -113,8 +113,9 @@ which the tests patch.
 - `available()`.
 - `connect(user, key, send_rides)`: `GET /athlete/0` with the key, then the stored connection.
 - `disconnect(connection)`.
-- `upload(ride)`: the TCX is `strava.tcx()` decompressed. A 401 or 403 drops the connection and
-  records the failure.
+- `upload(ride)`: the TCX is `strava.tcx()` decompressed. A 401 drops the connection and records
+  the failure. A 403 only records it: the Cloudflare proxy in front of intervals.icu answers 403 when
+  it turns an address away, which says nothing about the key.
 
 **Saving a ride** (`api/endpoints/virtual_ride.py`). A ride that is not in demo mode and has its
 track goes to Strava when connected with its box on, and to intervals.icu when connected with its
