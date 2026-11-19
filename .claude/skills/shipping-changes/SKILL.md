@@ -117,3 +117,11 @@ deliberately out of scope. Say what you measured rather than what you assume.
 
 Then **stop**. Merging is the maintainer's; when they do merge, it is `--rebase` so every commit
 survives and the history stays linear.
+
+## After the merge
+
+A merged change reaches the site at night: `.github/workflows/deploy.yml` deploys `main` at 02:07 in
+Almaty (21:07 UTC) when the site names another commit at `/api/v1/version/` and `main`'s CI passed
+(issue #153). To see a change live sooner, run `gh workflow run deploy.yml` -- on the maintainer's
+word only, since every deploy takes the site down for up to a minute -- and check that
+`/api/v1/version/` names the merged commit.
