@@ -4,7 +4,7 @@ The trainer page (trainer/static/trainer/alatau.html) calls these from the membe
 their session; API clients use the personal Bearer token like everywhere else in /api/v1/.
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 
 from django.db import transaction
@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from ninja import Field, Router, Schema, Status
+from ninja import Field, Path, Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import SecretStr, field_validator
 
@@ -180,6 +180,35 @@ class IntervalsConnectIn(Schema):
     # secret: shown as stars wherever the payload is printed, an error report's frames too
     api_key: SecretStr = Field(..., min_length=1, max_length=200)
     send_rides: bool = False
+
+
+class PlannedWorkoutOut(Schema):
+    id: int
+    # the day it is planned for, in the member's own calendar at intervals.icu (YYYY-MM-DD)
+    date: str
+    name: str
+    duration_s: int | None = None
+
+
+class WorkoutStepOut(Schema):
+    duration_s: int
+    # the power at the step's start and at its end, in watts: equal for a steady step, none for a free one
+    power_w: int | None = None
+    power_end_w: int | None = None
+    cadence_rpm: int | None = None
+
+
+class WorkoutCueOut(Schema):
+    # seconds from the workout's start
+    at_s: int
+    text: str
+
+
+class WorkoutOut(PlannedWorkoutOut):
+    # the FTP intervals.icu gives the workout, which its shares of FTP were turned into watts with
+    ftp_w: int | None = None
+    steps: list[WorkoutStepOut]
+    cues: list[WorkoutCueOut]
 
 
 class RouteBestOut(Schema):
@@ -515,6 +544,45 @@ def disconnect_intervals(request):
     if connection is not None:
         intervals.disconnect(connection)
     return Status(HTTPStatus.NO_CONTENT, None)
+
+
+def _from_intervals(read):
+    """A read of the member's intervals.icu, its failures as the API answers them."""
+    if not intervals.available():
+        raise HttpError(HTTPStatus.CONFLICT, _("intervals.icu is not offered on this site"))
+    try:
+        return read()
+    except intervals.NotConnectedError as exc:
+        raise HttpError(HTTPStatus.CONFLICT, str(exc)) from None
+    except intervals.NotFoundError as exc:
+        raise HttpError(HTTPStatus.NOT_FOUND, str(exc)) from None
+    except intervals.TooManyTriesError as exc:
+        raise HttpError(HTTPStatus.TOO_MANY_REQUESTS, str(exc)) from None
+    except intervals.IntervalsError as exc:
+        raise HttpError(HTTPStatus.SERVICE_UNAVAILABLE, str(exc)) from None
+
+
+@router.get(
+    "/intervals/workouts",
+    response=list[PlannedWorkoutOut],
+    auth=member_auth,
+    summary="My cycling workouts planned in intervals.icu, for eight days",
+)
+def planned_workouts(request, oldest: date | None = None):
+    """From ``oldest`` (the trainer page sends the rider's own today; the site's by default) for eight days."""
+    first = oldest or timezone.localdate()
+    return _from_intervals(lambda: intervals.planned_workouts(request.auth, first))
+
+
+@router.get(
+    "/intervals/workouts/{event_id}",
+    response=WorkoutOut,
+    auth=member_auth,
+    summary="One of my planned workouts: its steps, the power in watts",
+)
+def planned_workout(request, event_id: int = Path(..., ge=1, le=2**31 - 1)):  # intervals.icu's ids are int32
+    """Read from intervals.icu each time: the site keeps neither the workout nor the FTP."""
+    return _from_intervals(lambda: intervals.planned_workout(request.auth, event_id))
 
 
 @router.delete(

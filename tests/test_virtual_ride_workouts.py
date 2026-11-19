@@ -11,9 +11,10 @@ from unittest import mock
 
 import requests
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from django.views.debug import ExceptionReporter
 
-from tests.test_virtual_ride_api import _user
+from tests.test_virtual_ride_api import API, MemberClientMixin, _user
 from tests.test_virtual_ride_intervals import COUNTING_CACHE, KEY, OTHER_SITE_KEY, _connected, _page
 from trainer import intervals, zwo
 from trainer.models import IntervalsConnection
@@ -347,3 +348,59 @@ class WorkoutErrorReportTests(TestCase):
         call.side_effect = RuntimeError("the library broke")  # deep down, where the key travels as auth
         self.assertNotIn(KEY, _report_of(lambda: intervals.planned_workouts(user, date(2026, 11, 20))))
         self.assertNotIn(KEY, _report_of(lambda: intervals.planned_workout(user, 9)))
+
+
+class WorkoutsApiTests(MemberClientMixin, TestCase):
+    def setUp(self):
+        self.user = _user("anna")
+        self.client_a = self.member(self.user)
+
+    def test_the_workouts_need_a_member(self):
+        self.assertEqual(self.client.get(f"{API}/intervals/workouts").status_code, 401)
+        self.assertEqual(self.client.get(f"{API}/intervals/workouts/9").status_code, 401)
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_member_lists_their_week_from_their_own_today(self, call):
+        _connected(self.user)
+        call.return_value = _json(_EVENTS)
+        body = self.client_a.get(f"{API}/intervals/workouts?oldest=2026-11-20").json()
+        self.assertEqual([w["id"] for w in body], [8, 9])
+        self.assertEqual(call.call_args.kwargs["params"]["oldest"], "2026-11-20")
+        # without a day of their own, the site's today
+        self.client_a.get(f"{API}/intervals/workouts")
+        self.assertEqual(call.call_args.kwargs["params"]["oldest"], timezone.localdate().isoformat())
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_member_loads_one_workout_with_its_steps_and_cues(self, call):
+        _connected(self.user)
+        call.side_effect = [_json(_EVENT), _file(_SWEET_SPOT)]
+        response = self.client_a.get(f"{API}/intervals/workouts/9", HTTP_AUTHORIZATION=f"Bearer {self.user.api_token}")
+        self.assertEqual(response.status_code, 200, response.content)
+        body = response.json()
+        self.assertEqual((body["ftp_w"], body["steps"][1]), (250, _steps((600, 225, 225, 90))[0]))
+        self.assertEqual(body["cues"], [{"at_s": 300, "text": "Hold it"}])
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_each_failure_is_answered_as_what_it_is(self, call):
+        workouts = f"{API}/intervals/workouts"
+        self.assertEqual(self.client_a.get(workouts).status_code, 409, "not connected")
+        _connected(self.user)
+        call.return_value = _json({}, status=404)
+        self.assertEqual(self.client_a.get(f"{workouts}/9").status_code, 404)
+        call.return_value = _json({}, status=503)
+        response = self.client_a.get(workouts)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("intervals.icu answered 503", response.json()["detail"])
+        with mock.patch.object(intervals, "_allowed", return_value=False):
+            self.assertEqual(self.client_a.get(workouts).status_code, 429)
+        call.return_value = _json({}, status=401)
+        self.assertEqual(self.client_a.get(workouts).status_code, 409, "the key no longer taken: connect again")
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""):
+            self.assertEqual(self.client_a.get(workouts).status_code, 409, "not offered on this site")
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_workout_id_intervals_icu_cannot_have_is_refused_before_it_is_asked(self, call):
+        _connected(self.user)
+        for bad in ("0", "-3", str(2**31), "x"):
+            self.assertEqual(self.client_a.get(f"{API}/intervals/workouts/{bad}").status_code, 422, bad)
+        call.assert_not_called()
