@@ -64,7 +64,8 @@ function intervalsShow(rideId, s) {
     el.append(t('intervals.done') + ' ', a); return;
   }
   const b = document.createElement('button'); b.className = 'btn'; b.type = 'button'; b.textContent = t('intervals.retry');
-  b.onclick = () => Site.post('/rides/' + rideId + '/intervals').then(r => { if (intervalsFor === rideId) intervalsShow(rideId, r); })
-    .catch(e => { if (intervalsFor === rideId) intervalsShow(rideId, { status: 'failed', error: e.message }); });
+  // one try at a time: whether intervals.icu drops a second copy of an activity is not documented
+  b.onclick = () => { b.disabled = true; Site.post('/rides/' + rideId + '/intervals').then(r => { if (intervalsFor === rideId) intervalsShow(rideId, r); })
+    .catch(e => { if (intervalsFor === rideId) intervalsShow(rideId, { status: 'failed', error: e.message }); }); };
   el.append(t('intervals.failed', { msg: s.error }) + ' ', b);
 }
