@@ -321,3 +321,21 @@ def test_the_power_target_fits_the_hud_on_a_phone_in_kazakh(page: Page, live_ser
     )
     assert title["scroll"] <= title["client"] and title["right"] <= panel, (title, panel)
     assert width == size[0], width
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_workout_without_targets_tells_no_time_on_target(page: Page, live_server):
+    """A workout by heart rate comes without power: no "0 % on target" for a rider who was never given one."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            Records.me = { authenticated: true, intervals_connected: true };
+            settings.mode = 'plan'; settings.planIcu = 9;
+            Icu.plan = { name: 'Zone 2', ftp: null, cues: [], steps: [{ min: 1, w: null, w2: null, cad: null }] };
+            startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")
+    expect(page.locator("#plFoot")).to_have_text(page.evaluate("t('plan.footerStep', { i: 1, n: 1 })"))
+    expect(page.locator("#tTitle")).to_have_text(page.evaluate("t('plan.freeHint')"))

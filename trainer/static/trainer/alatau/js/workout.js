@@ -9,6 +9,8 @@ const stepWhat = s => (s.f != null ? gearLabel(s.f, s.r) : stepPower(s)) + (s.ca
 const onTarget = (v, aim, near, far) => { const d = Math.abs(v - aim); return d <= near ? 'act-ok' : d <= far ? 'act-near' : 'act-off'; };
 // the share of the time with a target that was spent on it, in per cent
 const zonePct = ss => { const aimed = ss.reduce((a, x) => a + x.aimed, 0); return aimed ? Math.round(ss.reduce((a, x) => a + x.zone, 0) / aimed * 100) : 0; };
+// whether a plan sets any target at all: a workout by heart rate comes without power, and has no time on target to tell
+const aimsAt = steps => steps.some(s => s.w != null || s.cad);
 function updatePlanHUD(cad, P) {
   if (!Work.active) return;
   // during the countdown the first step, as Work.cur() gives it: the target and the list are there from the start
@@ -39,7 +41,8 @@ function updatePlanHUD(cad, P) {
   const total = Work.total();
   $('#plLeft').textContent = t('plan.toEnd', { t: fmtTime(Math.ceil(total - Work.t)) });
   $('#plProg').style.width = clamp(Work.t / total * 100, 0, 100).toFixed(1) + '%';
-  $('#plFoot').textContent = Work.name != null ? t('plan.footerW', { i: i + 1, n, p: zonePct(Work.ss) }) : t('plan.footer', { i: i + 1, n, p: zonePct(Work.ss) });
+  $('#plFoot').textContent = Work.name == null ? t('plan.footer', { i: i + 1, n, p: zonePct(Work.ss) })
+    : aimsAt(Work.steps) ? t('plan.footerW', { i: i + 1, n, p: zonePct(Work.ss) }) : t('plan.footerStep', { i: i + 1, n });
 }
 Records.addWorkout = function (ride, powerLog) {
   const D = this.data, news = [], now = ride.date;
@@ -83,8 +86,8 @@ function finishWorkout() {
   const ride = { id: Date.now().toString(36), date: Date.now(), kind: 'plan', route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(km * 100) / 100, avgSpeed: Math.round(km / Math.max(t / 3600, 1e-6) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place: 1, of: 1, char: settings.char, steps: Work.steps.length, zone };
   const rec = Records.addWorkout(ride, me.powerLog || []);
   $('#resTitle').textContent = tr('res.workoutDone');
-  $('#resSub').textContent = Work.name != null ? tr('res.icuSub', { name: Work.name, n: Work.steps.length, t: fmtTime(t), route: world.route.name, z: zone })
-    : tr('res.planSub', { n: Work.steps.length, t: fmtTime(t), route: world.route.name, z: zone });
+  const said = { name: Work.name, n: Work.steps.length, t: fmtTime(t), route: world.route.name, z: zone };
+  $('#resSub').textContent = Work.name == null ? tr('res.planSub', said) : aimsAt(Work.steps) ? tr('res.icuSub', said) : tr('res.icuSubFree', said);
   $('#resRec').innerHTML = rec.news.length ? '<b>' + tr('res.newRecords') + '</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);
   const sx = [[fmtTime(t), tr('res.time')], [fmt1(km) + ' ' + tr('u.km'), tr('res.dist')], [fmt1(ride.avgSpeed), tr('res.avgKmh')], [avgP + ' ' + tr('u.w'), st.real ? tr('res.avgPower') : tr('res.avgPowerEst')], [ride.avgCad || '—', tr('res.avgCad')], [ride.gain + ' ' + tr('u.m'), tr('rec.gain')]];
