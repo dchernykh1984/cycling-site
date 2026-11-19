@@ -397,7 +397,7 @@ def send_to_strava(request, ride_id: int):
         return _strava_out(strava.refresh(sent))
     if not _strava_on(request.auth):
         raise HttpError(HTTPStatus.CONFLICT, _("Connect Strava in your profile first"))
-    if ride.power_source == VirtualRide.PowerSource.DEMO or not RideTrack.objects.filter(ride=ride).exists():
+    if not services.sendable(ride):
         raise HttpError(
             HTTPStatus.CONFLICT,
             _("This ride has no track to send: rides in demo mode and rides saved without one stay here"),
