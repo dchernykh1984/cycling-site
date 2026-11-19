@@ -348,7 +348,9 @@ def test_a_ride_s_intervals_icu_result_links_it_or_offers_another_try(page: Page
             const $ = s => document.querySelector(s);
             window.sent = [];
             const done = {status: 'done', activity_url: 'https://intervals.icu/activities/i9'};
-            const Site = {post: async path => { window.sent.push(path); return done; }};
+            // intervals.icu answers when the test says so: the try is still on its way until then
+            const answered = new Promise(resolve => { window.answer = () => resolve(done); });
+            const Site = {post: path => { window.sent.push(path); return answered; }};
             eval(words + show + '; window.intervalsShow = intervalsShow; window.t = t;');
             intervalsShow(5, {status: 'failed', error: 'slow'});
         }""",
@@ -356,7 +358,12 @@ def test_a_ride_s_intervals_icu_result_links_it_or_offers_another_try(page: Page
     )
     result = page.locator("#resIntervals")
     expect(result).to_contain_text(page.evaluate("t('intervals.failed', {msg: 'slow'})"))
-    result.locator("button").click()
+    again = result.locator("button")
+    again.click()
+    # a second tap while the first try is on its way sends nothing more
+    expect(again).to_be_disabled()
+    again.click(force=True)
+    page.evaluate("window.answer()")
     expect(result.locator("a")).to_have_attribute("href", "https://intervals.icu/activities/i9")
     assert page.evaluate("window.sent") == ["/rides/5/intervals"]
 
