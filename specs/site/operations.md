@@ -24,8 +24,10 @@ restored, locally or onto production.
    suite on five browser/device combinations and once per skin.
 2. **Given** a merge to `main`, **Then** it reaches the site at night. Render's auto-deploy is off.
    `.github/workflows/deploy.yml` deploys `main` at 21:07 UTC (02:07 in Almaty), and only when two
-   things hold: the site names another commit at `/api/v1/version/`, and `main`'s CI passed. It
-   then waits until the site names the new commit, so a deploy that fails turns the run red.
+   things hold: the site names another commit at `/api/v1/version/`, and every check `main`'s push
+   started is green (CI, the Dropbox check, any added later). It waits up to 30 minutes for a check
+   still running, and a red one holds the deploy, by night or by hand. It then waits until the site
+   names the new commit, so a deploy that fails turns the run red.
    - A night run GitHub starts after 01:00 UTC leaves the deploy to the next night.
    - An urgent change goes out by running the workflow by hand, or with Render's Manual Deploy.
    - Render runs `migrate` as a pre-deploy step.

@@ -1,10 +1,12 @@
-"""Deploy main to the host when the site runs another commit and main's CI passed (issue #153).
+"""Deploy main to the host when the site runs another commit and main is green (issue #153).
 
 Run by .github/workflows/deploy.yml, at night and by hand. The site names the commit it runs at
-/api/v1/version/; the host's deploy hook takes the commit to deploy as ``ref``. Nothing is deployed
-while main's CI is red or unfinished, a night run that starts after its window waits for the next
-night, and the run waits until the site names the new commit -- so a deploy that fails or never
-starts turns the workflow red instead of passing unseen.
+/api/v1/version/; the host's deploy hook takes the commit to deploy as ``ref``. "Green" is every
+workflow main's push of the commit started -- CI, the Dropbox check, any added later -- ending in
+success (or skipped). A check still running is waited for; one that is red, or one that never
+finishes, deploys nothing. A night run that starts after its window waits for the next night, and
+the run waits until the site names the new commit -- so a deploy that fails or never starts turns
+the workflow red instead of passing unseen.
 
 Environment: GITHUB_REPOSITORY, GITHUB_TOKEN, SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for night
 runs DEPLOY_WINDOW_UTC ("21:00-01:00": when a run may still deploy).
@@ -24,7 +26,11 @@ from datetime import time as clock
 USER_AGENT = "UniversalBicycleTeam-Deploy/1.0"
 CI_WORKFLOW = "ci.yml"
 WAIT_SECONDS = 20 * 60
+# how long main's checks may still run: CI takes about a quarter of an hour, the Dropbox check up to ten
+# tries a minute apart
+CHECKS_WAIT_SECONDS = 30 * 60
 POLL_SECONDS = 20
+GREEN = {"success", "skipped", "neutral"}
 
 Fetch = Callable[[str, str], dict]
 
@@ -52,12 +58,39 @@ def live_commit(site: str, fetch: Fetch = fetch_json) -> str:
         return ""
 
 
-def ci_conclusion(repo: str, sha: str, token: str, fetch: Fetch = fetch_json) -> str:
-    """How CI on main's push of ``sha`` ended -- "success", "failure", ... -- or "" while it runs."""
-    query = urllib.parse.urlencode({"head_sha": sha, "event": "push", "branch": "main"})
-    url = f"https://api.github.com/repos/{repo}/actions/workflows/{CI_WORKFLOW}/runs?{query}"
-    runs = fetch(url, token).get("workflow_runs") or []
-    return (runs[0].get("conclusion") or "") if runs else ""
+def main_checks(repo: str, sha: str, token: str, fetch: Fetch = fetch_json) -> dict[str, tuple[str, str]]:
+    """Each workflow main's push of ``sha`` started, by its file: its name and how it ended ("" while it runs).
+
+    Only push runs count: the agents and this deploy run on main's commit too, and are no check of it.
+    The newest run of a workflow counts, so one started again counts by how it ended the last time.
+    """
+    query = urllib.parse.urlencode({"head_sha": sha, "event": "push", "branch": "main", "per_page": 100})
+    runs = fetch(f"https://api.github.com/repos/{repo}/actions/runs?{query}", token).get("workflow_runs") or []
+    checks: dict[str, tuple[str, str]] = {}
+    for run in runs:  # newest first, as GitHub lists them
+        workflow = str(run.get("path") or run.get("name") or "").split("@")[0].rsplit("/", 1)[-1]
+        ended = str(run.get("conclusion") or "") if run.get("status") == "completed" else ""
+        checks.setdefault(workflow, (str(run.get("name") or workflow), ended))
+    return checks
+
+
+def settled_checks(
+    repo: str,
+    sha: str,
+    token: str,
+    fetch: Fetch = fetch_json,
+    sleep: Callable[[float], None] = time.sleep,
+    seconds: int = CHECKS_WAIT_SECONDS,
+) -> dict[str, tuple[str, str]]:
+    """main's checks of ``sha``, waited for while any still runs -- or CI has not started -- and none is red."""
+    checks = main_checks(repo, sha, token, fetch)
+    for _ in range(seconds // POLL_SECONDS):
+        conclusions = [conclusion for _name, conclusion in checks.values()]
+        if any(c and c not in GREEN for c in conclusions) or (CI_WORKFLOW in checks and all(conclusions)):
+            break
+        sleep(POLL_SECONDS)
+        checks = main_checks(repo, sha, token, fetch)
+    return checks
 
 
 def trigger(hook: str, sha: str) -> None:
@@ -102,13 +135,20 @@ def run(
     if live == sha:
         print(f"The site already runs main ({sha[:8]}); nothing to deploy.")
         return 0
-    conclusion = ci_conclusion(repo, sha, token, fetch)
-    if conclusion != "success":
-        print(f"::error::CI on main ({sha[:8]}) is {conclusion or 'not finished'}; nothing deployed.")
+    checks = settled_checks(repo, sha, token, fetch, sleep)
+    red = [f"{name} ({conclusion})" for name, conclusion in checks.values() if conclusion and conclusion not in GREEN]
+    if red:
+        print(f"::error::main ({sha[:8]}) is red: {', '.join(red)}; nothing deployed.")
+        return 1
+    running = [name for name, conclusion in checks.values() if not conclusion]
+    if CI_WORKFLOW not in checks or running:
+        minutes = CHECKS_WAIT_SECONDS // 60
+        waited = ", ".join(running) if CI_WORKFLOW in checks else "CI has not started"
+        print(f"::error::main's checks ({sha[:8]}) did not finish in {minutes} minutes: {waited}; nothing deployed.")
         return 1
     hook = env.get("RENDER_DEPLOY_HOOK_URL", "")
     if not hook:
-        print("::error::The repository secret RENDER_DEPLOY_HOOK_URL is not set; nothing deployed.")
+        print("::error::The production environment's secret RENDER_DEPLOY_HOOK_URL is not set; nothing deployed.")
         return 1
     try:
         deploy(hook, sha)

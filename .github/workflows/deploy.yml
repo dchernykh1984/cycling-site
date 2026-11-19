@@ -6,8 +6,9 @@ name: nightly-deploy
 # this workflow deploys instead.
 #
 # scripts/deploy_if_behind.py deploys main only when the site names another commit at
-# /api/v1/version/ and main's CI passed, then waits until the site names main's commit, so a deploy
-# that fails turns the run red. "Run workflow" deploys at once, for an urgent change: on the
+# /api/v1/version/ and every check main's push started is green (CI, the Dropbox check, any later
+# one): it waits for a check still running, and deploys nothing while one is red. It then waits until
+# the site names main's commit, so a deploy that fails turns the run red. "Run workflow" deploys at once, for an urgent change: on the
 # maintainer's word only, since it takes the site down.
 on:
   schedule:
