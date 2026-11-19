@@ -153,7 +153,8 @@ pushes to main and on manual dispatch. Set `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRE
 `DROPBOX_TEST_FOLDER_URL` (a shared folder containing `photo-index.v1.json` and at least one usable
 photo/preview) as secrets of the `production` environment. Keep that fixture available; a
 dedicated small album is preferable. No pull request receives these secrets, so a change is
-checked once it is merged. Normal unit tests skip this network check; no race photos or shared
+checked once it is merged. The check tries up to ten times a minute apart, so a moment's outage at
+Dropbox does not turn `main` red; a longer one does, and holds the deploy until it passes. Normal unit tests skip this network check; no race photos or shared
 links are committed as fixtures.
 
 Live site: <https://universalbicycle.team>.

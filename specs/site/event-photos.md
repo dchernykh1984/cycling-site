@@ -143,7 +143,8 @@ start list's bib: marks still do.
 - **FR-EVP-012**: A separate opt-in integration check uses real Dropbox app authentication to read
   a secret-configured fixture index and decode one thumbnail, without writing storage or the
   site's database. CI runs it on main, or the owner by hand, with the `production` environment's
-  secrets, which only `main` may use: no pull request's code receives the credentials.
+  secrets, which only `main` may use: no pull request's code receives the credentials. It tries up
+  to ten times a minute apart and is red only when every try failed; a red one holds the deploy.
 - **FR-EVP-013**: "Download all" streams a ZIP of the originals as they are read from storage, writing
   nothing to disk: a registration's album (its owner, whoever manages the owner's photos, and the
   event's managers) or a bib's search
