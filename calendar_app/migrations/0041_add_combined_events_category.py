@@ -8,7 +8,7 @@ from django.db import migrations
 # name_kk), the catch-all last.
 _CATEGORY_RU, _CATEGORY_EN, _CATEGORY_KK = "Многоборье", "Combined Events", "Көпсайыс"
 _DISCIPLINES = [
-    (1, "Общая физическая подготовка (ОФП)", "General Physical Preparation (GPP)", "Жалпы дене дайындығы (ЖДД)"),
+    (1, "Общая физическая подготовка", "General Physical Preparation", "Жалпы дене дайындығы"),
     (2, "Лёгкоатлетическое многоборье", "Athletics Combined Events", "Жеңіл атлетикалық көпсайыс"),
     (3, "Полиатлон", "Polyathlon", "Полиатлон"),
     (4, "Современное пятиборье", "Modern Pentathlon", "Қазіргі бессайыс"),
