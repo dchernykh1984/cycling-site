@@ -1,0 +1,40 @@
+name: nightly-deploy
+
+# Merged changes go live at night, when few people read the site (issue #153). The web service keeps
+# its media on a persistent disk, and with a disk Render stops the running instance before it starts
+# the new one, so every deploy takes the site down for up to a minute. Render's auto-deploy is off;
+# this workflow deploys instead.
+#
+# scripts/deploy_if_behind.py deploys main only when the site names another commit at
+# /api/v1/version/ and main's CI passed, then waits until the site names main's commit, so a deploy
+# that fails turns the run red. "Run workflow" deploys at once, for an urgent change: on the
+# maintainer's word only, since it takes the site down.
+on:
+  schedule:
+    # 21:07 UTC is 02:07 in Almaty, off the round minute to dodge cron congestion. GitHub starts a
+    # cron when it has capacity, and has drifted hours on a bad day: a night run that starts after
+    # 01:00 UTC (06:00 in Almaty) leaves the deploy to the next night (DEPLOY_WINDOW_UTC below).
+    - cron: "7 21 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-deploy
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Deploy main if the site runs another commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          DEPLOY_WINDOW_UTC: ${{ github.event_name == 'schedule' && '21:00-01:00' || '' }}
+        run: python3 scripts/deploy_if_behind.py
