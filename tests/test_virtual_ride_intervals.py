@@ -35,6 +35,13 @@ def _calls(call, method):
     return [c for c in call.call_args_list if c.args[0] == method]
 
 
+def _page(status=200):
+    """What a proxy in front of intervals.icu may answer instead of its data: a page."""
+    response = mock.Mock(status_code=status, text="<html><body>One moment, please</body></html>")
+    response.json.side_effect = requests.JSONDecodeError("Expecting value", response.text, 0)
+    return response
+
+
 class SecretBoxTests(TestCase):
     def test_a_sealed_key_opens_only_with_the_site_s_key(self):
         sealed = secret_box.seal(KEY)
@@ -97,7 +104,13 @@ class ConnectTests(TestCase):
 
     @mock.patch("trainer.intervals.requests.request")
     def test_an_answer_without_an_athlete_or_no_answer_keeps_nothing(self, call):
-        for answer in (_answer(200, {"name": "nobody"}), _answer(500), _answer(429), requests.ConnectionError("down")):
+        for answer in (
+            _answer(200, {"name": "nobody"}),
+            _answer(500),
+            _answer(429),
+            _page(),
+            requests.ConnectionError("down"),
+        ):
             call.reset_mock(side_effect=True, return_value=True)
             if isinstance(answer, Exception):
                 call.side_effect = answer
@@ -256,6 +269,16 @@ class UploadAnswerTests(TestCase):
         )
         call.return_value = _answer(200, {"activities": []})
         self.assertIn("named no activity", intervals.upload(self.ride).error)
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_page_or_other_data_instead_of_an_activity_fails_the_upload(self, call):
+        _connected(self.user)
+        for answer in (_page(), _answer(201, ["i3"])):
+            call.reset_mock(side_effect=True, return_value=True)
+            call.return_value = answer
+            sent = intervals.upload(self.ride)
+            self.assertEqual(sent.status, IntervalsUpload.Status.FAILED)
+            self.assertIn("without its usual data", sent.error)
 
     @mock.patch("trainer.intervals.requests.request")
     def test_a_virtual_mark_refused_outright_is_let_go(self, call):

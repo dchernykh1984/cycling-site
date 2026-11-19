@@ -62,6 +62,17 @@ def _call(key: str, method: str, path: str, timeout: float = _TIMEOUT, **kwargs)
     return response
 
 
+def _body(response: requests.Response) -> dict:
+    """The answer's JSON object. Anything else -- a page from a proxy in front of intervals.icu -- fails."""
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+    if not isinstance(body, dict):
+        raise IntervalsError(f"intervals.icu answered {response.status_code} without its usual data")
+    return body
+
+
 def _may_try(user) -> bool:
     """Count one more key the member tries; False past the window's allowance."""
     slot = f"intervals-connect-tries:{user.pk}"
@@ -84,7 +95,7 @@ def connect(user, key: str, send_rides: bool = False) -> IntervalsConnection:
     response = _call(key, "GET", "/athlete/0")
     if response.status_code != HTTPStatus.OK:
         raise IntervalsError(f"intervals.icu answered {response.status_code}")
-    body = response.json()
+    body = _body(response)
     athlete_id = str(body.get("id") or "")[:40]
     if not athlete_id:
         raise IntervalsError("intervals.icu named no athlete for this key")
@@ -137,13 +148,13 @@ def upload(ride: VirtualRide) -> IntervalsUpload:
     }
     try:
         response = _call(key, "POST", f"/athlete/{connection.athlete_id}/activities", params=params, files=files)
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
+            return _record(ride, failed, response.text or f"intervals.icu answered {response.status_code}")
+        body = _body(response)
     except IntervalsError as exc:
         if exc.revoked:
             connection.delete()
         return _record(ride, failed, str(exc))
-    if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
-        return _record(ride, failed, response.text or f"intervals.icu answered {response.status_code}")
-    body = response.json()
     activities = body.get("activities") or [{}]
     activity_id = str(body.get("id") or activities[0].get("id") or "")
     if not activity_id:
