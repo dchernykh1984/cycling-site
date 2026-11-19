@@ -319,6 +319,10 @@ def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_s
     # two buttons that act on different services never share a name (the interface's rule 12)
     names = [name.strip() for name in page.locator("#virtual-rides-services button").all_inner_texts()]
     assert len(names) == len(set(names)), names
+    # and on the narrowest phone, in the longest words, the block scrolls nothing sideways
+    page.set_viewport_size({"width": 320, "height": 740})
+    wide = page.evaluate("() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]")
+    assert wide[0] <= wide[1], wide
 
 
 @pytest.mark.parametrize("width", [360, 320])
