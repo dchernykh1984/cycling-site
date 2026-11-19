@@ -86,8 +86,9 @@ site down for up to a minute.
   in Almaty) leaves the deploy to the next night.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
-- **The workflow needs** the service's deploy hook (Render: Settings -> Deploy Hook) in the
-  repository secret `RENDER_DEPLOY_HOOK_URL`.
+- **Setting it up:** the service's deploy hook (Render: Settings -> Deploy Hook) goes into the
+  repository secret `RENDER_DEPLOY_HOOK_URL`, and Render's Auto-Deploy (Settings -> Build & Deploy)
+  is set to Off.
 - **Render runs `python manage.py migrate`** as a pre-deploy step.
 
 Configuration comes from environment variables set in the Render dashboard:
