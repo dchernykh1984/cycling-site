@@ -2,18 +2,17 @@
 
 **Status**: Baseline -- describes the system as it works today
 **Verified against**: `main` on 2026-10-21
-**Code**: `agent/` (shared pipeline), `instagram_agent/`, `telegram_agent/`, their guidance files and
-source lists (`events_sources.yaml`, `instagram_accounts.yaml`, `telegram_channels.yaml`), workflows
-`agent.yml`, `instagram-agent.yml`, `telegram-agent.yml`
-**Tests**: `agent/tests/`, `instagram_agent/tests/`, `telegram_agent/tests/`,
+**Code**: `agent/` (shared pipeline), `telegram_agent/`, their guidance files and source lists
+(`events_sources.yaml`, `telegram_channels.yaml`), workflows `agent.yml`, `telegram-agent.yml`
+**Tests**: `agent/tests/`, `telegram_agent/tests/`,
 `tests/test_agent_schedules.py`
 **Related**: [API](api.md), [events](events.md), [locations](locations.md); the `events-agents` skill
 holds the operating detail
 
 ## Overview
 
-Three scheduled jobs read announcements -- web calendars and organizer sites, Instagram club
-accounts, Telegram channels and groups -- ask a language model to extract concrete upcoming events,
+Two scheduled jobs read announcements -- web calendars and organizer sites, and Telegram channels
+and groups -- ask a language model to extract concrete upcoming events,
 and propose them to the site through the API as a service account. Every event they propose waits
 for a human to approve it; so do the regions and cities they add, while a new venue under an
 approved city follows the API's rule for the account's role (see [API](api.md)).
@@ -26,8 +25,8 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
    text are extracted with titles, descriptions and places in every site language, placed on the
    location tree, checked against everything the site knows, and proposed as pending.
 2. **Given** a date shown only in an image, **Then** the event is left out rather than guessed; links
-   are taken only from the page's real links; coordinates come from the text, from the first point of
-   a GPS track the page links to, or -- for Instagram posts -- from geocoding the address given.
+   are taken only from the page's real links; coordinates come from the text, or from the first point
+   of a GPS track the page links to.
 3. **Given** the maintainer reads a run, **Then** its summary names every proposed event with link
    and place, every skipped candidate with its reason, and per-source counts.
 4. **Given** a channel or an account the maintainers gave a city, **Then** a post that names no
@@ -57,8 +56,9 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 
 - A run stops once it has proposed its quota; sources are read in a fixed order so small local
   sources are not starved by large aggregators.
-- Instagram needs Graph API credentials that expire about every 60 days; without them the agent
-  proposes nothing and says why.
+- Instagram is not read. Its logged-out endpoint closed in September 2026, and Meta's Graph API
+  reads only through a business account, so the Instagram agent was removed on 2026-11-20 (#475);
+  an event announced only there is added by hand.
 - Scheduled runs drift (GitHub cron is best-effort) or are skipped during Actions incidents.
 
 ## Functional Requirements
@@ -72,14 +72,14 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 - **FR-AGT-004**: Each source may carry a free-text hint for the model; the maintainer's guidance
   files steer what matters and in what order.
 - **FR-AGT-005**: The model is named in code (`DEFAULT_LLM_MODEL` in `agent/config.py`, shared by
-  the three agents and the event assistant), not in a secret; the pipeline's `llm-model` job asks the provider's list of
-  models on every pull request and on main, spending no tokens, and goes red once the name is gone.
+  the two agents and the event assistant), not in a secret; the pipeline's `llm-model` job asks the provider's list of
+  models on main, spending no tokens, and goes red once the name is gone (pull requests get no key).
 - **FR-AGT-006**: Every page and track is fetched over http(s) from public addresses only, at most
   20 MB of it: a link on a page may point at a cloud-metadata endpoint or an internal service.
 
 ## Key Entities
 
-- **Source** (web, Telegram, Instagram): kind, address, optional hint.
+- **Source** (web, Telegram): kind, address, optional hint.
 - **Candidate event**: titles, descriptions and places per language, dates, links, type and
   disciplines chosen from the site's ids, coordinates when known.
 
@@ -94,9 +94,7 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
 - Country names are matched through two tables in code (`agent/locations.py`): Russian spellings
   the tree does not carry (`_COUNTRY_ALIASES`) and two-letter codes for the countries the site sees
   today (`_COUNTRY_CODES`).
-- The Instagram agent's prompt frames every account as "a cycling club's Instagram account" and a
-  club ride as a ride rather than a race (`instagram_agent/llm.py`).
-- A run's "today" is the site's day: the three workflows pass `SITE_TIME_ZONE`, a repository
+- A run's "today" is the site's day: the two workflows pass `SITE_TIME_ZONE`, a repository
   variable that falls back to `Asia/Almaty`, the site's own `TIME_ZONE`; unset outside the
   workflows, it is UTC (`agent/config.py`).
 

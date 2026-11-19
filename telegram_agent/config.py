@@ -1,9 +1,9 @@
 """Settings for one Telegram-agent run, read from the environment (no I/O, unit-tested).
 
-Its own settings rather than the web agent's, for the same reason the Instagram agent has its own:
-different schedule, different budget. The site and LLM credentials are shared; on top of them this
-agent needs a Telegram identity -- the api_id/api_hash pair issued at my.telegram.org and the
-exported session string of the service account that joined the channels.
+Its own settings rather than the web agent's: a different schedule, a different budget. The site and
+LLM credentials are shared; on top of them this agent needs a Telegram identity -- the api_id/api_hash
+pair issued at my.telegram.org and the exported session string of the service account that joined
+the channels.
 
 The Telegram credentials are deliberately optional at the run level: without them there is nothing
 this agent can read, so it says so and stops cleanly instead of failing a scheduled run red every

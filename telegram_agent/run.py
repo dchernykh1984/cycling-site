@@ -5,7 +5,7 @@ communities that need a member account. It is its own agent, on its own schedule
 channels file, but it shares the parts that must not diverge: the events the site already knows,
 the duplicate detection those feed, the location tree, and the API it posts through.
 
-Unlike the Instagram agent it is a single job over every channel, deliberately: all reads go
+It is a single job over every channel, deliberately: all reads go
 through one logged-in session, and a session hopping addresses inside one night is what gets a
 session revoked. One process, one connection, channels in sequence.
 """

@@ -2,8 +2,8 @@ name: telegram-agent
 
 on:
   schedule:
-    # 13:17 UTC daily -- after the events agent (11:17, Mondays and Fridays) and the Instagram agent
-    # (12:17), so this one sees everything they just proposed. Chat announcements are short notice,
+    # 13:17 UTC daily -- after the events agent (11:17, Mondays and Fridays), so this one sees
+    # everything it just proposed. Chat announcements are short notice,
     # so this agent keeps its nightly cadence. The hour leaves 11 hours before the model's next peak
     # window (01:00-04:00 UTC, 2x pricing) -- the margin GitHub's cron drift needs -- and sits after
     # the other peak (06:00-10:00 UTC). Off the round minute to dodge cron congestion.
@@ -39,7 +39,7 @@ permissions:
   contents: read
 
 jobs:
-  # One job for every channel, deliberately -- the opposite of the Instagram agent's matrix. All
+  # One job for every channel, deliberately. All
   # reads go through one logged-in session, and a session hopping addresses inside one night is
   # what gets a session revoked. One process, one connection, channels in sequence; the channel
   # list lives in telegram_channels.yaml and the agent reads it itself.

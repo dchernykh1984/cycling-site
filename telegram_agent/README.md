@@ -3,7 +3,7 @@
 Reads the Telegram channels no other agent can -- private club channels and closed communities --
 and proposes the events they announce (rides, hikes, runs, ski outings: the channels are outdoor
 communities of every kind, not only cycling) as pending events on the site, in all three locales
-(ru/kk/en), through the same API, dedup and location machinery as the events and Instagram agents.
+(ru/kk/en), through the same API, dedup and location machinery as the events agent.
 
 ## Why a member account and not a bot
 

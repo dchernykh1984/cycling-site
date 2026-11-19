@@ -22,7 +22,7 @@ class LlmSettings(Protocol):
     llm_api_key: str
 
 
-# How the reply spells a text given in every locale; the three agents ask for the same shape.
+# How the reply spells a text given in every locale; the two agents ask for the same shape.
 LOCALIZED = '{"ru": str, "kk": str, "en": str}'
 _SYSTEM = (
     "You extract real, upcoming sporting competitions from the given source text -- cycling "

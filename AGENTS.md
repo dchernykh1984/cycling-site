@@ -9,7 +9,7 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 
 - **Never merge a pull request** unless the maintainer asks for it in the message you are answering.
   Drive the pipeline green and stop.
-- **Never run an events agent** (`agent.yml`, `telegram-agent.yml`, `instagram-agent.yml`) without
+- **Never run an events agent** (`agent.yml`, `telegram-agent.yml`) without
   being asked: every run spends money on the LLM provider.
 - **Never invent facts.** Announcements, articles and event data carry only what the source says.
   When a source is contradictory, transcribe it and say so rather than tidying it into a guess.
@@ -36,7 +36,7 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 | `shipping-changes` | branches, commits, review cycles, the pipeline, what CI runs |
 | `site-content` | publishing and editing articles, news and events on the live site |
 | `production-access` | reaching production: shell, database, media, logs |
-| `events-agents` | the three import agents, their schedules, their logs |
+| `events-agents` | the two import agents, their schedules, their logs |
 | `calendar-curation` | filling and fixing the calendar by hand |
 | `locations` | the four-level geography tree and the rules that keep it clean |
 | `data-validation` | checking and correcting what is already on the site: duplicates, starts, dates, names |

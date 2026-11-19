@@ -1,8 +1,8 @@
 """The one line that credits an event to where it was announced, shared by the agents that add one.
 
-The Instagram and Telegram agents both credit a proposed event to the account or channel it came
-from, in the same words, so events read the same however they arrived. What may be named in the
-label is each agent's own rule (see their attribution modules); the wording lives here.
+The Telegram agent credits a proposed event to the channel it came from, in these words, so events
+read the same however they arrived. What may be named in the label is the agent's own rule (see its
+attribution module); the wording lives here.
 """
 
 from __future__ import annotations
