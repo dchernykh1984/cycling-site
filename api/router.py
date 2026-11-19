@@ -79,6 +79,7 @@ def _register_routers() -> None:
         group_times_router,
         remote_points_router,
     )
+    from api.endpoints.version import router as version_router
     from api.endpoints.virtual_members import router as virtual_members_router
     from api.endpoints.virtual_ride import router as virtual_ride_router
     from assistant.api import router as assistant_router
@@ -107,6 +108,7 @@ def _register_routers() -> None:
     api.add_router("/stats/", stats_router)
     api.add_router("/service-accounts/", service_accounts_router)
     api.add_router("/ratings/", ratings_router)
+    api.add_router("/version/", version_router)
 
 
 _register_routers()

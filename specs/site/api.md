@@ -8,7 +8,7 @@ token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 `tests/test_gallery_api.py`, `tests/test_input_length_limits.py`, `tests/test_virtual_ride_api.py`,
 `tests/test_managing_api.py`, `assistant/tests/test_api.py`, `tests/test_home_cards.py`,
 `tests/test_route_track_api.py`, `tests/test_stats.py`, `tests/test_virtual_members.py`,
-`tests/test_registrations_api.py`, `tests/e2e/test_api_to_front.py`
+`tests/test_registrations_api.py`, `tests/test_api_version.py`, `tests/e2e/test_api_to_front.py`
 **Related**: [events](events.md), [locations](locations.md), [news and knowledge](news-and-knowledge.md),
 [protocols](protocols.md), [registrations](registrations.md), [events agents](events-agents.md),
 [gallery](gallery.md)
@@ -122,6 +122,13 @@ and protocols with the event's upload token. The API has no language prefix.
    invite-only ones included (maintainer, 2026-10-31) -- which is how a watch data field (Garmin
    Connect IQ) shows a rider their place and gaps.
 
+### Story 3 -- The nightly deploy asks which commit runs (P2)
+
+1. **Given** anyone, **Then** `GET /version/` names the commit the site runs: `RELEASE_COMMIT`
+   when the host sets it, else the commit Render names on every deploy (`RENDER_GIT_COMMIT`), and
+   empty when neither is set. The nightly deploy (`.github/workflows/deploy.yml`, issue #153)
+   deploys `main` only while the site names another commit, and waits until it names `main`'s.
+
 ### Edge Cases
 
 - No token where one is needed: 422; an unknown or malformed token: 401; an event not approved: 401.
@@ -143,7 +150,8 @@ and protocols with the event's upload token. The API has no language prefix.
   `/event-types/`, `/participants/`, `/protocols/`, `/start-list/`, `/group-times/`,
   `/finish-times/`, `/remote-points/`, `/live-stats/`, `/gallery/`, `/home/`, `/event-photos/`
   ([event photos](event-photos.md)), `/virtual-ride/`, `/managing/` ([accounts](accounts.md)),
-  `/assistant/` ([event assistant](assistant.md)), `/stats/` ([statistics](statistics.md)). A
+  `/assistant/` ([event assistant](assistant.md)), `/stats/` ([statistics](statistics.md)),
+  `/version/` (the commit the site runs). A
   start-list upload also records which registration got which bib, from the lines' trailing `r<id>`
   field; its response is unchanged.
 - **FR-API-002**: Personal tokens belong to participants and up (generated on the profile); the
