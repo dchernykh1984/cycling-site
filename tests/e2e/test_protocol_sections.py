@@ -26,7 +26,9 @@ def test_on_a_phone_the_organizer_adds_a_section_and_the_event_shows_it(
     page.goto(f"{live_server.url}/{lang}/protocols/event/{approved_competition.pk}/sections/")
     for code, name in FINALS.items():
         page.fill(f"#id_new-{code}", name)
-    page.locator("button[value='add']").click()
+    # Pressed from the keyboard: a click aimed while the page still scrolls the button into view lands
+    # wherever the scroll left it, and nothing is sent (Firefox, CI). The keyboard has no place to miss.
+    page.locator("button[value='add']").press("Enter")
     expect(page.locator("#section-2 h2")).to_contain_text(FINALS[lang])
     # The page the form returns to is measured once its styles are in, not while they arrive
     page.wait_for_load_state("load")
