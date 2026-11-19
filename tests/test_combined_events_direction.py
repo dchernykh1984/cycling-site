@@ -38,7 +38,10 @@ class CombinedEventsDirectionTests(TestCase):
         self.assertEqual(list(kinds), KINDS)
 
     def test_it_comes_after_the_directions_there_were_so_none_of_them_moves(self):
-        self.assertGreater(self.direction().order, DisciplineCategory.objects.get(name_en="Hiking").order)
+        direction = self.direction()
+        earlier = DisciplineCategory.objects.filter(pk__lt=direction.pk).values_list("order", flat=True)
+        self.assertTrue(earlier, "the directions seeded before it should be there")
+        self.assertGreater(direction.order, max(earlier))
 
     def test_every_name_is_given_in_all_three_languages(self):
         direction = self.direction()
