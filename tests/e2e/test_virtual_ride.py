@@ -189,26 +189,30 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
     assert page.evaluate("window.copied") == "LINK-7"
 
 
-@pytest.mark.parametrize("connected", [False, True])
-def test_the_setup_page_offers_strava_or_says_the_rides_go_there(page: Page, connected: bool):
+@pytest.mark.parametrize("connected, send", [(False, False), (True, True), (True, False)])
+def test_the_setup_page_offers_strava_or_says_the_rides_go_there(page: Page, connected: bool, send: bool):
     source = _trainer_source()
     note = _cut(source, r"^function renderStravaNote\(\) \{.*?^\}")
     page.set_content('<style>.hidden{display:none}</style><p id="stravaNote" class="hidden"></p>')
     page.evaluate(
-        """({words, note, connected}) => {
+        """({words, note, connected, send}) => {
             const $ = s => document.querySelector(s);
             const STRAVA_LOGO = '', topPath = () => '/ru/virtual-ride/?group=5';
             const Records = {accountUrl: '/kk/accounts/profile/', me: {authenticated: true, strava_available: true,
-                strava_connected: connected, strava_connect_url: '/en/virtual-ride/strava/connect/'}};
+                strava_connected: connected, strava_send: send,
+                strava_connect_url: '/en/virtual-ride/strava/connect/'}};
             eval(words + note);
             window.t = t;
             renderStravaNote();
         }""",
-        {"words": _language_block(source), "note": note, "connected": connected},
+        {"words": _language_block(source), "note": note, "connected": connected, "send": send},
     )
     if connected:
-        # the connection shows: its rides go there, and the profile is where to manage it
-        expect(page.locator("#stravaNote")).to_contain_text(page.evaluate("t('strava.on')"))
+        # the connection shows, with whether its box sends the rides there (issue #471), and the profile is
+        # where to manage it
+        expect(page.locator("#stravaNote")).to_contain_text(
+            page.evaluate("send => send ? t('strava.on') : t('strava.off')", send)
+        )
         manage = page.locator("#stravaNote a")
         expect(manage).to_have_text(page.evaluate("t('strava.manage')"))
         expect(manage).to_have_attribute("href", "/kk/accounts/profile/#virtual-rides-strava")
@@ -218,6 +222,30 @@ def test_the_setup_page_offers_strava_or_says_the_rides_go_there(page: Page, con
     link = page.locator("#stravaNote a")
     expect(link).to_have_text("Connect with Strava")
     expect(link).to_have_attribute("href", "/ru/virtual-ride/strava/connect/?next=%2Fru%2Fvirtual-ride%2F%3Fgroup%3D5")
+
+
+@pytest.mark.parametrize("connected, send", [(False, False), (True, True), (True, False)])
+def test_the_setup_page_offers_intervals_icu_or_says_where_the_rides_go(page: Page, connected: bool, send: bool):
+    """Issue #471: the note says whether rides go to intervals.icu; the profile is where to connect or manage it."""
+    source = _trainer_source()
+    note = _cut(source, r"^function renderIntervalsNote\(\) \{.*?^\}")
+    page.set_content('<style>.hidden{display:none}</style><p id="intervalsNote" class="hidden"></p>')
+    page.evaluate(
+        """({words, note, connected, send}) => {
+            const $ = s => document.querySelector(s);
+            const Records = {accountUrl: '/kk/accounts/profile/', me: {authenticated: true, intervals_available: true,
+                intervals_connected: connected, intervals_send: send}};
+            eval(words + note);
+            window.t = t;
+            renderIntervalsNote();
+        }""",
+        {"words": _language_block(source), "note": note, "connected": connected, "send": send},
+    )
+    said = "send ? t('intervals.on') : t('intervals.off')" if connected else "t('intervals.offer')"
+    expect(page.locator("#intervalsNote")).to_contain_text(page.evaluate(f"send => {said}", send))
+    link = page.locator("#intervalsNote a")
+    expect(link).to_have_text(page.evaluate("t('intervals.manage')" if connected else "t('intervals.connect')"))
+    expect(link).to_have_attribute("href", "/kk/accounts/profile/#virtual-rides-intervals")
 
 
 def test_the_track_puts_the_rider_back_on_the_map_where_the_route_is(page: Page):
