@@ -44,14 +44,20 @@ jobs:
   # what gets a session revoked. One process, one connection, channels in sequence; the channel
   # list lives in telegram_channels.yaml and the agent reads it itself.
   read:
+    # The secrets are the production environment's, which only main may use (Settings -> Environments):
+    # a workflow pushed on any other branch gets none of them.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Fail a manual run started by anyone other than the owner before any secret is used.
+      # Fail a run started by hand, or started again, by anyone other than the owner before any secret is
+      # used: a re-run keeps the first run's actor, so the one who started it again is the triggering actor.
       - name: Restrict manual runs to the repository owner
-        if: ${{ github.event_name == 'workflow_dispatch' && github.actor != github.repository_owner }}
+        if: >-
+          ${{ github.triggering_actor != github.repository_owner &&
+          (github.event_name == 'workflow_dispatch' || github.run_attempt != '1') }}
         run: |
-          echo "::error::Only ${{ github.repository_owner }} may run this workflow manually (actor: ${{ github.actor }})."
+          echo "::error::Only ${{ github.repository_owner }} may run this workflow by hand (started by: ${{ github.triggering_actor }})."
           exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v7
