@@ -1,9 +1,9 @@
 """All-round competitions have a direction of their own, general physical preparation first (migration 0041).
 
 The migration's functions are called against the real app registry rather than driven through
-MigrationExecutor, for the reason HikingMigrationTests gives: rolling the app back in-process
-truncates the seeded tables for every test that runs afterwards. A TestCase rolls each write here
-back. Assertions use the English names, so this file stays ASCII.
+MigrationExecutor, for the reason HikingMigrationTests (calendar_app/tests.py) gives: rolling the
+app back in-process truncates the seeded tables for every test that runs afterwards. A TestCase
+rolls each write here back. Assertions use the English names, so this file stays ASCII.
 """
 
 import datetime
