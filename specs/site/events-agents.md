@@ -29,7 +29,7 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
    of a GPS track the page links to.
 3. **Given** the maintainer reads a run, **Then** its summary names every proposed event with link
    and place, every skipped candidate with its reason, and per-source counts.
-4. **Given** a channel or an account the maintainers gave a city, **Then** a post that names no
+4. **Given** a Telegram channel the maintainers gave a city, **Then** a post that names no
    place is filed in that city; one that names a region or a country takes the city only where the
    tree has it there, so a club chat reposting another country's calendar does not file it at home.
 5. **Given** an announcement that names a region the tree knows and no town in it, **Then** the
