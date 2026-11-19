@@ -8,7 +8,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from tests import trainer_page
-from tests.e2e.test_virtual_ride import _ride_alone, _trainer_in_its_menu
+from tests.e2e.test_virtual_ride import _FRAMES, _ride_alone, _trainer_in_its_menu
 
 _ALATAU = trainer_page.PAGE.parent / "alatau"
 
@@ -267,3 +267,57 @@ def test_a_trainer_that_refuses_to_hold_a_power_is_ridden_by_the_grade(page: Pag
     # refused once, then no more power asked of it: the route's grade instead
     assert found == {"sent": [0x05, 0x11], "range": None, "grade": 4}, found
     assert errors == [], errors
+
+
+def _menu_in_kazakh(page: Page, live_server, size) -> None:
+    page.set_viewport_size({"width": size[0], "height": size[1]})
+    page.add_init_script(_FRAMES)
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=kk")  # the longest words
+    page.evaluate("drawFrame(16)")
+    if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
+        pytest.skip("this browser cannot draw 3D, so the page does not start in it")
+    page.evaluate(
+        """() => {
+            Records.me = { authenticated: true, intervals_connected: true };
+            Icu.list = [
+                { id: 1, date: '2026-11-21', duration_s: 5400,
+                  name: 'Sweet spot 3x12 with over-unders and a long cool-down' },
+                { id: 2, date: '2026-11-22', name: 'VO2maxIntervalsWithoutAnySpacesInTheNameAtAll', duration_s: 3600 },
+            ];
+            settings.mode = 'plan'; settings.planIcu = 1;
+            Icu.plan = { name: 'Sweet spot', ftp: 250, cues: [],
+                         steps: [{ min: 1, w: 200, w2: 200, cad: 90 }, { min: 1, w: 100, w2: 300, cad: 95 }] };
+            renderPlanEditor(); renderIcu();
+        }"""
+    )
+
+
+@pytest.mark.parametrize("width", [360, 320])
+@pytest.mark.django_db(transaction=True)
+def test_the_workout_list_fits_a_narrow_phone_in_kazakh(page: Page, live_server, width: int):
+    """Long names wrap rather than widen the page, and each workout is a whole button to tap."""
+    _menu_in_kazakh(page, live_server, (width, 740))
+    fit = page.evaluate(
+        """() => ({ page: document.scrollingElement.scrollWidth,
+            off: [...document.querySelectorAll('#plIcuList button')].map(b => b.getBoundingClientRect())
+                .filter(r => r.height < 44 || r.right > innerWidth).length })"""
+    )
+    assert fit == {"page": width, "off": 0}, fit
+
+
+@pytest.mark.parametrize("size", [(360, 740), (320, 640), (844, 390)])
+@pytest.mark.django_db(transaction=True)
+def test_the_power_target_fits_the_hud_on_a_phone_in_kazakh(page: Page, live_server, size):
+    """The longest title a power step shows -- held by ERG, with its cadence -- is not cut off on a phone."""
+    _menu_in_kazakh(page, live_server, size)
+    page.evaluate("startRace()")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("() => { Trainer.held = 200; drawFrame(200); }")
+    title, panel, width = page.evaluate(
+        """() => { const t = document.querySelector('#tTitle');
+            return [{ scroll: t.scrollWidth, client: t.clientWidth, right: t.getBoundingClientRect().right },
+                    document.querySelector('#target').getBoundingClientRect().right,
+                    document.scrollingElement.scrollWidth]; }"""
+    )
+    assert title["scroll"] <= title["client"] and title["right"] <= panel, (title, panel)
+    assert width == size[0], width
