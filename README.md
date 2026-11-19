@@ -93,8 +93,9 @@ site down for up to a minute.
   Environments), whose deployment branches are `main` only. A job receives them only when it names
   the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
   fork's, gets none, and `main` changes only through a reviewed pull request. None is kept as a
-  repository secret, which every branch's workflow could read. The jobs that use them run by hand,
-  or run again, for the repository's owner only.
+  repository secret, which every branch's workflow could read. The deploy, the agents and the
+  Dropbox check run by hand, or run again, for the repository's owner only; CI's model check runs on
+  every push to `main`, whoever starts it again.
 - **Render runs `python manage.py migrate`** as a pre-deploy step.
 
 Configuration comes from environment variables set in the Render dashboard:
