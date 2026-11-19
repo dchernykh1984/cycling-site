@@ -446,6 +446,10 @@ PROTOCOL_LOAD_TIMEOUT_MS = env.int("PROTOCOL_LOAD_TIMEOUT_MS", default=20_000)
 
 SITE_BASE_URL = env("SITE_BASE_URL", default="http://localhost:8000")
 
+# The commit this instance runs, which /api/v1/version/ tells the nightly deploy (issue #153):
+# RELEASE_COMMIT when the host is told it, else the commit Render names on every deploy.
+RELEASE_COMMIT = env("RELEASE_COMMIT", default="") or env("RENDER_GIT_COMMIT", default="")
+
 # IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
 # check that whoever submits URLs for this host controls it. Empty means no submissions at all.
 INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
