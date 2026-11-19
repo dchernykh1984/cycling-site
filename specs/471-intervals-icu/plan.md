@@ -123,7 +123,8 @@ box on.
 **API** (`/api/v1/virtual-ride/`):
 
 - `GET /services` and `PATCH /services/{strava|intervals}` with `{send_rides}`.
-- `POST /services/intervals` with `{api_key, send_rides}` (201, or 422 with intervals.icu's reason),
+- `POST /services/intervals` with `{api_key, send_rides}` (201, or 422 with intervals.icu's reason,
+  or 429 past five keys in ten minutes),
   and `DELETE /services/intervals`.
 - `POST /rides/{id}/intervals` and `GET /rides/{id}/intervals`, mirroring Strava's.
 - `GET /me` gains `intervals_available`, `intervals_connected`, `strava_send` and `intervals_send`.
