@@ -54,7 +54,7 @@ def live_commit(site: str, fetch: Fetch = fetch_json) -> str:
 
 def ci_conclusion(repo: str, sha: str, token: str, fetch: Fetch = fetch_json) -> str:
     """How CI on main's push of ``sha`` ended -- "success", "failure", ... -- or "" while it runs."""
-    query = urllib.parse.urlencode({"head_sha": sha, "event": "push"})
+    query = urllib.parse.urlencode({"head_sha": sha, "event": "push", "branch": "main"})
     url = f"https://api.github.com/repos/{repo}/actions/workflows/{CI_WORKFLOW}/runs?{query}"
     runs = fetch(url, token).get("workflow_runs") or []
     return (runs[0].get("conclusion") or "") if runs else ""
