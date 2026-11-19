@@ -72,7 +72,9 @@ maintainer decided the points below in conversation on 2026-11-19; they are reco
    - The results say when the ride is on intervals.icu ("View on intervals.icu") or why it is not,
      and "Send again" retries.
 2. **Given** Strava connected with its box off, **When** a ride is saved, **Then** it is not sent to
-   Strava. "Send again" from the results still sends that one ride, at the member's own request.
+   Strava, and the results say nothing about Strava. The member can still send that one ride
+   through the API (`POST /rides/{id}/strava`); the results offer "Send again" only after a failed
+   upload.
 3. **Given** the profile's recent rides, **Then** each links to its activity on every service that
    has it.
 4. **Given** the member's key no longer accepted by intervals.icu, **Then** the next upload fails
