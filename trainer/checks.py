@@ -15,8 +15,9 @@ def integrations_key_can_seal(app_configs, **kwargs):
         checks.Warning(
             "INTEGRATIONS_ENCRYPTION_KEY is set but is not a Fernet key (32 url-safe base64-encoded bytes):"
             " intervals.icu is not offered.",
-            hint="Generate one: python -c "
-            '"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"',
+            # the command README.md and the settings give
+            hint="Generate one: python3 -c "
+            '"import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"',
             id="trainer.W001",
         )
     ]
