@@ -24,24 +24,38 @@ function trackPoint(inp) {
     Math.round(clamp(me.v, 0, 40) * 100) / 100, Math.round(clamp(inp.P || 0, 0, 3000)), Math.round(clamp(inp.cad || 0, 0, 250)), Math.round(clamp(inp.hr || 0, 0, 260))];
 }
 /* ---- выполнение плана во время заезда ---- */
+// A step of the own plan is { f, r, cad, min }: a gear and a cadence. A step of a workout from intervals.icu
+// (issue #471) is { w, w2, cad, min }: the power in watts at its start and at its end (a ramp moves between
+// them; none for a free ride) and the cadence it asks for, if any. Cues are { at_s, text } from the start.
 const Work = {
-  active: false, steps: [], ends: [], idx: -1, t: 0, ss: [], warned: false,
-  start(steps) {
+  active: false, steps: [], ends: [], idx: -1, t: 0, ss: [], warned: false, cues: [], cue: 0, name: null,
+  start(steps, cues, name) {
     this.steps = steps.map(s => Object.assign({}, s)); let acc = 0; this.ends = this.steps.map(s => (acc += s.min * 60));
-    this.ss = this.steps.map(() => ({ time: 0, sumCad: 0, n: 0, zone: 0 })); this.idx = -1; this.t = 0; this.active = true; this.warned = false;
+    this.ss = this.steps.map(() => ({ time: 0, sumCad: 0, n: 0, zone: 0, aimed: 0, sumP: 0 })); this.idx = -1; this.t = 0; this.active = true; this.warned = false;
+    this.cues = cues || []; this.cue = 0; this.name = name ?? null;
   },
   total() { return this.ends[this.ends.length - 1] || 0; },
   cur() { return this.steps[Math.max(0, this.idx)]; },
-  update(dt, cad, mode) {
+  // the power the step under way asks for at this second, in watts, or null for a step without one
+  target() {
+    const i = Math.max(0, this.idx), s = this.steps[i]; if (!this.active || !s || s.w == null) return null;
+    const from = i ? this.ends[i - 1] : 0, f = clamp((this.t - from) / (this.ends[i] - from), 0, 1);
+    return Math.round(s.w + ((s.w2 == null ? s.w : s.w2) - s.w) * f);
+  },
+  update(dt, cad, mode, P) {
     this.t += dt;
     let i = this.ends.findIndex(e => this.t < e); if (i < 0) { this.active = false; return true; }
     if (i !== this.idx) {
-      this.idx = i; this.warned = false; const s = this.steps[i], shift = mode === 'cadence' || mode === 'demo';
+      this.idx = i; this.warned = false; const s = this.steps[i], shift = s.f != null && (mode === 'cadence' || mode === 'demo');
       if (shift) { gearF = s.f; gearR = s.r; }
       rideEvent('planStep', i, s, shift);
     }
-    const s = this.steps[i], st = this.ss[i];
-    st.time += dt; if (cad > 0) { st.sumCad += cad * dt; st.n += dt; } if (Math.abs((cad || 0) - s.cad) <= 5) st.zone += dt;
+    const s = this.steps[i], st = this.ss[i], w = this.target();
+    st.time += dt; st.sumP += (P || 0) * dt; if (cad > 0) { st.sumCad += cad * dt; st.n += dt; }
+    // the time on the step's target: the power within 5 % of it, or else the cadence within 5 rpm of it
+    if (w != null) { st.aimed += dt; if (Math.abs((P || 0) - w) <= w * .05) st.zone += dt; }
+    else if (s.cad) { st.aimed += dt; if (Math.abs((cad || 0) - s.cad) <= 5) st.zone += dt; }
+    while (this.cue < this.cues.length && this.cues[this.cue].at_s <= this.t) rideEvent('planCue', this.cues[this.cue++].text);
     const left = this.ends[i] - this.t, nx = this.steps[i + 1];
     if (!this.warned && left < 10 && nx) { this.warned = true; rideEvent('planSoon', nx); }
     return false;
@@ -71,7 +85,7 @@ function stepRide(dt, inp, t) {
         if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; rideEvent('backToStart'); }
         const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
-        if (rideMode === 'plan' && Work.update(dt, inp.cad, inp.mode)) rideEvent('planDone');
+        if (rideMode === 'plan' && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
       } else if (me.s >= world.FIN) { me.finishT = raceT; rideEvent('finish'); }
       world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; rideEvent('sight', l); } });
     } else { me.s += stepRider(me, 60, grade, dt); }

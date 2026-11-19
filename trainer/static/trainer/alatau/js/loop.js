@@ -10,20 +10,24 @@ Object.assign(rideHooks, {
   lap: n => toast(t('hud.lapToast', { n }), 2.5),
   sight: l => toast(l.side === 'right' ? t('sight.right', { name: l.name }) : t('sight.left', { name: l.name }), 4.5),
   finish: () => finishRace(),
-  planStep: (i, s, shifted) => { if (shifted) updateModeUI(); toast(t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }), 5); },
-  planSoon: s => toast(t('plan.soon', { g: gearLabel(s.f, s.r), c: s.cad }), 4),
+  planStep: (i, s, shifted) => { if (shifted) updateModeUI(); toast(s.f != null ? t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.stepToastW', { n: i + 1, what: stepWhat(s) }), 5); },
+  planSoon: s => toast(s.f != null ? t('plan.soon', { g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.soonW', { what: stepWhat(s) }), 4),
+  planCue: text => toast(text, 6),
   planDone: () => finishWorkout()
 });
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(MAX_FRAME, (now - last) / 1000); last = now; clockT += dt;
   Sensors.tick(now);
-  if (phase === 'menu') { renderPreview(dt); return; } // на странице настроек 3D-сцену не рисуем
+  // на странице настроек 3D-сцену не рисуем; a smart trainer is let go back to a flat road, not left holding a workout's power
+  if (phase === 'menu') { Trainer.update(clockT, 0, me, null); renderPreview(dt); return; }
   if (!world) return;
   const T = world.T, frozen = paused || photo, grade = gradeAt(T, me.s);
   const inp = frozen ? { P: 0, cad: 0, mode: 'demo' } : readInput();
   if (!frozen) { advanceRide(dt, inp, clockT); showCount(); }
-  Trainer.update(clockT, phase === 'race' && !frozen ? grade * 100 : 0, me);
+  // the grade, or the power of a workout's step while ERG is on (Trainer holds it on a trainer that can)
+  const riding = phase === 'race' && !frozen;
+  Trainer.update(clockT, riding ? grade * 100 : 0, me, riding && rideMode === 'plan' && settings.erg !== false ? Work.target() : null);
   MP.lastInp = inp;
   // боты: позиция и анимация
   bots.forEach(b => {
