@@ -71,8 +71,6 @@ select = [
 "**/tests.py" = ["S101", "S105", "S106"]
 # The agent only ever opens http(s) URLs from the source list / site API / LLM endpoint.
 "agent/fetch.py" = ["S310"]
-"instagram_agent/fetch.py" = ["S310"]
-"instagram_agent/geo.py" = ["S310"]
 "agent/llm.py" = ["S310"]
 "agent/site_api.py" = ["S310"]
 "agent/check_model.py" = ["S310"]
@@ -105,9 +103,6 @@ omit = [
     # Standalone scheduled tool (talks to the site over HTTP, not the ORM). Its pure logic has its
     # own tests under agent/tests/; the network/LLM adapters are not part of the site coverage gate.
     "agent/*",
-    # The Instagram agent is the same kind of standalone tool, with its own tests under
-    # instagram_agent/tests/.
-    "instagram_agent/*",
     # And so is the Telegram agent (telegram_agent/tests/).
     "telegram_agent/*",
 ]

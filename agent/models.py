@@ -14,7 +14,6 @@ class SourceKind(StrEnum):
     TG_PUBLIC = "tg_public"
     TG_ACCOUNT = "tg_account"
     TG_PRIVATE = "tg_private"
-    INSTAGRAM = "instagram"
     TELEGRAM = "telegram"
 
 

@@ -1,4 +1,4 @@
-"""When the three agents are told to run, and why the hour matters.
+"""When the two agents are told to run, and why the hour matters.
 
 The model bills double inside two windows (01:00-04:00 and 06:00-10:00 UTC), and GitHub starts a
 cron only when it has capacity -- our own runs have drifted more than five hours on a bad day. So
@@ -13,7 +13,6 @@ import pytest
 
 WORKFLOWS = {
     "events": ".github/workflows/agent.yml",
-    "instagram": ".github/workflows/instagram-agent.yml",
     "telegram": ".github/workflows/telegram-agent.yml",
 }
 
@@ -55,7 +54,7 @@ def test_every_agent_keeps_a_margin_for_github_cron_drift(name):
 
 
 def test_the_web_agent_reads_the_sources_twice_a_week():
-    """The expensive agent: 27 sources and 20-40 minutes against 1-4 for the other two.
+    """The expensive agent: 27 sources and 20-40 minutes against 1-4 for the Telegram agent.
 
     Websites announce weeks ahead, so Monday and Friday cost nothing in lead time.
     """
@@ -64,18 +63,16 @@ def test_the_web_agent_reads_the_sources_twice_a_week():
     assert cron["dom"] == "*" and cron["month"] == "*"
 
 
-@pytest.mark.parametrize("name", ["instagram", "telegram"])
-def test_the_short_notice_agents_still_run_every_night(name):
-    """Club posts and chat announcements are days old at most; a weekly read would miss them."""
-    cron = _cron(name)
+def test_the_telegram_agent_still_runs_every_night():
+    """Chat announcements are days old at most; a weekly read would miss them."""
+    cron = _cron("telegram")
     assert (cron["dow"], cron["dom"], cron["month"]) == ("*", "*", "*")
 
 
 def test_the_agents_run_in_the_order_that_lets_each_see_the_last():
-    """The Telegram agent dedups against what the other two just proposed, so it goes last."""
+    """The Telegram agent dedups against what the web agent just proposed, so it goes last."""
     hours = {name: _cron(name)["hour"] for name in WORKFLOWS}
-    assert hours["events"] < hours["instagram"] < hours["telegram"]
-    assert hours["instagram"] - hours["events"] >= 1, "the web agent runs up to 40 minutes"
+    assert hours["telegram"] - hours["events"] >= 1, "the web agent runs up to 40 minutes"
 
 
 @pytest.mark.parametrize("name", sorted(WORKFLOWS))
