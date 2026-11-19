@@ -19,7 +19,7 @@ jobs:
     # workflow, a fork's or this repository's, receives them. No pull_request_target.
     environment: production
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25 # ten tries a minute apart, each up to a minute of Dropbox's own timeouts
     steps:
       # Fail a run started by hand, or started again, by anyone other than the owner before any secret is
       # used: a re-run keeps the first run's actor, so the one who started it again is the triggering actor.
@@ -43,4 +43,12 @@ jobs:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_TEST_FOLDER_URL: ${{ secrets.DROPBOX_TEST_FOLDER_URL }}
-        run: uv run pytest tests/integration/test_dropbox_photos.py -n 0 --no-cov -q --tb=short
+        # Dropbox or the network may stumble for a moment: up to ten tries a minute apart, and the check is
+        # red only when every one failed. A red check holds the deploy (scripts/deploy_if_behind.py).
+        run: |
+          for attempt in $(seq 1 10); do
+            uv run pytest tests/integration/test_dropbox_photos.py -n 0 --no-cov -q --tb=short && exit 0
+            if [ "$attempt" -lt 10 ]; then echo "Try $attempt of 10 failed; the next in a minute."; sleep 60; fi
+          done
+          echo "::error::All 10 tries failed."
+          exit 1
