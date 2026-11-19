@@ -12,6 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_POST
 
 from accounts.access import needs_email_confirmation
@@ -126,8 +127,10 @@ def service_sending(request, service):
     return redirect(_services_card())
 
 
+@sensitive_post_parameters("api_key")
 @login_required
 @require_POST
+@sensitive_variables("key")
 def intervals_connect(request):
     """The member's own API key: checked with intervals.icu, then kept sealed and never shown again."""
     if needs_email_confirmation(request.user) or not intervals.available():

@@ -5,19 +5,21 @@ rides go there as they go to Strava. Every call to intervals.icu is a patched ``
 """
 
 import json
+import sys
 from unittest import mock
 
 import requests
 from django.contrib.messages import get_messages
 from django.core import checks
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import translation
 from django.utils.translation import gettext
+from django.views.debug import ExceptionReporter
 
 from tests.test_virtual_ride_api import API, MemberClientMixin, _ride, _user
 from tests.test_virtual_ride_strava import STRAVA_ON, _answer, _connect, _track
-from trainer import intervals, secret_box
+from trainer import intervals, secret_box, views
 from trainer.models import IntervalsConnection, IntervalsUpload, RideTrack, StravaConnection, VirtualRide
 
 KEY = "abc123-the-members-own-key"
@@ -72,6 +74,47 @@ class StartupCheckTests(TestCase):
             self.assertEqual(_startup_warnings(), ["trainer.W001"])
         with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""):
             self.assertEqual(_startup_warnings(), [], "no key is a site without intervals.icu, by choice")
+
+
+class ErrorReportTests(TestCase):
+    """A server error mails its report, with every frame's variables, to the admins: never with a key."""
+
+    def setUp(self):
+        self.user = _user("anna")
+
+    def report_of(self, act, request=None):
+        request = request or RequestFactory().post("/")
+        try:
+            act()
+        except RuntimeError:
+            return ExceptionReporter(request, *sys.exc_info()).get_traceback_html()
+        self.fail("nothing went wrong")
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_failure_while_connecting_leaves_the_key_out(self, call):
+        call.side_effect = RuntimeError("the library broke")  # deep down, where the key travels as auth
+        self.assertNotIn(KEY, self.report_of(lambda: intervals.connect(self.user, KEY)))
+        call.side_effect = None
+        call.return_value = _answer(200, {"id": "i42"})
+        with mock.patch.object(IntervalsConnection.objects, "update_or_create", side_effect=RuntimeError("db gone")):
+            self.assertNotIn(KEY, self.report_of(lambda: intervals.connect(self.user, KEY)))
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_failure_in_the_profile_s_form_leaves_the_key_out(self, call):
+        call.side_effect = RuntimeError("the library broke")
+        request = RequestFactory().post("/", {"api_key": KEY})
+        request.user = self.user
+        report = self.report_of(lambda: views.intervals_connect(request), request)
+        self.assertIn("api_key", report)
+        self.assertNotIn(KEY, report)
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_failure_while_uploading_leaves_the_key_out(self, call):
+        _connected(self.user)
+        ride = VirtualRide.objects.create(user=self.user, route="center", duration_s=3, distance_m=16)
+        RideTrack.objects.create(ride=ride, points=_track())
+        call.side_effect = RuntimeError("the library broke")
+        self.assertNotIn(KEY, self.report_of(lambda: intervals.upload(ride)))
 
 
 class ConnectTests(TestCase):

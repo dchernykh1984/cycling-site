@@ -13,6 +13,7 @@ from http import HTTPStatus
 import requests
 from django.core.cache import cache
 from django.utils.html import strip_tags
+from django.views.decorators.debug import sensitive_variables
 
 from . import secret_box, strava
 from .models import IntervalsConnection, IntervalsUpload, RideTrack, VirtualRide
@@ -48,6 +49,8 @@ def available() -> bool:
     return secret_box.available()
 
 
+# every frame from here down, the HTTP library's too, holds the key: none of them goes into an error report
+@sensitive_variables()
 def _call(key: str, method: str, path: str, timeout: float = _TIMEOUT, **kwargs) -> requests.Response:
     try:
         response = requests.request(
@@ -85,6 +88,7 @@ def _may_try(user) -> bool:
         return True
 
 
+@sensitive_variables("key")
 def connect(user, key: str, send_rides: bool = False) -> IntervalsConnection:
     """Check the key with intervals.icu, then keep it sealed with the athlete it belongs to."""
     key = key.strip()
@@ -123,6 +127,7 @@ def _record(ride: VirtualRide, status: str, error: str = "", activity_id: str = 
     return record
 
 
+@sensitive_variables("key")
 def upload(ride: VirtualRide) -> IntervalsUpload:
     """Send one ride to the member's intervals.icu as an activity. A failure is recorded, not raised."""
     failed = IntervalsUpload.Status.FAILED
@@ -163,6 +168,7 @@ def upload(ride: VirtualRide) -> IntervalsUpload:
     return _record(ride, IntervalsUpload.Status.DONE, activity_id=activity_id)
 
 
+@sensitive_variables("key")
 def _mark_virtual(key: str, activity_id: str) -> None:
     """A TCX reads as a ride on the road; this one was on a trainer in a virtual world.
 
