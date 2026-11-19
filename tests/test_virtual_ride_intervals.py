@@ -136,11 +136,11 @@ class ConnectTests(TestCase):
 
     @mock.patch("trainer.intervals.requests.request")
     def test_a_refused_key_keeps_nothing(self, call):
-        for status in (401, 403):
+        for status, verdict_on_the_key in ((401, True), (403, False)):
             call.return_value = _answer(status)
             with self.assertRaises(intervals.IntervalsError) as caught:
                 intervals.connect(self.user, KEY)
-            self.assertTrue(caught.exception.revoked)
+            self.assertEqual(caught.exception.revoked, verdict_on_the_key, status)
         self.assertFalse(IntervalsConnection.objects.exists())
 
     @override_settings(CACHES=COUNTING_CACHE)
@@ -241,6 +241,15 @@ class SendingTests(MemberClientMixin, TestCase):
         self.assertIsNone(self.save(power_source="demo").json()["intervals"])
         self.assertIsNone(self.post(self.client_m, "/rides", _ride()).json()["intervals"])
         call.assert_not_called()
+
+    @mock.patch("trainer.intervals.requests.request")
+    def test_a_403_fails_the_upload_and_keeps_the_connection(self, call):
+        # the proxy in front of intervals.icu answers 403 when it turns the site's address away
+        _connected(self.user)
+        call.return_value = _answer(403, text="<html>Sorry, you have been blocked</html>")
+        body = self.save().json()["intervals"]
+        self.assertEqual(body["status"], "failed")
+        self.assertTrue(IntervalsConnection.objects.filter(user=self.user).exists())
 
     @mock.patch("trainer.intervals.requests.request")
     def test_a_key_intervals_icu_no_longer_takes_drops_the_connection(self, call):
