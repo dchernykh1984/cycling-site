@@ -2,6 +2,7 @@
 
 import urllib.error
 from datetime import UTC, datetime
+from urllib.parse import parse_qs
 
 from scripts import deploy_if_behind as deploy
 
@@ -27,6 +28,9 @@ class Site:
         assert url.startswith("https://api.github.com/repos/owner/site/") and token == "t", url
         if url.endswith("/commits/main"):
             return {"sha": MAIN}
+        path, _, query = url.partition("?")
+        assert path.endswith("/actions/workflows/ci.yml/runs"), url
+        assert parse_qs(query) == {"head_sha": [MAIN], "event": ["push"], "branch": ["main"]}, "main's own CI"
         return {"workflow_runs": [{"conclusion": self.conclusion}] if self.runs else []}
 
     def deploy(self, hook, sha):
