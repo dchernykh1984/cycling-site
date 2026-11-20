@@ -71,6 +71,10 @@ restored, locally or onto production.
   another branch receives them, and none is a repository secret. The deploy, the agents and the
   Dropbox check run by hand, or run again, for the repository's owner only.
 - **FR-OPS-002**: Dependencies are locked with uv; `requirements.txt` is exported from the lock.
+- **FR-OPS-003**: An upload opened at its `/media/` address cannot act as a page of the site
+  (`cycling_site/urls.py`, `serve_media`): every file but a PDF carries `Content-Security-Policy:
+  sandbox` (a browser's PDF viewer may refuse a sandboxed document), and HTML and XML are downloaded
+  rather than shown. The private prefix and the protocol folders are not served there at all.
 
 ## Key Entities
 
@@ -80,6 +84,9 @@ restored, locally or onto production.
 
 - Production settings list the site's own host names in code (`cycling_site/settings/prod.py`:
   `universalbicycle.team`, `www.universalbicycle.team`) beside those read from the environment.
+- Production settings name Cloudflare's `CF-Connecting-IP` as the header holding a visitor's address
+  (Render passes every request through Cloudflare); `CLIENT_IP_HEADER` in the environment names
+  another host's header, or none.
 
 ## Open Questions
 

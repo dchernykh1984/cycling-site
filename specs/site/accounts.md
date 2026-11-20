@@ -18,7 +18,8 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 `tests/test_roles.py`, `tests/test_role_matrix.py`, `tests/test_virtual_members.py`,
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
-`tests/test_change_email.py`, `tests/e2e/test_change_email.py`, `tests/e2e/test_role_ladder.py`
+`tests/test_change_email.py`, `tests/e2e/test_change_email.py`, `tests/e2e/test_role_ladder.py`,
+`tests/test_sign_in_limits.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
@@ -333,6 +334,13 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
     A member reads at most sixty times in ten minutes (429); a workout intervals.icu does not have,
     or one a bike does not ride, is 404; one without steps, or by power with no FTP, is 422;
     intervals.icu failing is 503; a key it no longer takes drops the connection and answers 409.
+- **FR-ACC-016**: Sign-in, sign-up, password resets and confirmation mails are held to allauth's own
+  rates, which count each visitor and each address apart; the site sets none of its own. A visitor
+  is the address the proxy in front of the site names in the header the deployment sets
+  (`CLIENT_IP_HEADER`); without one, or with a value that is no address, the connection's address
+  counts. Each process logs once, cut to the network, where it read the address from
+  (`accounts.adapters`). Rates of the site's own, counted by the connection alone, held the whole
+  site back while every request came from one proxy address.
 
 ## Key Entities
 
