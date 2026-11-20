@@ -98,7 +98,7 @@ into view, tells a guest to sign in and brings them back to it, and says when th
 has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
-fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a cadence plan and free riding. It includes rider
+fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu. During a ride the HUD shows, in one row on top, the speed,
 the distance, the metres climbed and the time over a bar of the route (or the plan, or the lap) done; under it the
