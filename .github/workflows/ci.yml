@@ -28,8 +28,8 @@ jobs:
       # deploys versions nothing here tested, or ones that do not install at all -- Django 6.1 next to
       # django-ninja 1.6, which needs Django below 6.1, broke the deploy that way. The uv-export hook
       # rewrites and stages the file, which pre-commit does not count as a change, so look here.
-      - name: requirements.txt matches uv.lock
-        run: git diff --exit-code HEAD -- requirements.txt
+      - name: requirements.txt and requirements-agents.txt match uv.lock
+        run: git diff --exit-code HEAD -- requirements.txt requirements-agents.txt
 
   commitizen:
     if: github.ref != 'refs/heads/main'

@@ -65,8 +65,8 @@ repos:
         pass_filenames: false
 
       - id: uv-export
-        name: export requirements.txt from uv.lock
+        name: export requirements.txt and requirements-agents.txt from uv.lock
         language: system
-        entry: bash -c 'uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt && git add requirements.txt'
+        entry: bash -c 'uv export --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt && uv export --only-group agents --no-annotate --no-emit-project -o requirements-agents.txt && git add requirements.txt requirements-agents.txt'
         pass_filenames: false
         always_run: true
