@@ -3,10 +3,11 @@ from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import URLPattern, URLResolver, include, path, re_path, reverse
-from django.utils.http import urlencode
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
@@ -58,11 +59,29 @@ def indexnow_key_file(request, key):
     return HttpResponse(configured, content_type="text/plain")
 
 
-def admin_sign_in(request, home):
+def admin_sign_in(request, home, may_enter):
     """Both admins sign in through the site's own sign-in, which holds every attempt to allauth's limits,
     per visitor and per address, and offers the providers too; their own forms took a password without
-    any limit, Wagtail's for any member. Checks nothing itself: a POST is sent on like a GET."""
-    return redirect(f"{reverse('account_login')}?{urlencode({'next': request.GET.get('next') or reverse(home)})}")
+    any limit, Wagtail's for any member. Checks no password itself: a POST is sent on like a GET.
+
+    A member already signed in goes where they asked if they may enter, and is refused if not: sent to
+    the site's sign-in, which returns a signed-in member to where they came from, they would go round in
+    circles.
+    """
+    asked = request.GET.get("next", "")
+    if not url_has_allowed_host_and_scheme(
+        asked, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        asked = reverse(home)
+    if not request.user.is_authenticated:
+        return redirect(f"{reverse('account_login')}?{urlencode({'next': asked})}")
+    if not may_enter(request):
+        raise PermissionDenied
+    return redirect(asked)
+
+
+def _may_enter_wagtail(request):
+    return request.user.has_perm("wagtailadmin.access_admin")
 
 
 def robots_txt(request):
@@ -139,10 +158,10 @@ sitemaps = {
 # Machine-facing addresses, and the ones a language prefix would only get in the way of: the API,
 # both admins, the media and the files a crawler asks for by exact name.
 urlpatterns: list[URLPattern | URLResolver] = [
-    path("django-admin/login/", admin_sign_in, {"home": "admin:index"}),
+    path("django-admin/login/", admin_sign_in, {"home": "admin:index", "may_enter": admin.site.has_permission}),
     path("django-admin/", admin.site.urls),
     path("api/v1/", ninja_api.urls),
-    path("admin/login/", admin_sign_in, {"home": "wagtailadmin_home"}),
+    path("admin/login/", admin_sign_in, {"home": "wagtailadmin_home", "may_enter": _may_enter_wagtail}),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),

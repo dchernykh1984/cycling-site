@@ -436,9 +436,9 @@ WAGTAILSEARCH_BACKENDS = {
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 WAGTAILADMIN_BASE_URL = "http://example.com"
-# The admins sign in through the site's own sign-in (cycling_site.urls.admin_sign_in), held to allauth's
-# limits; Wagtail's own password reset, which had none, is off -- the site's "forgot password" does it.
-WAGTAILADMIN_LOGIN_URL = "account_login"
+# The admins' sign-in pages send a reader on to the site's own, held to allauth's limits
+# (cycling_site.urls.admin_sign_in); Wagtail's own password reset, which had none, is off -- the site's
+# "forgot password" does it.
 WAGTAIL_PASSWORD_RESET_ENABLED = False
 
 MAX_PROTOCOL_SIZE_MB = env.int("MAX_PROTOCOL_SIZE_MB", default=5)
