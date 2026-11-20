@@ -21,7 +21,12 @@ class VisitorAddressTests(TestCase):
 
     def test_the_proxys_header_names_the_visitor(self):
         self.assertEqual(self.address(**{HEADER: "198.51.100.7"}), "198.51.100.7")
-        self.assertEqual(self.address(**{HEADER: " 2001:db8::1 "}), "2001:db8::1")
+        self.assertEqual(self.address(**{HEADER: "::ffff:198.51.100.7"}), "198.51.100.7")
+
+    def test_an_ipv6_visitor_is_their_whole_64(self):
+        # a subscriber is handed a /64 and could take a new address from it for every try
+        self.assertEqual(self.address(**{HEADER: " 2001:db8:1:2::1 "}), self.address(**{HEADER: "2001:db8:1:2:ab::9"}))
+        self.assertNotEqual(self.address(**{HEADER: "2001:db8:1:2::1"}), self.address(**{HEADER: "2001:db8:1:3::1"}))
 
     def test_without_the_header_the_connection_counts(self):
         self.assertEqual(self.address(), "10.0.0.1")
