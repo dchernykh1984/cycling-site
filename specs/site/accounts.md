@@ -19,7 +19,8 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
 `tests/test_change_email.py`, `tests/e2e/test_change_email.py`, `tests/e2e/test_role_ladder.py`,
-`tests/test_sign_in_limits.py`, `tests/test_admin_sign_in.py`
+`tests/test_sign_in_limits.py`, `tests/test_admin_sign_in.py`, `tests/test_account_mail_safety.py`,
+`tests/test_account_mail_language.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
@@ -92,6 +93,16 @@ once; confirming the address unlocks everything that writes.
    button stays; a link sent for a change asked for
    again confirms nothing; an address another account has confirmed is never taken over, and a guest
    who confirms the new one becomes a participant.
+7. **Given** a member asks for a password reset, **Then** the link mailed to them works for an hour.
+   **Given** a password is changed, set or reset, an address changed or removed, or a provider's
+   account connected or disconnected, **Then** the member is told by mail -- of an address change, at
+   the old address -- with the visitor's address, browser and time.
+8. **Given** the site mails a member about the account they are signed in as, or have just signed up,
+   **Then** the mail is in the language of their profile, else of the page. **Given** a mail anybody
+   could cause about anybody's address -- a reset asked for without signing in and its notice, a
+   reset for an address without an account, the notice of an address change confirmed through a link
+   opened signed out --, **Then** it comes in every language of the site, one after another, each
+   part's links opening the page in its own language.
 
 ### Story 4 -- The role ladder (P2)
 
@@ -350,6 +361,16 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   own password reset is off (`WAGTAIL_PASSWORD_RESET_ENABLED`); the site's own, held to its limits,
   remains. Their own forms took any number of passwords, Wagtail's for any member, and its reset
   any number of mails.
+- **FR-ACC-018**: The account mails, allauth's through `accounts.adapters.AccountAdapter`:
+  - A password reset link works for an hour (`PASSWORD_RESET_TIMEOUT`): a copy of the mail kept
+    anywhere -- the site's mailbox keeps one of every mail it sends -- is worth nothing after it.
+  - Every change to how a member signs in is told to them (`ACCOUNT_EMAIL_NOTIFICATIONS`), an
+    address change at the old address.
+  - A mail goes in one language -- the profile's, else the page's -- only when the visitor is signed
+    in as the account it is for, or has just signed it up (`email_confirmation_signup`). Any other goes
+    in every language of `LANGUAGES`, the subjects joined by " / " and the bodies by a line of dashes,
+    each part's links in its own language (`translate_url`): anybody could have asked for it, so
+    nothing the account holds chooses its language.
 
 ## Key Entities
 
