@@ -63,7 +63,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - run: pip install pyyaml telethon
+      # Exactly the files uv.lock names, each checked against its hash: this job holds production
+      # secrets, and a package installed by name alone would take whatever release came out last.
+      - run: pip install --require-hashes --no-deps -r requirements-agents.txt
       - name: Read the channels
         env:
           SITE_BASE_URL: ${{ secrets.SITE_BASE_URL || 'https://universalbicycle.team' }}
