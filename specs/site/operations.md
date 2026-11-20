@@ -70,7 +70,8 @@ restored, locally or onto production.
   are the `production` environment's, whose deployment branches are `main` only: no workflow on
   another branch receives them, and none is a repository secret. The deploy, the agents and the
   Dropbox check run by hand, or run again, for the repository's owner only.
-- **FR-OPS-002**: Dependencies are locked with uv; `requirements.txt` is exported from the lock.
+- **FR-OPS-002**: Dependencies are locked with uv; `requirements.txt` is exported from the lock, and
+  so is `requirements-agents.txt`, with hashes, for the agents' jobs (FR-AGT-007 in events-agents.md).
 - **FR-OPS-003**: An upload opened at its `/media/` address cannot act as a page of the site
   (`cycling_site/urls.py`, `serve_media`): every file but a PDF carries `Content-Security-Policy:
   sandbox` (a browser's PDF viewer may refuse a sandboxed document), and HTML and XML are downloaded

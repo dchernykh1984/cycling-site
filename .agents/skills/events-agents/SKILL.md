@@ -16,6 +16,11 @@ a service account. Everything they propose lands as `pending_approval` for a hum
 **Never start one without being asked.** Each run spends money at the LLM provider. When the
 maintainer does ask: `gh workflow run agent.yml --ref main -f dry_run=false -f max_events=25`.
 
+**A package an agent needs goes into the `agents` group** of `pyproject.toml`, then `uv lock`; the
+pre-commit hook exports it with hashes to `requirements-agents.txt`, which the jobs install from.
+Never `pip install` a package by name in their workflows: they hold production secrets, and a test
+refuses it.
+
 ## Sources
 
 `events_sources.yaml` groups sources by kind -- `aggregators`, `organizers`, `telegram_public` --
