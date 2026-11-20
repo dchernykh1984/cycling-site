@@ -5,7 +5,8 @@ from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.urls import URLPattern, URLResolver, include, path, re_path
+from django.urls import URLPattern, URLResolver, include, path, re_path, reverse
+from django.utils.http import urlencode
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
@@ -55,6 +56,13 @@ def indexnow_key_file(request, key):
     if not configured or key != configured:
         raise Http404
     return HttpResponse(configured, content_type="text/plain")
+
+
+def admin_sign_in(request, home):
+    """Both admins sign in through the site's own sign-in, which holds every attempt to allauth's limits,
+    per visitor and per address, and offers the providers too; their own forms took a password without
+    any limit, Wagtail's for any member. Checks nothing itself: a POST is sent on like a GET."""
+    return redirect(f"{reverse('account_login')}?{urlencode({'next': request.GET.get('next') or reverse(home)})}")
 
 
 def robots_txt(request):
@@ -131,8 +139,10 @@ sitemaps = {
 # Machine-facing addresses, and the ones a language prefix would only get in the way of: the API,
 # both admins, the media and the files a crawler asks for by exact name.
 urlpatterns: list[URLPattern | URLResolver] = [
+    path("django-admin/login/", admin_sign_in, {"home": "admin:index"}),
     path("django-admin/", admin.site.urls),
     path("api/v1/", ninja_api.urls),
+    path("admin/login/", admin_sign_in, {"home": "wagtailadmin_home"}),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("i18n/set_language/", accounts_set_language, name="set_language"),
