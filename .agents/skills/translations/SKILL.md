@@ -44,6 +44,10 @@ of a select -- shows in English on both; its Russian sits beside it, in `locale_
 - `tests/test_kazakh_account_pages.py` holds the account pages, their errors, the confirmation mail
   and the CSRF refusal against the packages' Russian: a release that brings a new string fails it,
   and the string goes into this catalogue.
+- The account mails choose their own language (`accounts.adapters`, FR-ACC-018 in
+  `specs/site/accounts.md`): one about the account the visitor is signed in as, or has just signed
+  up, comes in the profile's language, else the page's; any other -- a reset asked for signed out --
+  in all three, one after another. Russian in such a mail is by design, not a missing string.
 
 ## The traps
 
