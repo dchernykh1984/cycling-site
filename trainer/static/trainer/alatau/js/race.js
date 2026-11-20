@@ -11,6 +11,9 @@ let routeSel = store.get('route', null);
 if (!ROUTES.some(r => r.id === routeSel)) routeSel = ROUTES[0].id; // the first visit, or a route no map has any more
 const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
+// #471: a cadence sensor alone rides by the physics by default, once for everyone: the gear's speed was the default
+// and is kept by whoever picks it again
+if (!settings.cadPhysics) { settings.cadSpeed = 'physics'; settings.cadPhysics = true; }
 settings.char = 'me'; // выбор героев убран: игрок всегда в форме UBT
 
 function spawnBots(n, levelKey, s0) {
