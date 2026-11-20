@@ -295,8 +295,11 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
 - **FR-ACC-007**: Strava sign-in requests read-only scope only and keeps no token. Sending virtual
   rides to Strava is a separate grant (`read,activity:write`) the member gives from the profile's
   "Virtual rides" card with Strava's own "Connect with Strava" button; its tokens live in
-  `trainer.StravaConnection`, are refreshed when they expire, and are revoked at Strava and deleted
-  when the member disconnects it there or through the API, or their account is deleted. Nothing
+  `trainer.StravaConnection`, sealed with `INTEGRATIONS_ENCRYPTION_KEY` (`trainer.secret_box`), are
+  refreshed when they expire, and are revoked at Strava and deleted when the member disconnects it there
+  or through the API, or their account is deleted. Without the key uploading is not offered (a startup
+  warning names a Strava application left without it); a grant the key cannot open is dropped as one
+  Strava refused, and the member connects again. Nothing
   reads the member's Strava activities. Its box "Send my rides to Strava" (`send_rides`) is on for a new
   connection; turned off, rides are not sent on their own, though the member can still send one
   through `POST /api/v1/virtual-ride/rides/{id}/strava`.
