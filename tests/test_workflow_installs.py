@@ -21,7 +21,7 @@ JOBS = list(_jobs_with_secrets())
 
 
 def test_the_jobs_with_secrets_are_found():
-    assert len(JOBS) >= 4, JOBS  # the deploy, both agents, the Dropbox check, the model check
+    assert len(JOBS) >= 5, JOBS  # the deploy, both agents, the Dropbox check, the model check
 
 
 @pytest.mark.parametrize("job", JOBS)
