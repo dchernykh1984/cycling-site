@@ -71,6 +71,8 @@ def build_logging_config(log_dir: Path) -> dict:
                 "level": "WARNING",
                 "propagate": False,
             },
+            # Once a process: where sign-in limits read a visitor's address from (accounts.adapters)
+            "accounts.adapters": {"handlers": ["console", "file"], "level": "INFO", "propagate": False},
             # A killed or timed-out worker never reaches Django's request error handler.
             # With --preload this configuration also reaches Gunicorn's master process.
             "gunicorn.error": {

@@ -40,6 +40,11 @@ CSRF_COOKIE_SECURE = True
 # exception: sent without Secure, it is the first thing a privacy-minded browser refuses to keep.
 LANGUAGE_COOKIE_SECURE = True
 
+# Render passes every request through Cloudflare, which writes the visitor's address into this header
+# and drops any value the caller sent; the connection itself comes from Render's proxy, one address for
+# everyone. Another host names its own header here, or "" for none.
+CLIENT_IP_HEADER = os.environ.get("CLIENT_IP_HEADER", "CF-Connecting-IP")
+
 # HTTPS hardening (review #5). CodeRed terminates TLS and forwards the original
 # scheme via X-Forwarded-Proto, so trust that header and redirect any HTTP request
 # to HTTPS; advertise HSTS so browsers stick to HTTPS. Clears check --deploy W004/W008.
