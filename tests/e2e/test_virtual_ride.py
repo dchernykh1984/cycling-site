@@ -328,7 +328,11 @@ def test_the_profile_s_service_controls_are_big_enough_to_tap(page: Page, live_s
     )
     if connected:
         StravaConnection.objects.create(
-            user=member, athlete_id=1, access_token="a", refresh_token="r", expires_at="2099-01-01T00:00:00Z"
+            user=member,
+            athlete_id=1,
+            access_token=secret_box.seal("a"),
+            refresh_token=secret_box.seal("r"),
+            expires_at="2099-01-01T00:00:00Z",
         )
         IntervalsConnection.objects.create(user=member, athlete_id="i1", api_key=secret_box.seal("k"))
     inject_session(page, live_server, member)

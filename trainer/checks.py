@@ -3,10 +3,13 @@
 from django.conf import settings
 from django.core import checks
 
+# the command README.md and the settings give
+_GENERATE = 'Generate one: python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"'
+
 
 @checks.register()
 def integrations_key_can_seal(app_configs, **kwargs):
-    """A key that is set but cannot seal anything would hide intervals.icu without a word."""
+    """A key that is set but cannot seal anything would hide intervals.icu and Strava without a word."""
     from trainer import secret_box
 
     if not settings.INTEGRATIONS_ENCRYPTION_KEY or secret_box.available():
@@ -14,10 +17,25 @@ def integrations_key_can_seal(app_configs, **kwargs):
     return [
         checks.Warning(
             "INTEGRATIONS_ENCRYPTION_KEY is set but is not a Fernet key (32 url-safe base64-encoded bytes):"
-            " intervals.icu is not offered.",
-            # the command README.md and the settings give
-            hint="Generate one: python3 -c "
-            '"import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"',
+            " intervals.icu and uploads to Strava are not offered.",
+            hint=_GENERATE,
             id="trainer.W001",
+        )
+    ]
+
+
+@checks.register()
+def strava_tokens_can_be_sealed(app_configs, **kwargs):
+    """A Strava application without the key to seal its tokens would hide uploading to Strava without a word."""
+    from trainer import secret_box, strava
+
+    if not strava.configured() or settings.INTEGRATIONS_ENCRYPTION_KEY or secret_box.available():
+        return []
+    return [
+        checks.Warning(
+            "A Strava application is set but INTEGRATIONS_ENCRYPTION_KEY is not: uploads to Strava are not"
+            " offered, since a member's tokens are kept only sealed.",
+            hint=_GENERATE,
+            id="trainer.W002",
         )
     ]

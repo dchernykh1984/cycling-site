@@ -2,8 +2,8 @@
 
 Signing in with Strava asks for ``read`` only and keeps no token (``specs/site/accounts.md``,
 FR-ACC-007). Uploading needs ``activity:write``: the member grants it separately from the profile, its
-tokens live in ``StravaConnection`` and are refreshed here when they expire. Every call goes through
-``requests``, which the tests patch -- they never reach Strava.
+tokens live sealed in ``StravaConnection`` (``trainer.secret_box``) and are refreshed here when they
+expire. Every call goes through ``requests``, which the tests patch -- they never reach Strava.
 """
 
 import gzip
@@ -22,6 +22,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.html import strip_tags
 
+from . import secret_box
 from .models import RideTrack, StravaConnection, StravaUpload, VirtualRide
 
 AUTHORIZE_URL = "https://www.strava.com/oauth/authorize"
@@ -53,10 +54,15 @@ def _app() -> dict:
     return cast(dict, settings.SOCIALACCOUNT_PROVIDERS[StravaProvider.id]["APP"])
 
 
-def available() -> bool:
+def configured() -> bool:
     """The site has a Strava application to upload with."""
     app = _app()
     return bool(app.get("client_id") and app.get("secret"))
+
+
+def available() -> bool:
+    """The site has a Strava application to upload with and can keep a member's tokens sealed."""
+    return configured() and secret_box.available()
 
 
 def authorize_url(redirect_uri: str, state: str) -> str:
@@ -102,8 +108,8 @@ def connect(user, code: str) -> StravaConnection:
         defaults={
             "athlete_id": athlete.get("id") or 0,
             "athlete_name": name[:120],
-            "access_token": data["access_token"],
-            "refresh_token": data["refresh_token"],
+            "access_token": secret_box.seal(data["access_token"]),
+            "refresh_token": secret_box.seal(data["refresh_token"]),
             "expires_at": _when(data["expires_at"]),
         },
     )
@@ -112,14 +118,18 @@ def connect(user, code: str) -> StravaConnection:
 
 def _access_token(connection: StravaConnection) -> str:
     """A token that works now: Strava's last six hours, then a refresh keeps the grant going."""
+    access, refresh = secret_box.open_sealed(connection.access_token), secret_box.open_sealed(connection.refresh_token)
+    if access is None or refresh is None:
+        # the site's key was changed or lost: nothing can be sent with this grant, so the member connects again
+        raise StravaError("The site can no longer read this connection", revoked=True)
     if connection.expires_at > timezone.now() + timedelta(minutes=1):
-        return connection.access_token
-    data = _token(refresh_token=connection.refresh_token, grant_type="refresh_token")
-    connection.access_token = data["access_token"]
-    connection.refresh_token = data["refresh_token"]
+        return access
+    data = _token(refresh_token=refresh, grant_type="refresh_token")
+    connection.access_token = secret_box.seal(data["access_token"])
+    connection.refresh_token = secret_box.seal(data["refresh_token"])
     connection.expires_at = _when(data["expires_at"])
     connection.save(update_fields=["access_token", "refresh_token", "expires_at"])
-    return connection.access_token
+    return data["access_token"]
 
 
 def disconnect(connection: StravaConnection) -> None:
