@@ -267,7 +267,9 @@ def test_the_workflow_hands_the_run_every_name_the_config_reads():
         assert f"{name}:" in workflow, f"the workflow never sets {name}"
     assert "LLM_MODEL:" not in workflow, "the model is named in agent/config.py, not handed in by the workflow"
     assert "python -m telegram_agent.run" in workflow
-    assert "telethon" in workflow, "the runner must install the one dependency the site does not carry"
+    # the one dependency the site does not carry, installed from the agents' locked file
+    assert "-r requirements-agents.txt" in workflow
+    assert "telethon==" in Path("requirements-agents.txt").read_text(encoding="utf-8")
 
 
 def test_the_guidance_is_this_agents_own_and_wants_more_than_rides():
