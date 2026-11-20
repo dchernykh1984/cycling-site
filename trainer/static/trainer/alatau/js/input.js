@@ -11,8 +11,9 @@ function readInput() {
     const s = Work.active && Work.idx >= 0 ? Work.cur() : null;
     P = s && s.w != null ? Work.target() : demoP; cad = P > 0 ? (s && s.cad ? s.cad + Math.sin(clockT * .7) * 3 : clamp(70 + P / 12, 70, 100)) : 0;
   }
-  // скорость по передаче: каденс × (передняя звезда / задняя) × окружность колеса. A step of the own plan by gears
-  // rides at its gear's speed; otherwise a cadence sensor alone rides by the physics unless the rider chose the gear's
+  // скорость по передаче: каденс × (передняя звезда / задняя) × окружность колеса.
+  // A step of the own plan by gears rides at its gear's speed; otherwise a cadence sensor alone rides by the physics,
+  // unless the rider chose the gear's speed
   let direct = false; const byGear = Work.active && Work.idx >= 0 && Work.cur().f != null;
   if (mode === 'demo' && byGear) { const gt = gearTeeth(gearF, gearR); wheelKmh = cad * gt[0] / gt[1] * circ * 60 / 1000; P = curve(wheelKmh); direct = true; }
   if (mode === 'cadence' && (byGear || settings.cadSpeed === 'direct')) direct = true;
