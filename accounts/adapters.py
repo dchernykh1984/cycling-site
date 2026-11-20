@@ -8,8 +8,8 @@ from allauth.socialaccount.providers.strava.provider import StravaProvider
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.urls import translate_url
-from django.utils import timezone, translation
-from django.utils.translation import get_language, get_language_from_path
+from django.utils import timezone
+from django.utils.translation import get_language, get_language_from_path, override
 from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ class AccountAdapter(DefaultAccountAdapter):
         for code in _mail_languages(template_prefix, context):
             # Under the page's language, which the links were built in and which alone resolves them
             links = {key: translate_url(value, code) for key, value in context.items() if _is_link(value)}
-            with translation.override(code):
+            with override(code):
                 parts.append(super().render_mail(template_prefix, email, {**context, **links}, headers))
         # shortcut: only the text bodies are joined -- the site sends no HTML mail; join the alternatives too
         # if it ever does
@@ -123,7 +123,7 @@ def _mail_languages(template_prefix: str, context: dict) -> list[str]:
     visitor = getattr(context.get("request"), "user", None)
     signed_in_as_it = visitor is not None and visitor.is_authenticated and visitor.pk == getattr(account, "pk", None)
     if account is not None and (template_prefix == SIGNUP_CONFIRMATION or signed_in_as_it):
-        return [account.preferred_language or translation.get_language()]
+        return [account.preferred_language or get_language()]
     return [code for code, _name in settings.LANGUAGES]
 
 
