@@ -5,7 +5,7 @@
 **Code**: `protocols/` (models, views, `protocols/document.py`, `protocols/rendering.py`, `protocols/sections.py`),
 `protocols/access.py`, `protocols/static/protocols/`, `protocols/schema/protocol-document-v1.json`,
 `api/endpoints/protocols.py`
-**Tests**: `protocols/tests.py`, `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
+**Tests**: `protocols/tests.py`, `cycling_site/tests.py` (media), `tests/test_protocol_images.py`, `tests/test_protocol_document.py`,
 `tests/test_protocol_upload.py`, `tests/test_protocol_sections.py`,
 `tests/test_protocol_read_api.py`, `tests/e2e/test_competition_result_emphasis.py`,
 `tests/e2e/test_protocol_sections.py`,
@@ -157,7 +157,9 @@ their heats (issue #454).
 - **FR-PRO-002**: The protocol file is served as HTML with `nosniff`, `no-store`, `X-Frame-Options:
   SAMEORIGIN` and a narrow Content Security Policy: `sandbox allow-scripts` without same-origin,
   inline script and style only, no frames, forms or connections; external script, `<base>` and
-  meta-refresh are stripped.
+  meta-refresh are stripped. The file itself is never served from `/media/`: `serve_media` answers 404
+  for `protocols/` and `protocol_versions/` (`protocols.models.SANDBOXED_ONLY`), however the address
+  is spelled, so these views are the only way to it.
 - **FR-PRO-003**: Images in a protocol may come only inline (`data:`) or from the serving site's own
   address (and the media host, when media is kept elsewhere); the address is taken from the
   deployment, not written down; nothing else is reachable.

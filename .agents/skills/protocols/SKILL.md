@@ -54,6 +54,10 @@ So it is served under a deliberately narrow policy (`protocols/views.py`): `defa
 `sandbox allow-scripts` without `allow-same-origin`, inline script and style only, no frames, no
 forms, no connections. Regexes strip `<script src>`, `<base>` and meta-refresh as well.
 
+The uploaded file is never served from `/media/`: `serve_media` answers 404 for `protocols/` and
+`protocol_versions/`, so those views are the only way to it. Never link a protocol's
+`html_file.url`; link its page or its `/html/` view.
+
 Consequences worth knowing before promising anything:
 
 - **Images.** `img-src` allows `data:` and the site's own origin, the latter built from the request
