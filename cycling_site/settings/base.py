@@ -110,6 +110,9 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 # sent to it, so a typo never locks anybody out and nobody takes an address they cannot read.
 ACCOUNT_CHANGE_EMAIL = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+# A password reset link works for an hour, not Django's three days: a copy of the mail kept anywhere --
+# the site's mailbox keeps one of every mail it sends -- is worth nothing after that.
+PASSWORD_RESET_TIMEOUT = 60 * 60
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 # Sign-in, sign-up, password resets and confirmation mails are held to allauth's own rates, which count
 # each visitor and each address apart, so there is no ACCOUNT_RATE_LIMITS here: tighter rates counted by
