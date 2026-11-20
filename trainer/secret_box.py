@@ -1,4 +1,5 @@
-"""Secrets members give the site -- their intervals.icu API keys -- kept sealed with the site's own key.
+"""Secrets members give the site -- their intervals.icu API keys and Strava tokens -- kept sealed with the
+site's own key.
 
 Fernet (``cryptography``) with ``INTEGRATIONS_ENCRYPTION_KEY`` (issue #471). Without the setting
 nothing can be sealed and the features that need it are not offered. A token the key cannot open --
