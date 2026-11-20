@@ -9,7 +9,10 @@ let rideMode = 'race';  // режим текущего заезда: race | plan
 // what the page does when something happens in the ride: go, lap, backToStart, sight, finish, planStep, planSoon, planDone
 const rideHooks = {};
 function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args); }
-function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, phase: Math.random() * 6, finishT: null, P: 0 }; }
+// rho is the air a rider is in: sea level until the ride's step sets it (airAround)
+function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, rho: airDensity(0), phase: Math.random() * 6, finishT: null, P: 0 }; }
+// the air a rider rides in this step: its density at the height y of the road under them
+function airAround(r, y) { r.rho = airDensity(y); }
 // a rider at the start of a ride: nothing ridden yet
 function startRider(r) {
   r.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
@@ -69,13 +72,13 @@ function advanceRide(dt, inp, t) { const n = Math.max(1, Math.ceil(dt / RIDE_STE
 // one step of the ride, dt seconds at time t: the countdown, the rider, the bots and what the rider passes
 const _ry = {};
 function stepRide(dt, inp, t) {
-  const T = world.T, grade = gradeAt(T, me.s);
+  const T = world.T, grade = gradeAt(T, me.s), y0 = sampleAt(T, me.s, _ry).y;
+  airAround(me, y0); // in the countdown too: a smart trainer is set to the air at the start
   if (phase === 'countdown') {
     cdT -= dt;
     if (cdT <= 0) { phase = 'race'; rideEvent('go'); }
   } else if (phase === 'race' || phase === 'done') {
     if (cdT > -0.8) cdT -= dt;
-    const y0 = sampleAt(T, me.s, _ry).y;
     if (phase === 'race') {
       raceT += dt; const ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
       const st = me.stats, y1 = sampleAt(T, me.s, _ry).y; if (y1 > y0) st.gain += y1 - y0;
@@ -96,6 +99,7 @@ function stepRide(dt, inp, t) {
     const gb = gradeAt(T, b.s), P = botPower(b, gb, world.FIN - b.s, t);
     b.P = P;
     b.cad = botCadence(b, gb, t);
+    airAround(b, sampleAt(T, b.s, _ry).y);
     b.s += stepRider(b, P, gb, dt);
     if (b.finishT == null && b.s >= world.FIN) b.finishT = raceT;
     if (!T.loop && b.s > T.L - 2) b.s = T.L - 2;

@@ -530,34 +530,68 @@ def test_a_rider_settles_where_the_power_meets_the_drag(page: Page):
         """() => {
             const inp = { P: 200, cad: 85, mode: 'power', direct: false };
             for (let i = 1; i <= 240 * 60; i++) stepRide(1 / 60, inp, i / 60);
-            return [me.v, PHYS.rho, PHYS.g];
+            return [me.v, me.rho, PHYS.g];
         }"""
     )
     # on the flat 200 W = v * (air rho * CdA * v^2 / 2 + rolling Crr * m * g): CdA .3, Crr .004, 75 + 8 kg
+    assert v == pytest.approx(_settled(rho, 0.3, g), abs=0.01)
+
+
+def _settled(rho: float, cda: float, g: float) -> float:
+    """The speed at which 200 W meets the drag on the flat: rider and bike of 83 kg, Crr .004."""
     lo, hi = 0.0, 30.0
     for _ in range(60):
         mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if mid * (rho * 0.3 * mid * mid / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
-    assert v == pytest.approx(lo, abs=0.01)
+        lo, hi = (mid, hi) if mid * (rho * cda * mid * mid / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
+    return lo
+
+
+_STILL = "{ P: 0, cad: 0, mode: 'power', direct: false }"
+
+
+def test_the_air_thins_with_the_height_as_the_standard_atmosphere_has_it(page: Page):
+    errors = _ride_alone(page)
+    air = page.evaluate(
+        f"""() => [0, 1000, 2000, 3000].map(h => {{
+            world.T.Y = [h, h]; stepRide(1 / 60, {_STILL}, 0); return me.rho;
+        }})"""
+    )
+    # the table of the International Standard Atmosphere (ISO 2533), kg/m3
+    assert air == pytest.approx([1.2250, 1.1117, 1.0066, 0.9093], abs=5e-4)
+    assert errors == [], errors
+
+
+def _trainer_answering(page: Page) -> None:
+    """A smart trainer that takes every command, answered as FTMS answers; what it is sent is in `sent`."""
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    page.evaluate(
+        """() => {
+            globalThis.settings = { difficulty: 50 }; globalThis.sent = [];
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.ctrl = true; trainer.roles.add('trainer');
+            trainer.write = async bytes => {
+                sent.push(bytes);
+                setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], 1]).buffer)), 0);
+            };
+            Sensors.devs.push(trainer);
+        }"""
+    )
 
 
 def test_a_smart_trainer_is_set_to_the_riders_own_drag(page: Page):
     errors = _ride_alone(page)
-    for name in ("js/i18n.js", "js/bluetooth.js"):
-        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    _trainer_answering(page)
     sent, rho = page.evaluate(
-        """() => {
-            globalThis.settings = { difficulty: 50 };
-            const trainer = new BLEDev({ name: 'trainer' }), sent = [];
-            trainer.ctrl = true; trainer.roles.add('trainer'); trainer.write = async bytes => { sent.push(bytes); };
-            Sensors.devs.push(trainer);
-            Object.assign(me, { CdA: .35, Crr: .0058 });
+        f"""() => {{
+            stepRide(1 / 60, {_STILL}, 0);
+            Object.assign(me, {{ CdA: .35, Crr: .0058 }});
             Trainer.update(10, 6, me);
-            return [sent, PHYS.rho];
-        }"""
+            return [sent, me.rho];
+        }}"""
     )
     # 6 % at half the difficulty is 3 % (300 in 0.01 %); then the rider's own rolling resistance (in 0.0001)
-    # and wind resistance CdA x air density (in 0.01 kg/m), not a trainer's defaults
+    # and wind resistance CdA x the air's density at their height (in 0.01 kg/m), not a trainer's defaults
     assert sent == [[0x11, 0, 0, 300 & 255, 300 >> 8, 58, round(0.35 * rho * 100)]], sent
     assert errors == [], errors
 
