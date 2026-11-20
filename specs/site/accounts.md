@@ -19,7 +19,7 @@ to a mentor against branch `profile-change-email` on 2026-11-12
 `tests/test_privacy_consent.py`, `tests/e2e/test_virtual_members.py`, `tests/e2e/test_privacy_consent.py`,
 `tests/test_virtual_member_transfer.py`, `tests/e2e/test_virtual_member_transfer.py`,
 `tests/test_change_email.py`, `tests/e2e/test_change_email.py`, `tests/e2e/test_role_ladder.py`,
-`tests/test_sign_in_limits.py`
+`tests/test_sign_in_limits.py`, `tests/test_admin_sign_in.py`
 **Related**: [setup hints](site-shell.md), [skins](skins.md), [registrations](registrations.md), [ratings](ratings.md) (the agents' service account, marked by an owner)
 
 ## Overview
@@ -342,6 +342,13 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   once, cut to the network, where it read the address from (`accounts.adapters`). Rates of the
   site's own, counted by the connection alone, held the whole site back while every request came
   from one proxy address.
+- **FR-ACC-017**: Both admins -- Wagtail's at `/admin/` and Django's at `/django-admin/` -- sign in
+  through the site's own sign-in and its limits (FR-ACC-016), with the way back to the page asked
+  for: their own sign-in pages send a reader on, a password sent to them included, and check
+  nothing (`cycling_site.urls.admin_sign_in`, `WAGTAILADMIN_LOGIN_URL`). Wagtail's own password
+  reset is off (`WAGTAIL_PASSWORD_RESET_ENABLED`); the site's own, held to its limits, remains. Their
+  own forms took any number of passwords, Wagtail's for any member, and its reset any number of
+  mails.
 
 ## Key Entities
 
