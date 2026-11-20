@@ -344,11 +344,12 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   from one proxy address.
 - **FR-ACC-017**: Both admins -- Wagtail's at `/admin/` and Django's at `/django-admin/` -- sign in
   through the site's own sign-in and its limits (FR-ACC-016), with the way back to the page asked
-  for: their own sign-in pages send a reader on, a password sent to them included, and check
-  nothing (`cycling_site.urls.admin_sign_in`, `WAGTAILADMIN_LOGIN_URL`). Wagtail's own password
-  reset is off (`WAGTAIL_PASSWORD_RESET_ENABLED`); the site's own, held to its limits, remains. Their
-  own forms took any number of passwords, Wagtail's for any member, and its reset any number of
-  mails.
+  for: their own sign-in pages check no password, a password sent to them included
+  (`cycling_site.urls.admin_sign_in`). A member already signed in goes on to the admin if they may
+  enter it and is refused (403) if not, rather than sent round between the two sign-ins. Wagtail's
+  own password reset is off (`WAGTAIL_PASSWORD_RESET_ENABLED`); the site's own, held to its limits,
+  remains. Their own forms took any number of passwords, Wagtail's for any member, and its reset
+  any number of mails.
 
 ## Key Entities
 

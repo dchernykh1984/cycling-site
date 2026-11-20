@@ -37,7 +37,26 @@ class AdminSignInTests(TestCase):
                 self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_an_admin_page_sends_a_guest_to_the_sites_sign_in(self):
-        self.assert_sent_to_the_sites_sign_in(self.client.get("/admin/"), "/admin/")
+        for page in ("/admin/", "/django-admin/"):
+            with self.subTest(page=page):
+                response = self.client.get(page, follow=True)
+                address = urlsplit(response.redirect_chain[-1][0])
+                self.assertTrue(address.path.endswith("/accounts/login/"), response.redirect_chain)
+                self.assertEqual(parse_qs(address.query)["next"], [page])
+
+    def test_signed_in_with_the_right_the_sign_in_page_goes_where_asked(self):
+        self.client.force_login(self.admin)
+        response = self.client.get("/admin/login/?next=/admin/pages/")
+        self.assertEqual((response.status_code, response["Location"]), (302, "/admin/pages/"))
+        response = self.client.get("/admin/login/?next=https://elsewhere.example/")
+        self.assertEqual(response["Location"], "/admin/")
+
+    def test_a_member_without_the_right_is_told_so_rather_than_sent_round_in_circles(self):
+        member = User.objects.create_user(username="member", email="member@example.com", password=PASSWORD)
+        self.client.force_login(member)
+        for page in ("/admin/", "/django-admin/"):
+            with self.subTest(page=page):
+                self.assertEqual(self.client.get(page, follow=True).status_code, 403)
 
     def test_signed_in_on_the_site_an_admin_reaches_the_admin(self):
         self.client.force_login(self.admin)
