@@ -81,10 +81,14 @@ def serve_media(request, path):
     from django.http import Http404
     from django.views.static import serve as django_serve
 
-    # Files whose visibility depends on who asks (event photo thumbnails) live under this prefix and
-    # are served by their own views; a direct /media/ address must not bypass those checks. The path
-    # is normalized first, so `a/../private/x` cannot slip past.
-    if (posixpath.normpath(path).lstrip("/") + "/").startswith(settings.PRIVATE_MEDIA_PREFIX):
+    from protocols.models import SANDBOXED_ONLY
+
+    # Two kinds of files are served by their own views only, and a direct /media/ address must not
+    # bypass them: those whose visibility depends on who asks (event photo thumbnails, under the private
+    # prefix) and protocols, HTML somebody else wrote, which their views frame in a sandbox. The path is
+    # normalized first, so `a/../private/x` cannot slip past, and lowered for a disk that ignores case.
+    normalized = posixpath.normpath(path).lstrip("/").lower() + "/"
+    if normalized.startswith((settings.PRIVATE_MEDIA_PREFIX, *SANDBOXED_ONLY)):
         raise Http404
     return django_serve(request, path, document_root=settings.MEDIA_ROOT)
 
