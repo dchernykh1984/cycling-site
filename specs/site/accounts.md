@@ -342,10 +342,10 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   once, cut to the network, where it read the address from (`accounts.adapters`). Rates of the
   site's own, counted by the connection alone, held the whole site back while every request came
   from one proxy address.
-- **FR-ACC-017**: Both admins -- Wagtail's at `/admin/` and Django's at `/django-admin/` -- sign in
-  through the site's own sign-in and its limits (FR-ACC-016), with the way back to the page asked
-  for: their own sign-in pages check no password, a password sent to them included
-  (`cycling_site.urls.admin_sign_in`). A member already signed in goes on to the admin if they may
+- **FR-ACC-017**: Both admins -- Wagtail's at `/admin/` and Django's at `/django-admin/` -- and
+  Wagtail's sign-in for pages kept to members (`/<lang>/_util/login/`) sign in through the site's own
+  sign-in and its limits (FR-ACC-016), with the way back to the page asked for: their own sign-in
+  pages check no password, a password sent to them included (`cycling_site.urls.admin_sign_in`). A member already signed in goes on to the admin if they may
   enter it and is refused (403) if not, rather than sent round between the two sign-ins. Wagtail's
   own password reset is off (`WAGTAIL_PASSWORD_RESET_ENABLED`); the site's own, held to its limits,
   remains. Their own forms took any number of passwords, Wagtail's for any member, and its reset

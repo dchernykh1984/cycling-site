@@ -29,8 +29,11 @@ class AdminSignInTests(TestCase):
                 self.assert_sent_to_the_sites_sign_in(self.client.get(page), home)
                 self.assert_sent_to_the_sites_sign_in(self.client.get(f"{page}?next={home}pages/"), f"{home}pages/")
 
+    def test_wagtails_sign_in_for_members_only_pages_sends_on_to_the_sites_too(self):
+        self.assert_sent_to_the_sites_sign_in(self.client.get("/en/_util/login/?next=/en/news/"), "/en/news/")
+
     def test_a_password_sent_to_an_admins_own_form_signs_nobody_in(self):
-        for page in ("/admin/login/", "/django-admin/login/"):
+        for page in ("/admin/login/", "/django-admin/login/", "/en/_util/login/"):
             with self.subTest(page=page):
                 response = self.client.post(page, {"username": "admin@example.com", "password": PASSWORD})
                 self.assertEqual(response.status_code, 302)
