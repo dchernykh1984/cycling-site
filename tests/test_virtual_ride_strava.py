@@ -1,6 +1,7 @@
 """Virtual rides sent to Strava as Virtual Ride activities: the grant, the track, the upload, the profile."""
 
 import gzip
+import sys
 from datetime import timedelta
 from unittest import mock
 from urllib.parse import parse_qs, urlsplit
@@ -12,10 +13,11 @@ from django.conf import settings
 from django.core import checks
 from django.db import connection as db
 from django.db.migrations.executor import MigrationExecutor
-from django.test import Client, TestCase, TransactionTestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import override as translation_override
+from django.views.debug import ExceptionReporter
 
 from accounts.models import User
 from tests.language_urls import in_language
@@ -27,6 +29,8 @@ STRAVA_ON = {
     **settings.SOCIALACCOUNT_PROVIDERS,
     "strava": {**settings.SOCIALACCOUNT_PROVIDERS["strava"], "APP": {"client_id": "65938", "secret": "s3cret"}},
 }
+# What an error report must never show; up here, apart from the source lines a report quotes around a frame
+ACCESS, REFRESH = "tok-acc-5e1f", "tok-ref-9a2b"
 TCX = "{http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2}"
 TPX = "{http://www.garmin.com/xmlschemas/ActivityExtension/v2}"
 
@@ -355,6 +359,56 @@ class PrivacyTests(TestCase):
         body = Client().get(in_language(reverse("privacy_policy"), "en")).content.decode()
         self.assertIn("upload each ride you finish as a virtual ride", body)
         self.assertIn("we still do not read your Strava activities", body)
+
+
+@override_settings(SOCIALACCOUNT_PROVIDERS=STRAVA_ON)
+class StravaErrorReportTests(TestCase):
+    """A server error mails its report, with every frame's variables, to the admins: never a token or the secret."""
+
+    def setUp(self):
+        self.user = _user("anna")
+
+    def report_of(self, act):
+        try:
+            act()
+        except RuntimeError:
+            return ExceptionReporter(RequestFactory().post("/"), *sys.exc_info()).get_traceback_html()
+        self.fail("nothing went wrong")
+
+    def assert_nothing_secret_in(self, report):
+        for secret in (ACCESS, REFRESH, STRAVA_ON["strava"]["APP"]["secret"]):
+            self.assertNotIn(secret, report)
+
+    def connection(self, expires_in):
+        return StravaConnection.objects.create(
+            user=self.user,
+            athlete_id=7,
+            access_token=secret_box.seal(ACCESS),
+            refresh_token=secret_box.seal(REFRESH),
+            expires_at=timezone.now() + expires_in,
+        )
+
+    @mock.patch("trainer.strava.requests.post", side_effect=RuntimeError("the library broke"))
+    def test_a_failure_while_refreshing_or_revoking_leaves_them_out(self, post):
+        connection = self.connection(-timedelta(minutes=5))
+        self.assert_nothing_secret_in(self.report_of(lambda: strava._access_token(connection)))
+        connection.expires_at = timezone.now() + timedelta(hours=5)
+        self.assert_nothing_secret_in(self.report_of(lambda: strava.revoke_at_strava(None, connection)))
+
+    @mock.patch("trainer.strava.requests.request", side_effect=RuntimeError("the library broke"))
+    def test_a_failure_while_sending_leaves_them_out(self, call):
+        connection = self.connection(timedelta(hours=5))
+        self.assert_nothing_secret_in(self.report_of(lambda: strava._call(connection, "GET", strava.UPLOADS_URL)))
+
+    @mock.patch("trainer.strava.requests.post")
+    def test_a_failure_while_connecting_leaves_them_out(self, post):
+        post.side_effect = RuntimeError("the library broke")
+        self.assert_nothing_secret_in(self.report_of(lambda: strava.connect(self.user, "code")))
+        later = int((timezone.now() + timedelta(hours=6)).timestamp())
+        post.side_effect = None
+        post.return_value = _answer(200, {"access_token": ACCESS, "refresh_token": REFRESH, "expires_at": later})
+        with mock.patch.object(StravaConnection.objects, "update_or_create", side_effect=RuntimeError("db gone")):
+            self.assert_nothing_secret_in(self.report_of(lambda: strava.connect(self.user, "code")))
 
 
 BEFORE_SEALING = [("trainer", "0005_intervals_icu")]

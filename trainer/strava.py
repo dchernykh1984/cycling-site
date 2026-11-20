@@ -21,6 +21,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.html import strip_tags
+from django.views.decorators.debug import sensitive_variables
 
 from . import secret_box
 from .models import RideTrack, StravaConnection, StravaUpload, VirtualRide
@@ -81,6 +82,8 @@ def _when(epoch) -> datetime:
     return datetime.fromtimestamp(int(epoch), tz=UTC)
 
 
+# the app's secret, a code or a token and Strava's answer: none of this frame's or deeper ones' in an error report
+@sensitive_variables()
 def _token(**data) -> dict:
     app = _app()
     try:
@@ -98,6 +101,7 @@ def _token(**data) -> dict:
     return response.json()
 
 
+@sensitive_variables("code", "data")
 def connect(user, code: str) -> StravaConnection:
     """Trade the code Strava sent back for tokens and keep them for this member."""
     data = _token(code=code, grant_type="authorization_code")
@@ -116,6 +120,7 @@ def connect(user, code: str) -> StravaConnection:
     return connection
 
 
+@sensitive_variables("access", "refresh", "data")
 def _access_token(connection: StravaConnection) -> str:
     """A token that works now: Strava's last six hours, then a refresh keeps the grant going."""
     access, refresh = secret_box.open_sealed(connection.access_token), secret_box.open_sealed(connection.refresh_token)
@@ -138,6 +143,7 @@ def disconnect(connection: StravaConnection) -> None:
 
 
 @receiver(pre_delete, sender=StravaConnection)
+@sensitive_variables()  # the token travels down through the HTTP library
 def revoke_at_strava(sender, instance: StravaConnection, **kwargs) -> None:
     """Whatever removes a grant -- the member turning it off, their account deleted -- revokes it at Strava too.
 
@@ -221,6 +227,7 @@ def _apply(record: StravaUpload, body: dict) -> StravaUpload:
     return record
 
 
+@sensitive_variables()  # the token travels down through the HTTP library as its Authorization header
 def _call(connection: StravaConnection, method: str, url: str, **kwargs) -> requests.Response:
     try:
         response = requests.request(
