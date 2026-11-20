@@ -76,6 +76,10 @@ approved city follows the API's rule for the account's role (see [API](api.md)).
   models on main, spending no tokens, and goes red once the name is gone (pull requests get no key).
 - **FR-AGT-006**: Every page and track is fetched over http(s) from public addresses only, at most
   20 MB of it: a link on a page may point at a cloud-metadata endpoint or an internal service.
+- **FR-AGT-007**: The agents' jobs hold production secrets (the Telegram session among them), so
+  they install only what `uv.lock` names for its `agents` group, each file checked by its hash
+  (`pip install --require-hashes -r requirements-agents.txt`); CI checks that file against the lock
+  and audits its packages, and `tests/test_workflow_installs.py` holds every job with the secrets to it.
 
 ## Key Entities
 
