@@ -20,3 +20,8 @@ jobs:
         run: uv export --locked --no-hashes --no-annotate --no-default-groups --no-emit-project -o requirements.txt
       - name: Run pip-audit
         run: uvx pip-audit -r requirements.txt
+      # The agents' packages run beside production secrets: their known vulnerabilities count too
+      - name: Run pip-audit on the agents' packages
+        run: |
+          uv export --locked --no-hashes --no-annotate --only-group agents --no-emit-project -o agents-audit.txt
+          uvx pip-audit -r agents-audit.txt
