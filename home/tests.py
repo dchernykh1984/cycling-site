@@ -525,6 +525,17 @@ class LegalPagesTests(TestCase):
                 self.assertNotContains(page, "People who manage your registrations and photos.")
                 self.assertNotContains(page, "the members you allowed to manage")
 
+    def test_privacy_page_says_what_a_notice_of_a_change_carries(self):
+        # A notice of a change to how a member signs in carries the visitor's address and browser, and
+        # the site's mailbox keeps a copy of it, as of every mail the site sends.
+        body = self.client.get(in_language(reverse("privacy_policy"), "en")).content.decode()
+        self.assertIn("with the IP address and the browser the change came from", body)
+        self.assertIn("keeps a copy of every mail it sends", body)
+        for lang in ("ru", "kk"):
+            with self.subTest(lang):
+                page = self.client.get(in_language(reverse("privacy_policy"), lang))
+                self.assertNotContains(page, "Notices of changes to your account.")
+
     def test_privacy_page_links_to_the_contact_form(self):
         resp = self.client.get(reverse("privacy_policy"))
         self.assertContains(resp, reverse("account_contact_owners"))
