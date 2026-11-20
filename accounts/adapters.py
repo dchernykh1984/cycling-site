@@ -7,13 +7,16 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.providers.strava.provider import StravaProvider
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+from django.urls import translate_url
+from django.utils import timezone, translation
 from django.utils.translation import get_language, get_language_from_path
 from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 # Set once this process has logged where it reads a visitor's address from (once, after each start)
 _address_source_logged = threading.Event()
+# What allauth sends to the address somebody has just signed up with
+SIGNUP_CONFIRMATION = "account/email/email_confirmation_signup"
 
 
 def _with_language(url: str) -> str:
@@ -86,6 +89,46 @@ class AccountAdapter(DefaultAccountAdapter):
         user = emailconfirmation.email_address.user
         user.last_mail_action_at = timezone.now()
         user.save(update_fields=["last_mail_action_at"])
+
+    def send_notification_mail(self, template_prefix, user, context=None, email=None):
+        # allauth leaves the account out of a notice's context, and render_mail chooses its language by it
+        super().send_notification_mail(template_prefix, user, {"user": user, **(context or {})}, email)
+
+    def render_mail(self, template_prefix, email, context, headers=None):
+        """A mail in the language of the member it is for, or in every language of the site.
+
+        Signed in as the account the mail is for, or signing it up just now, the visitor is the member
+        who reads it: the mail goes in the language of their profile, else of the page. Anything else --
+        a reset asked for without signing in, a sign-up with an address that has an account -- anybody
+        could ask for about anybody's address, so it goes in every language, chosen by nothing the account
+        holds. Each language's links open the page in that language.
+        """
+        parts = []
+        for code in _mail_languages(template_prefix, context):
+            # Under the page's language, which the links were built in and which alone resolves them
+            links = {key: translate_url(value, code) for key, value in context.items() if _is_link(value)}
+            with translation.override(code):
+                parts.append(super().render_mail(template_prefix, email, {**context, **links}, headers))
+        # shortcut: only the text bodies are joined -- the site sends no HTML mail; join the alternatives too
+        # if it ever does
+        message = parts[0]
+        message.subject = " / ".join(part.subject for part in parts)
+        message.body = "\n\n----------\n\n".join(part.body for part in parts)
+        return message
+
+
+def _mail_languages(template_prefix: str, context: dict) -> list[str]:
+    """The one language of the member who caused a mail about their own account, or all the site's."""
+    account = context.get("user")
+    visitor = getattr(context.get("request"), "user", None)
+    signed_in_as_it = visitor is not None and visitor.is_authenticated and visitor.pk == getattr(account, "pk", None)
+    if account is not None and (template_prefix == SIGNUP_CONFIRMATION or signed_in_as_it):
+        return [account.preferred_language or translation.get_language()]
+    return [code for code, _name in settings.LANGUAGES]
+
+
+def _is_link(value) -> bool:
+    return isinstance(value, str) and value.startswith(("http://", "https://"))
 
 
 def _visitor(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> str:
