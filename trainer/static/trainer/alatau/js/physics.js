@@ -6,11 +6,15 @@ const TRAINERS = { // мощность по скорости колеса на �
   mag: v => 7.5 * v + 0.0012 * v * v * v,
   rollers: v => 4.0 * v + 0.0006 * v * v * v
 };
-const PHYS = { g: 9.81, rho: 1.08, CdA: .32, Crr: .005, bike: 8.5 };
+const PHYS = { g: 9.81, CdA: .32, Crr: .005, bike: 8.5 };
+// The air's density at a height in metres above the sea, kg/m3, by the International Standard Atmosphere (ISO 2533):
+// 1.225 at the sea at 15 C, the air cooling 6.5 C a kilometre up to 11 km
+function airDensity(h) { return 1.225 * Math.pow(1 - .0065 * clamp(h || 0, -500, 11000) / 288.15, 4.25588); }
+// a rider's step: r.rho is the air they are in
 function stepRider(r, P, grade, dt) {
   const m = r.mass + (r.bike || PHYS.bike), th = Math.atan(grade);
   const v = Math.max(r.v, .5);
-  const F = P / v - .5 * PHYS.rho * r.CdA * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
+  const F = P / v - .5 * r.rho * r.CdA * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
   r.v = Math.max(0, r.v + F / (m * 1.04) * dt);
   if (r.v > 30) r.v = 30;
   return r.v * dt;
@@ -42,4 +46,4 @@ function botCadence(b, grade, t) {
 // rider's own drag as the ride counts it: rolling resistance Crr and wind resistance Cw = CdA·ρ in kg/m
 // (as ANT+ FE-C defines it: frontal area × drag coefficient × air density; the air drag is ½·Cw·v²)
 function trainerGrade(gradePct, difficulty) { return Math.round(gradePct * difficulty / 100 * 10) / 10; }
-function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * PHYS.rho }; }
+function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * r.rho }; }
