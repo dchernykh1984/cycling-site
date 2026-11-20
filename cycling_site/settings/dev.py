@@ -11,6 +11,12 @@ ALLOWED_HOSTS = ["*"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# The development and test servers give each browser connection a thread of its own, and a thread
+# keeps a persistent database connection for as long as the browser keeps its connection open: a run
+# of browser tests ran the database out of connections. Django's advice: no persistent connections
+# with the development server.
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+
 
 try:
     from .local import *

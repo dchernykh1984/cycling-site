@@ -1,13 +1,16 @@
+import http.client
 import logging
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 from django.core import mail
+from django.db import connection
 from django.http import Http404, HttpResponse
-from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.test import LiveServerTestCase, RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.utils import translation
 
 from cycling_site.logconfig import build_logging_config
@@ -468,3 +471,28 @@ class VendoredStaticAssetsTests(SimpleTestCase):
                 if asset.suffix in {".js", ".css"} and "sourceMappingURL" in asset.read_text(encoding="utf-8"):
                     offenders.append(str(asset.relative_to(app_path)))
         self.assertEqual(offenders, [], f"vendored assets reference uncollected sourcemaps: {offenders}")
+
+
+class LiveServerDatabaseConnectionsTests(LiveServerTestCase):
+    """The test server gives each browser connection a thread, and a browser keeps its connections open
+    long after a page: a thread must not hold a database connection while it waits, or a run of browser
+    tests runs the database out of them."""
+
+    def connections_open(self):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()")
+            return cursor.fetchone()[0]
+
+    def test_an_idle_browser_connection_holds_no_database_connection(self):
+        before = self.connections_open()
+        browser = http.client.HTTPConnection(self.server_thread.host, self.server_thread.port, timeout=10)
+        self.addCleanup(browser.close)
+        browser.request("GET", "/api/v1/disciplines/")  # reads the database
+        response = browser.getresponse()
+        response.read()
+        self.assertEqual(response.status, 200)
+        self.assertNotEqual(response.getheader("Connection"), "close")  # kept open, as a browser's is
+        deadline = time.monotonic() + 3
+        while self.connections_open() > before and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual(self.connections_open(), before)
