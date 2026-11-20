@@ -1,4 +1,5 @@
-"""What a copy of the site's mail is worth to somebody who reads it: a reset link lasts an hour."""
+"""The site's mail about signing in: a copy of a reset link is worth nothing after an hour, and a
+change to how a member signs in is told to them, so a change they did not make is noticed."""
 
 import re
 from datetime import datetime, timedelta
@@ -11,6 +12,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
+from tests.language_urls import in_language
 
 ADDRESS = "member@example.com"
 
@@ -34,3 +36,27 @@ class ResetLinkTests(TestCase):
         link = self.reset_link()
         self.assertTrue(self.opens(link, 59))
         self.assertFalse(self.opens(link, 61))
+
+
+class ChangeNoticeTests(TestCase):
+    def setUp(self):
+        self.member = User.objects.create_user(username="member", email=ADDRESS, password="Strong-pass-2026")
+        EmailAddress.objects.create(user=self.member, email=ADDRESS, verified=True, primary=True)
+        self.client.force_login(self.member)
+
+    def test_a_changed_password_is_told(self):
+        self.client.post(
+            in_language(reverse("account_change_password"), "en"),
+            {"oldpassword": "Strong-pass-2026", "password1": "Another-pass-2026", "password2": "Another-pass-2026"},
+        )
+        notice = mail.outbox[-1]
+        self.assertEqual((notice.to, notice.subject), ([ADDRESS], "Password Changed"))
+        self.assertIn("Your password has been changed.", notice.body)
+
+    def test_a_changed_address_is_told_at_the_old_one(self):
+        self.client.post(in_language(reverse("account_email"), "en"), {"action_add": "", "email": "new@example.com"})
+        key = re.search(r"/accounts/confirm-email/([^/\s]+)/", mail.outbox[-1].body).group(1)
+        self.client.post(in_language(reverse("account_confirm_email", args=[key]), "en"))
+        notice = mail.outbox[-1]
+        self.assertEqual((notice.to, notice.subject), ([ADDRESS], "Email Changed"))
+        self.assertIn(f"from {ADDRESS} to new@example.com", notice.body)

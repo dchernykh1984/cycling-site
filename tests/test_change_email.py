@@ -74,8 +74,9 @@ class ChangeEmailTests(TestCase):
 
     def test_a_change_cancelled_before_it_is_confirmed_leaves_the_old_address(self):
         self._ask_for("new@example.com")
+        link = mail.outbox[-1]
         self.client.post(reverse("account_email"), {"action_remove": "", "email": "new@example.com"})
-        self._open_the_link()
+        self._open_the_link(link)
         self.member.refresh_from_db()
         self.assertEqual(self.member.email, "old@example.com")
         self.assertEqual(self._addresses(self.member), [("old@example.com", True, True)])
