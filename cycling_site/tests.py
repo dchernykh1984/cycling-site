@@ -258,6 +258,36 @@ class MediaServingTests(TestCase):
                 with self.subTest(address=address):
                     self.assertEqual(self.client.get(address).status_code, 404)
 
+    def test_an_upload_cannot_act_as_a_page_of_the_site(self):
+        """Opened directly, any upload but a PDF runs in a sandbox, and HTML or XML is downloaded rather
+        than shown; images, SVG and PDFs still open in the browser."""
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        files = {
+            "documents/page.html": b"<script>document.title = 'ours'</script>",
+            "documents/feed.xml": b"<?xml version='1.0'?><feed/>",
+            "news/hero/logo.svg": b"<svg xmlns='http://www.w3.org/2000/svg'><script>1</script></svg>",
+            "news/hero/logo.png": b"\x89PNG\r\n\x1a\n fake image bytes",
+            "documents/rules.pdf": b"%PDF-1.4 fake",
+        }
+        for name, content in files.items():
+            (Path(tmp) / name).parent.mkdir(parents=True, exist_ok=True)
+            (Path(tmp) / name).write_bytes(content)
+        expected = {  # (opened how, sandboxed)
+            "documents/page.html": ("attachment", True),
+            "documents/feed.xml": ("attachment", True),
+            "news/hero/logo.svg": ("inline", True),
+            "news/hero/logo.png": ("inline", True),
+            "documents/rules.pdf": ("inline", False),
+        }
+        with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
+            for name, (opened, sandboxed) in expected.items():
+                with self.subTest(name=name):
+                    resp = self.client.get(f"/media/{name}")
+                    self.assertEqual(resp.status_code, 200)
+                    self.assertTrue(resp["Content-Disposition"].startswith(opened), resp["Content-Disposition"])
+                    self.assertEqual(resp.get("Content-Security-Policy") == "sandbox", sandboxed)
+
 
 class SanitizeRichHtmlTests(SimpleTestCase):
     def test_strips_script_keeps_formatting(self):

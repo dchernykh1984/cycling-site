@@ -90,7 +90,32 @@ def serve_media(request, path):
     normalized = posixpath.normpath(path).lstrip("/").lower() + "/"
     if normalized.startswith((settings.PRIVATE_MEDIA_PREFIX, *SANDBOXED_ONLY)):
         raise Http404
-    return django_serve(request, path, document_root=settings.MEDIA_ROOT)
+    return _sandboxed(django_serve(request, path, document_root=settings.MEDIA_ROOT))
+
+
+# What a browser opens as a page when it comes inline: HTML and XML documents ("+xml" types too, but
+# SVG, which pages show as an image)
+_PAGE_TYPES = ("text/html", "application/xhtml+xml", "text/xml", "application/xml")
+
+
+def _sandboxed(response):
+    """A member's upload goes out unable to act as a page of the site, whatever it is.
+
+    Every file but a PDF carries `sandbox`: opened directly it gets an origin of its own, no script
+    and no form, while a page showing it as an image, a video or a download is not affected. A PDF
+    is left out because a browser's own PDF viewer may refuse a sandboxed document; it runs no
+    script of the site's in any case. HTML and XML are downloaded rather than opened.
+    """
+    content_type = response.get("Content-Type", "").split(";")[0].strip().lower()
+    if not content_type:  # 304 Not Modified: no body to protect
+        return response
+    if content_type != "application/pdf":
+        response["Content-Security-Policy"] = "sandbox"
+    if content_type in _PAGE_TYPES or (content_type.endswith("+xml") and content_type != "image/svg+xml"):
+        disposition = response.get("Content-Disposition", "")
+        rest = disposition[len("inline") :] if disposition.startswith("inline") else ""
+        response["Content-Disposition"] = "attachment" + rest
+    return response
 
 
 sitemaps = {
