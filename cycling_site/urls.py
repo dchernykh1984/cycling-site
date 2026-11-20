@@ -60,9 +60,10 @@ def indexnow_key_file(request, key):
 
 
 def admin_sign_in(request, home, may_enter):
-    """Both admins sign in through the site's own sign-in, which holds every attempt to allauth's limits,
-    per visitor and per address, and offers the providers too; their own forms took a password without
-    any limit, Wagtail's for any member. Checks no password itself: a POST is sent on like a GET.
+    """The admins, and Wagtail's pages kept to members, sign in through the site's own sign-in, which holds
+    every attempt to allauth's limits, per visitor and per address, and offers the providers too; their
+    own forms took a password without any limit, for any member. Checks no password itself: a POST is
+    sent on like a GET.
 
     A member already signed in goes where they asked if they may enter, and is refused if not: sent to
     the site's sign-in, which returns a signed-in member to where they came from, they would go round in
