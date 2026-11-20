@@ -7,8 +7,12 @@ from urllib.parse import parse_qs, urlsplit
 from xml.etree import ElementTree as ET
 
 import requests
+from cryptography.fernet import Fernet
 from django.conf import settings
-from django.test import Client, TestCase, override_settings
+from django.core import checks
+from django.db import connection as db
+from django.db.migrations.executor import MigrationExecutor
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import override as translation_override
@@ -16,7 +20,7 @@ from django.utils.translation import override as translation_override
 from accounts.models import User
 from tests.language_urls import in_language
 from tests.test_virtual_ride_api import API, MemberClientMixin, _ride, _user
-from trainer import strava
+from trainer import secret_box, strava
 from trainer.models import RideTrack, StravaConnection, StravaUpload, VirtualRide
 
 STRAVA_ON = {
@@ -46,10 +50,15 @@ def _connect(user, expires_in=timedelta(hours=5)):
         user=user,
         athlete_id=7,
         athlete_name="Anna R",
-        access_token="access",
-        refresh_token="refresh",
+        access_token=secret_box.seal("access"),
+        refresh_token=secret_box.seal("refresh"),
         expires_at=timezone.now() + expires_in,
     )
+
+
+def _tokens(connection):
+    connection.refresh_from_db()
+    return secret_box.open_sealed(connection.access_token), secret_box.open_sealed(connection.refresh_token)
 
 
 @override_settings(SOCIALACCOUNT_PROVIDERS=STRAVA_ON)
@@ -107,8 +116,20 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         self.save()
         self.assertEqual(post.call_args.kwargs["data"]["grant_type"], "refresh_token")
         self.assertEqual(call.call_args.kwargs["headers"]["Authorization"], "Bearer new")
-        connection.refresh_from_db()
-        self.assertEqual((connection.access_token, connection.refresh_token), ("new", "next"))
+        self.assertEqual(_tokens(connection), ("new", "next"))
+        self.assertNotIn("new", connection.access_token)  # kept sealed after a refresh too
+
+    @mock.patch("trainer.strava.requests.post")
+    @mock.patch("trainer.strava.requests.request")
+    def test_a_grant_the_site_s_key_cannot_open_is_forgotten_and_strava_is_not_called(self, call, post):
+        connection = _connect(self.user)
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY=Fernet.generate_key().decode()):
+            connection.access_token = secret_box.seal("access")  # sealed with a key the site no longer has
+        connection.save(update_fields=["access_token"])
+        self.assertEqual(self.save().json()["strava"]["status"], "failed")
+        call.assert_not_called()
+        post.assert_not_called()
+        self.assertFalse(StravaConnection.objects.exists())
 
     @mock.patch("trainer.strava.requests.request")
     def test_a_grant_revoked_at_strava_is_forgotten_and_the_ride_says_why(self, call):
@@ -210,6 +231,14 @@ class StravaUploadTests(MemberClientMixin, TestCase):
             self.assertEqual((me["strava_available"], me["strava_connect_url"]), (False, ""))
             self.assertEqual(self.client_m.get(reverse("virtual_ride_strava_connect")).status_code, 404)
 
+    def test_without_the_key_to_seal_its_tokens_nothing_is_offered_and_startup_says_why(self):
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""):
+            me = self.client_m.get(f"{API}/me").json()
+            self.assertEqual((me["strava_available"], me["strava_connect_url"]), (False, ""))
+            self.assertEqual(self.client_m.get(reverse("virtual_ride_strava_connect")).status_code, 404)
+            self.assertIn("trainer.W002", [message.id for message in checks.run_checks()])
+        self.assertNotIn("trainer.W002", [message.id for message in checks.run_checks()])
+
 
 class StravaFileTests(TestCase):
     def test_the_file_carries_the_route_s_places_power_and_pulse_from_the_ride_s_start(self):
@@ -267,6 +296,8 @@ class StravaGrantTests(TestCase):
         connection = StravaConnection.objects.get(user=self.user)
         self.assertEqual((connection.athlete_id, connection.athlete_name), (42, "Anna R"))
         self.assertEqual(post.call_args.kwargs["data"]["grant_type"], "authorization_code")
+        self.assertEqual(_tokens(connection), ("a", "r"))
+        self.assertNotEqual((connection.access_token, connection.refresh_token), ("a", "r"))  # nothing in plain text
 
     @mock.patch("trainer.strava.requests.post")
     def test_no_connection_from_a_stranger_s_answer_or_without_the_upload_permission(self, post):
@@ -324,3 +355,47 @@ class PrivacyTests(TestCase):
         body = Client().get(in_language(reverse("privacy_policy"), "en")).content.decode()
         self.assertIn("upload each ride you finish as a virtual ride", body)
         self.assertIn("we still do not read your Strava activities", body)
+
+
+BEFORE_SEALING = [("trainer", "0005_intervals_icu")]
+SEALING = [("trainer", "0006_sealed_strava_tokens")]
+
+
+class SealingMigrationTests(TransactionTestCase):
+    """The grants kept before tokens were sealed: sealed by the migration, opened again by its reverse."""
+
+    def migrate(self, target):
+        executor = MigrationExecutor(db)
+        executor.migrate(target)
+        return executor.loader.project_state(target).apps.get_model("trainer", "StravaConnection")
+
+    def keep_a_grant_in_plain_text(self):
+        connections = self.migrate(BEFORE_SEALING)
+        user = _user("anna")
+        connections.objects.create(
+            user_id=user.pk, athlete_id=7, access_token="access", refresh_token="refresh", expires_at=timezone.now()
+        )
+
+    def test_a_grant_kept_in_plain_text_is_sealed_and_its_reverse_opens_it(self):
+        try:
+            self.keep_a_grant_in_plain_text()
+            row = self.migrate(SEALING).objects.get()
+            self.assertNotIn("access", row.access_token + row.refresh_token)
+            self.assertEqual(
+                (secret_box.open_sealed(row.access_token), secret_box.open_sealed(row.refresh_token)),
+                ("access", "refresh"),
+            )
+            row = self.migrate(BEFORE_SEALING).objects.get()
+            self.assertEqual((row.access_token, row.refresh_token), ("access", "refresh"))
+        finally:
+            self.migrate(SEALING)
+
+    def test_without_the_key_the_migration_stops_and_keeps_the_grant(self):
+        try:
+            self.keep_a_grant_in_plain_text()
+            with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""), self.assertRaises(RuntimeError):
+                self.migrate(SEALING)
+            row = self.migrate(BEFORE_SEALING).objects.get()
+            self.assertEqual((row.access_token, row.refresh_token), ("access", "refresh"))
+        finally:
+            self.migrate(SEALING)

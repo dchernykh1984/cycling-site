@@ -9,6 +9,7 @@ import sys
 from unittest import mock
 
 import requests
+from django.conf import settings
 from django.contrib.messages import get_messages
 from django.core import checks
 from django.test import RequestFactory, TestCase, override_settings
@@ -72,7 +73,9 @@ class StartupCheckTests(TestCase):
         self.assertEqual(_startup_warnings(), [])
         with override_settings(INTEGRATIONS_ENCRYPTION_KEY="pasted-with-a-typo"):
             self.assertEqual(_startup_warnings(), ["trainer.W001"])
-        with override_settings(INTEGRATIONS_ENCRYPTION_KEY=""):
+        # a Strava application without the key is said apart (trainer.W002), so none here, whatever .env holds
+        no_strava = settings.SOCIALACCOUNT_PROVIDERS | {"strava": {"APP": {}}}
+        with override_settings(INTEGRATIONS_ENCRYPTION_KEY="", SOCIALACCOUNT_PROVIDERS=no_strava):
             self.assertEqual(_startup_warnings(), [], "no key is a site without intervals.icu, by choice")
 
 

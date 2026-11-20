@@ -134,14 +134,15 @@ class StravaConnection(models.Model):
 
     Signing in with Strava asks for ``read`` only and keeps no token; this is a separate grant the
     member gives on the profile, kept only while they want their rides sent. Turning it off revokes it
-    at Strava and deletes the row (``trainer.strava``).
+    at Strava and deletes the row (``trainer.strava``). Both tokens are kept sealed
+    (``trainer.secret_box``): a copy of the database or a backup holds nothing that uploads to Strava.
     """
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="strava_connection")
     athlete_id = models.BigIntegerField()
     athlete_name = models.CharField(max_length=120, blank=True, default="")
-    access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255)
+    access_token = models.TextField()  # sealed
+    refresh_token = models.TextField()  # sealed
     expires_at = models.DateTimeField()
     connected_at = models.DateTimeField(auto_now_add=True)
     # the member's box on the profile: off keeps the connection and sends nothing on its own (issue #471)
