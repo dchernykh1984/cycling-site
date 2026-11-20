@@ -1,8 +1,9 @@
 """Both admins sign in through the site's own sign-in, which holds every attempt to allauth's limits; their
-own forms took passwords without any limit."""
+own forms took passwords without any limit. Wagtail's own password reset, which had none, is off."""
 
 from urllib.parse import parse_qs, urlsplit
 
+from django.core import mail
 from django.test import TestCase
 
 from accounts.models import User
@@ -41,3 +42,8 @@ class AdminSignInTests(TestCase):
     def test_signed_in_on_the_site_an_admin_reaches_the_admin(self):
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+    def test_wagtails_own_password_reset_is_gone(self):
+        self.assertEqual(self.client.get("/admin/password_reset/").status_code, 404)
+        self.client.post("/admin/password_reset/", {"email": "admin@example.com"})
+        self.assertEqual(mail.outbox, [])
