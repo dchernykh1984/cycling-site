@@ -84,6 +84,16 @@ class MailLanguageTests(TestCase):
         self.assertEqual(self.member.email, "new@example.com")
         self.assertEqual(mail.outbox[-1].subject, _in("kk", "Email Changed"))
 
+    def test_the_notice_of_a_change_confirmed_signed_out_comes_in_every_language(self):
+        self.prefer("kk")
+        self.client.force_login(self.member)
+        self.client.post(in_language(reverse("account_email"), "kk"), {"action_add": "", "email": "new@example.com"})
+        link = re.search(r"https?://[^/\s]+(/\S+/confirm-email/\S+/)", mail.outbox[-1].body).group(1)
+        self.client.logout()
+        self.client.post(link)
+        notice = mail.outbox[-1]
+        self.assertEqual((notice.to, notice.subject), ([ADDRESS], _in_every_language("Email Changed")))
+
     def test_a_reset_asked_for_without_signing_in_comes_in_every_language(self):
         self.prefer("kk")
         message = self.ask_for_a_reset()
