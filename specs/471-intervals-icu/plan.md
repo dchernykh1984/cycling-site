@@ -223,11 +223,11 @@ each rider. It replaces the fixed 1.08 kg/m3: at 930 m the air is 1.119 kg/m3, a
 - **The assumption.** Further out the same slopes are assumed, and no open measurement checks it:
   the saving is gone 4.2 m behind the wheel, or 1.2-1.4 m aside by the gap. The open papers read for this go
   no further back than 1 m (Blocken et al. 2013); those that may (Kyle 1979, Olds 1998) are not open.
-- **Why this source.** It measured real riders pedalling on the road. Blocken et al. 2013 (Computers
-  & Fluids 71:435-445) computed 12-27 % by position, from 1 cm to 1 m, with still legs and wheels and
-  the body without a bicycle. They name that as why their figure is below the 37-49 % measured
-  earlier in a wind tunnel (Zdravkovich et al. 1996), and they cite Kyle's coast-down tests (1979) at
-  38 %.
+- **Why this source.** It measured real riders pedalling outdoors: six riders of a professional
+  team's development squad, on a bike park's flat lap. Blocken et al. 2013 (Computers & Fluids
+  71:435-445) computed 12-27 % by position, from 1 cm to 1 m, with still legs and wheels and the body
+  without a bicycle. They name that as why their figure is below the 37-49 % measured earlier in a
+  wind tunnel (Zdravkovich et al. 1996), and they cite Kyle's coast-down tests (1979) at 38 %.
 - **The gap.** The bikes as drawn are 1.71 m from tyre to tyre, so the gap between the wheels is the
   distance between two riders less 1.71 m. On a loop, a rider just behind is a lap ahead.
 - **Who.** The rider and the bots alike ride in the best wake ahead: a bot's, the rider's or a live
