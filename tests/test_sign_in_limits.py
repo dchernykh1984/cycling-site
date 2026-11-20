@@ -2,8 +2,11 @@
 in a header (CLIENT_IP_HEADER): behind a proxy the connection's address is one for everyone."""
 
 from allauth.account.adapter import get_adapter
+from django.core import mail
 from django.core.cache import cache
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, override_settings
+
+from accounts.models import User
 
 HEADER = "CF-Connecting-IP"
 # allauth keeps its counters in the cache, which the test settings turn off
@@ -50,3 +53,25 @@ class SignInLimitsTests(TestCase):
             self.assertFalse(self.refused(self.sign_in("198.51.100.7", f"guess{n}@example.com")), n)
         self.assertTrue(self.refused(self.sign_in("198.51.100.7", "guess10@example.com")))
         self.assertFalse(self.refused(self.sign_in("203.0.113.9", "member@example.com")))
+
+    def test_an_account_is_guarded_across_visitors(self):
+        for n in range(5):
+            self.assertFalse(self.refused(self.sign_in(f"198.51.100.{n + 1}", "member@example.com")), n)
+        self.assertTrue(self.refused(self.sign_in("203.0.113.9", "member@example.com")))
+
+    def test_people_signing_up_from_one_address_each_get_an_account_and_a_confirmation_mail(self):
+        # one place's network -- a club's, a race village's -- serves many people at once, each on a phone
+        for n in range(6):
+            response = Client().post(
+                "/en/accounts/signup/",
+                {
+                    "email": f"rider{n}@example.com",
+                    "password1": "a long pass phrase 2026",
+                    "password2": "a long pass phrase 2026",
+                    "privacy": "on",
+                },
+                headers={HEADER: "198.51.100.7"},
+            )
+            self.assertEqual(response.status_code, 302, n)
+        self.assertEqual(User.objects.filter(email__startswith="rider").count(), 6)
+        self.assertEqual(sorted(m.to[0] for m in mail.outbox), [f"rider{n}@example.com" for n in range(6)])

@@ -114,13 +114,10 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 # The request header in which a proxy in front of the site names the visitor's own address; empty, the
 # connection's address. allauth's sign-in limits count each visitor by it (accounts.adapters).
 CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", default="")
-ACCOUNT_RATE_LIMITS = {
-    "confirm_email": "1/3m",
-    "login": "10/5m",
-    "signup": "5/h",
-    "reset_password": "5/h",
-    "reset_password_from_key": "5/h",
-}
+# Sign-in, sign-up, reset and confirmation mails are limited by allauth's own rates, which count each
+# visitor and each address apart (so no ACCOUNT_RATE_LIMITS here). Tighter rates counted by visitor
+# alone held the whole site back while every request came from one proxy address: five sign-ups an
+# hour for everybody, one confirmation mail in three minutes for everybody.
 # Don't reveal whether an email is registered on signup/login/password-reset (review #4).
 ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_SESSION_REMEMBER = True
