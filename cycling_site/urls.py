@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.sitemaps import views as sitemap_views
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.shortcuts import redirect, resolve_url
 from django.urls import URLPattern, URLResolver, include, path, re_path, reverse
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from wagtail import urls as wagtail_urls
@@ -72,7 +72,7 @@ def admin_sign_in(request, home, may_enter):
     if not url_has_allowed_host_and_scheme(
         asked, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
-        asked = reverse(home)
+        asked = resolve_url(home)
     if not request.user.is_authenticated:
         return redirect(f"{reverse('account_login')}?{urlencode({'next': asked})}")
     if not may_enter(request):
@@ -82,6 +82,10 @@ def admin_sign_in(request, home, may_enter):
 
 def _may_enter_wagtail(request):
     return request.user.has_perm("wagtailadmin.access_admin")
+
+
+def _anybody_signed_in(request):
+    return True
 
 
 def robots_txt(request):
@@ -218,6 +222,8 @@ urlpatterns += i18n_patterns(
     path("", include("registrations.urls")),
     path("search/", search_views.search, name="search"),
     path("", include("home.urls")),
+    # Wagtail's sign-in for pages kept to members, a password form of its own like the admins'
+    path("_util/login/", admin_sign_in, {"home": "/", "may_enter": _anybody_signed_in}),
     path("", include(wagtail_urls)),  # must be last
     prefix_default_language=True,
 )
