@@ -26,6 +26,14 @@ dependencies = [
 ]
 
 [dependency-groups]
+# What the import agents install in their GitHub jobs, which hold production secrets (the Telegram
+# session among them): exported with hashes to requirements-agents.txt, so a job installs exactly the
+# files this lock names and nothing a new release would bring.
+agents = [
+    "beautifulsoup4>=4.12,<5",
+    "pyyaml>=6,<7",
+    "telethon>=1.40,<2",
+]
 dev = [
     "ruff>=0.15.12,<0.18",
     "pre-commit>=4.6.0,<5",

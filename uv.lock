@@ -472,6 +472,11 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+agents = [
+    { name = "beautifulsoup4" },
+    { name = "pyyaml" },
+    { name = "telethon" },
+]
 dev = [
     { name = "commitizen" },
     { name = "django-debug-toolbar" },
@@ -510,6 +515,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+agents = [
+    { name = "beautifulsoup4", specifier = ">=4.12,<5" },
+    { name = "pyyaml", specifier = ">=6,<7" },
+    { name = "telethon", specifier = ">=1.40,<2" },
+]
 dev = [
     { name = "commitizen", specifier = ">=4.17.0,<5" },
     { name = "django-debug-toolbar", specifier = ">=6.3.0,<8" },
@@ -1526,6 +1536,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pyaes"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/66/2c17bae31c906613795711fc78045c285048168919ace2220daa372c7d72/pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f", size = 28536, upload-time = "2017-09-20T21:17:54.23Z" }
+
+[[package]]
+name = "pyasn1"
+version = "0.6.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/7e/3c0da41061a2021cac7cd524fd57092adbe5b515e8bf9005702e366802e2/pyasn1-0.6.5.tar.gz", hash = "sha256:6b11616a6bcf3a40e635f082bb232fa57b5e0dd7f517bd7ddd69ec3794508a47", size = 155152, upload-time = "2026-10-27T06:32:49.125Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/1f/3eefd5c84c35cae44549ce1c7f7e58f7945b34f5a6bce07a135438522073/pyasn1-0.6.5-py3-none-any.whl", hash = "sha256:4017b0fce125096b8573b39c989fdb1a4b19cf761e683398184550fea0e66587", size = 84807, upload-time = "2026-10-27T06:32:48.045Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1824,6 +1849,18 @@ wheels = [
 ]
 
 [[package]]
+name = "rsa"
+version = "4.9.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyasn1" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/da/8a/22b7beea3ee0d44b1916c0c1cb0ee3af23b700b6da9f04991899d0c555d4/rsa-4.9.1.tar.gz", hash = "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75", size = 29034, upload-time = "2025-04-16T09:51:18.218Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl", hash = "sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762", size = 34696, upload-time = "2025-04-16T09:51:17.142Z" },
+]
+
+[[package]]
 name = "ruff"
 version = "0.17.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1887,6 +1924,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/65/58/5de8765687d6f9dfcbb72c89251036c3b901126404f872b936b13377a3fe/telepath-0.3.1.tar.gz", hash = "sha256:925c0609e0a8a6488ec4a55b19d485882cf72223b2b19fe2359a50fddd813c9c", size = 11622, upload-time = "2023-06-12T12:07:42.559Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/50/0f246d316f223b14ba5a88fbe2ff0b480d4a6064b866d48008dd57fd5930/telepath-0.3.1-py38-none-any.whl", hash = "sha256:c280aa8e77ad71ce80e96500a4e4d4a32f35b7e0b52e896bb5fde9a5bcf0699a", size = 10926, upload-time = "2023-06-12T12:07:41.443Z" },
+]
+
+[[package]]
+name = "telethon"
+version = "1.46.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyaes" },
+    { name = "rsa" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e4/e9/b0a7b4af3ad1302845cce64e62cfd9040d6ae2d8b49c391a51dddc347eea/telethon-1.46.0.tar.gz", hash = "sha256:8357f5719376a9c1ddf0999136a44594a5b21b453647f1e146c169483b6a67df", size = 766624, upload-time = "2026-11-17T19:46:48.924Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/82/33/30d84b58c52231ae6b3e6b918cee4a8a040338eef814e4e57217e849f18a/telethon-1.46.0-py3-none-any.whl", hash = "sha256:c56e55e4a1f95fde556fe13459a542fc758e8ba501c0bf76f2fc5d8409fa81cb", size = 836173, upload-time = "2026-11-17T19:46:46.848Z" },
 ]
 
 [[package]]
