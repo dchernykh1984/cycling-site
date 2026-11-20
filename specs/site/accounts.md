@@ -339,9 +339,9 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   is the address the proxy in front of the site names in the header the deployment sets
   (`CLIENT_IP_HEADER`), an IPv6 one by its /64 (a subscriber is handed a whole /64); without a
   header, or with a value that is no address, the connection's address counts. Each process logs
-  once, cut to the network, where it read the address from
-  (`accounts.adapters`). Rates of the site's own, counted by the connection alone, held the whole
-  site back while every request came from one proxy address.
+  once, cut to the network, where it read the address from (`accounts.adapters`). Rates of the
+  site's own, counted by the connection alone, held the whole site back while every request came
+  from one proxy address.
 
 ## Key Entities
 
