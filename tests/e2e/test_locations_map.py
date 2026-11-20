@@ -348,7 +348,10 @@ def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, adm
     page.goto(f"{_map_url(live_server)}?location={location_with_coords.pk}&page=1")
     marker = page.locator(".leaflet-marker-icon").first
     expect(marker).to_be_visible()
-    marker.click()
+    # From the keyboard: the map zooms to its markers as they appear, and its clusters draw them
+    # anew at the end, so a click aimed at one mid-zoom can land where it no longer is (Firefox, CI).
+    # A Leaflet marker opens its popup on Enter as on a click.
+    marker.press("Enter")
     edit_link = page.locator(f".leaflet-popup a[href^='/ru/locations/{location_with_coords.pk}/edit/']")
     expect(edit_link).to_be_visible()
     with page.expect_navigation():

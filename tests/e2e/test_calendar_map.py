@@ -84,7 +84,10 @@ def test_map_marker_popup_links_to_competition(page: Page, live_server, organize
     page.goto(f"{live_server.url}/ru/calendar/map/?{AROUND_UPCOMING}")
     marker = page.locator(".leaflet-marker-icon")
     expect(marker).to_have_count(1)
-    marker.click()
+    # From the keyboard: the map zooms to its markers as they appear, and its clusters draw them
+    # anew at the end, so a click aimed at one mid-zoom can land where it no longer is (Firefox, CI).
+    # A Leaflet marker opens its popup on Enter as on a click.
+    marker.press("Enter")
     popup = page.locator(".leaflet-popup-content")
     expect(popup).to_contain_text("Mapped Race")
     expect(popup.locator("a")).to_have_attribute("target", "_blank")
