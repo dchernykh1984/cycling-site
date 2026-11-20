@@ -114,9 +114,8 @@ ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 # the site's mailbox keeps one of every mail it sends -- is worth nothing after that.
 PASSWORD_RESET_TIMEOUT = 60 * 60
 # A member hears of every change to how they sign in -- a password changed, set or reset, an address
-# changed (told at the old one) or removed, a Google, GitHub or Strava account connected or
-# disconnected -- with the visitor's address, browser and time, so a change they did not make is
-# noticed the same day.
+# changed (told at the old one) or removed, a sign-in provider's account connected or disconnected --
+# with the visitor's address, browser and time, so a change they did not make is noticed the same day.
 ACCOUNT_EMAIL_NOTIFICATIONS = True
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 # Sign-in, sign-up, password resets and confirmation mails are held to allauth's own rates, which count
