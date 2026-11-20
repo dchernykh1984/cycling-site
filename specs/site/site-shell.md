@@ -47,7 +47,8 @@ wheel, 1.3 points more for each 10 cm closer, 3.9 points less for each 10 cm asi
 slopes further out, so it is gone 4.2 m back or 1.2-1.4 m aside; a smart trainer is told a change
 of that drag within the second. A cadence sensor alone rides by the physics, from the trainer's
 power curve, unless the rider chose the gear's speed; a step of the own plan by gears rides at its
-gear's speed whatever the choice. A smart trainer is sent one command at a time, each once it has answered the one
+gear's speed whatever the choice.
+A smart trainer is sent one command at a time, each once it has answered the one
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
 is shown as not under control and left alone; a grade sent before the trainer reconnected is sent
