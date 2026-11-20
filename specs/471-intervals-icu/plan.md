@@ -206,17 +206,47 @@ by power with no FTP, is 422, since trying again changes nothing; intervals.icu 
 
 **Saving.** The ride is a plan ride. Neither the workout nor the FTP is stored.
 
-### Phase 3 -- mechanics
+### Phase 3 -- mechanics (as built)
 
-- **Air density.** Density from the height by the International Standard Atmosphere (ISO 2533),
-  replacing the fixed 1.08 kg/m3.
-- **Drafting.**
-  - The drag of a rider close behind another, bot or live member, shrinks with the gap along the
-    route, by a curve from published wind-tunnel measurements. The source is cited in the code and
-    in the pull request.
-  - In SIM mode, Cw sent to a smart trainer is the reduced one.
-- **Cadence-only riders.** The cadence-only speed setting defaults to the physics in races and free
-  rides. Plans by gear keep the gear's speed, whatever the setting.
+**Air density.** `airDensity(h)` (`js/physics.js`) is the International Standard Atmosphere's
+(ISO 2533): 1.225 kg/m3 at sea level and 15 C, the air cooling 6.5 C a kilometre, so
+rho = 1.225 * (1 - 0.0065 h / 288.15) ^ 4.25588. Each step takes it at the height of the road under
+each rider. It replaces the fixed 1.08 kg/m3: at 930 m the air is 1.118 kg/m3, at 3000 m 0.909.
+
+**Drafting.**
+- **The source.** On-site measurements of riders pedalling at 45 km/h through a stereo-PIV system
+  (Spoelstra, Mahalingesh, Sciacchitano 2020, "Drafting Effect in Cycling: On-Site Aerodynamic
+  Investigation by the 'Ring of Fire'", Proceedings 49(1):113, doi:10.3390/proceedings2020049113,
+  CC BY). In line 0.7 m behind the wheel the trailing rider's drag is 45 % lower; 1.3 points more for
+  each 10 cm closer, 3.9 points less for each 10 cm aside. They measured 0.35-0.85 m back and up to
+  0.2 m aside.
+- **The assumption.** Further out the same slopes are assumed, and no open measurement checks it:
+  the saving is gone 4.2 m behind the wheel, or about 1.2 m aside. The open papers read for this go
+  no further back than 1 m (Blocken et al. 2013); those that may (Kyle 1979, Olds 1998) are not open.
+- **Why this source.** It measured real riders pedalling on the road. Blocken et al. 2013 (Computers
+  & Fluids 71:435-445) computed 12-27 % by position, from 1 cm to 1 m, with still legs and wheels and
+  the body without a bicycle. They name that as why their figure is below the 37-49 % measured
+  earlier in a wind tunnel (Zdravkovich et al. 1996), and they cite Kyle's coast-down tests (1979) at
+  38 %.
+- **The gap.** The bikes as drawn are 1.71 m from tyre to tyre, so the gap between the wheels is the
+  distance between two riders less 1.71 m. On a loop, a rider just behind is a lap ahead.
+- **Who.** The rider and the bots alike ride in the best wake ahead: a bot's, the rider's or a live
+  member's. The leader's own saving (0.8-2.6 % at 1 cm, Blocken et al. 2013) is left out.
+- **SIM.** A smart trainer is sent Cw = CdA x (1 - the share) x the air's density. A change of
+  0.01 kg/m, the unit it reads, is sent within the second, as a change of the grade is.
+
+**Cadence-only riders.** A cadence sensor alone rides by the physics, from the trainer's power curve,
+unless the rider chose the gear's speed. A step of the own plan by gears rides at its gear's speed,
+whatever the choice. The gear's speed was the default, and stored settings cannot tell a rider who
+picked it from one who never looked. So every rider is moved to the physics once (`cadPhysics`), and
+one who picks the gear's speed again keeps it.
+
+**Tests** (`tests/e2e/test_virtual_ride.py`):
+- the density against the standard's table at 0, 1000, 2000 and 3000 m;
+- the share saved in line, closer, aside, alongside, far behind and in front;
+- the speed a wake gives at 200 W, and a bot in the rider's wake;
+- a smart trainer told the lighter drag within the second;
+- which speed a cadence sensor rides by, and the default moved once.
 
 ## Rollout
 
