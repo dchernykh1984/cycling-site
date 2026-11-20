@@ -218,9 +218,11 @@ const Sensors = {
 };
 // Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении (и раз в 5 с без него);
 // сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG
-// on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it
+// on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it.
+// A change of the rider's wind resistance (a wake ahead, the air higher up) is sent as a change of the grade is;
+// cw is the last one sent, in the 0.01 kg/m the trainer reads
 const Trainer = {
-  last: -10, sent: null, held: null,
+  last: -10, sent: null, held: null, cw: null,
   update(t, grade, rider, watts) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
     if (t - this.last < 1) return;
@@ -228,9 +230,9 @@ const Trainer = {
       if (this.held !== null && Math.abs(watts - this.held) < 1 && t - this.last < 5) return;
       this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) this.held = watts; }); return;
     }
-    const target = trainerGrade(grade, settings.difficulty);
-    if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && t - this.last < 5) return;
-    this.last = t; d.setGrade(target, trainerDrag(rider)).then(ok => { if (ok) { this.sent = target; this.held = null; } });
+    const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100);
+    if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && t - this.last < 5) return;
+    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.held = null; } });
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
   canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }
