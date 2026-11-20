@@ -6,6 +6,12 @@ from django.db import models
 
 from calendar_app.models import Competition
 
+# Where an upload's HTML is kept. A protocol is HTML somebody else wrote: only the protocol's own views
+# serve it, framed in a sandbox -- never /media/ as a page of the site (cycling_site.urls.serve_media).
+PROTOCOL_DIR = "protocols/"
+VERSION_DIR = "protocol_versions/"
+SANDBOXED_ONLY = (PROTOCOL_DIR, VERSION_DIR)
+
 
 class Protocol(models.Model):
     objects: ClassVar[models.Manager[Protocol]]
@@ -22,7 +28,7 @@ class Protocol(models.Model):
     protocol_type = models.CharField(max_length=20, choices=ProtocolType.choices)
     # A protocol is the HTML file the timing software wrote, its structured document
     # (protocols/document.py), or both from one run -- whatever the last upload carried.
-    html_file = models.FileField(upload_to="protocols/", blank=True)
+    html_file = models.FileField(upload_to=PROTOCOL_DIR, blank=True)
     document = models.JSONField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
     is_live = models.BooleanField(default=True)
@@ -77,7 +83,7 @@ class ProtocolVersion(models.Model):
         on_delete=models.CASCADE,
         related_name="versions",
     )
-    html_file = models.FileField(upload_to="protocol_versions/", blank=True)
+    html_file = models.FileField(upload_to=VERSION_DIR, blank=True)
     document = models.JSONField(null=True, blank=True)
     saved_at = models.DateTimeField(auto_now_add=True)
     file_hash = models.CharField(max_length=64)

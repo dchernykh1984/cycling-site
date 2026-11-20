@@ -238,6 +238,26 @@ class MediaServingTests(TestCase):
             resp = self.client.get("/media/news/hero/missing.jpg")
         self.assertEqual(resp.status_code, 404)
 
+    def test_a_protocol_file_is_never_served_as_a_page_of_the_site(self):
+        """A protocol is HTML somebody else wrote: its own views frame it in a sandbox, and /media/ must
+        not hand the file out as a page of the site, by any spelling of its address."""
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        for folder, name in (("protocols", "abs.html"), ("protocol_versions", "v_abs.html")):
+            (Path(tmp) / folder).mkdir()
+            (Path(tmp) / folder / name).write_text("<script>document.title = 'ours'</script>")
+        addresses = (
+            "/media/protocols/abs.html",
+            "/media/protocol_versions/v_abs.html",
+            "/media/news/../protocols/abs.html",
+            "/media/./protocols/abs.html",
+            "/media/Protocols/abs.html",
+        )
+        with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
+            for address in addresses:
+                with self.subTest(address=address):
+                    self.assertEqual(self.client.get(address).status_code, 404)
+
 
 class SanitizeRichHtmlTests(SimpleTestCase):
     def test_strips_script_keeps_formatting(self):

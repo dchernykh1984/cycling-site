@@ -22,7 +22,7 @@ from protocols import access, sections
 from protocols.document import DocumentError
 from protocols.document import parse as parse_document
 from protocols.forms import SectionNamesForm
-from protocols.models import VERSIONS_KEPT, Protocol, ProtocolSection, ProtocolVersion
+from protocols.models import PROTOCOL_DIR, VERSION_DIR, VERSIONS_KEPT, Protocol, ProtocolSection, ProtocolVersion
 from protocols.views import content_security_policy, protocol_state
 
 router = Router(tags=["protocols"])
@@ -134,9 +134,9 @@ def _replace_protocol(
         main_name = version_name = ""
         if html is not None:
             content, filename = html
-            main_name = default_storage.save(f"protocols/{filename}", ContentFile(content))
+            main_name = default_storage.save(f"{PROTOCOL_DIR}{filename}", ContentFile(content))
             saved.append(main_name)
-            version_name = default_storage.save(f"protocol_versions/v_{filename}", ContentFile(content))
+            version_name = default_storage.save(f"{VERSION_DIR}v_{filename}", ContentFile(content))
             saved.append(version_name)
         with transaction.atomic():
             Competition.objects.select_for_update().get(pk=competition.pk)
