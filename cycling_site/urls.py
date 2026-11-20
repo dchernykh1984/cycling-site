@@ -93,8 +93,8 @@ def serve_media(request, path):
     return _sandboxed(django_serve(request, path, document_root=settings.MEDIA_ROOT))
 
 
-# What a browser opens as a page when it comes inline: HTML and XML documents ("+xml" types too, but
-# SVG, which pages show as an image)
+# What a browser opens as a page when it comes inline: HTML and XML documents, every "+xml" type too
+# except SVG, which pages show as an image
 _PAGE_TYPES = ("text/html", "application/xhtml+xml", "text/xml", "application/xml")
 
 
