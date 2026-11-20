@@ -2,7 +2,7 @@
 
 **Feature Branch**: `471-intervals-icu`
 **Created**: 2026-11-19
-**Status**: Phase 1 (services) merged in #472; phase 2 (workouts and ERG) in its own pull request; phase 3 follows
+**Status**: Phase 1 (services) merged in #472, phase 2 (workouts and ERG) in #475; phase 3 (mechanics) in its own pull request
 **Input**: Issue #471 asks the virtual ride to run the workouts planned in intervals.icu. It names
 four things: syncing workouts from there, recording rides, a trainer simulator by power if there is
 none, and a check that the virtual ride lacks no standard feature and gets its mechanics right. The
@@ -103,8 +103,9 @@ maintainer decided the points below in conversation on 2026-11-19; they are reco
 1. **Air density.** The air resisting the rider has the density of the route's height at that
    point, not one figure for every height.
 2. **Drafting.** Close behind a rider ahead, bot or live member, the rider meets less air.
-   - How much less follows published measurements: it shrinks with the gap and is gone a few
-     lengths back.
+   - How much less follows published measurements: it shrinks with the gap and with the offset
+     aside, and is gone a few lengths back.
+   - Bots ride in wakes too, each other's and the rider's.
    - A smart trainer in SIM mode is told the lighter drag.
 3. **Cadence-only riders.** A rider with a cadence sensor only slows on climbs by default in races
    and free rides: their speed follows the physics from the trainer's power curve. A plan by gear
