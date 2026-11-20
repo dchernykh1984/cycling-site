@@ -16,7 +16,7 @@ function airDensity(h) { return 1.225 * Math.pow(1 - .0065 * clamp(h || 0, -500,
 // Fire'", Proceedings 49(1):113, doi:10.3390/proceedings2020049113): 45 % saved in line 0.7 m back, 1.3 points more
 // for each 10 cm closer, 3.9 points less for each 10 cm aside. They rode 0.35-0.85 m back and up to 0.2 m aside.
 // Further out the same slopes are assumed, which no open measurement checks: the saving is gone 4.2 m back, or
-// about 1.2 m aside.
+// 1.2-1.4 m aside by the gap.
 const DRAFT = { share: .45, at: .7, back: .13, side: .39 };
 function draftShare(gap, side) { return gap < 0 ? 0 : clamp(DRAFT.share - DRAFT.back * (gap - DRAFT.at) - DRAFT.side * Math.abs(side), 0, 1); }
 // a rider's step: r.rho is the air they are in, r.draft the share of their drag a wake ahead takes

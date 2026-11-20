@@ -211,7 +211,7 @@ by power with no FTP, is 422, since trying again changes nothing; intervals.icu 
 **Air density.** `airDensity(h)` (`js/physics.js`) is the International Standard Atmosphere's
 (ISO 2533): 1.225 kg/m3 at sea level and 15 C, the air cooling 6.5 C a kilometre, so
 rho = 1.225 * (1 - 0.0065 h / 288.15) ^ 4.25588. Each step takes it at the height of the road under
-each rider. It replaces the fixed 1.08 kg/m3: at 930 m the air is 1.118 kg/m3, at 3000 m 0.909.
+each rider. It replaces the fixed 1.08 kg/m3: at 930 m the air is 1.119 kg/m3, at 3000 m 0.909.
 
 **Drafting.**
 - **The source.** On-site measurements of riders pedalling at 45 km/h through a stereo-PIV system
@@ -221,7 +221,7 @@ each rider. It replaces the fixed 1.08 kg/m3: at 930 m the air is 1.118 kg/m3, a
   each 10 cm closer, 3.9 points less for each 10 cm aside. They measured 0.35-0.85 m back and up to
   0.2 m aside.
 - **The assumption.** Further out the same slopes are assumed, and no open measurement checks it:
-  the saving is gone 4.2 m behind the wheel, or about 1.2 m aside. The open papers read for this go
+  the saving is gone 4.2 m behind the wheel, or 1.2-1.4 m aside by the gap. The open papers read for this go
   no further back than 1 m (Blocken et al. 2013); those that may (Kyle 1979, Olds 1998) are not open.
 - **Why this source.** It measured real riders pedalling on the road. Blocken et al. 2013 (Computers
   & Fluids 71:435-445) computed 12-27 % by position, from 1 cm to 1 m, with still legs and wheels and
