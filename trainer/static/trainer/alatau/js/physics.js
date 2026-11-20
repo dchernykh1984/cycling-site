@@ -10,11 +10,20 @@ const PHYS = { g: 9.81, CdA: .32, Crr: .005, bike: 8.5 };
 // The air's density at a height in metres above the sea, kg/m3, by the International Standard Atmosphere (ISO 2533):
 // 1.225 at the sea at 15 C, the air cooling 6.5 C a kilometre up to 11 km
 function airDensity(h) { return 1.225 * Math.pow(1 - .0065 * clamp(h || 0, -500, 11000) / 288.15, 4.25588); }
-// a rider's step: r.rho is the air they are in
+// Drafting: the share of a rider's air drag saved in another rider's wake, by the gap between their wheels and the
+// sideways offset between them, in metres. From on-site measurements of riders pedalling at 45 km/h (Spoelstra,
+// Mahalingesh, Sciacchitano 2020, "Drafting Effect in Cycling: On-Site Aerodynamic Investigation by the 'Ring of
+// Fire'", Proceedings 49(1):113, doi:10.3390/proceedings2020049113): 45 % saved in line 0.7 m back, 1.3 points more
+// for each 10 cm closer, 3.9 points less for each 10 cm aside. They rode 0.35-0.85 m back and up to 0.2 m aside.
+// Further out the same slopes are assumed, which no open measurement checks: the saving is gone 4.2 m back, or
+// about 1.2 m aside.
+const DRAFT = { share: .45, at: .7, back: .13, side: .39 };
+function draftShare(gap, side) { return gap < 0 ? 0 : clamp(DRAFT.share - DRAFT.back * (gap - DRAFT.at) - DRAFT.side * Math.abs(side), 0, 1); }
+// a rider's step: r.rho is the air they are in, r.draft the share of their drag a wake ahead takes
 function stepRider(r, P, grade, dt) {
   const m = r.mass + (r.bike || PHYS.bike), th = Math.atan(grade);
   const v = Math.max(r.v, .5);
-  const F = P / v - .5 * r.rho * r.CdA * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
+  const F = P / v - .5 * r.rho * r.CdA * (1 - r.draft) * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
   r.v = Math.max(0, r.v + F / (m * 1.04) * dt);
   if (r.v > 30) r.v = 30;
   return r.v * dt;
@@ -44,6 +53,7 @@ function botCadence(b, grade, t) {
 }
 // a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, with no wind, and to the
 // rider's own drag as the ride counts it: rolling resistance Crr and wind resistance Cw = CdA·ρ in kg/m
-// (as ANT+ FE-C defines it: frontal area × drag coefficient × air density; the air drag is ½·Cw·v²)
+// (as ANT+ FE-C defines it: frontal area × drag coefficient × air density; the air drag is ½·Cw·v²), less
+// the share a wake ahead takes
 function trainerGrade(gradePct, difficulty) { return Math.round(gradePct * difficulty / 100 * 10) / 10; }
-function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * r.rho }; }
+function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * (1 - r.draft) * r.rho }; }

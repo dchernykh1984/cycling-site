@@ -9,10 +9,21 @@ let rideMode = 'race';  // режим текущего заезда: race | plan
 // what the page does when something happens in the ride: go, lap, backToStart, sight, finish, planStep, planSoon, planDone
 const rideHooks = {};
 function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args); }
-// rho is the air a rider is in: sea level until the ride's step sets it (airAround)
-function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, rho: airDensity(0), phase: Math.random() * 6, finishT: null, P: 0 }; }
-// the air a rider rides in this step: its density at the height y of the road under them
-function airAround(r, y) { r.rho = airDensity(y); }
+// rho and draft are the air a rider is in: sea level and no wake until the ride's step sets them (airAround)
+function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, rho: airDensity(0), draft: 0, phase: Math.random() * 6, finishT: null, P: 0 }; }
+// The bikes as drawn (js/riders.js) are 1.71 m from tyre to tyre: two riders' points that far apart leave no gap
+const BIKE_LENGTH = 1.71;
+// the share of r's drag that o's wake takes, o being anyone on the road: on a loop the one just behind is a lap ahead
+function wakeOf(r, o) {
+  if (o === r) return 0;
+  const T = world.T; let d = o.s - r.s; if (T.loop) d = ((d % T.L) + T.L) % T.L;
+  return draftShare(d - BIKE_LENGTH, o.lane - r.lane);
+}
+// the air a rider rides in this step: its density at their height y, and the best wake among the riders ahead
+function airAround(r, y) {
+  r.rho = airDensity(y); r.draft = wakeOf(r, me);
+  for (const b of bots) r.draft = Math.max(r.draft, wakeOf(r, b));
+}
 // a rider at the start of a ride: nothing ridden yet
 function startRider(r) {
   r.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };

@@ -561,6 +561,58 @@ def test_the_air_thins_with_the_height_as_the_standard_atmosphere_has_it(page: P
     assert errors == [], errors
 
 
+def test_a_rider_close_behind_another_rides_in_its_wake(page: Page):
+    """As the on-site measurements have it (Spoelstra et al. 2020): 45 % of the drag saved in line 0.7 m behind the
+    wheel, 1.3 points more for each 10 cm closer, 3.9 less for each 10 cm aside; nothing alongside, far behind,
+    well aside, or for the one in front."""
+    errors = _ride_alone(page)
+    shares = page.evaluate(
+        f"""() => {{
+            globalThis.mpStepRemote = () => {{}};
+            const other = newRider('other', 0, 75, 0, 2); other.remote = true; bots = [other];
+            // the bikes are 1.71 m long: their points 1.71 m apart leave no gap between the wheels
+            const share = (gap, side) => {{
+                other.s = me.s + 1.71 + gap; other.lane = me.lane + side;
+                stepRide(1 / 60, {_STILL}, 0); return me.draft;
+            }};
+            return [share(.7, 0), share(.3, 0), share(.7, .1), share(-.5, 0),
+                    share(4.5, 0), share(.7, 1.3), share(-4, 0)];
+        }}"""
+    )
+    assert shares == pytest.approx([0.45, 0.502, 0.411, 0, 0, 0, 0], abs=1e-3)
+    assert errors == [], errors
+
+
+def test_in_a_wake_the_same_power_rides_faster(page: Page):
+    errors = _ride_alone(page)
+    v, rho, g = page.evaluate(
+        """() => {
+            // a live rider who keeps 0.7 m ahead of the wheel, in line: 45 % of the air drag saved
+            globalThis.mpStepRemote = b => { b.s = me.s + 1.71 + .7; };
+            const ahead = newRider('ahead', 0, 75, me.s + 2.41, me.lane); ahead.remote = true; bots = [ahead];
+            const inp = { P: 200, cad: 85, mode: 'power', direct: false };
+            for (let i = 1; i <= 240 * 60; i++) stepRide(1 / 60, inp, i / 60);
+            return [me.v, me.rho, PHYS.g];
+        }"""
+    )
+    assert v == pytest.approx(_settled(rho, 0.3 * 0.55, g), abs=0.01)
+    assert v > _settled(rho, 0.3, g) + 1
+    assert errors == [], errors
+
+
+def test_a_bot_behind_the_rider_rides_in_the_riders_wake(page: Page):
+    errors = _ride_alone(page)
+    share = page.evaluate(
+        f"""() => {{
+            const bot = newRider('bot', 0, 70, me.s - 1.71 - .7, me.lane);
+            Object.assign(bot, {{ ch: {{ style: 'rouleur' }}, wkg: 3, seed: 1 }}); bots = [bot];
+            stepRide(1 / 60, {_STILL}, 0); return bot.draft;
+        }}"""
+    )
+    assert share == pytest.approx(0.45, abs=1e-3)
+    assert errors == [], errors
+
+
 def _trainer_answering(page: Page) -> None:
     """A smart trainer that takes every command, answered as FTMS answers; what it is sent is in `sent`."""
     for name in ("js/i18n.js", "js/bluetooth.js"):
@@ -593,6 +645,29 @@ def test_a_smart_trainer_is_set_to_the_riders_own_drag(page: Page):
     # 6 % at half the difficulty is 3 % (300 in 0.01 %); then the rider's own rolling resistance (in 0.0001)
     # and wind resistance CdA x the air's density at their height (in 0.01 kg/m), not a trainer's defaults
     assert sent == [[0x11, 0, 0, 300 & 255, 300 >> 8, 58, round(0.35 * rho * 100)]], sent
+    assert errors == [], errors
+
+
+def test_a_smart_trainer_is_told_the_lighter_drag_of_a_wake_at_once(page: Page):
+    errors = _ride_alone(page)
+    _trainer_answering(page)
+    sent, rho = page.evaluate(
+        f"""async () => {{
+            globalThis.mpStepRemote = () => {{}};
+            const ahead = newRider('ahead', 0, 75, me.s + 1.71 + .7, me.lane); ahead.remote = true; bots = [ahead];
+            Object.assign(me, {{ CdA: .35, Crr: .0058 }});
+            const at = async t => {{
+                stepRide(1 / 60, {_STILL}, 0); Trainer.update(t, 6, me);
+                await new Promise(done => setTimeout(done, 50));
+            }};
+            await at(10);                    // in the wake
+            ahead.s += 10; await at(11.5);   // left behind: told within the second, the grade the same
+            await at(13);                    // nothing changed: nothing sent
+            return [sent, me.rho];
+        }}"""
+    )
+    wake, alone = round(0.35 * (1 - 0.45) * rho * 100), round(0.35 * rho * 100)
+    assert sent == [[0x11, 0, 0, 300 & 255, 300 >> 8, 58, cw] for cw in (wake, alone)], sent
     assert errors == [], errors
 
 
