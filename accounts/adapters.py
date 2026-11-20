@@ -66,7 +66,7 @@ class AccountAdapter(DefaultAccountAdapter):
         _log_address_source(header, named, request.META.get("REMOTE_ADDR", ""))
         if named:
             try:
-                return str(ipaddress.ip_address(named))
+                return _visitor(ipaddress.ip_address(named))
             except ValueError:
                 logger.warning("%s holds no address; sign-in limits count the connection's instead", header)
         return super().get_client_ip(request)
@@ -86,6 +86,16 @@ class AccountAdapter(DefaultAccountAdapter):
         user = emailconfirmation.email_address.user
         user.last_mail_action_at = timezone.now()
         user.save(update_fields=["last_mail_action_at"])
+
+
+def _visitor(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> str:
+    """Who a limit counts: an IPv4 address, or an IPv6 one's /64 -- a subscriber is handed a whole /64
+    and could take a new address from it for every try."""
+    if ip.version == 4:
+        return str(ip)
+    if ip.ipv4_mapped:
+        return str(ip.ipv4_mapped)
+    return str(ipaddress.ip_network(f"{ip}/64", strict=False).network_address)
 
 
 def _log_address_source(header: str, named: str, remote: str) -> None:
