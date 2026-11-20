@@ -111,6 +111,9 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_CHANGE_EMAIL = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
+# The request header in which a proxy in front of the site names the visitor's own address; empty, the
+# connection's address. allauth's sign-in limits count each visitor by it (accounts.adapters).
+CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", default="")
 ACCOUNT_RATE_LIMITS = {
     "confirm_email": "1/3m",
     "login": "10/5m",

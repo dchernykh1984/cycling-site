@@ -1,3 +1,7 @@
+import ipaddress
+import logging
+import threading
+
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.providers.strava.provider import StravaProvider
@@ -6,6 +10,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import get_language, get_language_from_path
 from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger(__name__)
+# Set once this process has logged where it reads a visitor's address from (once, after each start)
+_address_source_logged = threading.Event()
 
 
 def _with_language(url: str) -> str:
@@ -45,6 +53,24 @@ class AccountAdapter(DefaultAccountAdapter):
     def get_signup_redirect_url(self, request):
         return _in_page_language(super().get_signup_redirect_url(request), request)
 
+    def get_client_ip(self, request):
+        """The visitor's own address, which allauth's sign-in limits count by.
+
+        Behind a proxy the connection comes from the proxy, one address for everyone, and a limit
+        counted by it holds the whole site back. The proxy names the visitor in a header the deployment
+        names (CLIENT_IP_HEADER); without one, or with a value that is no address, the connection's
+        address counts, as before.
+        """
+        header = settings.CLIENT_IP_HEADER
+        named = request.headers.get(header, "").strip() if header else ""
+        _log_address_source(header, named, request.META.get("REMOTE_ADDR", ""))
+        if named:
+            try:
+                return str(ipaddress.ip_address(named))
+            except ValueError:
+                logger.warning("%s holds no address; sign-in limits count the connection's instead", header)
+        return super().get_client_ip(request)
+
     def save_user(self, request, user, form, commit=True):
         user = super().save_user(request, user, form, commit=False)
         user.role = user.Role.GUEST
@@ -60,6 +86,26 @@ class AccountAdapter(DefaultAccountAdapter):
         user = emailconfirmation.email_address.user
         user.last_mail_action_at = timezone.now()
         user.save(update_fields=["last_mail_action_at"])
+
+
+def _log_address_source(header: str, named: str, remote: str) -> None:
+    """Once a process: where the visitor's address came from, cut to its network, so a look at the log
+    after a deploy tells a visitor's address from a proxy's without keeping anybody's."""
+    if _address_source_logged.is_set():
+        return
+    _address_source_logged.set()
+    source = f"the {header} header: {_network(named)}" if header else "the connection only"
+    logger.info("Sign-in limits count visitors by %s; the connection: %s", source, _network(remote))
+
+
+def _network(address: str) -> str:
+    """An address cut to its /16 (IPv4) or /48 (IPv6), and whether it is a private one."""
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return "malformed" if address else "none"
+    network = ipaddress.ip_network(f"{ip}/{16 if ip.version == 4 else 48}", strict=False)
+    return f"{network} ({'private' if ip.is_private else 'public'})"
 
 
 def user_display(user) -> str:
