@@ -589,12 +589,13 @@ class RegistrationFlowTests(TestCase):
         user = User.objects.get(email="newuser@example.com")
         self.assertEqual(user.role, User.Role.GUEST)
 
-    def test_signup_with_existing_email_does_not_reveal_account(self):
-        # Enumeration prevention (review #4): signing up with an existing email must not
-        # error that the email is taken, nor create a duplicate account.
+    def test_signup_with_a_taken_address_says_so_and_makes_no_second_account(self):
+        # With optional confirmation a new address signs the visitor in at once and a taken one cannot,
+        # so allauth cannot hide it; the maintainer kept it so on 2026-11-20 (hiding it would add a step
+        # to every sign-up and still leave a check in two steps).
         User.objects.create_user(username="exists@example.com", email="exists@example.com", password="SuperPass123!")
         response = self.client.post(
-            reverse("account_signup"),
+            in_language(reverse("account_signup"), "en"),
             {
                 "email": "exists@example.com",
                 "password1": "SuperPass123!",
@@ -602,9 +603,26 @@ class RegistrationFlowTests(TestCase):
                 "privacy": "on",
             },
         )
-        self.assertIn(response.status_code, [200, 302])
-        self.assertNotIn(b"already registered", response.content)
+        self.assertContains(response, "A user is already registered with this email address.")
         self.assertEqual(User.objects.filter(email="exists@example.com").count(), 1)
+
+    def test_sign_in_and_a_reset_tell_a_taken_address_from_a_free_one_in_nothing(self):
+        user = User.objects.create_user(
+            username="exists@example.com", email="exists@example.com", password="SuperPass123!"
+        )
+        EmailAddress.objects.create(user=user, email="exists@example.com", verified=True, primary=True)
+        login, reset = in_language(reverse("account_login"), "en"), in_language(reverse("account_reset_password"), "en")
+        answers = []
+        for address in ("exists@example.com", "free@example.com"):
+            refused = self.client.post(login, {"login": address, "password": "Wrong-pass-2026"})
+            asked = self.client.post(reset, {"email": address})
+            answers.append(
+                (refused.status_code, refused.context["form"].errors, asked.status_code, asked.get("Location"))
+            )
+        self.assertEqual(answers[0], answers[1])
+        self.assertEqual(
+            answers[0][1], {"__all__": ["The email address and/or password you specified are not correct."]}
+        )
 
     def test_email_confirmation_flow(self):
         from django.core import mail
