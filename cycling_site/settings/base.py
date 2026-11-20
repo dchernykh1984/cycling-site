@@ -124,7 +124,9 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
 # an hour, one confirmation mail in three minutes, for everybody). A visitor is the address a proxy in
 # front of the site names in this request header; empty, the connection's (accounts.adapters).
 CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", default="")
-# Don't reveal whether an email is registered on signup/login/password-reset (review #4).
+# Signing in and a password reset answer a taken address and a free one alike (review #4). Sign-up
+# cannot: with optional confirmation a new address signs the visitor in at once and a taken one cannot,
+# so allauth says it is taken -- kept so by the maintainer (2026-11-20).
 ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_SESSION_REMEMBER = True
 LOGIN_REDIRECT_URL = "/"

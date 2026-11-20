@@ -40,7 +40,10 @@ once; confirming the address unlocks everything that writes.
 1. **Given** a visitor signs up with an e-mail, **When** the form is sent, **Then** they are signed
    in as a **guest** and a confirmation mail is sent.
 2. **Given** the address is already registered, **When** someone signs up with it, **Then** the
-   response does not reveal that an account exists.
+   form says the address is taken and no second account is made. With optional confirmation allauth
+   cannot hide it: a new address signs the visitor in at once, a taken one cannot. The maintainer
+   kept it so on 2026-11-20: hiding it would add a step to every sign-up and still leave a check in
+   two steps. Signing in and asking for a password reset answer a taken address and a free one alike.
 3. **Given** a guest confirms their address, **Then** they become a **participant**; a higher role
    is never lowered by a confirmation.
 4. **Given** a provider returns a verified e-mail, **Then** the member becomes a participant at
