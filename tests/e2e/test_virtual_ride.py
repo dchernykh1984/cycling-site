@@ -671,6 +671,27 @@ def test_a_smart_trainer_is_told_the_lighter_drag_of_a_wake_at_once(page: Page):
     assert errors == [], errors
 
 
+def test_a_cadence_sensor_alone_rides_by_the_physics_unless_the_gears_speed_is_chosen(page: Page):
+    """Races and free rides take the physics by default; a step of the own plan by gears keeps the gear's speed."""
+    errors = _ride_alone(page)
+    page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / "js" / "input.js")
+    direct = page.evaluate(
+        """() => {
+            const none = () => null;
+            globalThis.Sensors = { mode: () => 'cadence', crank: () => 90, power: none, wheel: none, hr: none };
+            globalThis.gearTeeth = () => [50, 17]; globalThis.gearF = 2; globalThis.gearR = 6;
+            const by = cadSpeed => {
+                globalThis.settings = { circ: 2105, trainer: 'fluid', cadSpeed }; return readInput().direct;
+            };
+            const ride = [by(undefined), by('physics'), by('direct')];
+            Work.start([{ f: 2, r: 6, cad: 90, min: 5 }], [], null); Work.update(.1, 90, 'cadence', 0);
+            return { ride, plan: [by(undefined), by('physics'), by('direct')] };
+        }"""
+    )
+    assert direct == {"ride": [False, False, True], "plan": [True, True, True]}, direct
+    assert errors == [], errors
+
+
 def test_a_smart_trainer_that_answers_each_command_is_given_the_grade(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
@@ -855,6 +876,20 @@ def _trainer_in_its_menu(page: Page, live_server) -> None:
     page.evaluate("drawFrame(16)")
     if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
         pytest.skip("this browser cannot draw 3D, so no ride starts in it")
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    ("stored", "chosen"),
+    [({}, "physics"), ({"cadSpeed": "direct"}, "physics"), ({"cadSpeed": "direct", "cadPhysics": True}, "direct")],
+)
+def test_the_physics_becomes_the_cadence_default_once_and_a_choice_after_it_is_kept(
+    page: Page, live_server, stored, chosen
+):
+    # the gear's speed was the default, so a rider's stored settings carry it whether they chose it or not
+    page.add_init_script(f"localStorage.setItem('alatau:settings', {json.dumps(json.dumps(stored))})")
+    _trainer_in_its_menu(page, live_server)
+    assert page.evaluate("[settings.cadSpeed, $('#cadSpeed').value]") == [chosen, chosen]
 
 
 @pytest.mark.django_db(transaction=True)
