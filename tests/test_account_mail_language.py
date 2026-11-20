@@ -71,6 +71,19 @@ class MailLanguageTests(TestCase):
     def test_without_a_language_in_the_profile_it_is_the_page_language(self):
         self.assertEqual(self.change_password("kk").subject, _in("kk", "Password Changed"))
 
+    def test_the_link_in_a_mail_in_the_profile_language_opens_in_it_and_works(self):
+        self.prefer("kk")
+        self.client.force_login(self.member)
+        self.client.post(in_language(reverse("account_email"), "ru"), {"action_add": "", "email": "new@example.com"})
+        message = mail.outbox[-1]
+        self.assertEqual(message.subject, _in("kk", "Please Confirm Your Email Address"))
+        link = re.search(r"https?://[^/\s]+(/\S+/confirm-email/\S+/)", message.body).group(1)
+        self.assertTrue(link.startswith("/kk/"), link)
+        self.client.post(link)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.email, "new@example.com")
+        self.assertEqual(mail.outbox[-1].subject, _in("kk", "Email Changed"))
+
     def test_a_reset_asked_for_without_signing_in_comes_in_every_language(self):
         self.prefer("kk")
         message = self.ask_for_a_reset()
