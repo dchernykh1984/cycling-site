@@ -99,9 +99,9 @@ class AccountAdapter(DefaultAccountAdapter):
 
         Signed in as the account the mail is for, or signing it up just now, the visitor is the member
         who reads it: the mail goes in the language of their profile, else of the page. Anything else --
-        a reset asked for without signing in, a sign-up with an address that has an account -- anybody
-        could ask for about anybody's address, so it goes in every language, chosen by nothing the account
-        holds. Each language's links open the page in that language.
+        a reset asked for without signing in, one for an address without an account -- anybody could ask
+        for about anybody's address, so it goes in every language, chosen by nothing the account holds.
+        Each language's links open the page in that language.
         """
         parts = []
         for code in _mail_languages(template_prefix, context):
