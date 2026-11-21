@@ -42,6 +42,8 @@ def test_a_member_s_menu_links_their_profile_under_its_name(client, skin, langua
     link = re.search(rf'<a class="nav-link" {_profile_link(language)}>(.*?)</a>', menu, re.S)
     assert link, f"{skin}: the menu has no link to the profile"
     assert re.sub(r"<[^>]+>", "", link.group(1)).strip() == name
+    # Last, so that signing in moves none of the links a guest sees
+    assert re.findall(r'<a class="nav-link" (href="[^"]*")', menu)[-1] == _profile_link(language)
 
 
 @pytest.mark.django_db
