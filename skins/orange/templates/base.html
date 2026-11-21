@@ -139,15 +139,15 @@
                         <a class="nav-link" href="{{ about_url }}">{% include "_ubt_icon.html" with name="info" %}<span>{% trans "About" %}</span></a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'search' %}">{% include "_ubt_icon.html" with name="search" %}<span>{% trans "Search" %}</span></a>
-                    </li>
                     {% if request.user.is_authenticated %}
                     {# Folded menus only, as on the site's own base.html: the account menu holds it on a desktop #}
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="{% url 'account_profile' %}">{% include "_ubt_icon.html" with name="user" %}<span>{% trans "Profile" context "a member's own page" %}</span></a>
                     </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'search' %}">{% include "_ubt_icon.html" with name="search" %}<span>{% trans "Search" %}</span></a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center flex-wrap gap-2 ubt-nav-tools">
                     {% include "_skin_select.html" %}
