@@ -4,12 +4,14 @@
 **Verified against**: `main` on 2026-10-21; managing another member's registrations (issue #315) against branch `315-managing-registrations` on 2026-10-28, its card and banner against `353-event-assistant` on 2026-10-29; the role checks in one module
 against branch `roles-in-one-module` on 2026-10-31; people without accounts and the privacy question (issue #438)
 against branch `438-virtual-members` on 2026-11-05; changing the sign-in address and handing a person over
-to a mentor against branch `profile-change-email` on 2026-11-12
+to a mentor against branch `profile-change-email` on 2026-11-12; the profile's name and its place in the menu against
+branch feat/menu-my-account on 2026-11-21
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/transfers.py`, `accounts/forms.py`,
 `accounts/middleware.py`, `api/endpoints/virtual_members.py`
-**Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`,
+**Tests**: `accounts/tests.py`, `tests/test_role_request.py`, `tests/test_user_display.py`, `tests/test_profile_name.py`,
+`tests/test_menu_profile_link.py`, `tests/e2e/test_menu_profile.py`,
 `tests/test_oauth_callback.py`, `tests/test_save_filter_preferences.py`, `tests/test_skin_choice.py`,
 `tests/e2e/test_api_token_profile.py`, `tests/e2e/test_profile_preferences.py`,
 `tests/e2e/test_theme_choice.py`, `tests/test_virtual_ride_api.py`, `tests/test_virtual_ride_intervals.py`,
@@ -29,6 +31,11 @@ Anyone can read the site. Signing in -- by e-mail and password, or with Google, 
 -- makes a member, whose rights grow along a ladder of five roles. The profile is the member's
 cabinet: their data for race registration, their events and registrations, the defaults the
 calendar opens with, their skin, their API token, and the ways to reach the site's owners.
+Russian and Kazakh call the page so -- "Lichnyi kabinet", "Zheke kabinet" -- in the menu, in its heading and
+in every hint and button that sends a member there; English keeps "Profile", as its hints do. What
+speaks of the profile's data ("Edit profile", "complete your profile to register") keeps the word in
+every language. A member opens the page from their menu at the right and, where the menu folds, from
+the menu's last link ([site shell](site-shell.md)).
 
 ## User Scenarios
 
