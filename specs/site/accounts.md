@@ -31,8 +31,9 @@ Anyone can read the site. Signing in -- by e-mail and password, or with Google, 
 -- makes a member, whose rights grow along a ladder of five roles. The profile is the member's
 cabinet: their data for race registration, their events and registrations, the defaults the
 calendar opens with, their skin, their API token, and the ways to reach the site's owners.
-Russian and Kazakh call the page so -- "Lichnyi kabinet", "Zheke kabinet" -- in the menu, in its heading and
-in every hint and button that sends a member there; English keeps "Profile", as its hints do. What
+Russian and Kazakh call the page so -- "Lichnyi kabinet", "Zheke kabinet" -- in the menu, in its heading,
+in every hint and button that sends a member there and in the privacy policy's lines on where a member
+changes what is kept; English keeps "Profile", as its hints do. What
 speaks of the profile's data ("Edit profile", "complete your profile to register") keeps the word in
 every language. A member opens the page from their menu at the right and, where the menu folds, from
 the menu's last link ([site shell](site-shell.md)).
