@@ -2,7 +2,8 @@
 
 The account menu -- behind the member's address, or an icon on a narrower desktop -- holds the
 profile too, but on a phone it sits at the bottom of the folded menu and reads as an address rather
-than a way in, and members missed everything the profile holds. The folded menu now ends with it.
+than a way in, and members missed everything the profile holds. The folded menu now carries it, right
+before Search.
 """
 
 import re
@@ -26,9 +27,13 @@ def _menu(html: str) -> str:
     return menu.group(1)
 
 
-def _profile_link(language: str) -> str:
+def _link(name: str, language: str) -> str:
     with translation.override(language):
-        return f'href="{reverse("account_profile")}"'
+        return f'href="{reverse(name)}"'
+
+
+def _profile_link(language: str) -> str:
+    return _link("account_profile", language)
 
 
 @pytest.mark.django_db
@@ -43,8 +48,11 @@ def test_a_member_s_menu_links_their_profile_under_its_name(client, skin, langua
     link = re.search(rf'<a class="nav-link" {_profile_link(language)}>(.*?)</a>', menu, re.S)
     assert link, f"{skin}: the menu has no link to the profile"
     assert re.sub(r"<[^>]+>", "", link.group(1)).strip() == name
-    # Last, so that signing in moves none of the links a guest sees
-    assert re.findall(r'<a class="nav-link" (href="[^"]*")', menu)[-1] == _profile_link(language)
+    # Right before Search, which stays the menu's last link
+    assert re.findall(r'<a class="nav-link" (href="[^"]*")', menu)[-2:] == [
+        _profile_link(language),
+        _link("search", language),
+    ]
 
 
 @pytest.mark.django_db

@@ -36,7 +36,7 @@ in every hint and button that sends a member there and in the privacy policy's l
 changes what is kept; English keeps "Profile", as its hints do. What
 speaks of the profile's data ("Edit profile", "complete your profile to register") keeps the word in
 every language. A member opens the page from their menu at the right and, where the menu folds, from
-the menu's last link ([site shell](site-shell.md)).
+the link right before Search, the menu's last ([site shell](site-shell.md)).
 
 ## User Scenarios
 
