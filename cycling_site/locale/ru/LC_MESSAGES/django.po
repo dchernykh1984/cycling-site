@@ -171,12 +171,6 @@ msgstr "Отмена"
 
 #: accounts/templates/accounts/profile.html:4
 #: accounts/templates/accounts/profile.html:9
-#: cycling_site/templates/base.html:153 skins/orange/templates/base.html:162
-msgid "Profile"
-msgstr "Личный кабинет"
-
-#: accounts/templates/accounts/profile.html:4
-#: accounts/templates/accounts/profile.html:9
 #: cycling_site/templates/base.html:144 cycling_site/templates/base.html:171
 msgctxt "a member's own page"
 msgid "Profile"

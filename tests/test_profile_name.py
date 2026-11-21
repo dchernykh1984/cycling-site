@@ -70,3 +70,11 @@ def test_a_hint_that_sends_a_member_to_the_profile_names_it_as_the_menu_does(lan
             text = gettext(hint)
             assert text != hint or language == "en", f"no {language} translation: {hint}"
             assert name in text.lower(), f"{language}: {text}"
+
+
+@pytest.mark.parametrize("language", ["ru", "kk"])
+def test_a_package_s_own_profile_keeps_its_word(language):
+    """Wagtail's admin has a "Profile" tab of its own, for an editor's account settings; the member's
+    cabinet, its own string, renames none of it (Kazakh falls back to Wagtail's Russian, as before)."""
+    with translation.override(language):
+        assert gettext("Profile") not in ("Profile", pgettext(*PAGE))
