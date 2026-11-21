@@ -135,15 +135,15 @@
                         <a class="nav-link" href="{{ about_url }}">{% trans "About" %}</a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'search' %}">{% trans "Search" %}</a>
-                    </li>
                     {% if request.user.is_authenticated %}
                     {# Folded menus only: a desktop row has no room for it, and the account menu holds it there #}
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="{% url 'account_profile' %}">{% trans "Profile" context "a member's own page" %}</a>
                     </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'search' %}">{% trans "Search" %}</a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center gap-2">
                     {% include "_skin_select.html" %}
