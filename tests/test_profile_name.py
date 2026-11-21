@@ -9,8 +9,9 @@ import pytest
 from django.utils import translation
 from django.utils.translation import gettext
 
-# The hints and buttons that send a member to the page; those about the profile's data ("Edit
-# profile", "Complete your profile to register") speak of the data, not of the page, and keep it.
+# The hints and buttons that send a member to the page, and the privacy policy's lines that tell where a
+# member changes what is kept; those about the profile's data ("Edit profile", "Complete your profile to
+# register") speak of the data, not of the page, and keep it.
 SENT_THERE = [
     "To your profile",
     "Confirm your email address: until then you cannot enter races, add events or comment. Look for the "
@@ -27,6 +28,34 @@ SENT_THERE = [
     "Connect Strava in your profile first",
     "Connect intervals.icu in your profile first",
     "Connect the service in your profile first",
+    "We keep your data while your account exists. You can edit or clear most of it yourself in your profile "
+    "at any time, and you can disconnect a linked Google, GitHub or Strava account from that service's "
+    "settings. If you ask us to delete your account, we remove your personal data, including any identifier "
+    "and name received from Strava. Published results of past events may be kept for historical accuracy in "
+    "the same way they appear in ordinary sport protocols.",
+    "<strong>People who manage your registrations and photos.</strong> You may let another member manage your"
+    " race registrations and race photos: they send you a link, you allow it on the page it opens, and they "
+    "accept your request. That member then sees your last name, first name, date of birth, gender, city and "
+    "team, and the Strava link an event's form may ask for, but never your email address; they can register "
+    "you for events, change and cancel your registrations, and see and mark your race photos. Either of you "
+    "can end this in the profile at any time: from then on that member sees nothing of yours and can do "
+    "nothing for you, and the registrations they made stay yours.",
+    "<strong>Virtual rides.</strong> When you are signed in, the rides you finish on the virtual ride page "
+    "are saved to your profile: the route, time, distance, speed, power, cadence and heart rate, and the "
+    "track of your position along the route. While you are on that page, other signed-in members see your "
+    "name, what you are riding and where you are on the route. If you connect Strava for your rides, we keep "
+    "the access Strava gives us for this and use it only to upload each ride you finish as a virtual ride; we"
+    " still do not read your Strava activities. You can disconnect Strava in your profile at any time, and we"
+    " then revoke that access.",
+    "<strong>Strava and intervals.icu.</strong> For each of them your profile shows whether it is connected, "
+    "with a box that sends your rides there; you can turn the box off and keep the service connected. If you "
+    "connect intervals.icu, you give us your API key from intervals.icu: we check it with intervals.icu and "
+    "keep it encrypted. We also keep your athlete identifier and name there, to show which account is "
+    "connected. We use the key only from our server: to send the rides you choose to send, and, while you "
+    "have the virtual ride open, to read the workouts planned in your intervals.icu calendar for today and "
+    "the next seven days, with the steps and the FTP of the one you pick. We keep none of them, and never "
+    "show the key again. We do not read your intervals.icu activities. Disconnecting intervals.icu in your "
+    "profile deletes the key.",
 ]
 
 
