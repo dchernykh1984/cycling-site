@@ -1,7 +1,8 @@
 # Site Specification: The site around every page
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21
+**Verified against**: `main` on 2026-10-21; the profile in the folded menu against branch
+feat/menu-my-account on 2026-11-21
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
 `setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`, `storage.py`), `home/` (home page, site
 content, legal pages), `search/`
@@ -9,16 +10,20 @@ content, legal pages), `search/`
 `tests/test_share_button.py`, `tests/test_language_switch.py`, `tests/test_locale_cache.py`,
 `tests/test_kazakh_account_pages.py`, `tests/test_page_meta.py`, `tests/test_favicon.py`, `search/tests.py`,
 `tests/test_template_comments.py`, `tests/test_sign_in_link.py`, `tests/test_signing_out.py`,
+`tests/test_menu_profile_link.py`,
 `tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`, `test_setup_hints.py`,
-`test_share_button.py`, `test_reader_timezone.py`, `test_sign_in_returns.py`, `test_sign_out_stays.py`
+`test_share_button.py`, `test_reader_timezone.py`, `test_sign_in_returns.py`, `test_sign_out_stays.py`,
+`test_menu_profile.py`
 **Related**: [accounts](accounts.md), [skins](skins.md), [search visibility](search-visibility.md)
 
 ## Overview
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
 pages exist, Ratings ([ratings](ratings.md), right after Calendar), Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
-([statistics](statistics.md)), Search, the skin chooser, the three language buttons, sign-in or the member's
-menu; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
+([statistics](statistics.md)), Search, then a member's profile where the menu folds (below 992px: a phone, a
+tablet held upright), the skin chooser, the three language buttons, sign-in or the member's
+menu (the profile, the admin for staff, sign-out); a desktop row has no room for one more link -- it took a
+second row at 1400px and wider in every skin -- so there the member's menu alone holds the profile; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
 account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
 home page in its language), a banner of moderation tasks for moderators, one of requests waiting for a member's answer, one of the events they took part in to rate and, for the owners while none is marked, one asking to mark the agents' account ([ratings](ratings.md))
 ([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to
