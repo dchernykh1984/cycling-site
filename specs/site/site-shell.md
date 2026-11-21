@@ -22,8 +22,9 @@ Every page shares one frame: a sticky navbar (site title, News, Calendar, Map an
 pages exist, Ratings ([ratings](ratings.md), right after Calendar), Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
 ([statistics](statistics.md)), Search, then a member's profile where the menu folds (below 992px: a phone, a
 tablet held upright), the skin chooser, the three language buttons, sign-in or the member's
-menu (the profile, the admin for staff, sign-out); a desktop row has no room for one more link -- it took a
-second row at 1400px and wider in every skin -- so there the member's menu alone holds the profile; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
+menu (the profile, the admin for staff, sign-out); a desktop row has no room for one more link -- measured,
+it made the header a row taller in every skin, in Russian at 1400px and wider -- so there the member's
+menu alone holds the profile; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
 account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
 home page in its language), a banner of moderation tasks for moderators, one of requests waiting for a member's answer, one of the events they took part in to rate and, for the owners while none is marked, one asking to mark the agents' account ([ratings](ratings.md))
 ([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to

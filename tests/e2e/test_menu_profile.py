@@ -1,7 +1,8 @@
 """A member reaches their profile from the menu.
 
-On a phone the folded menu ends with it. A desktop row has no room for one more link -- it took a
-second row at 1400px and wider in every skin -- so there the account menu at the right holds it.
+On a phone the folded menu ends with it. A desktop row has no room for one more link -- measured, it
+made the header a row taller in every skin, in Russian at 1400px and wider -- so there the account menu
+at the right holds it.
 """
 
 import pytest
