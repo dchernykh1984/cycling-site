@@ -10,10 +10,11 @@ import re
 import pytest
 from django.urls import reverse
 from django.utils import translation
-from django.utils.translation import gettext
+from django.utils.translation import pgettext
 
 from accounts.models import User
 from cycling_site import skins
+from tests.test_profile_name import PAGE
 
 LANGUAGES = ("ru", "kk", "en")
 
@@ -38,7 +39,7 @@ def test_a_member_s_menu_links_their_profile_under_its_name(client, skin, langua
     client.force_login(member)
     menu = _menu(client.get(f"/{language}/news/").content.decode())
     with translation.override(language):
-        name = gettext("Profile")
+        name = pgettext(*PAGE)
     link = re.search(rf'<a class="nav-link" {_profile_link(language)}>(.*?)</a>', menu, re.S)
     assert link, f"{skin}: the menu has no link to the profile"
     assert re.sub(r"<[^>]+>", "", link.group(1)).strip() == name

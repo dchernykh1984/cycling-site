@@ -8,11 +8,12 @@ at the right holds it.
 import pytest
 from django.urls import reverse
 from django.utils import translation
-from django.utils.translation import gettext
+from django.utils.translation import pgettext
 from playwright.sync_api import Page, ViewportSize, expect
 
 from accounts.models import User
 from tests.e2e.conftest import inject_session, open_navbar_if_collapsed
+from tests.test_profile_name import PAGE
 
 PHONE: ViewportSize = {"width": 360, "height": 740}
 DESKTOP: ViewportSize = {"width": 1280, "height": 800}
@@ -30,7 +31,7 @@ def member(db):
 
 @pytest.mark.django_db(transaction=True)
 def test_on_a_phone_the_folded_menu_opens_the_profile(page: Page, live_server, member):
-    name, path = _in_russian(gettext, "Profile"), _in_russian(reverse, "account_profile")
+    name, path = _in_russian(pgettext, *PAGE), _in_russian(reverse, "account_profile")
     inject_session(page, live_server, member)
     page.set_viewport_size(PHONE)
     page.goto(f"{live_server.url}/ru/calendar/")
@@ -46,7 +47,7 @@ def test_on_a_phone_the_folded_menu_opens_the_profile(page: Page, live_server, m
 
 @pytest.mark.django_db(transaction=True)
 def test_a_desktop_finds_the_profile_in_the_account_menu(page: Page, live_server, member):
-    name, path = _in_russian(gettext, "Profile"), _in_russian(reverse, "account_profile")
+    name, path = _in_russian(pgettext, *PAGE), _in_russian(reverse, "account_profile")
     inject_session(page, live_server, member)
     page.set_viewport_size(DESKTOP)
     page.goto(f"{live_server.url}/ru/calendar/")

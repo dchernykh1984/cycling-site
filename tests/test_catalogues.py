@@ -114,6 +114,6 @@ def test_the_kazakh_catalogue_names_an_account_a_profile_and_a_comment_one_way()
     entries = _entries("kk")
     for word in (akkaunt, eseptik, tusinikteme):
         assert [msgid for msgid, msgstr in entries if word in msgstr.lower()] == [], word
-    assert sorted(msgid for msgid, msgstr in entries if kabinet in msgstr.lower()) == sorted(["Profile", *SENT_THERE])
+    assert {msgid for msgid, msgstr in entries if kabinet in msgstr.lower()} == {"Profile", *SENT_THERE}
     assert [msgid for msgid, msgstr in entries if re.search(r"\be-mail\b", msgstr, re.I)] == []
     assert anons in dict(entries)["Announcement"].lower()
