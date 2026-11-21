@@ -173,7 +173,7 @@ msgstr "Отмена"
 #: accounts/templates/accounts/profile.html:9
 #: cycling_site/templates/base.html:153 skins/orange/templates/base.html:162
 msgid "Profile"
-msgstr "Профиль"
+msgstr "Личный кабинет"
 
 #: accounts/templates/accounts/profile.html:21
 #: accounts/templates/accounts/profile.html:22
@@ -3458,7 +3458,7 @@ msgid ""
 "Your profile has no Strava link. Add it in your profile so it fills in here "
 "automatically."
 msgstr ""
-"В вашем профиле нет ссылки на Strava. Добавьте её в профиле, чтобы она "
+"В вашем профиле нет ссылки на Strava. Добавьте её в личном кабинете, чтобы она "
 "подставлялась здесь автоматически."
 
 #: search/templates/search/search.html:42
@@ -4280,7 +4280,7 @@ msgstr "Будут видны ваши фамилия, имя, дата рожд
 
 #, python-format
 msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."
-msgstr "Запрос будет ждать, пока его не примет %(name)s. Отменить разрешение можно в профиле в любой момент."
+msgstr "Запрос будет ждать, пока его не примет %(name)s. Отменить разрешение можно в личном кабинете в любой момент."
 
 msgid "Allow"
 msgstr "Разрешить"
@@ -4303,7 +4303,7 @@ msgid "Your request to %(name)s is already waiting to be accepted."
 msgstr "Ваш запрос уже ждёт, пока его примет %(name)s."
 
 msgid "To your profile"
-msgstr "В профиль"
+msgstr "В личный кабинет"
 
 #, python-format
 msgid "Your request is waiting for %(name)s to accept it."
@@ -4723,7 +4723,7 @@ msgstr "В стартовом протоколе уже есть ваш номе
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "The start list gives you no bib at this event. Name yours, and its photos will be here and in your profile; only a bib from the start list lets you mark them."
-msgstr "В стартовом протоколе нет вашего номера на этом старте. Укажите свой — фото с ним появятся здесь и в профиле. Отмечать их можно только по номеру из протокола."
+msgstr "В стартовом протоколе нет вашего номера на этом старте. Укажите свой — фото с ним появятся здесь и в личном кабинете. Отмечать их можно только по номеру из протокола."
 
 #: event_photos/templates/event_photos/_registration_cards.html
 msgid "named by the participant"
@@ -5092,7 +5092,7 @@ msgstr "указан вами"
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "A bib for a person without an account you added: their photos will be here and in your profile."
-msgstr "Номер человека без аккаунта, которого вы добавили: фотографии этого человека будут здесь и в вашем профиле."
+msgstr "Номер человека без аккаунта, которого вы добавили: фотографии этого человека будут здесь и в вашем личном кабинете."
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "Person"

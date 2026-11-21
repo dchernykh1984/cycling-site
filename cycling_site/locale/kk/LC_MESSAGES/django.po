@@ -173,7 +173,7 @@ msgstr "Болдырмау"
 #: accounts/templates/accounts/profile.html:9
 #: cycling_site/templates/base.html:153 skins/orange/templates/base.html:162
 msgid "Profile"
-msgstr "Профиль"
+msgstr "Жеке кабинет"
 
 #: accounts/templates/accounts/profile.html:21
 #: accounts/templates/accounts/profile.html:22
@@ -2097,14 +2097,14 @@ msgid ""
 msgstr ""
 "Электрондық пошта мекенжайыңызды растаңыз: оған дейін стартқа тіркелуге, іс-"
 "шара қосуға және пікір жазуға болмайды. Хатты кіріс жәшігінен табыңыз немесе "
-"профильден қайта жіберіңіз."
+"жеке кабинеттен қайта жіберіңіз."
 
 #: cycling_site/templates/_setup_hint.html:13
 msgid ""
 "Choose your sports, event types and places in your profile or straight from "
 "the calendar filter, and the calendar, list and map will open with them."
 msgstr ""
-"Спорт түрлеріңізді, іс-шара түрлерін және орындарды профильде немесе тікелей "
+"Спорт түрлеріңізді, іс-шара түрлерін және орындарды жеке кабинетте немесе тікелей "
 "күнтізбе сүзгісінде таңдаңыз — сонда күнтізбе, тізім және карта солармен "
 "ашылады."
 
@@ -2113,7 +2113,7 @@ msgid ""
 "Add your name, gender and date of birth to your profile: race entries will "
 "be filled in for you."
 msgstr ""
-"Профильде атыңызды, тегіңізді, жынысыңызды және туған күніңізді көрсетіңіз — "
+"Жеке кабинетте атыңызды, тегіңізді, жынысыңызды және туған күніңізді көрсетіңіз — "
 "олар стартқа тіркелуге өздігінен қойылады."
 
 #: cycling_site/templates/_setup_hint.html:15
@@ -2154,7 +2154,7 @@ msgid ""
 "Stop this reminder for good? You can still change it in your profile at any "
 "time."
 msgstr ""
-"Бұл туралы енді ешқашан еске салмау керек пе? Мұны профильде кез келген "
+"Бұл туралы енді ешқашан еске салмау керек пе? Мұны жеке кабинетте кез келген "
 "уақытта өзгертуге болады."
 
 #: cycling_site/templates/_setup_hint.html:32
@@ -3456,7 +3456,7 @@ msgid ""
 "automatically."
 msgstr ""
 "Профиліңізде Strava сілтемесі жоқ. Осы жерде автоматты түрде қойылуы үшін "
-"оны профиліңізге қосыңыз."
+"оны жеке кабинетте қосыңыз."
 
 #: search/templates/search/search.html:42
 msgid "Knowledge base"
@@ -4179,7 +4179,7 @@ msgstr ""
 
 #: api/endpoints/virtual_ride.py:332
 msgid "Connect Strava in your profile first"
-msgstr "Алдымен профильде Strava-ны қосыңыз"
+msgstr "Алдымен жеке кабинетте Strava-ны қосыңыз"
 
 #: api/endpoints/virtual_ride.py:334
 msgid ""
@@ -4277,7 +4277,7 @@ msgstr "Сіздің тегіңіз, атыңыз, туған күніңіз, ж
 
 #, python-format
 msgid "Your request waits until %(name)s accepts it. You can take it back in your profile at any time."
-msgstr "Сұрауды %(name)s қабылдағанша ол күтіп тұрады. Рұқсатты профиліңізде кез келген уақытта қайтарып алуға болады."
+msgstr "Сұрауды %(name)s қабылдағанша ол күтіп тұрады. Рұқсатты жеке кабинетіңізде кез келген уақытта қайтарып алуға болады."
 
 msgid "Allow"
 msgstr "Рұқсат беру"
@@ -4300,7 +4300,7 @@ msgid "Your request to %(name)s is already waiting to be accepted."
 msgstr "Сұрауыңыз әлі күтуде: оны %(name)s қабылдауы керек."
 
 msgid "To your profile"
-msgstr "Профильге"
+msgstr "Жеке кабинетке"
 
 #, python-format
 msgid "Your request is waiting for %(name)s to accept it."
@@ -4720,7 +4720,7 @@ msgstr "Старт хаттамасында бұл жарыстағы нөмір
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "The start list gives you no bib at this event. Name yours, and its photos will be here and in your profile; only a bib from the start list lets you mark them."
-msgstr "Старт хаттамасында бұл жарыстағы нөміріңіз жоқ. Өз нөміріңізді көрсетіңіз — осы нөмір бар фотолар осында және профиліңізде пайда болады. Оларды тек хаттамадағы нөмір бойынша белгілеуге болады."
+msgstr "Старт хаттамасында бұл жарыстағы нөміріңіз жоқ. Өз нөміріңізді көрсетіңіз — осы нөмір бар фотолар осында және жеке кабинетіңізде пайда болады. Оларды тек хаттамадағы нөмір бойынша белгілеуге болады."
 
 #: event_photos/templates/event_photos/_registration_cards.html
 msgid "named by the participant"
@@ -5088,7 +5088,7 @@ msgstr "сіз көрсеткен"
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "A bib for a person without an account you added: their photos will be here and in your profile."
-msgstr "Сіз қосқан тіркелгісі жоқ адамның нөмірі: оның фотолары осында және сіздің профиліңізде болады."
+msgstr "Сіз қосқан тіркелгісі жоқ адамның нөмірі: оның фотолары осында және сіздің жеке кабинетіңізде болады."
 
 #: event_photos/templates/event_photos/event_photos.html
 msgid "Person"
@@ -5731,11 +5731,11 @@ msgstr "intervals.icu-ды қосу"
 
 #: api/endpoints/virtual_ride.py:428
 msgid "Connect intervals.icu in your profile first"
-msgstr "Алдымен профильде intervals.icu-ды қосыңыз"
+msgstr "Алдымен жеке кабинетте intervals.icu-ды қосыңыз"
 
 #: api/endpoints/virtual_ride.py:463
 msgid "Connect the service in your profile first"
-msgstr "Алдымен профильде сервисті қосыңыз"
+msgstr "Алдымен жеке кабинетте сервисті қосыңыз"
 
 #: api/endpoints/virtual_ride.py:490
 msgid "intervals.icu is not offered on this site"
