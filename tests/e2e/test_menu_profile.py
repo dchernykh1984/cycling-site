@@ -52,6 +52,7 @@ def test_a_desktop_finds_the_profile_in_the_account_menu(page: Page, live_server
     in_the_row = page.locator(f'#mainNav .navbar-nav a[href="{path}"]')
     expect(in_the_row).to_have_count(1)
     expect(in_the_row).to_be_hidden()
-    page.locator("#mainNav .dropdown-toggle").click()
+    # The account menu's button bears the member's address, shown or, beside icons alone, for screen readers
+    page.locator("#mainNav").get_by_role("button", name=member.email).click()
     page.locator("#mainNav .dropdown-menu").get_by_role("link", name=name, exact=True).click()
     page.wait_for_url(f"{live_server.url}{path}")
