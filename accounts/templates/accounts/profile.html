@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load i18n event_photos_tags roles %}
 
-{% block title %}{% trans "Profile" %}{% endblock %}
+{% block title %}{% trans "Profile" context "a member's own page" %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
-        <h1 class="mb-4">{% trans "Profile" %}</h1>
+        <h1 class="mb-4">{% trans "Profile" context "a member's own page" %}</h1>
         {% if not has_verified_email %}
         <div class="alert alert-danger border-danger" role="alert">
             <p class="fw-bold mb-2">{{ email_confirmation_required_message }}</p>

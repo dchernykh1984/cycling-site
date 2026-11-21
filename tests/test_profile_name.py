@@ -7,7 +7,10 @@ itself the member's cabinet, and every hint that sends a member there names it a
 
 import pytest
 from django.utils import translation
-from django.utils.translation import gettext
+from django.utils.translation import gettext, pgettext
+
+# The page's name: a context of its own keeps a package's own "Profile" (Wagtail's admin has one) apart
+PAGE = ("a member's own page", "Profile")
 
 # The hints and buttons that send a member to the page, and the privacy policy's lines that tell where a
 # member changes what is kept; those about the profile's data ("Edit profile", "Complete your profile to
@@ -62,7 +65,7 @@ SENT_THERE = [
 @pytest.mark.parametrize("language", ["ru", "kk", "en"])
 def test_a_hint_that_sends_a_member_to_the_profile_names_it_as_the_menu_does(language):
     with translation.override(language):
-        name = gettext("Profile").split()[-1].lower()
+        name = pgettext(*PAGE).split()[-1].lower()
         for hint in SENT_THERE:
             text = gettext(hint)
             assert text != hint or language == "en", f"no {language} translation: {hint}"
