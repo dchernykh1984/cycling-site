@@ -12,10 +12,13 @@ name: nightly-deploy
 # maintainer's word only, since it takes the site down.
 on:
   schedule:
-    # 21:07 UTC is 02:07 in Almaty, off the round minute to dodge cron congestion. GitHub starts a
-    # cron when it has capacity, and has drifted hours on a bad day: a night run that starts after
-    # 01:00 UTC (06:00 in Almaty) leaves the deploy to the next night (DEPLOY_WINDOW_UTC below).
-    - cron: "7 21 * * *"
+    # A run deploys only when it starts inside DEPLOY_WINDOW_UTC below, 21:00-01:00 UTC (02:00-06:00 in
+    # Almaty). GitHub starts a cron when it has capacity: on the first three nights it started the one
+    # 21:07 run 4 to 5 hours late, past the window, and nothing was deployed. So a run is asked for every
+    # hour from 17:07 to 00:07 UTC, off the round minute to dodge congestion. Started on time or up to
+    # about 7 hours late, one of them starts inside the window and deploys; the rest start outside it,
+    # or find the site already on main, and do nothing.
+    - cron: "7 0,17-23 * * *"
   workflow_dispatch:
 
 concurrency:

@@ -4,9 +4,10 @@ Run by .github/workflows/deploy.yml, at night and by hand. The site names the co
 /api/v1/version/; the host's deploy hook takes the commit to deploy as ``ref``. "Green" is every
 workflow main's push of the commit started -- CI, the Dropbox check, any added later -- ending in
 success (or skipped). A check still running is waited for; one that is red, or one that never
-finishes, deploys nothing. A night run that starts after its window waits for the next night, and
-the run waits until the site names the new commit -- so a deploy that fails or never starts turns
-the workflow red instead of passing unseen.
+finishes, deploys nothing. A scheduled run that starts outside its window deploys nothing either:
+the schedule asks for one every hour around the window, and the first inside it deploys. The run
+then waits until the site names the new commit, so a deploy that fails or never starts turns the
+workflow red instead of passing unseen.
 
 Environment: GITHUB_REPOSITORY, GITHUB_TOKEN, SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for night
 runs DEPLOY_WINDOW_UTC ("21:00-01:00": when a run may still deploy).
@@ -126,7 +127,7 @@ def run(
 ) -> int:
     window = env.get("DEPLOY_WINDOW_UTC", "")
     if window and not in_window(now, window):
-        print(f"Started at {now:%H:%M} UTC, outside the window {window}: the next night deploys.")
+        print(f"Started at {now:%H:%M} UTC, outside the window {window}: a run started inside it deploys.")
         return 0
     repo, token = env["GITHUB_REPOSITORY"], env.get("GITHUB_TOKEN", "")
     site = env["SITE_BASE_URL"].rstrip("/")

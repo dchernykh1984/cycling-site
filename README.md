@@ -79,13 +79,14 @@ deployed at night (issue #153). The web service keeps its media on a persistent 
 disk Render stops the running instance before it starts the new one, so every deploy takes the
 site down for up to a minute.
 
-- **Render's auto-deploy is off.** `.github/workflows/deploy.yml` deploys `main` at 21:07 UTC
-  (02:07 in Almaty) when the site names another commit at `/api/v1/version/` and every check
+- **Render's auto-deploy is off.** `.github/workflows/deploy.yml` deploys `main` between 21:00
+  and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at `/api/v1/version/` and every check
   `main`'s push started is green: CI, the Dropbox check, any added later. It waits up to 30
   minutes for a check still running and deploys nothing while one is red, by night or by hand.
   It then waits until the site names `main`'s commit: a deploy that fails turns the run red.
-- **GitHub starts a cron when it has capacity.** A night run that starts after 01:00 UTC (06:00
-  in Almaty) leaves the deploy to the next night.
+- **GitHub starts a cron when it has capacity**, on the first three nights 4 to 5 hours late, past
+  the window, so nothing was deployed. The workflow therefore asks for a run every hour from 17:07
+  to 00:07 UTC: the first one that starts inside the window deploys, and the others do nothing.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
 - **Setting it up:** the service's deploy hook (Render: Settings -> Deploy Hook) goes into the

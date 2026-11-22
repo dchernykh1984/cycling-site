@@ -1,7 +1,9 @@
 """The nightly deploy deploys main only when the site runs another commit and main is green (#153)."""
 
+import re
 import urllib.error
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib.parse import parse_qs
 
 from scripts import deploy_if_behind as deploy
@@ -173,13 +175,37 @@ def test_a_deploy_the_site_never_shows_turns_the_run_red():
     assert site.deployed == [(HOOK, MAIN)]
 
 
-def test_a_night_run_started_after_its_window_waits_for_the_next_night():
+def test_a_run_started_outside_its_window_deploys_nothing():
     site = Site()
     late = datetime(2026, 11, 20, 3, 0, tzinfo=UTC)
     assert site.run({"DEPLOY_WINDOW_UTC": "21:00-01:00"}, now=late) == 0
     assert site.deployed == []
     assert site.run({"DEPLOY_WINDOW_UTC": "21:00-01:00"}) == 0
     assert site.deployed == [(HOOK, MAIN)]
+
+
+def _hours(field: str) -> list[int]:
+    """The hours a cron field such as "0,17-23" names."""
+    hours: list[int] = []
+    for part in field.split(","):
+        first, _, last = part.partition("-")
+        hours.extend(range(int(first), int(last or first) + 1))
+    return hours
+
+
+def test_a_scheduled_run_starts_inside_the_window_however_late_github_starts_it():
+    """GitHub started the one night run 4 to 5 hours late on each of the first three nights
+    (2026-11-20 to 22), past the window, and nothing was deployed: a run every hour around the window
+    puts one inside it whether GitHub is on time or hours late."""
+    workflow = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "deploy.yml").read_text()
+    (cron,) = re.findall(r'cron: "([^"]+)"', workflow)
+    minute, hour = cron.split()[:2]
+    window = re.search(r"DEPLOY_WINDOW_UTC: .*'(\d\d:\d\d-\d\d:\d\d)'", workflow)
+    assert window, "the workflow gives its night runs no window"
+    asked = [datetime(2026, 11, 21, h, int(minute), tzinfo=UTC) for h in _hours(hour)]
+    for late in range(0, 7 * 60 + 1, 5):
+        started = [moment + timedelta(minutes=late) for moment in asked]
+        assert any(deploy.in_window(moment, window.group(1)) for moment in started), f"{late} minutes late"
 
 
 def test_the_window_may_cross_midnight():
