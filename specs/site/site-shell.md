@@ -2,7 +2,8 @@
 
 **Status**: Baseline -- describes the site as it works today
 **Verified against**: `main` on 2026-10-21; the profile in the folded menu against branch
-feat/menu-my-account on 2026-11-21, its place before Search against feat/menu-cabinet-before-search
+feat/menu-my-account on 2026-11-21, its place before Search against feat/menu-cabinet-before-search,
+the profile in a desktop's row against branch menu-cabinet-desktop-deploy-schedule on 2026-11-22
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
 `setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`, `storage.py`), `home/` (home page, site
 content, legal pages), `search/`
@@ -20,11 +21,9 @@ content, legal pages), `search/`
 
 Every page shares one frame: a sticky navbar (site title, News, Calendar, Map and About when their
 pages exist, Ratings ([ratings](ratings.md), right after Calendar), Knowledge Base, Gallery ([gallery](gallery.md)), Virtual ride, Statistics for the owners
-([statistics](statistics.md)), a member's profile where the menu folds (below 992px: a phone, a tablet held
-upright), Search last, the skin chooser, the three language buttons, sign-in or the member's
-menu (the profile, the admin for staff, sign-out); a desktop row has no room for one more link -- measured,
-it made the header a row taller in every skin, in Russian at 1400px and wider -- so there the member's
-menu alone holds the profile; sign-in brings the reader back to the page it was pressed on, filters and all, except from an
+([statistics](statistics.md)), a member's profile -- in the folded menu on a phone and in the row on a
+desktop -- Search last, the skin chooser, the three language buttons, sign-in or the member's
+menu (the profile too, the admin for staff, sign-out); sign-in brings the reader back to the page it was pressed on, filters and all, except from an
 account page, and signing out stays on the page -- or, where a guest may not open it, goes to the
 home page in its language), a banner of moderation tasks for moderators, one of requests waiting for a member's answer, one of the events they took part in to rate and, for the owners while none is marked, one asking to mark the agents' account ([ratings](ratings.md))
 ([accounts](accounts.md)), one setup hint, the page, and a footer with the legal pages and a link to

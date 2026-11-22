@@ -58,8 +58,8 @@ def test_the_account_menu_stays_on_screen(page: Page, live_server, wagtail_home_
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
 @pytest.mark.django_db(transaction=True)
 def test_a_members_sections_stay_on_one_line(page: Page, live_server, wagtail_home_page, lang, width):
-    """Every section and the search on one line on a desktop, in every language, for a member: an owner's
-    Statistics is one more, and in Russian it folds them already."""
+    """Every section, the member's cabinet and the search on one line on a desktop, in every language: an
+    owner's Statistics is one more, and below 1400px in Russian and Kazakh it folds them."""
     if settings.DEFAULT_SKIN in KNOWN_OVERFLOW:
         pytest.skip(f"the {settings.DEFAULT_SKIN} navbar is kept as it is")
     member = User.objects.create_user(
@@ -69,10 +69,8 @@ def test_a_members_sections_stay_on_one_line(page: Page, live_server, wagtail_ho
     page.set_viewport_size({"width": width, "height": 900})
     inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/{lang}/calendar/")
-    # The items on screen: a member's profile link is the folded menu's alone, and a desktop hides it
     tops = page.evaluate(
         "[...document.querySelector('nav.navbar .navbar-nav').children]"
-        ".filter(item => item.getClientRects().length)"
         ".map(item => Math.round(item.getBoundingClientRect().top))"
     )
     assert len(set(tops)) == 1, tops

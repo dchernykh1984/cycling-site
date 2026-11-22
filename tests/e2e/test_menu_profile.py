@@ -1,8 +1,5 @@
-"""A member reaches their profile from the menu.
-
-On a phone the folded menu carries it, right before Search. A desktop row has no room for one more
-link -- measured, it made the header a row taller in every skin, in Russian at 1400px and wider -- so
-there the account menu at the right holds it.
+"""A member reaches their profile from the menu, right before Search: folded on a phone, in the row on
+a desktop. The account menu at the right holds it too.
 """
 
 import pytest
@@ -46,14 +43,23 @@ def test_on_a_phone_the_folded_menu_opens_the_profile(page: Page, live_server, m
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_desktop_finds_the_profile_in_the_account_menu(page: Page, live_server, member):
+def test_on_a_desktop_the_menu_row_opens_the_profile(page: Page, live_server, member):
     name, path = _in_russian(pgettext, *PAGE), _in_russian(reverse, "account_profile")
     inject_session(page, live_server, member)
     page.set_viewport_size(DESKTOP)
     page.goto(f"{live_server.url}/ru/calendar/")
-    in_the_row = page.locator(f'#mainNav .navbar-nav a[href="{path}"]')
-    expect(in_the_row).to_have_count(1)
-    expect(in_the_row).to_be_hidden()
+    page.locator("#mainNav .navbar-nav").get_by_role("link", name=name, exact=True).click()
+    page.wait_for_url(f"{live_server.url}{path}")
+    here = page.locator("#mainNav .navbar-nav").get_by_role("link", name=name, exact=True)
+    expect(here).to_have_attribute("aria-current", "page")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_on_a_desktop_the_account_menu_opens_the_profile_too(page: Page, live_server, member):
+    name, path = _in_russian(pgettext, *PAGE), _in_russian(reverse, "account_profile")
+    inject_session(page, live_server, member)
+    page.set_viewport_size(DESKTOP)
+    page.goto(f"{live_server.url}/ru/calendar/")
     # The account menu's button bears the member's address, shown or, beside icons alone, for screen readers
     page.locator("#mainNav").get_by_role("button", name=member.email).click()
     page.locator("#mainNav .dropdown-menu").get_by_role("link", name=name, exact=True).click()
