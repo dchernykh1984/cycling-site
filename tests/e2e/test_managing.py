@@ -74,7 +74,10 @@ def test_the_banner_leads_to_the_requests_and_goes_once_each_is_answered(page: P
     banner.get_by_role("link", name="Answer").click()
     expect(page).to_have_url(re.compile(r"/en/accounts/profile/#managing-waiting$"))
     expect(page.locator("#managing-waiting")).to_be_in_viewport()
-    page.locator("#managed-members").get_by_role("button", name=re.compile(r"^Accept")).click()
+    # The page lands on the requests by their anchor and scrolls there smoothly after it has loaded: a tap
+    # aimed meanwhile lands wherever the scroll left the button (webkit, iPhone, CI). The keyboard has no
+    # place to miss.
+    page.locator("#managed-members").get_by_role("button", name=re.compile(r"^Accept")).press("Enter")
     expect(page.locator("#managed-members table").first).to_contain_text("Taraz")
     expect(page.get_by_role("region", name="Waiting for your answer")).to_have_count(0)
 
