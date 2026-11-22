@@ -201,7 +201,7 @@ def test_a_scheduled_run_starts_inside_the_window_when_github_starts_it_up_to_7_
     (cron,) = re.findall(r'cron: "([^"]+)"', workflow)
     minute, hour = cron.split()[:2]
     window = re.search(r"DEPLOY_WINDOW_UTC: .*'(\d\d:\d\d-\d\d:\d\d)'", workflow)
-    assert window, "the workflow gives its night runs no window"
+    assert window, "the workflow gives its scheduled runs no window"
     asked = [datetime(2026, 11, 21, h, int(minute), tzinfo=UTC) for h in _hours(hour)]
     for late in range(0, 7 * 60 + 1, 5):
         started = [moment + timedelta(minutes=late) for moment in asked]

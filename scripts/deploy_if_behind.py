@@ -9,7 +9,7 @@ the schedule asks for one every hour around the window, and the first inside it 
 then waits until the site names the new commit, so a deploy that fails or never starts turns the
 workflow red instead of passing unseen.
 
-Environment: GITHUB_REPOSITORY, GITHUB_TOKEN, SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for night
+Environment: GITHUB_REPOSITORY, GITHUB_TOKEN, SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for scheduled
 runs DEPLOY_WINDOW_UTC ("21:00-01:00": when a run may still deploy).
 """
 
