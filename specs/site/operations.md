@@ -24,11 +24,12 @@ restored, locally or onto production.
    commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
    suite on five browser/device combinations and once per skin.
 2. **Given** a merge to `main`, **Then** it reaches the site at night. Render's auto-deploy is off.
-   `.github/workflows/deploy.yml` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in Almaty), and only when two
-   things hold: the site names another commit at `/api/v1/version/`, and every check `main`'s push
-   started is green (CI, the Dropbox check, any added later). It waits up to 30 minutes for a check
-   still running, and a red one holds the deploy, by night or by hand. It then waits until the site
-   names the new commit, so a deploy that fails turns the run red.
+   `.github/workflows/deploy.yml` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
+   Almaty), and only when two things hold: the site names another commit at `/api/v1/version/`,
+   and every check `main`'s push started is green (CI, the Dropbox check, any added later). It
+   waits up to 30 minutes for a check still running, and a red one holds the deploy, by night or by
+   hand. It then waits until the site names the new commit, so a deploy that fails turns the run
+   red.
    - GitHub starts a cron when it has capacity: on the first three nights it started the one night
      run 4 to 5 hours late, past the window, and nothing was deployed. The workflow asks for a run
      every hour from 17:07 to 00:07 UTC; the first that starts inside the window deploys, the others
