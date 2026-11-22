@@ -1163,6 +1163,6 @@ main h1.gallery-title::after { display: none; }
 @media (min-width: 992px) {
     .navbar .ubt-nav .nav-link .ubt-icon { display: none; }
 }
-@media (min-width: 1200px) and (max-width: 1399.98px) {
+@media (min-width: 992px) and (max-width: 1399.98px) {
     .navbar .ubt-nav .nav-link { padding: 0.5rem 0.5rem !important; font-size: 0.9rem; }
 }
