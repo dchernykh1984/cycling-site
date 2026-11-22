@@ -193,10 +193,10 @@ def _hours(field: str) -> list[int]:
     return hours
 
 
-def test_a_scheduled_run_starts_inside_the_window_however_late_github_starts_it():
+def test_a_scheduled_run_starts_inside_the_window_when_github_starts_it_up_to_7_hours_late():
     """GitHub started the one night run 4 to 5 hours late on each of the first three nights
     (2026-11-20 to 22), past the window, and nothing was deployed: a run every hour around the window
-    puts one inside it whether GitHub is on time or hours late."""
+    puts one inside it whether GitHub starts them on time or up to 7 hours late."""
     workflow = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "deploy.yml").read_text()
     (cron,) = re.findall(r'cron: "([^"]+)"', workflow)
     minute, hour = cron.split()[:2]
