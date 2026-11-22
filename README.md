@@ -80,10 +80,11 @@ disk Render stops the running instance before it starts the new one, so every de
 site down for up to a minute.
 
 - **Render's auto-deploy is off.** `.github/workflows/deploy.yml` deploys `main` between 21:00
-  and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at `/api/v1/version/` and every check
-  `main`'s push started is green: CI, the Dropbox check, any added later. It waits up to 30
-  minutes for a check still running and deploys nothing while one is red, by night or by hand.
-  It then waits until the site names `main`'s commit: a deploy that fails turns the run red.
+  and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at
+  `/api/v1/version/` and every check `main`'s push started is green: CI, the Dropbox check, any
+  added later. It waits up to 30 minutes for a check still running and deploys nothing while one
+  is red, by night or by hand. It then waits until the site names `main`'s commit: a deploy that
+  fails turns the run red.
 - **GitHub starts a cron when it has capacity**, on the first three nights 4 to 5 hours late, past
   the window, so nothing was deployed. The workflow therefore asks for a run every hour from 17:07
   to 00:07 UTC: the first one that starts inside the window deploys, and the others do nothing.
