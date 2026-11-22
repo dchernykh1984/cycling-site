@@ -1157,3 +1157,12 @@ main h1.gallery-title::after { display: none; }
 @media (min-width: 1400px) {
     .navbar .ubt-nav .nav-link { padding: 0.5rem 0.6rem !important; }
 }
+/* Nine sections since the member's cabinet: the icons give way on every desktop, and below 1400px the
+   links are a little smaller and closer, still 8px from their pill, so that the search stays on their
+   line in Russian. A phone's folded menu keeps its icons. */
+@media (min-width: 992px) {
+    .navbar .ubt-nav .nav-link .ubt-icon { display: none; }
+}
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    .navbar .ubt-nav .nav-link { padding: 0.5rem 0.5rem !important; font-size: 0.9rem; }
+}
