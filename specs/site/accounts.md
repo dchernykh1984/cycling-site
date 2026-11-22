@@ -5,7 +5,8 @@
 against branch `roles-in-one-module` on 2026-10-31; people without accounts and the privacy question (issue #438)
 against branch `438-virtual-members` on 2026-11-05; changing the sign-in address and handing a person over
 to a mentor against branch `profile-change-email` on 2026-11-12; the profile's name and its place in the menu against
-branch feat/menu-my-account on 2026-11-21
+branch feat/menu-my-account on 2026-11-21, on a desktop's row too against branch
+menu-cabinet-desktop-deploy-schedule on 2026-11-22
 **Code**: `accounts/` (models, roles, views, adapters, access, signals, managing),
 `accounts/templatetags/roles.py`, `cycling_site/templates/allauth/`,
 `api/endpoints/managing.py`, `accounts/virtual_members.py`, `accounts/transfers.py`, `accounts/forms.py`,
@@ -35,8 +36,8 @@ Russian and Kazakh call the page so -- "Lichnyi kabinet", "Zheke kabinet" -- in 
 in every hint and button that sends a member there and in the privacy policy's lines on where a member
 changes what is kept; English keeps "Profile", as its hints do. What
 speaks of the profile's data ("Edit profile", "complete your profile to register") keeps the word in
-every language. A member opens the page from their menu at the right and, where the menu folds, from
-the link right before Search, the menu's last ([site shell](site-shell.md)).
+every language. A member opens the page from the menu's link right before Search, the menu's last, on
+a phone and on a desktop, and from their menu at the right ([site shell](site-shell.md)).
 
 ## User Scenarios
 

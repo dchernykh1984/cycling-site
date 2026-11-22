@@ -2,8 +2,8 @@
 
 The account menu -- behind the member's address, or an icon on a narrower desktop -- holds the
 profile too, but on a phone it sits at the bottom of the folded menu and reads as an address rather
-than a way in, and members missed everything the profile holds. The folded menu now carries it, right
-before Search.
+than a way in, and members missed everything the profile holds. The menu now carries it, right before
+Search, folded on a phone and in the row on a desktop.
 """
 
 import re

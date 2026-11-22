@@ -136,8 +136,7 @@
                     </li>
                     {% endif %}
                     {% if request.user.is_authenticated %}
-                    {# Folded menus only: a desktop row has no room for it, and the account menu holds it there #}
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'account_profile' %}">{% trans "Profile" context "a member's own page" %}</a>
                     </li>
                     {% endif %}
