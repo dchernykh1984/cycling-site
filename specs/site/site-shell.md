@@ -14,7 +14,7 @@ content, legal pages), `search/`
 `tests/test_menu_profile_link.py`,
 `tests/e2e/test_home_page.py`, `test_header.py`, `test_locale.py`, `test_setup_hints.py`,
 `test_share_button.py`, `test_reader_timezone.py`, `test_sign_in_returns.py`, `test_sign_out_stays.py`,
-`test_menu_profile.py`
+`test_menu_profile.py`, `test_navbar_fits.py`
 **Related**: [accounts](accounts.md), [skins](skins.md), [search visibility](search-visibility.md)
 
 ## Overview
