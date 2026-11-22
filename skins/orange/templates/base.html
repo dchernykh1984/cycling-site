@@ -140,8 +140,7 @@
                     </li>
                     {% endif %}
                     {% if request.user.is_authenticated %}
-                    {# Folded menus only, as on the site's own base.html: the account menu holds it on a desktop #}
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'account_profile' %}">{% include "_ubt_icon.html" with name="user" %}<span>{% trans "Profile" context "a member's own page" %}</span></a>
                     </li>
                     {% endif %}
