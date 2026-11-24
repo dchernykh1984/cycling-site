@@ -332,8 +332,11 @@ def _shows(request, competition: Competition, holder: Competition | None) -> boo
 
 def _readable(request, protocol_id: int, competition_token: str | None = None) -> Protocol:
     holder = _holder(competition_token)
-    protocol = Protocol.objects.select_related("competition__submitted_by").filter(pk=protocol_id).first()
-    if protocol is None or not _shows(request, protocol.competition, holder):
+    if holder is None:
+        protocol = access.readable_protocol(request.auth, protocol_id)
+    else:
+        protocol = Protocol.objects.select_related("competition").filter(pk=protocol_id, competition=holder).first()
+    if protocol is None:
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return protocol
 
