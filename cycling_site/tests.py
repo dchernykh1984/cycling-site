@@ -440,6 +440,14 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertLess(time.perf_counter() - started, 1.0)
         self.assertNotIn("rgb", out)
 
+    def test_a_line_of_deeply_nested_unknown_tags_is_cleaned_in_well_under_a_second(self):
+        # Unwrapping walked everything under each tag again: 8000 nested divs took seconds, and a document's 100
+        # header and footer lines of them minutes a draw. The bound is generous; a cleanup gone quadratic fails it.
+        started = time.perf_counter()
+        out = sanitize_rich_html("<div><x a=1>" * 4000 + "kept")
+        self.assertLess(time.perf_counter() - started, 1.0)
+        self.assertEqual(out, "kept")
+
     def test_align_and_indent_classes_kept_others_dropped(self):
         out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
         self.assertIn('class="ql-align-center"', out)
