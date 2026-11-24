@@ -312,11 +312,21 @@ def delete_protocol(
 
 
 # -- Reading: what the protocol pages show, under their rule (protocols/access.py) --------------------
+# An event's own upload token reads its protocols and their documents too, whatever the event's
+# visibility, as the timing tools read its start lists and times by it: a cup reads a stage held on an
+# invite-only event that way (maintainer, 2026-11-24). A token no approved event holds is a 401; another
+# event's token reads nothing, a 404.
 
 
-def _readable(request, protocol_id: int) -> Protocol:
-    protocol = access.readable_protocol(request.auth, protocol_id)
-    if protocol is None:
+def _shows(request, competition: Competition, competition_token: str | None) -> bool:
+    if competition_token is None:
+        return access.shows_protocols(request.auth, competition)
+    return competition_by_token(competition_token) == competition
+
+
+def _readable(request, protocol_id: int, competition_token: str | None = None) -> Protocol:
+    protocol = Protocol.objects.select_related("competition__submitted_by").filter(pk=protocol_id).first()
+    if protocol is None or not _shows(request, protocol.competition, competition_token):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return protocol
 
@@ -345,14 +355,16 @@ def _protocol_out(protocol: Protocol, names: dict[int, dict[str, str]]) -> dict:
     "/",
     response=list[ProtocolOut],
     auth=optional_auth,
-    summary="List an event's protocols, in the order of its sections (whoever may read its protocol pages)",
+    summary="List an event's protocols, in the order of its sections (whoever may read its protocol pages, "
+    "or its upload token)",
 )
-def list_protocols(request, competition_id: int):
+def list_protocols(request, competition_id: int, competition_token: str | None = None):
     """An event's protocols as its page links them. A published event's are anybody's; an invite-only
     event's only its managers' and the people it lets in, by their token; a hidden, unpublished or
-    deleted event answers 404, as one that does not exist does."""
+    deleted event answers 404, as one that does not exist does. The event's own upload token reads them
+    whatever the event's visibility."""
     competition = Competition.objects.filter(pk=competition_id).first()
-    if competition is None or not access.shows_protocols(request.auth, competition):
+    if competition is None or not _shows(request, competition, competition_token):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     names = _section_names(competition)
     return [_protocol_out(protocol, names) for protocol in competition.protocols.order_by("section", "pk")]
@@ -364,11 +376,11 @@ def list_protocols(request, competition_id: int):
     auth=optional_auth,
     summary="A protocol: its structured document and its update history",
 )
-def get_protocol(request, protocol_id: int):
+def get_protocol(request, protocol_id: int, competition_token: str | None = None):
     """The protocol with the document the site draws -- null when the last upload brought none it took,
     HTML alone or with a document it refused -- and the times of its last uploads, as its page lists them;
-    its HTML file is at ``/{protocol_id}/html``."""
-    protocol = _readable(request, protocol_id)
+    its HTML file is at ``/{protocol_id}/html``. The event's own upload token reads it too."""
+    protocol = _readable(request, protocol_id, competition_token)
     return {
         **_protocol_out(protocol, _section_names(protocol.competition)),
         "document": protocol.document,

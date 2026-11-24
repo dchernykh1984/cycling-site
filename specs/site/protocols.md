@@ -81,6 +81,11 @@ their heats (issue #454).
    anybody's; an invite-only event's only the people it lets in and its managers, by their own
    token; an unpublished, hidden or deleted event's nobody's -- a 404, as for a protocol that does
    not exist.
+7. **Given** a timing tool holding the event's upload token, **Then** it reads the event's protocol
+   list and a protocol's document by that token (`competition_token`), whatever the event's
+   visibility, as it reads the event's start lists and times -- so a cup reads a stage held on an
+   invite-only event (maintainer, 2026-11-24). A token no approved event holds is a 401, another
+   event's token reads nothing (404), and the HTML file keeps the pages' rule.
 
 ### Story 3 -- Read a drawn protocol on a phone (P1)
 
@@ -149,6 +154,8 @@ their heats (issue #454).
 - A section number below 1 or beyond the column's range, or one the event does not have: 400.
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
   and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
+  The event's upload token still reads a hidden or invite-only event's protocol list and documents
+  through the API (Story 2, 7).
 
 ## Functional Requirements
 
@@ -201,6 +208,8 @@ their heats (issue #454).
   every table, may then make the tables shorter).
 - **FR-PRO-016**: One rule decides who reads an event's protocols (`protocols/access.py`); the
   protocol pages and the API both ask it, so a reader the page turns away gets nothing from the API.
+  The one exception is the event's own upload token, which only the API takes: it reads the
+  protocol list and documents of its event whatever the event's visibility (Story 2, 7).
 
 ## Key Entities
 

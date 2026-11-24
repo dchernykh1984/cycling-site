@@ -173,6 +173,36 @@ class ProtocolReadApiTest(TestCase):
                 for url in (LIST.format(self.race.pk), DETAIL.format(self.absolute.pk), HTML.format(self.absolute.pk)):
                     self.assertEqual(self._get(url, user).status_code, status)
 
+    def test_the_events_upload_token_reads_its_protocols_whatever_its_visibility(self):
+        # A cup reads a stage held on an invite-only event by that event's upload token (2026-11-24).
+        token = f"competition_token={self.race.upload_token}"
+        states = {"published": {}, "invite-only": {"invite_only": True}, "hidden": {"is_hidden": True}}
+        for label, change in states.items():
+            Competition.objects.filter(pk=self.race.pk).update(**{"invite_only": False, "is_hidden": False, **change})
+            with self.subTest(event=label):
+                listed = self._get(f"{LIST.format(self.race.pk)}&{token}")
+                self.assertEqual([row["id"] for row in listed.json()], [self.absolute.pk, self.all_round.pk])
+                detail = self._get(f"{DETAIL.format(self.absolute.pk)}?{token}")
+                self.assertEqual(detail.json()["document"]["sections"][0]["rows"], DOCUMENT["sections"][0]["rows"])
+        # The HTML file keeps the pages' rule.
+        self.assertEqual(self._get(f"{HTML.format(self.absolute.pk)}?{token}").status_code, 404)
+
+    def test_an_upload_token_reads_only_its_own_events_protocols(self):
+        other = Competition.objects.create(
+            title_ru="Other", date_start="2027-06-01", status=Competition.Status.APPROVED, submitted_by=self.author
+        )
+        Competition.objects.filter(pk=self.race.pk).update(invite_only=True)
+        for token, status in ((other.upload_token, 404), (uuid.uuid4(), 401), ("not-a-token", 401)):
+            with self.subTest(status=status, token=str(token)):
+                listed = self._get(f"{LIST.format(self.race.pk)}&competition_token={token}")
+                self.assertEqual(listed.status_code, status)
+                detail = self._get(f"{DETAIL.format(self.absolute.pk)}?competition_token={token}")
+                self.assertEqual(detail.status_code, status)
+        # An event that is no longer approved takes its token's reading with it, as its uploads.
+        Competition.objects.filter(pk=self.race.pk).update(status=Competition.Status.PENDING_APPROVAL)
+        listed = self._get(f"{LIST.format(self.race.pk)}&competition_token={self.race.upload_token}")
+        self.assertEqual(listed.status_code, 401)
+
     def test_the_api_and_the_protocol_page_let_in_the_same_readers(self):
         stranger, invited, admin = _member("stranger"), _member("invited"), _member("admin", User.Role.ADMIN)
         CompetitionInvite.objects.create(competition=self.race, user=invited)
