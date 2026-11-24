@@ -83,14 +83,20 @@ class MeOut(Schema):
 
 
 class TrainerSettingsIn(Schema):
-    # the page's own object, kept as it comes; saved_at is the page's clock (ms) when it last changed
+    # the page's own object, kept as it comes; base is the account's stamp of the copy the page last had (0: none)
     settings: dict[str, Any]
-    saved_at: int = Field(ge=0, le=10**15)
+    base: int = Field(ge=0, le=10**15)
 
 
 class TrainerSettingsOut(Schema):
     settings: dict[str, Any]
+    # the site's clock, in ms, when the copy kept was saved; 0 while nothing is kept
     saved_at: int
+
+
+class TrainerSettingsKeptOut(TrainerSettingsOut):
+    # whether the page's copy was kept, or another device's later one stands and comes back instead
+    accepted: bool
 
 
 class RideIn(Schema):
@@ -646,18 +652,25 @@ def my_settings(request):
     return TrainerSettingsOut(settings=kept.data if kept else {}, saved_at=kept.saved_at if kept else 0)
 
 
-@router.put("/settings", response=TrainerSettingsOut, auth=member_auth, summary="Keep my settings on the trainer page")
+@router.put(
+    "/settings", response=TrainerSettingsKeptOut, auth=member_auth, summary="Keep my settings on the trainer page"
+)
 def keep_settings(request, payload: TrainerSettingsIn):
-    """The page's settings with the member's account; a copy older than the one kept leaves it as it is, and the
-    answer is always the copy kept, so a page that was behind takes the newer one."""
+    """The page's settings with the member's account, stamped by the site's clock, never a device's own.
+
+    A page that had the latest copy (``base``) replaces it; one that was behind -- another device saved
+    since -- is handed that copy instead, and takes it.
+    """
     if len(json.dumps(payload.settings)) > _MAX_SETTINGS:
         raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "The settings are too large to keep")
     with transaction.atomic():
         kept, _created = TrainerSettings.objects.select_for_update().get_or_create(user=request.auth)
-        if payload.saved_at >= kept.saved_at:
-            kept.data, kept.saved_at = payload.settings, payload.saved_at
+        accepted = payload.base >= kept.saved_at
+        if accepted:
+            now = int(timezone.now().timestamp() * 1000)
+            kept.data, kept.saved_at = payload.settings, max(now, kept.saved_at + 1)
             kept.save(update_fields=["data", "saved_at", "updated_at"])
-    return TrainerSettingsOut(settings=kept.data, saved_at=kept.saved_at)
+    return TrainerSettingsKeptOut(settings=kept.data, saved_at=kept.saved_at, accepted=accepted)
 
 
 # -- Group races -----------------------------------------------------------

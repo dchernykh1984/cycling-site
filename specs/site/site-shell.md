@@ -54,11 +54,12 @@ of that drag within the second. A cadence sensor alone rides by the physics, fro
 power curve, unless the rider chose the gear's speed; a step of the own plan by gears rides at its
 gear's speed whatever the choice.
 A signed-in member's settings on the page -- body, bike, trainer, mode, plan -- are kept with their account
-too, so every device they sign in on shows the same: the page takes the account's copy when it changed
-later than the browser's, by the page's clock, and sends its own a moment and a half after a change;
-settings a browser never changed are never sent, so a fresh browser's defaults cannot replace what the
-member chose elsewhere (`tests/e2e/test_virtual_ride.py`). Bluetooth devices and the auto-connect box stay
-with the browser.
+too, so every device they sign in on shows the same. The account stamps each copy by the site's clock,
+never a device's: a browser's change, sent a moment and a half after it, replaces the account's copy
+only if that is the copy the browser had, and otherwise the later copy comes to the browser. Settings a
+browser never changed are never sent, so a fresh browser's defaults cannot replace what the member chose
+elsewhere, and settings an old browser kept before the account did go only to an account still empty
+(`tests/e2e/test_virtual_ride.py`). Bluetooth devices and the auto-connect box stay with the browser.
 Every device once connected is remembered in the browser, by the id the browser gives it for the site
 and its name, newest first, at most eight; one not connected now is listed with Connect and Forget.
 Connect opens it again without the chooser where the browser lists the site's devices

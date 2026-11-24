@@ -61,9 +61,10 @@ and protocols with the event's upload token. The API has no language prefix.
    Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
    available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007). The page's
-   settings are kept with the member: `GET /settings` hands back the copy kept, `PUT /settings` keeps the
-   page's object (64 KB at most) with the page's clock of its last change, and leaves a newer copy in
-   place, answering with it (`tests/test_virtual_ride_api.py`).
+   settings are kept with the member: `GET /settings` hands back the copy kept and the site's stamp of it,
+   `PUT /settings` keeps the page's object (64 KB at most) under a new stamp when the page names the copy
+   it had (`base`), and otherwise leaves the later copy in place and answers with it
+   (`tests/test_virtual_ride_api.py`).
 8. **Given** managing another member's registrations and photos ([accounts](accounts.md), issue
    #315), **Then** a confirmed member (session or token) reads their link, managers, requests
    waiting and members (`GET /managing/`), makes a link or a new one -- 409 while their profile has
