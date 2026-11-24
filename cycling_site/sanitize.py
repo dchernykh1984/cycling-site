@@ -111,7 +111,8 @@ _ALLOWED_CLASSES = frozenset(
 # value -- so url()/expression()/scripts can never ride in on a style attribute.
 _UNSAFE_STYLE = re.compile(r"url\(|expression|javascript|/\*|\\|[<>]", re.IGNORECASE)
 _LENGTH = re.compile(r"^-?\d+(?:\.\d+)?(?:px|%|em|rem)$|^0$")
-_COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$|^rgba?\(\s*[\d.,%\s]+\)$", re.IGNORECASE)
+# No \s* before the class that holds spaces already: spaces read either way took seconds a colour.
+_COLOR = re.compile(r"^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,%\s]+\)$", re.IGNORECASE)
 
 
 def _is_length(value: str) -> bool:
