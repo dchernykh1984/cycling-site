@@ -52,7 +52,9 @@ finals has priority 4 (the generator's choice), so a narrow column keeps place a
 
 So it is served under a deliberately narrow policy (`protocols/views.py`): `default-src 'none'`,
 `sandbox allow-scripts` without `allow-same-origin`, inline script and style only, no frames, no
-forms, no connections. Regexes strip `<script src>`, `<base>` and meta-refresh as well.
+forms, no connections. Regexes strip `<script src>`, `<base>` and meta-refresh as well, best
+effort: the policy is what refuses a script from elsewhere and `<base>`. A refresh written with an
+entity (`http-equiv="&#114;efresh"`), or an inline script, can still send the frame off the site.
 
 The uploaded file is never served from `/media/`: `serve_media` answers 404 for `protocols/` and
 `protocol_versions/`, so those views are the only way to it. Never link a protocol's
