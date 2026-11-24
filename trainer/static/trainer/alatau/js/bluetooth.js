@@ -251,8 +251,10 @@ const Sensors = {
   async autoConnect() {
     if (!this.auto || !this.saved.length || !this.supported()) return;
     if (!this.canReopen()) { btHint(t('bt.autoBlocked'), true); return; }
+    let permitted = [];
+    try { permitted = await navigator.bluetooth.getDevices(); } catch (e) { return; }
     for (const entry of this.saved) {
-      const dev = await this.permitted(entry);
+      const dev = permitted.find(x => x.id === entry.id);
       if (!dev) continue;
       if (dev.watchAdvertisements) dev.watchAdvertisements().catch(() => {}); // so the browser looks for it while it sleeps
       this.open(dev, true);
