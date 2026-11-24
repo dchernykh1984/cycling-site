@@ -1,6 +1,7 @@
 """The structured protocol document: what it accepts, what it refuses, and what it costs to show."""
 
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -767,3 +768,17 @@ def test_each_set_of_columns_gets_a_chip_named_from_its_headings():
         ("c-result", "Time"),
         ("p2", "Start"),
     ]
+
+
+def test_a_protocol_of_long_numbered_headings_is_drawn_in_well_under_a_second():
+    # Headings of 2000 digits and a letter took 11 ms each to name their chip while a number was tried at every
+    # digit, 4 seconds for these two tables. The bound is generous, so a slow runner passes it and that still fails.
+    def table(first: int) -> dict:
+        label = "1" * (doc.MAX_TEXT - 5) + "x"
+        columns = [{"id": f"c{i}", "label": f"{first + i:04d}{label}"} for i in range(doc.MAX_COLUMNS)]
+        return {"columns": columns, "rows": [{"cells": {}}]}
+
+    stored = _document(sections=[table(0), table(doc.MAX_COLUMNS)])
+    started = time.perf_counter()
+    rendering.build(stored, [])
+    assert time.perf_counter() - started < 1.0
