@@ -146,6 +146,33 @@ def test_a_link_to_a_group_race_reaches_the_framed_trainer(page: Page, live_serv
     assert (linked, link, back) == (5, f"{live_server.url}/en/virtual-ride/?group=5", "/en/virtual-ride/?group=5")
 
 
+@pytest.mark.django_db(transaction=True)
+def test_open_full_screen_puts_the_trainer_on_the_whole_screen(page: Page, live_server):
+    page.goto(f"{live_server.url}/en/virtual-ride/")
+    if not page.evaluate("!!(document.fullscreenEnabled || document.webkitFullscreenEnabled)"):
+        pytest.skip("this browser gives a frame no full screen")
+    pages = len(page.context.pages)
+    page.get_by_role("link", name="Open full screen").click()
+    page.wait_for_function("() => document.fullscreenElement === document.querySelector('.virtual-ride-frame')")
+    assert len(page.context.pages) == pages  # the trainer stays in the site's page, on the whole screen
+    page.evaluate("document.exitFullscreen()")  # what Escape does
+    page.wait_for_function("() => document.fullscreenElement === null")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_where_a_frame_cannot_go_full_screen_the_trainer_opens_on_a_page_of_its_own(page: Page, live_server):
+    # an iPhone gives a frame no full screen
+    page.add_init_script(
+        "for (const name of ['fullscreenEnabled', 'webkitFullscreenEnabled'])"
+        " Object.defineProperty(Document.prototype, name, { get: () => false, configurable: true });"
+    )
+    page.goto(f"{live_server.url}/en/virtual-ride/")
+    with page.context.expect_page() as opened:
+        page.get_by_role("link", name="Open full screen").click()
+    assert "/static/trainer/alatau.html?" in opened.value.url
+    assert page.evaluate("document.fullscreenElement") is None
+
+
 def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
     source = _trainer_source()
     pieces = [

@@ -11,15 +11,18 @@ language named in its address.{% endcomment %}
 <section class="virtual-ride">
   <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-2">
     <h1 class="h4 mb-0">{% trans "Virtual ride" %}</h1>
-    <a href="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" target="_blank" rel="noopener">{% trans "Open full screen" %}</a>
+    <a id="virtual-ride-fullscreen" href="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" target="_blank" rel="noopener">{% trans "Open full screen" %}</a>
   </div>
   <iframe class="virtual-ride-frame" src="{% static 'trainer/alatau.html' %}?{{ trainer_query }}" title="{% trans 'Virtual ride' %}"
           allow="bluetooth; screen-wake-lock; fullscreen; clipboard-write; web-share" allowfullscreen></iframe>
 </section>
 {% endblock %}
 
+{% block extra_js %}<script src="{% static 'trainer/virtual-ride.js' %}" defer></script>{% endblock %}
+
 {% block extra_css %}
 <style>
   .virtual-ride-frame { display: block; width: 100%; height: calc(100dvh - 10rem); min-height: 28rem; border: 0; border-radius: .5rem; }
+  .virtual-ride-frame:fullscreen { border-radius: 0; }
 </style>
 {% endblock %}
