@@ -1134,7 +1134,7 @@ def test_a_connected_device_is_listed_again_when_the_page_opens_next_time(page: 
 def test_connect_opens_the_chooser_with_the_remembered_device_alone(page: Page, live_server):
     page.add_init_script(_bluetooth(reopens=False, stored={"devices": [{"id": "old-id", "name": "HRM Pro"}]}))
     _trainer_in_its_menu(page, live_server)
-    page.locator("#devList li").get_by_role("button", name="Connect", exact=True).click()
+    page.locator("#devList li").get_by_role("button", name="Connect: HRM Pro", exact=True).click()
     expect(page.locator("#devList li small")).to_have_text("connected")
     assert page.evaluate("chooserAsked.map(o => o.filters)") == [[{"name": "HRM Pro"}]]
     # the browser gave it another id: one entry for it still, under the new id
@@ -1165,7 +1165,7 @@ def test_where_the_browser_cannot_reopen_a_device_the_box_says_what_to_turn_on(p
 def test_forget_drops_a_remembered_device_here_and_in_the_browser(page: Page, live_server):
     page.add_init_script(_bluetooth(reopens=True, stored={"devices": [{"id": "hr-1", "name": "HRM Pro"}]}))
     _trainer_in_its_menu(page, live_server)
-    page.locator("#devList li").get_by_role("button", name="Forget", exact=True).click()
+    page.locator("#devList li").get_by_role("button", name="Forget: HRM Pro", exact=True).click()
     expect(page.locator("#devList li")).to_have_count(0)
     assert page.evaluate("localStorage.getItem('alatau:devices')") == "[]"
     page.wait_for_function("hrm.forgotten === true")
