@@ -22,7 +22,7 @@ from .forms import SectionNamesForm
 from .models import VERSIONS_KEPT, Protocol, ProtocolSection
 
 # Strip what could redirect or load external code -- best effort, on top of the policy: the CSP
-# (default-src 'none', base-uri 'none') is what refuses a script from elsewhere and <base>, and a tag
+# (script-src 'unsafe-inline' alone, base-uri 'none') is what refuses a script from elsewhere and <base>, and a tag
 # with a ">" in a quoted value, or one put together by a removal, can survive these patterns.
 # A tag runs to its first ">" -- or to the end, and is then kept -- and each is taken whole, so every
 # byte is read once: patterns that read far ahead, failed and started again a byte later took seconds
