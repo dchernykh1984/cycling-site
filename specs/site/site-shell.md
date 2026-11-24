@@ -39,8 +39,8 @@ home page, Map, Knowledge Base) is addressed under its own language's prefix
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
 lock and full screen. "Open full screen" puts that frame on the whole screen, as a protocol's button does, and
 Escape brings the page back; where a frame cannot go full screen (an iPhone) the link opens the same page on its
-own (`trainer/static/trainer/virtual-ride.js`, `tests/e2e/test_virtual_ride.py`). The page is a static file that loads
-its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
+own (`trainer/static/trainer/virtual-ride.js`, `tests/e2e/test_virtual_ride.py`). The page is a static file that
+loads its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
 words (`text/<lang>.js`), its maps (`maps/`, below), its rider catalogue (`data/`) and its code, a file
 per part of it (`js/`: the physics, the ride, the scene, the riders, the devices, the HUD, the site's API and the
 rest). The ride is stepped apart from its drawing: the physics (`js/physics.js` -- the speed from
@@ -104,8 +104,9 @@ language the page spoke then; the page itself shows the routes it knows in its c
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
 the rider is on the route's map (a route follows the streets its description names, along OpenStreetMap's
 ways on the side a rider keeps to, each corner rounded within the street; its heights are SRTM's, smoothed over
-150 m; the map's sights stand where OpenStreetMap has them), height, distance, speed, power, cadence and pulse. The setup page lays its sections one a
-row -- the route, the mode, riding with friends, the rider, the devices and the bike, the ones set
+150 m; the map's sights stand where OpenStreetMap has them), height, distance, speed, power, cadence and pulse.
+The setup page lays its sections one a row -- the route, the mode, riding with friends, the rider, the devices and
+the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
 whatever a remembered device is called or a menu has chosen, Safari included, and the route cards keep
 inside their section. It offers a member who
