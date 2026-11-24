@@ -6,7 +6,8 @@ feat/menu-my-account on 2026-11-21, its place before Search against feat/menu-ca
 the profile in a desktop's row against branch menu-cabinet-desktop-deploy-schedule on 2026-11-22, the virtual
 ride's settings with the account, remembered devices, setup layout and ride invitation against branch
 virtual-ride-tweaks on 2026-11-24, the setup on a 320 px phone (Safari's menus, the route cards) against branch
-fix/trainer-webkit-narrow-setup on 2026-11-24
+fix/trainer-webkit-narrow-setup on 2026-11-24, the routes on their streets and the full screen against branch
+fix/trainer-routes-on-streets on 2026-11-25
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
 `setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`, `storage.py`), `home/` (home page, site
 content, legal pages), `search/`
@@ -101,8 +102,9 @@ rather than from the translation catalogues: an exception to FR-SHL-006 that kee
 from the site's templates. A route name the page sends with a saved ride or a group race is in the
 language the page spoke then; the page itself shows the routes it knows in its current language,
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
-the rider is on the route's map (the route's own OpenStreetMap coordinates, simplified, so a turn may
-cut a corner), height, distance, speed, power, cadence and pulse. The setup page lays its sections one a
+the rider is on the route's map (a route follows the streets its description names, along OpenStreetMap's
+ways on the side a rider keeps to, each corner rounded within the street; its heights are SRTM's, smoothed over
+150 m), height, distance, speed, power, cadence and pulse. The setup page lays its sections one a
 row -- the route, the mode, riding with friends, the rider, the devices and the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
 whatever a remembered device is called or a menu has chosen, Safari included, and the route cards keep
