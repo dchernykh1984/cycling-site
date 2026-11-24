@@ -1310,9 +1310,10 @@ def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_pho
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_route_s_card_keeps_inside_its_section_on_a_narrow_phone(page: Page, live_server):
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_a_route_s_card_keeps_inside_its_section_on_a_narrow_phone(page: Page, live_server, lang):
     page.set_viewport_size({"width": 320, "height": 700})
-    _trainer_in_its_menu(page, live_server)
+    _trainer_in_its_menu(page, live_server, lang)
     wide, room = page.evaluate(
         "[document.querySelector('#routes').scrollWidth, document.querySelector('#routes').clientWidth]"
     )
