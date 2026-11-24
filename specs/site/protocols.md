@@ -151,7 +151,8 @@ their heats (issue #454).
 ### Edge Cases
 
 - Unknown token: 401; no token: 422; an event not approved: 401; wrong protocol type, wrong content
-  type, an over-size file or neither a file nor a document: 400; GET on the upload endpoint: 405.
+  type, an over-size file or neither a file nor a document: 400; a stage label over its 200
+  characters: 422 naming the limit, and nothing kept; GET on the upload endpoint: 405.
 - A section number below 1 or beyond the column's range, or one the event does not have: 400.
 - An HTML file's own name is cut to fit the name the site stores it under, upload after upload: the
   name is the site's, and a reader gets the file as `protocol-<id>.html`, so no name is too long.

@@ -225,7 +225,7 @@ def upload_protocol(
     competition_token: str = Form(...),
     protocol_type: str = Form(Protocol.ProtocolType.ABSOLUTE),
     is_live: bool = Form(True),
-    stage_label: str = Form(""),
+    stage_label: str = Form("", max_length=Protocol._meta.get_field("stage_label").max_length),
     section: int = Form(sections.FIRST),
     html_file: UploadedFile | None = File(None),  # noqa: B008
     document: UploadedFile | None = File(None),  # noqa: B008

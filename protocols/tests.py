@@ -164,6 +164,21 @@ class UploadProtocolTest(TestCase):
         self._post(stage_label="Lap 3")
         self.assertEqual(Protocol.objects.get().stage_label, "Lap 3")
 
+    def test_a_stage_label_longer_than_its_200_characters_is_a_422_naming_the_limit(self):
+        response = Client(raise_request_exception=False).post(
+            self.url,
+            {
+                "competition_token": str(self.competition.upload_token),
+                "html_file": _html_file(),
+                "stage_label": "S" * 201,
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("stage_label", response.content.decode())
+        self.assertIn("200 characters", response.content.decode())
+        self.assertFalse(Protocol.objects.exists())
+        self.assertEqual(self._post(stage_label="S" * 200).status_code, 200)
+
     def test_group_protocol_type(self):
         self._post(protocol_type="group")
         self.assertEqual(Protocol.objects.get().protocol_type, "group")
