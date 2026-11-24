@@ -1272,3 +1272,10 @@ def test_a_browser_another_member_used_never_sends_their_settings_into_this_one_
         assert _kept(member) == ({"height": 191, "mass": 82}, 1000)
     else:
         assert _kept(member) is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_browser_without_bluetooth_for_sites_offers_no_auto_connect(page: Page, live_server):
+    page.add_init_script("Object.defineProperty(navigator, 'bluetooth', { value: undefined, configurable: true })")
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#btAuto")).to_be_hidden()
