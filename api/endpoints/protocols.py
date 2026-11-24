@@ -312,10 +312,10 @@ def delete_protocol(
 
 
 # -- Reading: what the protocol pages show, under their rule (protocols/access.py) --------------------
-# An event's own upload token reads its protocols and their documents too, whatever the event's
-# visibility, as the timing tools read its start lists and times by it: a cup reads a stage held on an
-# invite-only event that way (maintainer, 2026-11-24). A token no approved event holds is a 401; another
-# event's token reads nothing, a 404.
+# An event's own upload token reads its protocols and their documents too, invite-only or hidden, as the
+# timing tools read its start lists and times by it: a cup reads a stage held on an invite-only event that
+# way (maintainer, 2026-11-24). A token no approved, undeleted event holds is a 401 -- an unpublished or
+# deleted event's own too; another event's token reads nothing, a 404.
 
 
 def _holder(competition_token: str | None) -> Competition | None:
@@ -369,7 +369,7 @@ def list_protocols(request, competition_id: int, competition_token: str | None =
     """An event's protocols as its page links them. A published event's are anybody's; an invite-only
     event's only its managers' and the people it lets in, by their token; a hidden, unpublished or
     deleted event answers 404, as one that does not exist does. The event's own upload token reads them
-    whatever the event's visibility."""
+    too, invite-only or hidden, while the event is approved and not deleted; any other token is a 401."""
     holder = _holder(competition_token)
     competition = Competition.objects.filter(pk=competition_id).first()
     if competition is None or not _shows(request, competition, holder):

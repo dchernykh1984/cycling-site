@@ -112,7 +112,7 @@ and protocols with the event's upload token. The API has no language prefix.
    own token (`/protocols/competitions/{id}/sections`). Whoever may read an event's protocol pages
    reads the same through `/protocols/` -- the event's protocols, a protocol's document, update
    history and HTML file; the event's upload token reads its protocol list and documents too,
-   whatever the event's visibility ([protocols](protocols.md)).
+   invite-only or hidden ([protocols](protocols.md)).
 2. **Given** a device uploads its stream, **Then** it carries the `client_revision` it is at: an
    older revision, or a different snapshot at the same revision, is refused with 409; an identical
    re-send or a newer revision replaces the stored one, and the stored revision is echoed back so a
