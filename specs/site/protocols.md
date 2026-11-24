@@ -158,8 +158,9 @@ their heats (issue #454).
   name is the site's, and a reader gets the file as `protocol-<id>.html`, so no name is too long.
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
   and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
-  The event's upload token still reads a hidden or invite-only event's protocol list and documents
-  through the API (story 2.7).
+  So the event's page -- which its managers still open while it is hidden, and its author and
+  moderators while it awaits review -- links none of its protocols then. The event's upload token
+  still reads a hidden or invite-only event's protocol list and documents through the API (story 2.7).
 
 ## Functional Requirements
 

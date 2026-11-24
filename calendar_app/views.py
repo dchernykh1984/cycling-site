@@ -48,6 +48,7 @@ from locations.models import (
     sort_locations_for_filter,
 )
 from protocols import sections as protocol_sections
+from protocols.access import shows_protocols
 
 from . import organizers
 from .forms import (
@@ -987,8 +988,11 @@ class CompetitionDetailView(View):
         )
         ctx: dict = {
             "competition": competition,
-            # Each section of the event's protocols that holds any, under its own heading (issue #452).
-            "protocol_sections": protocol_sections.shown(competition),
+            # Each section of the event's protocols that holds any, under its own heading (issue #452); none on a
+            # page whose reader may not open them -- a hidden event's, which its managers still see.
+            "protocol_sections": (
+                protocol_sections.shown(competition) if shows_protocols(request.user, competition) else []
+            ),
             # Photo and video coverage, in the order its author arranged it. Shown to everyone who
             # can see the event at all -- the links are public pages, not a manager's business.
             "materials": competition.materials.all(),
