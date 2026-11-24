@@ -318,5 +318,6 @@ function renderDevs() {
     });
     ul.appendChild(li);
   });
-  const auto = $('#btAuto'); if (auto) auto.checked = Sensors.auto;
+  // a browser without Bluetooth for sites has nothing to connect, by hand or on its own: no box to tick
+  const auto = $('#btAuto'); if (auto) { auto.checked = Sensors.auto; auto.closest('label').classList.toggle('hidden', !Sensors.supported()); }
 }
