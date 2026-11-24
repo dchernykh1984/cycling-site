@@ -198,6 +198,9 @@ class ProtocolReadApiTest(TestCase):
                 self.assertEqual(listed.status_code, status)
                 detail = self._get(f"{DETAIL.format(self.absolute.pk)}?competition_token={token}")
                 self.assertEqual(detail.status_code, status)
+        # The token is asked first: with a bad one a missing id answers as an existing one does.
+        for missing in (f"{LIST.format(10**9)}&", f"{DETAIL.format(10**9)}?"):
+            self.assertEqual(self._get(f"{missing}competition_token={uuid.uuid4()}").status_code, 401)
         # An event that is no longer approved takes its token's reading with it, as its uploads.
         Competition.objects.filter(pk=self.race.pk).update(status=Competition.Status.PENDING_APPROVAL)
         listed = self._get(f"{LIST.format(self.race.pk)}&competition_token={self.race.upload_token}")
