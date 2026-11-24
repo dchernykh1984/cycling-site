@@ -102,7 +102,8 @@ the rider is on the route's map (the route's own OpenStreetMap coordinates, simp
 cut a corner), height, distance, speed, power, cadence and pulse. The setup page lays its sections one a
 row -- the route, the mode, riding with friends, the rider, the devices and the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
-whatever a remembered device is called or a menu has chosen, Safari included. It offers a member who
+whatever a remembered device is called or a menu has chosen, Safari included, and the route cards keep
+inside their section. It offers a member who
 has not connected Strava to connect it with Strava's button, and tells one who has that the rides go
 there, with a link to the profile's Strava card to manage it (`tests/e2e/test_virtual_ride.py`);
 the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride

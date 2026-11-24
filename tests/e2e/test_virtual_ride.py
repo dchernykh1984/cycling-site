@@ -1307,3 +1307,13 @@ def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_pho
         "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
     )
     assert wide <= room, (wide, room)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_route_s_card_keeps_inside_its_section_on_a_narrow_phone(page: Page, live_server):
+    page.set_viewport_size({"width": 320, "height": 700})
+    _trainer_in_its_menu(page, live_server)
+    wide, room = page.evaluate(
+        "[document.querySelector('#routes').scrollWidth, document.querySelector('#routes').clientWidth]"
+    )
+    assert wide <= room, (wide, room)

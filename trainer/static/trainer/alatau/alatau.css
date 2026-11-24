@@ -98,7 +98,7 @@ button{cursor:pointer}
 .box.wide{grid-column:1/-1}
 .box h2{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:17px}
 .num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--panel);display:inline-grid;place-items:center;font-size:13px;font-weight:700;flex:none}
-.box .routes{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:12px}
+.box .routes{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr));margin-top:12px}
 .box #modeSeg{margin-bottom:6px}
 .box #charPrev{height:210px}
 .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 32px}
