@@ -39,7 +39,7 @@ function saveSettings() {
 // the account's copy, saved later than this browser's: taken whole, and the menu shows it
 function takeSettings(kept, savedAt) {
   if (!kept || typeof kept !== 'object' || Array.isArray(kept)) return;
-  Object.assign(settings, kept, { synced: savedAt, unsent: false }); store.set('settings', settings);
+  Object.assign(settings, kept, { owner: SettingsSync.me(), synced: savedAt, unsent: false }); store.set('settings', settings);
   fillSettings(); renderMenu(); renderPlanEditor(); setPreview(settings.char); renderStartSum();
 }
 function readSettings() {
