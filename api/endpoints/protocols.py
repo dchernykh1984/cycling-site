@@ -33,6 +33,8 @@ optional_auth = OptionalApiTokenAuth()
 # What an uploaded file's own name keeps before ".html": the longest name it is stored under is its version's,
 # VERSION_DIR + "v_" + the name, and storage adds "_" and 7 characters when that is taken.
 _NAME_ROOM = (ProtocolVersion._meta.get_field("html_file").max_length or 100) - len(f"{VERSION_DIR}v__1234567.html")
+# And in bytes: a file name on the server's disk (Linux) holds 255, a letter outside the BMP takes 4 of them.
+_NAME_BYTES = 255 - len("v__1234567.html")
 
 
 class ProtocolUploadOut(Schema):
@@ -121,7 +123,8 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
         filename = filename + ".html"
     # The stored name is the site's own -- a reader gets the file as protocol-<id>.html -- so a long one is
     # cut to fit rather than refused.
-    return content, filename[:-5][:_NAME_ROOM] + filename[-5:]
+    kept = filename[:-5][:_NAME_ROOM].encode()[:_NAME_BYTES].decode("utf-8", "ignore")  # no letter cut in half
+    return content, kept + filename[-5:]
 
 
 def _replace_protocol(
