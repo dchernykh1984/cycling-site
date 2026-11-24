@@ -1321,10 +1321,24 @@ def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_pho
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
-def test_a_route_s_card_keeps_inside_its_section_on_a_narrow_phone(page: Page, live_server, lang):
+def test_a_route_s_card_and_its_profile_keep_inside_on_a_narrow_phone(page: Page, live_server, lang):
     page.set_viewport_size(_PHONE_FRAME)
     _trainer_in_its_menu(page, live_server, lang)
-    wide, room = page.evaluate(
-        "[document.querySelector('#routes').scrollWidth, document.querySelector('#routes').clientWidth]"
-    )
-    assert wide <= room, (wide, room)
+    # what stands past a card's padding edge, or a section's, named for a failure's message
+    too_wide = page.evaluate("""() => {
+      const out = [], routes = document.querySelector('#routes');
+      if (routes.scrollWidth > routes.clientWidth)
+        out.push('routes ' + routes.scrollWidth + ' > ' + routes.clientWidth);
+      for (const card of routes.querySelectorAll('.route')) {
+        const r = card.getBoundingClientRect(), cs = getComputedStyle(card);
+        const edge = r.right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth) + 0.5;
+        for (const part of card.children) {
+          const right = part.getBoundingClientRect().right;
+          if (right > edge || part.scrollWidth > part.clientWidth)
+            out.push(card.querySelector('b').textContent + ': ' + part.tagName
+                     + ' ' + Math.round(right) + ' > ' + Math.round(edge));
+        }
+      }
+      return out;
+    }""")
+    assert not too_wide, too_wide
