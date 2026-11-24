@@ -120,6 +120,33 @@ class ReplaceProtocolTest(_MediaMixin, TestCase):
         self.assertEqual(_stored_files(self.media_root), set())
 
 
+class LongFileNameTest(_MediaMixin, TestCase):
+    def setUp(self):
+        self._use_temp_media()
+        self.competition = Competition.objects.create(
+            title_ru="Race", date_start="2026-01-01", status=Competition.Status.APPROVED
+        )
+
+    def _upload(self, name: str, text: str):
+        html = SimpleUploadedFile(name, f"<html><body>{text}</body></html>".encode(), content_type="text/html")
+        data = {"competition_token": str(self.competition.upload_token), "html_file": html}
+        with self.captureOnCommitCallbacks(execute=True):
+            return Client(raise_request_exception=False).post(URL, data)
+
+    def test_a_long_file_name_is_cut_to_fit_however_often_it_comes(self):
+        # 73 characters failed once a version's name was taken, on the second upload; 81 failed at once.
+        for name in ("a" * 68 + ".html", "b" * 76 + ".html", "c." * 60 + "html"):
+            with self.subTest(length=len(name)):
+                Protocol.objects.all().delete()
+                for text in ("first", "second", "third"):
+                    self.assertEqual(self._upload(name, text).status_code, 200)
+                protocol = Protocol.objects.get()
+                with protocol.html_file.open("rb") as stored:
+                    self.assertIn(b"third", stored.read())
+                names = [protocol.html_file.name, *(v.html_file.name for v in protocol.versions.all())]
+                self.assertTrue(all(stored_name.endswith(".html") for stored_name in names), names)
+
+
 class ConcurrentUploadTest(_MediaMixin, TransactionTestCase):
     def setUp(self):
         self._use_temp_media()
