@@ -171,7 +171,8 @@ their heats (issue #454).
 - **FR-PRO-002**: The protocol file is served as HTML with `nosniff`, `no-store`, `X-Frame-Options:
   SAMEORIGIN` and a narrow Content Security Policy: `sandbox allow-scripts` without same-origin,
   inline script and style only, no frames, forms or connections; external script, `<base>` and
-  meta-refresh are stripped, in one reading of the file, so serving it takes time in proportion to its
+  meta-refresh are stripped as well, best effort on top of the policy (which is what refuses a script
+  from elsewhere and `<base>`), in one reading of the file, so serving it takes time in proportion to its
   size whatever markup it holds. The file itself is never served from `/media/`: `serve_media` answers 404
   for `protocols/` and `protocol_versions/` (`protocols.models.SANDBOXED_ONLY`), however the address
   is spelled, so these views are the only way to it.
