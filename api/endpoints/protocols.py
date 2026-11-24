@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
 
+# What an uploaded file's own name keeps before ".html": the longest name it is stored under is its version's,
+# VERSION_DIR + "v_" + the name, and storage adds "_" and 7 characters when that is taken.
+_NAME_ROOM = (ProtocolVersion._meta.get_field("html_file").max_length or 100) - len(f"{VERSION_DIR}v__1234567.html")
+
 
 class ProtocolUploadOut(Schema):
     id: int
@@ -115,7 +119,9 @@ def _read_html(html_file: UploadedFile) -> tuple[bytes, str]:
     filename = get_valid_filename(html_file.name or "protocol.html")
     if not filename.lower().endswith(".html"):
         filename = filename + ".html"
-    return content, filename
+    # The stored name is the site's own -- a reader gets the file as protocol-<id>.html -- so a long one is
+    # cut to fit rather than refused.
+    return content, filename[:-5][:_NAME_ROOM] + filename[-5:]
 
 
 def _replace_protocol(
