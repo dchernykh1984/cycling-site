@@ -117,7 +117,14 @@ and protocols with the event's upload token. The API has no language prefix.
    older revision, or a different snapshot at the same revision, is refused with 409; an identical
    re-send or a newer revision replaces the stored one, and the stored revision is echoed back so a
    device that lost its state can resume.
-3. **Given** the finish-protocol generator posts a live-stats snapshot (each bib mapped to an opaque
+3. **Given** start lists from several devices, **Then** each is the list of the riders registered
+   at that device -- a registration point at the start, with its own `device_id` -- and
+   `GET /start-list/` gives every device's list and all of them joined in device order, which the
+   timing tools take as the start protocol. The same rider on two devices is a rider registered
+   twice, a race gone wrong rather than two copies to merge: the finish-protocol generator reports
+   every repeated bib as an error (maintainer, 2026-11-24). A device's list stays until that device
+   replaces it.
+4. **Given** the finish-protocol generator posts a live-stats snapshot (each bib mapped to an opaque
    set of named values), **Then** the site stores it as it is, without interpreting the keys, and
    anyone may read one bib's values for an approved event that is neither deleted nor hidden,
    invite-only ones included (maintainer, 2026-10-31) -- which is how a watch data field (Garmin
