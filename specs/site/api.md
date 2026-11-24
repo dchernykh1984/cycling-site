@@ -1,7 +1,7 @@
 # Site Specification: The API
 
 **Status**: Baseline -- describes the site as it works today
-**Verified against**: `main` on 2026-10-21; `/managing/` (issue #315) against branch `315-managing-registrations` on 2026-10-28; `/virtual-members/` and `/registrations/` (issue #438) against branch `438-virtual-members` on 2026-11-05
+**Verified against**: `main` on 2026-10-21; `/managing/` (issue #315) against branch `315-managing-registrations` on 2026-10-28; `/virtual-members/` and `/registrations/` (issue #438) against branch `438-virtual-members` on 2026-11-05; `/virtual-ride/settings` and the ride's invitation against branch `virtual-ride-tweaks` on 2026-11-24
 **Code**: `api/` (`router.py`, `auth.py` -- the token, and `member_auth`: a confirmed member's session or
 token --, `schemas.py`), `api/endpoints/`; django-ninja, served at `/api/v1/`
 **Tests**: `api/tests.py`, `registrations/tests.py` (participants), `protocols/tests.py`,
