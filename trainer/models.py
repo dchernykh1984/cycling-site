@@ -221,8 +221,9 @@ class TrainerSettings(models.Model):
     """A member's settings on the trainer page -- height, weight, bike, trainer, plan and the rest -- kept with
     their account, so the page shows the same on every device they sign in on.
 
-    ``data`` is the page's own object, which only the page reads. ``saved_at`` is the page's clock, in
-    milliseconds, when they last changed: of two copies the newer one wins.
+    ``data`` is the page's own object, which only the page reads. ``saved_at`` is the site's clock, in
+    milliseconds, when the copy was saved: a page replaces it only if it had this copy, so no device's own
+    clock decides which copy is the latest.
     """
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="trainer_settings")

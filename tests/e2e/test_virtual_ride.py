@@ -3,7 +3,6 @@
 import json
 import math
 import re
-import time
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -1173,8 +1172,8 @@ def test_forget_drops_a_remembered_device_here_and_in_the_browser(page: Page, li
 
 
 def _member_on_the_trainer(page: Page, live_server, stored: dict | None = None) -> User:
-    """A member signed in, the site's page having handed out its CSRF cookie, on the trainer in its menu;
-    `stored` is what this browser kept before."""
+    """A member signed in, a page of the site having handed out its CSRF cookie -- one without the trainer in a
+    frame, which would sync on its own; `stored` is what this browser kept before."""
     member = User.objects.create_user(
         username="e2e_settings", email="e2e_settings@test.local", password="testpass123!", role=User.Role.PARTICIPANT
     )
@@ -1184,7 +1183,7 @@ def _member_on_the_trainer(page: Page, live_server, stored: dict | None = None) 
             f" localStorage.setItem('alatau:settings', {json.dumps(json.dumps(stored))}); }}"
         )
     inject_session(page, live_server, member)
-    page.goto(f"{live_server.url}/en/virtual-ride/")
+    page.goto(f"{live_server.url}/en/accounts/profile/")
     return member
 
 
@@ -1200,8 +1199,7 @@ def test_a_member_s_settings_come_from_their_account_and_go_back_to_it(page: Pag
     from trainer.models import TrainerSettings
 
     member = _member_on_the_trainer(page, live_server)
-    a_day_ago = int(time.time() * 1000) - 86_400_000
-    TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82, "circ": 2146}, saved_at=a_day_ago)
+    TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82, "circ": 2146}, saved_at=1000)
     _trainer_in_its_menu(page, live_server)
     expect(page.locator("#height")).to_have_value("191")
     expect(page.locator("#circ")).to_have_value("2146")
@@ -1212,7 +1210,8 @@ def test_a_member_s_settings_come_from_their_account_and_go_back_to_it(page: Pag
     assert kept is not None, "nothing kept with the account"
     data, saved_at = kept
     assert (data["height"], data["mass"], data["circ"]) == (191, 77, 2146), data
-    assert saved_at > a_day_ago
+    assert saved_at > 1000
+    assert "synced" not in data and "unsent" not in data, "the browser's own marks stay with it"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1233,5 +1232,16 @@ def test_settings_kept_in_this_browser_before_go_to_an_empty_account(page: Page,
         _trainer_in_its_menu(page, live_server)
     kept = _kept(member)
     assert kept is not None, "nothing kept with the account"
-    data, saved_at = kept
-    assert (data["height"], data["mass"], saved_at) == (185, 70, 1), (data, saved_at)
+    assert (kept[0]["height"], kept[0]["mass"]) == (185, 70), kept
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_old_browser_s_settings_never_replace_the_account_s(page: Page, live_server):
+    from trainer.models import TrainerSettings
+
+    member = _member_on_the_trainer(page, live_server, stored={"height": 185, "mass": 70})
+    TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82}, saved_at=1000)
+    with page.expect_response(lambda r: r.url.endswith("/virtual-ride/settings") and r.request.method == "PUT"):
+        _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#height")).to_have_value("191")
+    assert _kept(member) == ({"height": 191, "mass": 82}, 1000)
