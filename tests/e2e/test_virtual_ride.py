@@ -5,7 +5,7 @@ import math
 import re
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, ViewportSize, expect
 
 from accounts.models import User
 from api.endpoints.virtual_ride import PresenceIn
@@ -875,6 +875,10 @@ _FRAMES = """(() => {
 })()"""
 
 
+# The trainer's frame on a 320 px phone: the site page's margins leave it 296 px.
+_PHONE_FRAME: ViewportSize = {"width": 296, "height": 700}
+
+
 def _trainer_in_its_menu(page: Page, live_server, lang: str = "en") -> None:
     page.add_init_script(_FRAMES)
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang={lang}")
@@ -1285,7 +1289,7 @@ def test_a_browser_without_bluetooth_for_sites_offers_no_auto_connect(page: Page
 def test_a_device_s_long_name_never_pushes_the_setup_sideways_on_a_narrow_phone(page: Page, live_server):
     devices = [{"id": "a", "name": "Wahoo KICKR CORE 5D91XXXXLONG"}, {"id": "b", "name": ""}]
     page.add_init_script(f"localStorage.setItem('alatau:devices', {json.dumps(json.dumps(devices))})")
-    page.set_viewport_size({"width": 320, "height": 700})
+    page.set_viewport_size(_PHONE_FRAME)
     _trainer_in_its_menu(page, live_server)
     wide, room = page.evaluate(
         "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
@@ -1296,7 +1300,7 @@ def test_a_device_s_long_name_never_pushes_the_setup_sideways_on_a_narrow_phone(
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
 def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_phone(page: Page, live_server, lang):
-    page.set_viewport_size({"width": 320, "height": 700})
+    page.set_viewport_size(_PHONE_FRAME)
     _trainer_in_its_menu(page, live_server, lang)
     page.evaluate(
         "document.querySelectorAll('.setup select').forEach(menu => {"
@@ -1312,7 +1316,7 @@ def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_pho
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
 def test_a_route_s_card_keeps_inside_its_section_on_a_narrow_phone(page: Page, live_server, lang):
-    page.set_viewport_size({"width": 320, "height": 700})
+    page.set_viewport_size(_PHONE_FRAME)
     _trainer_in_its_menu(page, live_server, lang)
     wide, room = page.evaluate(
         "[document.querySelector('#routes').scrollWidth, document.querySelector('#routes').clientWidth]"
