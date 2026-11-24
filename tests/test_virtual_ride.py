@@ -46,6 +46,17 @@ class VirtualRideTests(TestCase):
     def test_the_trainer_file_ships_with_the_site(self):
         self.assertIn("<!doctype html>", trainer_page.PAGE.read_text(encoding="utf-8")[:100].lower())
 
+    def test_a_road_tyre_of_every_common_width_can_be_chosen(self):
+        """The wheel menu holds 700C from 23 to 40 mm, 30 mm among them, each its circumference as the
+        bike computers' chart gives it -- wider, longer round."""
+        menu = re.search(r'<select id="circ">(.*?)</select>', trainer_page.PAGE.read_text(encoding="utf-8"), re.S)
+        assert menu, "the trainer has no wheel menu"
+        tyres = {
+            int(width): int(mm)
+            for mm, width in re.findall(r'<option value="(\d+)"[^>]*data-tyre="700\u00d7(\d+)C"', menu.group(1))
+        }
+        self.assertEqual(tyres, {23: 2096, 25: 2105, 28: 2136, 30: 2146, 32: 2155, 40: 2200})
+
     def test_every_text_of_the_trainer_exists_in_every_language(self):
         source = trainer_page.source()
         texts = trainer_page.texts()
