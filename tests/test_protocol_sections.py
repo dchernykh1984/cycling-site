@@ -79,8 +79,8 @@ class PublishingIntoSectionsTest(_Event, TestCase):
             self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
             self.assertEqual(
                 response.json()["detail"],
-                f"The event has no protocol section {deleted}; section numbers are never reused, so publish into"
-                f" one of the event's sections: {sections.FIRST}, {added}",
+                f"The event has no protocol section {deleted}; section numbers are never reused, and the event's"
+                f" sections are: {sections.FIRST}, {added}",
             )
 
     def test_a_number_that_cannot_be_a_section_is_refused(self):

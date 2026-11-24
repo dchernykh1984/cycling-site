@@ -215,8 +215,8 @@ def _check_section_exists(competition: Competition, section: int) -> None:
         numbers = ", ".join(str(row["number"]) for row in sections.listing(competition))
         raise HttpError(
             HTTPStatus.BAD_REQUEST,
-            f"The event has no protocol section {section}; section numbers are never reused, so publish into one "
-            f"of the event's sections: {numbers}",
+            f"The event has no protocol section {section}; section numbers are never reused, and the event's "
+            f"sections are: {numbers}",
         )
 
 
