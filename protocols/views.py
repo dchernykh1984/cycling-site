@@ -39,7 +39,7 @@ def _strip_external_scripts(content: bytes) -> bytes:
     """Every ``<script src=...>`` left out with its body, up to the first ``</script>`` after it."""
     kept, pos = [], 0
     for tag in _SCRIPT_TAG_RE.finditer(content):
-        if tag.start() < pos or not tag.group().endswith(b">") or not _SRC_RE.search(tag.group()):
+        if tag.start() < pos or not _SRC_RE.search(tag.group()):
             continue
         end = _SCRIPT_END_RE.search(content, tag.end())
         if end is None:  # nothing closes it, nor any script after it
