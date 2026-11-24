@@ -10,6 +10,7 @@
     if (!request || !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) return;
     event.preventDefault();
     var result = request.call(frame);
+    frame.focus(); // the trainer's keys (power, gears, pause) reach it, not the page behind
     if (result && typeof result.catch === "function") result.catch(function () {});
   });
 })();
