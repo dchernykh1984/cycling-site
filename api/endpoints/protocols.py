@@ -318,15 +318,22 @@ def delete_protocol(
 # event's token reads nothing, a 404.
 
 
-def _shows(request, competition: Competition, competition_token: str | None) -> bool:
-    if competition_token is None:
+def _holder(competition_token: str | None) -> Competition | None:
+    """The event a reader's upload token belongs to, None without one. Asked before anything is looked up, so a
+    bad token is a 401 whatever id it comes with: a 404 beside it for a missing id would tell which ids exist."""
+    return None if competition_token is None else competition_by_token(competition_token)
+
+
+def _shows(request, competition: Competition, holder: Competition | None) -> bool:
+    if holder is None:
         return access.shows_protocols(request.auth, competition)
-    return competition_by_token(competition_token) == competition
+    return holder == competition
 
 
 def _readable(request, protocol_id: int, competition_token: str | None = None) -> Protocol:
+    holder = _holder(competition_token)
     protocol = Protocol.objects.select_related("competition__submitted_by").filter(pk=protocol_id).first()
-    if protocol is None or not _shows(request, protocol.competition, competition_token):
+    if protocol is None or not _shows(request, protocol.competition, holder):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     return protocol
 
@@ -363,8 +370,9 @@ def list_protocols(request, competition_id: int, competition_token: str | None =
     event's only its managers' and the people it lets in, by their token; a hidden, unpublished or
     deleted event answers 404, as one that does not exist does. The event's own upload token reads them
     whatever the event's visibility."""
+    holder = _holder(competition_token)
     competition = Competition.objects.filter(pk=competition_id).first()
-    if competition is None or not _shows(request, competition, competition_token):
+    if competition is None or not _shows(request, competition, holder):
         raise HttpError(HTTPStatus.NOT_FOUND, "Not found")
     names = _section_names(competition)
     return [_protocol_out(protocol, names) for protocol in competition.protocols.order_by("section", "pk")]
