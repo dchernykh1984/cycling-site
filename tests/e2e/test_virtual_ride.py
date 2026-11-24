@@ -187,6 +187,8 @@ def test_open_full_screen_puts_the_trainer_on_the_whole_screen(page: Page, live_
     page.get_by_role("link", name="Open full screen").click()
     page.wait_for_function("() => document.fullscreenElement === document.querySelector('.virtual-ride-frame')")
     assert len(page.context.pages) == pages  # the trainer stays in the site's page, on the whole screen
+    # the trainer's keys reach it
+    assert page.evaluate("document.activeElement === document.querySelector('.virtual-ride-frame')")
     page.evaluate("document.exitFullscreen()")  # what Escape does
     page.wait_for_function("() => document.fullscreenElement === null")
 
