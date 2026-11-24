@@ -1279,3 +1279,15 @@ def test_a_browser_without_bluetooth_for_sites_offers_no_auto_connect(page: Page
     page.add_init_script("Object.defineProperty(navigator, 'bluetooth', { value: undefined, configurable: true })")
     _trainer_in_its_menu(page, live_server)
     expect(page.locator("#btAuto")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_device_s_long_name_never_pushes_the_setup_sideways_on_a_narrow_phone(page: Page, live_server):
+    devices = [{"id": "a", "name": "Wahoo KICKR CORE 5D91XXXXLONG"}, {"id": "b", "name": ""}]
+    page.add_init_script(f"localStorage.setItem('alatau:devices', {json.dumps(json.dumps(devices))})")
+    page.set_viewport_size({"width": 320, "height": 700})
+    _trainer_in_its_menu(page, live_server)
+    wide, room = page.evaluate(
+        "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
+    )
+    assert wide <= room, (wide, room)
