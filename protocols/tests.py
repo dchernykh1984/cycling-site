@@ -414,7 +414,7 @@ class ProtocolHtmlTest(TestCase):
         # Each of these took 17 to 50 seconds a view while the patterns read ahead, failed and started again a
         # byte later. The bound is generous, so a slow runner passes it and a quadratic pattern still fails it.
         for content in (b"<script src=x>" * 20000, b"<script " * 30000, b"<base" * 50000, b"<meta " * 40000):
-            with self.subTest(tag=content[:6]):
+            with self.subTest(tags=content[:9]):
                 Protocol.objects.all().delete()
                 protocol = self._create_protocol(content)
                 started = time.perf_counter()
