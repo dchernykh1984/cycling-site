@@ -877,6 +877,15 @@ _FRAMES = """(() => {
 
 # The trainer's frame on a 320 px phone: the site page's margins leave it 296 px.
 _PHONE_FRAME: ViewportSize = {"width": 296, "height": 700}
+# How far the setup scrolls sideways, and what sticks out of it, named for a failure's message.
+_SIDEWAYS = """() => {
+  const setup = document.querySelector('.setup'), edge = setup.getBoundingClientRect();
+  const out = [...setup.querySelectorAll('*')].filter(e => {
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && (r.right > edge.right + 0.5 || r.left < edge.left - 0.5);
+  }).map(e => e.tagName + '#' + e.id + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().right));
+  return [setup.scrollWidth, setup.clientWidth, out.slice(0, 5)];
+}"""
 
 
 def _trainer_in_its_menu(page: Page, live_server, lang: str = "en") -> None:
@@ -1292,10 +1301,8 @@ def test_a_device_s_long_name_never_pushes_the_setup_sideways_on_a_narrow_phone(
     page.add_init_script(f"localStorage.setItem('alatau:devices', {json.dumps(json.dumps(devices))})")
     page.set_viewport_size(_PHONE_FRAME)
     _trainer_in_its_menu(page, live_server, lang)
-    wide, room = page.evaluate(
-        "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
-    )
-    assert wide <= room, (wide, room)
+    wide, room, sticking_out = page.evaluate(_SIDEWAYS)
+    assert wide <= room and not sticking_out, (wide, room, sticking_out)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1308,10 +1315,8 @@ def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_pho
         " const longest = [...menu.options].sort((a, b) => b.text.length - a.text.length)[0];"
         " if (longest) menu.value = longest.value; })"
     )
-    wide, room = page.evaluate(
-        "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
-    )
-    assert wide <= room, (wide, room)
+    wide, room, sticking_out = page.evaluate(_SIDEWAYS)
+    assert wide <= room and not sticking_out, (wide, room, sticking_out)
 
 
 @pytest.mark.django_db(transaction=True)
