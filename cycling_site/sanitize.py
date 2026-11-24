@@ -246,7 +246,8 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
         bad.decompose()
     for tag in soup.find_all(True):
         if tag.name not in allowed_tags:
-            tag.unwrap()
+            # Its children written without its own markup: unwrap() walks all under it again, quadratic in depth.
+            tag.hidden = True
         elif not _clean_attrs_and_links(tag):
             tag.decompose()
     return str(soup).strip()
