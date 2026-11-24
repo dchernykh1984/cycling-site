@@ -208,9 +208,12 @@ def _check_section(section: int) -> None:
 
 def _check_section_exists(competition: Competition, section: int) -> None:
     if not sections.exists(competition, section):
+        # Adding a section would not bring a deleted number back: it gets one the event never had.
+        numbers = ", ".join(str(row["number"]) for row in sections.listing(competition))
         raise HttpError(
             HTTPStatus.BAD_REQUEST,
-            f"The event has no protocol section {section}: add it on the event's page first",
+            f"The event has no protocol section {section}; section numbers are never reused, so publish into one "
+            f"of the event's sections: {numbers}",
         )
 
 

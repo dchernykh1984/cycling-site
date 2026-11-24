@@ -50,7 +50,9 @@ their heats (issue #454).
 6. **Given** an upload or a delete naming a section (`section`, issue #452), **Then** it acts on that
    section's protocol of its type and leaves the other sections' alone; without one it acts on
    section 1, as software that does not know sections always did. A section the event does not have
-   -- never added, or deleted -- is a 400 that says so, and nothing is kept.
+   -- never added, or deleted -- is a 400 that says so and names the event's sections to publish
+   into, since numbers are never reused (adding a section does not bring a deleted number back);
+   nothing is kept.
 
 ### Story 2 -- Read results (P1)
 
