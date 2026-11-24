@@ -5,7 +5,8 @@ const API_BASE = '/api/v1/virtual-ride';
 const Site = {
   csrf() { const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/); return m ? decodeURIComponent(m[1]) : ''; },
   async req(method, path, body) {
-    const headers = { 'Accept': 'application/json' };
+    // the page's language, for what the site writes out in words for this rider (a ride's line on Strava)
+    const headers = { 'Accept': 'application/json', 'X-Page-Language': LANG };
     if (body) headers['Content-Type'] = 'application/json';
     if (method !== 'GET') headers['X-CSRFToken'] = this.csrf();
     const r = await fetch(API_BASE + path, { method, credentials: 'same-origin', headers, body: body ? JSON.stringify(body) : undefined });
