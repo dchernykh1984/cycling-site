@@ -65,8 +65,10 @@ Consequences worth knowing before promising anything:
 - **Images.** `img-src` allows `data:` and the site's own origin, the latter built from the request
   so every deployment allows its own address and no other. `'self'` cannot do that job here: with
   `sandbox` and no `allow-same-origin` the document's origin is opaque and matches nothing.
-- **Anything external stays blocked**, deliberately: a file we did not write must not be able to
-  call home or count who opened it.
+- **What is external is blocked**, deliberately -- pictures, scripts and connections from elsewhere,
+  forms and frames: a file we did not write must not be able to call home or count who opened it.
+  The one way out still open is the frame sending itself away, by a refresh the strip misses or an
+  inline script (above).
 - **Give every image `width` and `height`.** The iframe measures the document once, on load, and a
   picture that arrives afterwards is not an event it re-measures -- without the attributes the
   browser reserves no space and the bottom of the protocol is cut off.
