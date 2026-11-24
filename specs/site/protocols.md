@@ -155,7 +155,7 @@ their heats (issue #454).
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
   and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
   The event's upload token still reads a hidden or invite-only event's protocol list and documents
-  through the API (Story 2, 7).
+  through the API (story 2.7).
 
 ## Functional Requirements
 
@@ -209,7 +209,7 @@ their heats (issue #454).
 - **FR-PRO-016**: One rule decides who reads an event's protocols (`protocols/access.py`); the
   protocol pages and the API both ask it, so a reader the page turns away gets nothing from the API.
   The one exception is the event's own upload token, which only the API takes: it reads the
-  protocol list and documents of its event whatever the event's visibility (Story 2, 7).
+  protocol list and documents of its event whatever the event's visibility (story 2.7).
 
 ## Key Entities
 
