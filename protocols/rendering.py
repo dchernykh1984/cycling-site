@@ -31,8 +31,9 @@ _FALLBACK_PRIMARY = 3
 _ALIGNS = frozenset({"start", "center", "end"})
 _KNOWN_ROLES = frozenset({"place", "bib", "name", "result", "gap", "group", "team"})
 _CSS_WORD = re.compile(r"[^a-z0-9_-]")
-#: A heading that ends in its number ("Lap 6"): the sets of such columns are named by the range.
-_NUMBERED = re.compile(r"^(.*?)(\d+)$")
+#: A heading that ends in its number ("Lap 6"): the sets of such columns are named by the range. The
+#: number is tried only where a run of digits starts, so a long run is read once, not once a digit.
+_NUMBERED = re.compile(r"^(.*?)(?<!\d)(\d+)$")
 #: A section of this type holds the stages of a knockout, each stage the tables of its heats, in
 #: the order they are ridden (issue #454). A wide screen draws the stages side by side, each heat
 #: beside the two it was fed by; a phone lists them, the last stage first.
