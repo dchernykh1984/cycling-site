@@ -158,6 +158,7 @@ def _plan_screen(page: Page, connected: bool = True, workout_fails: bool = False
             globalThis.asked = [];
             globalThis.settings = { plan: { steps: [{ f: 1, r: 1, cad: 80, min: 5 }] } }; globalThis.phase = 'menu';
             globalThis.planTotalMin = () => 28; globalThis.renderStartSum = () => {};
+            globalThis.saveSettings = () => store.set('settings', settings);
             globalThis.Records = { me: { authenticated: true, intervals_connected: connected } };
             globalThis.Site = { get: async path => {
                 asked.push(path);
