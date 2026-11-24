@@ -53,6 +53,12 @@ slopes further out, so it is gone 4.2 m back or 1.2-1.4 m aside; a smart trainer
 of that drag within the second. A cadence sensor alone rides by the physics, from the trainer's
 power curve, unless the rider chose the gear's speed; a step of the own plan by gears rides at its
 gear's speed whatever the choice.
+A signed-in member's settings on the page -- body, bike, trainer, mode, plan -- are kept with their account
+too, so every device they sign in on shows the same: the page takes the account's copy when it changed
+later than the browser's, by the page's clock, and sends its own a moment and a half after a change;
+settings a browser never changed are never sent, so a fresh browser's defaults cannot replace what the
+member chose elsewhere (`tests/e2e/test_virtual_ride.py`). Bluetooth devices and the auto-connect box stay
+with the browser.
 Every device once connected is remembered in the browser, by the id the browser gives it for the site
 and its name, newest first, at most eight; one not connected now is listed with Connect and Forget.
 Connect opens it again without the chooser where the browser lists the site's devices
@@ -235,7 +241,9 @@ Tests: `tests/test_virtual_ride_maps.py`.
   Russian lacks (`tests/test_kazakh_account_pages.py`,
   `registrations/tests.py::FormLabelsInThePageLanguageTests`).
 - **FR-SHL-002**: The privacy policy and the terms of use live at stable addresses, are public and
-  translated, linked from every footer; the privacy policy states what Strava data is used, what a
+  translated, linked from every footer; the privacy policy states what Strava data is used, that a
+  member's settings on the virtual ride page -- height, weight, maximum heart rate, bike -- are kept with
+  their profile, what a
   member allowed to manage one's registrations and photos sees and may do ([accounts](accounts.md)),
   how a guest's region is found from the network provider's location and that the location is not
   stored ([calendar](calendar.md)), how the site counts its own visits -- daily sums only, no cookie,

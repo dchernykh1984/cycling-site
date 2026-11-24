@@ -4,8 +4,10 @@ The trainer page (trainer/static/trainer/alatau.html) calls these from the membe
 their session; API clients use the personal Bearer token like everywhere else in /api/v1/.
 """
 
+import json
 from datetime import date, datetime, timedelta
 from http import HTTPStatus
+from typing import Any
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -29,6 +31,7 @@ from trainer.models import (
     RideTrack,
     StravaConnection,
     StravaUpload,
+    TrainerSettings,
     VirtualRide,
 )
 
@@ -37,6 +40,8 @@ router = Router(tags=["virtual-ride"])
 
 _ROUTE = r"^[a-z0-9][a-z0-9_-]{0,39}$"
 _MAX_HISTORY = 100
+# The trainer page's settings, as JSON: a long own plan is a few kilobytes
+_MAX_SETTINGS = 64 * 1024
 # One point a second for six hours; each point is
 # [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm] within these bounds.
 _MAX_TRACK = 6 * 3600
@@ -75,6 +80,17 @@ class MeOut(Schema):
     intervals_connected: bool = False
     intervals_athlete: str = ""
     intervals_send: bool = False
+
+
+class TrainerSettingsIn(Schema):
+    # the page's own object, kept as it comes; saved_at is the page's clock (ms) when it last changed
+    settings: dict[str, Any]
+    saved_at: int = Field(ge=0, le=10**15)
+
+
+class TrainerSettingsOut(Schema):
+    settings: dict[str, Any]
+    saved_at: int
 
 
 class RideIn(Schema):
@@ -619,6 +635,29 @@ def delete_ride(request, ride_id: int):
 @router.get("/records", response=RecordsOut, auth=member_auth, summary="My personal records")
 def my_records(request):
     return records.summary(request.auth)
+
+
+# -- Settings --------------------------------------------------------------
+
+
+@router.get("/settings", response=TrainerSettingsOut, auth=member_auth, summary="My settings on the trainer page")
+def my_settings(request):
+    kept = TrainerSettings.objects.filter(user=request.auth).first()
+    return TrainerSettingsOut(settings=kept.data if kept else {}, saved_at=kept.saved_at if kept else 0)
+
+
+@router.put("/settings", response=TrainerSettingsOut, auth=member_auth, summary="Keep my settings on the trainer page")
+def keep_settings(request, payload: TrainerSettingsIn):
+    """The page's settings with the member's account; a copy older than the one kept leaves it as it is, and the
+    answer is always the copy kept, so a page that was behind takes the newer one."""
+    if len(json.dumps(payload.settings)) > _MAX_SETTINGS:
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, "The settings are too large to keep")
+    with transaction.atomic():
+        kept, _created = TrainerSettings.objects.select_for_update().get_or_create(user=request.auth)
+        if payload.saved_at >= kept.saved_at:
+            kept.data, kept.saved_at = payload.settings, payload.saved_at
+            kept.save(update_fields=["data", "saved_at", "updated_at"])
+    return TrainerSettingsOut(settings=kept.data, saved_at=kept.saved_at)
 
 
 # -- Group races -----------------------------------------------------------

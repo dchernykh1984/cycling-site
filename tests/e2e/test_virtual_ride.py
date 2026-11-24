@@ -3,6 +3,7 @@
 import json
 import math
 import re
+import time
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -1169,3 +1170,68 @@ def test_forget_drops_a_remembered_device_here_and_in_the_browser(page: Page, li
     expect(page.locator("#devList li")).to_have_count(0)
     assert page.evaluate("localStorage.getItem('alatau:devices')") == "[]"
     page.wait_for_function("hrm.forgotten === true")
+
+
+def _member_on_the_trainer(page: Page, live_server, stored: dict | None = None) -> User:
+    """A member signed in, the site's page having handed out its CSRF cookie, on the trainer in its menu;
+    `stored` is what this browser kept before."""
+    member = User.objects.create_user(
+        username="e2e_settings", email="e2e_settings@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    if stored is not None:
+        page.add_init_script(
+            "if (!sessionStorage.getItem('preset')) { sessionStorage.setItem('preset', '1');"
+            f" localStorage.setItem('alatau:settings', {json.dumps(json.dumps(stored))}); }}"
+        )
+    inject_session(page, live_server, member)
+    page.goto(f"{live_server.url}/en/virtual-ride/")
+    return member
+
+
+def _kept(member: User) -> tuple[dict, int] | None:
+    from trainer.models import TrainerSettings
+
+    kept = TrainerSettings.objects.filter(user=member).first()
+    return (kept.data, kept.saved_at) if kept else None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_member_s_settings_come_from_their_account_and_go_back_to_it(page: Page, live_server):
+    from trainer.models import TrainerSettings
+
+    member = _member_on_the_trainer(page, live_server)
+    a_day_ago = int(time.time() * 1000) - 86_400_000
+    TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82, "circ": 2146}, saved_at=a_day_ago)
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#height")).to_have_value("191")
+    expect(page.locator("#circ")).to_have_value("2146")
+    with page.expect_response(lambda r: r.url.endswith("/virtual-ride/settings") and r.request.method == "PUT"):
+        page.fill("#mass", "77")
+        page.dispatch_event("#mass", "change")
+    kept = _kept(member)
+    assert kept is not None, "nothing kept with the account"
+    data, saved_at = kept
+    assert (data["height"], data["mass"], data["circ"]) == (191, 77, 2146), data
+    assert saved_at > a_day_ago
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_fresh_browser_never_sends_its_defaults_over_the_account(page: Page, live_server):
+    member = _member_on_the_trainer(page, live_server)
+    sent = []
+    page.on("request", lambda r: sent.append(r.method) if r.url.endswith("/virtual-ride/settings") else None)
+    _trainer_in_its_menu(page, live_server)
+    page.wait_for_timeout(2500)  # past the pause a change waits before it is sent
+    assert sent == ["GET"], sent
+    assert _kept(member) is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_settings_kept_in_this_browser_before_go_to_an_empty_account(page: Page, live_server):
+    member = _member_on_the_trainer(page, live_server, stored={"height": 185, "mass": 70})
+    with page.expect_response(lambda r: r.url.endswith("/virtual-ride/settings") and r.request.method == "PUT"):
+        _trainer_in_its_menu(page, live_server)
+    kept = _kept(member)
+    assert kept is not None, "nothing kept with the account"
+    data, saved_at = kept
+    assert (data["height"], data["mass"], saved_at) == (185, 70, 1), (data, saved_at)

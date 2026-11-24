@@ -14,6 +14,7 @@ const Records = {
       const me = await Site.get('/me'); this.me = me; this.loginUrl = langPath(me.login_url || '');
       if (!me.authenticated) return;
       this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote(); renderIntervalsNote(); loadIcuWorkouts();
+      SettingsSync.pull();
       await this.pull(); renderMenu();
       if (!$('#recM').classList.contains('hidden')) renderRecords();
     } catch (e) { this.me = null; }
