@@ -139,6 +139,21 @@ class EventPageTest(_Event, TestCase):
                 self.assertNotIn(f'id="protocol-section-{empty}"', page)
                 self.assertIn(f'id="protocol-section-{finals}"', page)
 
+    def test_a_hidden_events_page_links_none_of_its_protocols(self):
+        # Its managers still open the page, but its protocols are nobody's: every link would be a 404.
+        self._upload()
+        link = f"/en/protocols/{Protocol.objects.get().pk}/"
+        self.competition.is_hidden = True
+        self.competition.save(update_fields=["is_hidden"])
+        for manager in (self.author, make_user("admin", role=User.Role.ADMIN)):
+            with self.subTest(manager=manager.username):
+                self.client.force_login(manager)
+                page = self.client.get(f"/en/calendar/{self.competition.pk}/")
+                self.assertEqual(page.status_code, HTTPStatus.OK)
+                self.assertNotIn(link, page.content.decode())
+                self.assertNotIn('id="protocol-section-1"', page.content.decode())
+                self.assertEqual(self.client.get(link).status_code, HTTPStatus.NOT_FOUND)
+
     def test_a_protocols_page_names_its_section(self):
         number = sections.add(self.competition, FINALS).number
         self._upload(section=number)
