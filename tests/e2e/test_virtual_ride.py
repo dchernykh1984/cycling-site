@@ -147,6 +147,38 @@ def test_a_link_to_a_group_race_reaches_the_framed_trainer(page: Page, live_serv
 
 
 @pytest.mark.django_db(transaction=True)
+def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_server):
+    # a route's points come from a map's streets: a spur ridden out and back, or two points on top of each other,
+    # would make the rider turn round or twitch where the street goes straight on
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildTrack === 'function'")
+    faults = page.evaluate(
+        """() => ROUTES.flatMap(r => {
+          const T = buildTrack(r), O = mapOf(r).origin, out = [];
+          if ([...T.X, ...T.Y, ...T.Z].some(v => !Number.isFinite(v))) out.push(r.id + ': not a number');
+          for (let i = 2; i < T.N; i++) {
+            const a = Math.atan2(T.Z[i - 1] - T.Z[i - 2], T.X[i - 1] - T.X[i - 2]);
+            const b = Math.atan2(T.Z[i] - T.Z[i - 1], T.X[i] - T.X[i - 1]);
+            const turn = Math.abs(((b - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * 180 / Math.PI;
+            if (turn > 60) {
+              out.push(r.id + ': turns ' + Math.round(turn) + ' degrees at ' + Math.round(T.D[i]) + ' m');
+              break;
+            }
+          }
+          for (let i = 1; i < r.pts.length; i++) {
+            const p = proj(r.pts[i - 1][0], r.pts[i - 1][1], O), q = proj(r.pts[i][0], r.pts[i][1], O);
+            if (Math.hypot(q.x - p.x, q.z - p.z) < 0.5) {
+              out.push(r.id + ': points ' + i + ' on top of each other');
+              break;
+            }
+          }
+          return out;
+        })"""
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_open_full_screen_puts_the_trainer_on_the_whole_screen(page: Page, live_server):
     page.goto(f"{live_server.url}/en/virtual-ride/")
     if not page.evaluate("!!(document.fullscreenEnabled || document.webkitFullscreenEnabled)"):
