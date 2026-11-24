@@ -4,6 +4,7 @@ The trainer page (trainer/static/trainer/alatau.html) calls these from the membe
 their session; API clients use the personal Bearer token like everywhere else in /api/v1/.
 """
 
+import contextlib
 import json
 from datetime import date, datetime, timedelta
 from http import HTTPStatus
@@ -12,7 +13,7 @@ from typing import Any
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from ninja import Field, Path, Router, Schema, Status
 from ninja.errors import HttpError
@@ -366,6 +367,19 @@ def _online_out(row: LiveRider) -> dict:
     }
 
 
+def _in_page_language(request):
+    """The language of the page the trainer runs in, which it names on every call (X-Page-Language), for what a
+    ride takes out in words: the invitation on Strava and intervals.icu. A profile's own choice still comes first
+    (trainer/invitation.py); without the header, the request's language stands."""
+    code = request.headers.get("X-Page-Language", "")
+    try:
+        return (
+            translation.override(translation.get_supported_language_variant(code)) if code else contextlib.nullcontext()
+        )
+    except LookupError:
+        return contextlib.nullcontext()
+
+
 # -- Who is asking ---------------------------------------------------------
 
 
@@ -419,7 +433,8 @@ def save_ride(request, payload: RideIn):
             records.rank_group(group)
             ride.refresh_from_db(fields=["place", "field_size"])
     # every service the member connected with its box on gets the ride; demo power is not a ride to show
-    to_strava, to_intervals = services.send_saved(ride)
+    with _in_page_language(request):
+        to_strava, to_intervals = services.send_saved(ride)
     return Status(
         HTTPStatus.CREATED,
         SavedRideOut(
@@ -454,7 +469,8 @@ def send_to_strava(request, ride_id: int):
             HTTPStatus.CONFLICT,
             _("This ride has no track to send: rides in demo mode and rides saved without one stay here"),
         )
-    return _strava_out(strava.upload(ride))
+    with _in_page_language(request):
+        return _strava_out(strava.upload(ride))
 
 
 @router.get("/rides/{ride_id}/strava", response=StravaOut, auth=member_auth, summary="How my ride's Strava upload went")
@@ -486,7 +502,8 @@ def send_to_intervals(request, ride_id: int):
             HTTPStatus.CONFLICT,
             _("This ride has no track to send: rides in demo mode and rides saved without one stay here"),
         )
-    return _intervals_out(intervals.upload(ride))
+    with _in_page_language(request):
+        return _intervals_out(intervals.upload(ride))
 
 
 @router.get(

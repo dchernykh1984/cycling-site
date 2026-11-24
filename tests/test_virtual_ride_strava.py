@@ -1,6 +1,7 @@
 """Virtual rides sent to Strava as Virtual Ride activities: the grant, the track, the upload, the profile."""
 
 import gzip
+import json
 import sys
 from datetime import timedelta
 from unittest import mock
@@ -103,6 +104,24 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         with translation_override("kk"):
             words = gettext("Ride with %(club)s!") % {"club": "UBT"}
         self.assertEqual(call.call_args.kwargs["data"]["description"], f"{words}\nhttps://ride.test/kk/virtual-ride/")
+
+    @override_settings(SITE_BASE_URL="https://ride.test", ORGANIZATION_SHORT_NAME="UBT")
+    @mock.patch("trainer.strava.requests.request")
+    def test_without_a_choice_in_the_profile_the_page_s_language_invites(self, call):
+        _connect(self.user)
+        call.return_value = _answer(201, {"id_str": "991", "status": "Your activity is still being processed."})
+        for page, chosen, said in (("kk", "", "kk"), ("kk", "en", "en"), ("xx", "", "ru")):
+            User.objects.filter(pk=self.user.pk).update(preferred_language=chosen)
+            self.client_m.post(
+                f"{API}/rides",
+                data=json.dumps(_ride(track=_track())),
+                content_type="application/json",
+                HTTP_X_PAGE_LANGUAGE=page,
+            )
+            with translation_override(said):
+                words = gettext("Ride with %(club)s!") % {"club": "UBT"}
+            description = call.call_args.kwargs["data"]["description"]
+            self.assertEqual(description, f"{words}\nhttps://ride.test/{said}/virtual-ride/", (page, chosen))
 
     @mock.patch("trainer.strava.requests.request")
     def test_demo_rides_and_members_without_strava_send_nothing(self, call):

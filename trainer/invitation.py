@@ -1,8 +1,9 @@
 """The line a ride takes to Strava and intervals.icu: an invitation to ride on this site, and its address.
 
 The words are in the language of the member who rode -- their choice in the profile, else the language
-the request came in -- and the address is the virtual ride's page in that language, so whoever follows
-it lands on a page in the rider's language. The club is named as the settings name it, never here.
+of the page they rode on (api/endpoints/virtual_ride.py) -- and the address is the virtual ride's page in
+that language, so whoever follows it lands on a page in the rider's language. The club is named as the
+settings name it, never here.
 """
 
 from django.conf import settings
