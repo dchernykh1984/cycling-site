@@ -71,7 +71,7 @@ class PublishingIntoSectionsTest(_Event, TestCase):
         self.assertFalse(Protocol.objects.exists())
         self.assertEqual(_stored_files(self.media_root), set())
 
-    def test_the_refusal_of_a_deleted_section_names_the_sections_to_publish_into(self):
+    def test_the_refusal_of_a_deleted_section_names_the_events_sections(self):
         deleted = sections.add(self.competition, FINALS).number
         sections.delete(self.competition, deleted)
         added = sections.add(self.competition, FINALS).number  # a number of its own: the deleted one stays refused
