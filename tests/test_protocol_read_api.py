@@ -173,7 +173,7 @@ class ProtocolReadApiTest(TestCase):
                 for url in (LIST.format(self.race.pk), DETAIL.format(self.absolute.pk), HTML.format(self.absolute.pk)):
                     self.assertEqual(self._get(url, user).status_code, status)
 
-    def test_the_events_upload_token_reads_its_protocols_whatever_its_visibility(self):
+    def test_the_events_upload_token_reads_its_protocols_invite_only_or_hidden(self):
         # A cup reads a stage held on an invite-only event by that event's upload token (2026-11-24).
         token = f"competition_token={self.race.upload_token}"
         states = {"published": {}, "invite-only": {"invite_only": True}, "hidden": {"is_hidden": True}}
