@@ -21,8 +21,6 @@
   </header>
   <div class="setup"><div class="setup-in">
     <p class="lead" data-t="lead"></p>
-    <p class="strava-note hidden" id="stravaNote"></p>
-    <p class="strava-note hidden" id="intervalsNote"></p>
     <div class="grid">
       <section class="box wide" aria-labelledby="hRoute">
         <h2 id="hRoute"><span class="num">1</span><span data-t="sec.route"></span></h2>
@@ -32,7 +30,7 @@
       <section class="box" aria-labelledby="hMode">
         <h2 id="hMode"><span class="num">2</span><span data-t="sec.mode"></span></h2>
     <div class="cities" id="modeSeg"><button class="city" type="button" data-mode="race" data-t="mode.raceBots"></button><button class="city" type="button" data-mode="plan" data-t="mode.plan"></button><button class="city" type="button" data-mode="free" data-t="mode.free"></button></div>
-    <div id="raceOpts"><div class="field"><label for="bots" data-t="race.bots"></label>
+    <div id="raceOpts" class="cols"><div class="field"><label for="bots" data-t="race.bots"></label>
       <select id="bots"><option value="0" data-t="bots.none"></option><option value="3" data-t="bots.3"></option><option value="6" selected data-t="bots.6"></option><option value="10" data-t="bots.10"></option></select></div>
     <div class="field"><label for="level" data-t="race.level"></label>
       <select id="level"><option value="easy" data-t="level.easy"></option><option value="mid" selected data-t="level.mid"></option><option value="hard" data-t="level.hard"></option></select></div></div>
@@ -52,24 +50,30 @@
     </div>
 
       </section>
-      <section class="box" aria-labelledby="hRider">
-        <h2 id="hRider"><span class="num">3</span><span data-t="sec.rider"></span></h2>
-        <canvas id="charPrev" data-t-label="a11y.riderPreview"></canvas>
-    <div class="field"><label for="height" data-t="body.height"></label><input id="height" type="number" min="120" max="220" step="1" value="178" inputmode="numeric"></div>
-<div class="field"><label for="mass" data-t="body.mass"></label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
-<p class="hint" id="bodyHint"></p>
-    <div class="field"><label for="view" data-t="view.label"></label>
-      <select id="view"><option value="chase" selected data-t="view.third"></option><option value="fpv" data-t="view.first"></option></select></div>
-
-      </section>
       <section class="box wide" aria-labelledby="hMp">
-        <h2 id="hMp"><span class="num">4</span><span data-t="sec.friends"></span></h2>
+        <h2 id="hMp"><span class="num">3</span><span data-t="sec.friends"></span></h2>
         <p class="hint" id="mpStatus" data-t="mp.connecting"></p>
         <div class="mp-online" id="mpOnline"></div>
         <div class="mp-groups" id="mpGroups"></div>
         <p class="hint hidden" id="mpNote" role="status"></p>
         <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
         <p class="hint" data-t="mp.hint"></p>
+      </section>
+      <section class="box" aria-labelledby="hRider">
+        <h2 id="hRider"><span class="num">4</span><span data-t="sec.rider"></span></h2>
+        <div class="cols">
+          <div>
+    <canvas id="charPrev" data-t-label="a11y.riderPreview"></canvas>
+          </div>
+          <div>
+    <div class="field"><label for="height" data-t="body.height"></label><input id="height" type="number" min="120" max="220" step="1" value="178" inputmode="numeric"></div>
+<div class="field"><label for="mass" data-t="body.mass"></label><input id="mass" type="number" min="35" max="160" step="1" value="75" inputmode="numeric"></div>
+<p class="hint" id="bodyHint"></p>
+    <div class="field"><label for="view" data-t="view.label"></label>
+      <select id="view"><option value="chase" selected data-t="view.third"></option><option value="fpv" data-t="view.first"></option></select></div>
+
+          </div>
+        </div>
       </section>
       <section class="box wide" aria-labelledby="hDev">
         <h2 id="hDev"><span class="num">5</span><span data-t="sec.devices"></span></h2>
@@ -117,6 +121,8 @@
         </div>
       </section>
     </div>
+    <p class="strava-note hidden" id="stravaNote"></p>
+    <p class="strava-note hidden" id="intervalsNote"></p>
     <p class="attr"><span data-t="attr.before"></span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" data-t="attr.osm"></a><span data-t="attr.after"></span></p>
 
   </div></div>
