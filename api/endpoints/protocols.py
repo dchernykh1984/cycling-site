@@ -369,7 +369,8 @@ def list_protocols(request, competition_id: int, competition_token: str | None =
     """An event's protocols as its page links them. A published event's are anybody's; an invite-only
     event's only its managers' and the people it lets in, by their token; a hidden, unpublished or
     deleted event answers 404, as one that does not exist does. The event's own upload token reads them
-    too, invite-only or hidden, while the event is approved and not deleted; any other token is a 401."""
+    too, invite-only or hidden, while the event is approved and not deleted; another event's token reads
+    nothing (404), and a token no approved, undeleted event holds is a 401."""
     holder = _holder(competition_token)
     competition = Competition.objects.filter(pk=competition_id).first()
     if competition is None or not _shows(request, competition, holder):
