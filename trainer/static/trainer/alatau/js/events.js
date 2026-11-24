@@ -1,6 +1,7 @@
 'use strict';
 /* ---------------- События ---------------- */
 $('#btnConnect').onclick = () => Sensors.add();
+$('#btAuto').onchange = e => Sensors.setAuto(e.target.checked);
 $('#btnStart').onclick = async () => {
   // a workout picked from intervals.icu that has not loaded: the line under the list says why, and nothing starts
   if (settings.mode === 'plan' && planWaits()) { $('#plIcuInfo').scrollIntoView({ block: 'center' }); return; }

@@ -1086,3 +1086,86 @@ def test_the_cadence_against_the_target_reads_over_a_light_sky(page: Page, live_
     # bold from 18.66 px is large text, which WCAG asks 3:1 of
     assert int(weight) >= 700 and size >= 18.66, (weight, size)
     assert (lighter + 0.05) / (darker + 0.05) >= 3, colour
+
+
+def _bluetooth(reopens: bool, stored: dict | None = None) -> str:
+    """A browser's Bluetooth with one heart rate monitor in reach; `reopens` gives it getDevices(), as Chrome
+    has behind its permissions flag. What the chooser was asked is in `chooserAsked`."""
+    preset = "".join(
+        f"localStorage.setItem('alatau:{k}', {json.dumps(json.dumps(v))});" for k, v in (stored or {}).items()
+    )
+    return """(() => {
+        const characteristic = { addEventListener() {}, startNotifications: async () => {} };
+        const server = { getPrimaryService: async uuid => {
+            if (uuid !== 0x180D) throw new Error('not here'); return { getCharacteristic: async () => characteristic };
+        } };
+        const hrm = { id: 'hr-1', name: 'HRM Pro', watched: false, forgotten: false, addEventListener() {},
+            gatt: { connect: async () => server, disconnect() {} } };
+        hrm.watchAdvertisements = async () => { hrm.watched = true; };
+        hrm.forget = async () => { hrm.forgotten = true; };
+        window.hrm = hrm; window.chooserAsked = [];
+        const bluetooth = { requestDevice: async options => { chooserAsked.push(options); return hrm; } };
+        if (REOPENS) bluetooth.getDevices = async () => [hrm];
+        Object.defineProperty(navigator, 'bluetooth', { value: bluetooth, configurable: true });
+        if (!sessionStorage.getItem('preset')) { sessionStorage.setItem('preset', '1'); PRESET }
+    })()""".replace("REOPENS", "true" if reopens else "false").replace("PRESET", preset)
+
+
+def _listed(page: Page) -> list[str]:
+    return page.locator("#devList li").evaluate_all(
+        "items => items.map(li => li.innerText.replace(/\\s+/g, ' ').trim())"
+    )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_connected_device_is_listed_again_when_the_page_opens_next_time(page: Page, live_server):
+    page.add_init_script(_bluetooth(reopens=False))
+    _trainer_in_its_menu(page, live_server)
+    page.click("#btnConnect")
+    expect(page.locator("#devList li")).to_have_count(1)
+    assert json.loads(page.evaluate("localStorage.getItem('alatau:devices')")) == [{"id": "hr-1", "name": "HRM Pro"}]
+    page.reload()
+    page.evaluate("drawFrame(16)")
+    assert _listed(page) == ["HRM Pro not connected Connect Forget"]
+    expect(page.locator("#btAuto")).not_to_be_checked()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_connect_opens_the_chooser_with_the_remembered_device_alone(page: Page, live_server):
+    page.add_init_script(_bluetooth(reopens=False, stored={"devices": [{"id": "old-id", "name": "HRM Pro"}]}))
+    _trainer_in_its_menu(page, live_server)
+    page.locator("#devList li").get_by_role("button", name="Connect", exact=True).click()
+    expect(page.locator("#devList li small")).to_have_text("connected")
+    assert page.evaluate("chooserAsked.map(o => o.filters)") == [[{"name": "HRM Pro"}]]
+    # the browser gave it another id: one entry for it still, under the new id
+    assert json.loads(page.evaluate("localStorage.getItem('alatau:devices')")) == [{"id": "hr-1", "name": "HRM Pro"}]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_with_the_box_on_remembered_devices_connect_as_the_page_opens(page: Page, live_server):
+    stored = {"devices": [{"id": "hr-1", "name": "HRM Pro"}], "btAuto": True}
+    page.add_init_script(_bluetooth(reopens=True, stored=stored))
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#devList li small")).to_have_text("connected")
+    expect(page.locator("#btAuto")).to_be_checked()
+    assert page.evaluate("[chooserAsked.length, hrm.watched]") == [0, True]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_where_the_browser_cannot_reopen_a_device_the_box_says_what_to_turn_on(page: Page, live_server):
+    stored = {"devices": [{"id": "hr-1", "name": "HRM Pro"}], "btAuto": True}
+    page.add_init_script(_bluetooth(reopens=False, stored=stored))
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#btHint")).to_contain_text("chrome://flags/#enable-web-bluetooth-new-permissions-backend")
+    assert _listed(page) == ["HRM Pro not connected Connect Forget"]
+    assert page.evaluate("chooserAsked.length") == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_forget_drops_a_remembered_device_here_and_in_the_browser(page: Page, live_server):
+    page.add_init_script(_bluetooth(reopens=True, stored={"devices": [{"id": "hr-1", "name": "HRM Pro"}]}))
+    _trainer_in_its_menu(page, live_server)
+    page.locator("#devList li").get_by_role("button", name="Forget", exact=True).click()
+    expect(page.locator("#devList li")).to_have_count(0)
+    assert page.evaluate("localStorage.getItem('alatau:devices')") == "[]"
+    page.wait_for_function("hrm.forgotten === true")
