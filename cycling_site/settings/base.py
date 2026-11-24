@@ -522,6 +522,9 @@ YANDEX_VERIFICATION = env("YANDEX_VERIFICATION", default="")
 # lists its own profiles elsewhere -- a Telegram channel, a Strava club -- comma separated; the
 # engines use them to tie those profiles to this site. Empty is fine: nothing is claimed then.
 ORGANIZATION_NAME = env("ORGANIZATION_NAME", default="")
+# The club's short name where a line names it -- the invitation a ride takes to Strava and intervals.icu
+# (trainer/invitation.py). Empty falls back to ORGANIZATION_NAME, then to the Wagtail site name.
+ORGANIZATION_SHORT_NAME = env("ORGANIZATION_SHORT_NAME", default="")
 ORGANIZATION_AREA = env("ORGANIZATION_AREA", default="")
 ORGANIZATION_SAME_AS = env.list("ORGANIZATION_SAME_AS", default=[])
 

@@ -88,7 +88,11 @@ has not connected Strava to connect it with Strava's button, and tells one who h
 there, with a link to the profile's Strava card to manage it (`tests/e2e/test_virtual_ride.py`);
 the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride
 Strava already has is linked to that activity, never sent twice, and after half a minute of
-processing the page says to look in Strava later. A
+processing the page says to look in Strava later. A ride sent to Strava or intervals.icu carries a
+description: an invitation to ride with the club and the virtual ride page's address, both in the
+rider's language -- their profile's choice, else the request's -- the club named by
+`ORGANIZATION_SHORT_NAME`, else `ORGANIZATION_NAME`, else the site's name (`trainer/invitation.py`,
+`tests/test_ride_invitation.py`). A
 guest's progress stays in their
 browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --

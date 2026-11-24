@@ -16,6 +16,7 @@ from django.db.migrations.executor import MigrationExecutor
 from django.test import Client, RequestFactory, TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
 from django.utils.translation import override as translation_override
 from django.views.debug import ExceptionReporter
 
@@ -91,6 +92,17 @@ class StravaUploadTests(MemberClientMixin, TestCase):
         self.assertEqual(sent["data"]["external_id"], f"universalbicycle-virtual-ride-{ride.pk}")
         self.assertEqual(ride.track.points, _track())
         self.assertEqual(ride.strava.upload_id, "991")
+
+    @override_settings(SITE_BASE_URL="https://ride.test", ORGANIZATION_SHORT_NAME="UBT")
+    @mock.patch("trainer.strava.requests.request")
+    def test_the_activity_invites_to_ride_here_in_the_rider_s_language(self, call):
+        _connect(self.user)
+        User.objects.filter(pk=self.user.pk).update(preferred_language="kk")
+        call.return_value = _answer(201, {"id_str": "991", "status": "Your activity is still being processed."})
+        self.save()
+        with translation_override("kk"):
+            words = gettext("Ride with %(club)s!") % {"club": "UBT"}
+        self.assertEqual(call.call_args.kwargs["data"]["description"], f"{words}\nhttps://ride.test/kk/virtual-ride/")
 
     @mock.patch("trainer.strava.requests.request")
     def test_demo_rides_and_members_without_strava_send_nothing(self, call):

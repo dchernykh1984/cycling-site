@@ -5815,3 +5815,8 @@ msgstr "intervals.icu қазір кілтті тексере алмады. Ке�
 #: home/templates/home/privacy_page.html
 msgid "<strong>Notices of changes to your account.</strong> When your password or your sign-in address changes, or a Google, GitHub or Strava account is connected to yours or disconnected from it, the site mails you a notice with the IP address and the browser the change came from and its time, so that you notice at once a change you did not make. The site's mailbox keeps a copy of every mail it sends, these notices included."
 msgstr "<strong>Тіркелгідегі өзгерістер туралы хабарламалар.</strong> Құпиясөзіңіз немесе кіретін электрондық пошта мекенжайыңыз өзгергенде, не тіркелгіңізге Google, GitHub немесе Strava тіркелгісі қосылғанда немесе одан ажыратылғанда, сайт сізге өзгеріс жасалған IP-мекенжай мен браузерді және оның уақытын көрсетіп хат жібереді — өзіңіз жасамаған өзгерісті бірден байқауыңыз үшін. Сайттың пошта жәшігінде ол жіберетін әр хаттың, соның ішінде осы хабарламалардың да көшірмесі сақталады."
+
+#: trainer/invitation.py:37
+#, python-format
+msgid "Ride with %(club)s!"
+msgstr "%(club)s командасымен бірге велосипед теп!"
