@@ -24,6 +24,7 @@ from django.utils.html import strip_tags
 from django.views.decorators.debug import sensitive_variables
 
 from . import secret_box
+from .invitation import invitation
 from .models import RideTrack, StravaConnection, StravaUpload, VirtualRide
 
 AUTHORIZE_URL = "https://www.strava.com/oauth/authorize"
@@ -255,6 +256,7 @@ def upload(ride: VirtualRide) -> StravaUpload:
         # the type Strava would guess from a TCX is a plain ride; this is a ride on a trainer in a virtual world
         "sport_type": "VirtualRide",
         "name": ride.route_name or ride.route,
+        "description": invitation(ride.user),
         "external_id": f"universalbicycle-virtual-ride-{ride.pk}",
     }
     files = {"file": (f"virtual-ride-{ride.pk}.tcx.gz", tcx(ride, track.points), "application/gzip")}

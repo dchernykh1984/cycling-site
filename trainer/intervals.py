@@ -18,6 +18,7 @@ from django.utils.html import strip_tags
 from django.views.decorators.debug import sensitive_variables
 
 from . import secret_box, strava, zwo
+from .invitation import invitation
 from .models import IntervalsConnection, IntervalsUpload, RideTrack, VirtualRide
 
 API = "https://intervals.icu/api/v1"
@@ -171,6 +172,7 @@ def upload(ride: VirtualRide) -> IntervalsUpload:
         return _record(ride, failed, "The intervals.icu key can no longer be read: connect intervals.icu again")
     params = {
         "name": ride.route_name or ride.route,
+        "description": invitation(ride.user),
         "external_id": f"universalbicycle-virtual-ride-{ride.pk}",
         "device_name": "Universal Bicycle Team virtual ride",
     }

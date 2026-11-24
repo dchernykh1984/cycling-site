@@ -5823,3 +5823,8 @@ msgstr "intervals.icu сейчас не смог проверить ключ. П
 #: home/templates/home/privacy_page.html
 msgid "<strong>Notices of changes to your account.</strong> When your password or your sign-in address changes, or a Google, GitHub or Strava account is connected to yours or disconnected from it, the site mails you a notice with the IP address and the browser the change came from and its time, so that you notice at once a change you did not make. The site's mailbox keeps a copy of every mail it sends, these notices included."
 msgstr "<strong>Уведомления об изменениях в аккаунте.</strong> Когда меняется ваш пароль или адрес, с которым вы входите, или к вашему аккаунту подключают либо от него отключают аккаунт Google, GitHub или Strava, сайт присылает вам письмо с IP-адресом и браузером, с которых сделано изменение, и его временем — чтобы вы сразу заметили изменение, которого не делали. В почтовом ящике сайта остаётся копия каждого отправленного им письма, в том числе этих уведомлений."
+
+#: trainer/invitation.py:37
+#, python-format
+msgid "Ride with %(club)s!"
+msgstr "Катайся вместе с %(club)s!"

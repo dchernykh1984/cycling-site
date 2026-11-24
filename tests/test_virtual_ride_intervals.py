@@ -18,6 +18,7 @@ from django.utils import translation
 from django.utils.translation import gettext
 from django.views.debug import ExceptionReporter
 
+from accounts.models import User
 from tests.test_virtual_ride_api import API, MemberClientMixin, _ride, _user
 from tests.test_virtual_ride_strava import STRAVA_ON, _answer, _connect, _track
 from trainer import intervals, secret_box, views
@@ -216,6 +217,18 @@ class SendingTests(MemberClientMixin, TestCase):
         self.assertEqual((put.args[1], put.kwargs["json"]["type"]), (f"{intervals.API}/activity/i9876", "VirtualRide"))
         self.assertLess(put.kwargs["timeout"], post.kwargs["timeout"], "the mark holds the save less than the upload")
         self.assertEqual(ride.intervals.status, IntervalsUpload.Status.DONE)
+
+    @override_settings(SITE_BASE_URL="https://ride.test", ORGANIZATION_SHORT_NAME="UBT")
+    @mock.patch("trainer.intervals.requests.request")
+    def test_the_activity_invites_to_ride_here_in_the_rider_s_language(self, call):
+        _connected(self.user)
+        User.objects.filter(pk=self.user.pk).update(preferred_language="en")
+        call.side_effect = [_answer(201, {"id": "i9876", "activities": [{"id": "i9876"}]}), _answer(200)]
+        self.save()
+        with translation.override("en"):
+            words = gettext("Ride with %(club)s!") % {"club": "UBT"}
+        post = _calls(call, "POST")[0]
+        self.assertEqual(post.kwargs["params"]["description"], f"{words}\nhttps://ride.test/en/virtual-ride/")
 
     @mock.patch("trainer.intervals.requests.request")
     def test_a_refused_virtual_mark_still_leaves_the_ride_there(self, call):
