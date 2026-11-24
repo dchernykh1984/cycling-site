@@ -115,6 +115,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.GroupIn": GroupRide,
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
+    # The trainer page's settings go into one JSON column, bounded at 64 KB of JSON by keep_settings.
+    "api.endpoints.virtual_ride.TrainerSettingsIn": None,
     # A box on or off is a flag; nothing lands in a text column (issue #471).
     "api.endpoints.virtual_ride.SendIn": None,
     # The intervals.icu key is bounded at 200 and kept sealed in a text column, never as given.
