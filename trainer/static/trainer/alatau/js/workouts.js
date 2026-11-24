@@ -22,7 +22,7 @@ async function loadIcuWorkouts() {
   if (Icu.list.some(w => w.id === settings.planIcu)) pickIcu(settings.planIcu); else pickIcu(null);
 }
 async function pickIcu(id) {
-  settings.planIcu = id; store.set('settings', settings); Icu.plan = null; Icu.pickFailed = ''; renderIcu();
+  settings.planIcu = id; saveSettings(); Icu.plan = null; Icu.pickFailed = ''; renderIcu();
   if (id == null) return;
   try {
     const w = await Site.get('/intervals/workouts/' + id);

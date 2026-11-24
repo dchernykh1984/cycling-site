@@ -215,3 +215,20 @@ class IntervalsUpload(models.Model):
     @property
     def activity_url(self) -> str:
         return f"https://intervals.icu/activities/{self.activity_id}" if self.activity_id else ""
+
+
+class TrainerSettings(models.Model):
+    """A member's settings on the trainer page -- height, weight, bike, trainer, plan and the rest -- kept with
+    their account, so the page shows the same on every device they sign in on.
+
+    ``data`` is the page's own object, which only the page reads. ``saved_at`` is the page's clock, in
+    milliseconds, when they last changed: of two copies the newer one wins.
+    """
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="trainer_settings")
+    data = models.JSONField(default=dict)
+    saved_at = models.BigIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.user_id} trainer settings"

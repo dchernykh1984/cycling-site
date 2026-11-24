@@ -45,7 +45,10 @@ SENT_THERE = [
     "nothing for you, and the registrations they made stay yours.",
     "<strong>Virtual rides.</strong> When you are signed in, the rides you finish on the virtual ride page "
     "are saved to your profile: the route, time, distance, speed, power, cadence and heart rate, and the "
-    "track of your position along the route. While you are on that page, other signed-in members see your "
+    "track of your position along the route. The settings you choose on that page -- your height, weight and "
+    "maximum heart rate, your bike and trainer, your own plan and the like -- are kept with your profile too, "
+    "so that the page shows them on every device you sign in on. While you are on that page, other signed-in "
+    "members see your "
     "name, what you are riding and where you are on the route. If you connect Strava for your rides, we keep "
     "the access Strava gives us for this and use it only to upload each ride you finish as a virtual ride; we"
     " still do not read your Strava activities. You can disconnect Strava in your profile at any time, and we"

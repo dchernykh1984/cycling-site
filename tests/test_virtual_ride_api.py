@@ -16,7 +16,7 @@ from django.utils.translation import override as translation_override
 from accounts.models import User
 from trainer import records
 from trainer.live import ONLINE_SECONDS
-from trainer.models import GroupRide, GroupRideMember, LiveRider, VirtualRide
+from trainer.models import GroupRide, GroupRideMember, LiveRider, TrainerSettings, VirtualRide
 
 API = "/api/v1/virtual-ride"
 
@@ -61,6 +61,60 @@ class MemberClientMixin:
 
     def post(self, client, path, data=None):
         return client.post(f"{API}{path}", data=json.dumps(data or {}), content_type="application/json")
+
+
+class TrainerSettingsTests(MemberClientMixin, TestCase):
+    """The trainer page's settings kept with the member's account: the newer copy wins, as the page's clock says."""
+
+    def setUp(self):
+        self.user = _user("anna")
+        self.anna = self.member(self.user)
+
+    def put(self, client, settings, saved_at):
+        return client.put(
+            f"{API}/settings",
+            data=json.dumps({"settings": settings, "saved_at": saved_at}),
+            content_type="application/json",
+        )
+
+    def test_nothing_kept_yet_is_an_empty_copy_of_no_age(self):
+        self.assertEqual(self.anna.get(f"{API}/settings").json(), {"settings": {}, "saved_at": 0})
+
+    def test_the_settings_are_kept_and_handed_back_as_they_came(self):
+        chosen = {"height": 191, "mass": 82, "circ": 2146, "plan": {"steps": [{"f": 2, "r": 6, "min": 5}]}}
+        self.assertEqual(
+            self.put(self.anna, chosen, 1_700_000_000_000).json(), {"settings": chosen, "saved_at": 1_700_000_000_000}
+        )
+        self.assertEqual(self.anna.get(f"{API}/settings").json(), {"settings": chosen, "saved_at": 1_700_000_000_000})
+
+    def test_an_older_copy_leaves_the_newer_one_and_is_handed_it(self):
+        self.put(self.anna, {"height": 191}, 2000)
+        answer = self.put(self.anna, {"height": 170}, 1000)
+        self.assertEqual(answer.json(), {"settings": {"height": 191}, "saved_at": 2000})
+        self.assertEqual(TrainerSettings.objects.get(user=self.user).data, {"height": 191})
+
+    def test_each_member_has_their_own(self):
+        self.put(self.anna, {"height": 191}, 2000)
+        boris = self.member(_user("boris"))
+        self.assertEqual(boris.get(f"{API}/settings").json(), {"settings": {}, "saved_at": 0})
+
+    def test_a_guest_keeps_nothing(self):
+        self.assertEqual(self.client.get(f"{API}/settings").status_code, 401)
+        self.assertEqual(self.put(self.client, {"height": 191}, 1).status_code, 401)
+        self.assertFalse(TrainerSettings.objects.exists())
+
+    def test_what_is_not_settings_is_refused(self):
+        for body in ({"settings": [1, 2], "saved_at": 1}, {"settings": {}, "saved_at": -1}, {"saved_at": 1}):
+            answer = self.anna.put(f"{API}/settings", data=json.dumps(body), content_type="application/json")
+            self.assertEqual(answer.status_code, 422, body)
+        too_large = {"plan": "x" * (64 * 1024)}
+        self.assertEqual(self.put(self.anna, too_large, 1).status_code, 422)
+        self.assertFalse(TrainerSettings.objects.exists())
+
+    def test_deleting_the_account_deletes_them(self):
+        self.put(self.anna, {"height": 191}, 1)
+        self.user.delete()
+        self.assertFalse(TrainerSettings.objects.exists())
 
 
 class WhoIsRidingTests(MemberClientMixin, TestCase):

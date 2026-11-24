@@ -18,5 +18,23 @@ const Site = {
   post(p, b) { return this.req('POST', p, b || {}); },
   loginHref() { return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(topPath()); }
 };
+// The settings with the member's account, so every device they sign in on shows the same: of the account's copy
+// and this browser's, the one changed later wins (settings.saved, the page's clock). Settings this browser never
+// changed are not sent: a fresh browser's defaults must not take the place of what the member chose elsewhere.
+const SettingsSync = {
+  timer: null,
+  async pull() {
+    let kept; try { kept = await Site.get('/settings'); } catch (e) { return; }
+    if ((kept.saved_at || 0) > (settings.saved || 0)) takeSettings(kept.settings, kept.saved_at);
+    else if (store.get('settings', null) !== null && (settings.saved || 1) > (kept.saved_at || 0)) this.push();
+  },
+  later() { clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 1500); },
+  push() {
+    if (!settings.saved) settings.saved = 1; // changed before the account kept them: older than any copy it has
+    Site.req('PUT', '/settings', { settings, saved_at: settings.saved })
+      .then(kept => { if (kept && (kept.saved_at || 0) > (settings.saved || 0)) takeSettings(kept.settings, kept.saved_at); })
+      .catch(() => {});
+  }
+};
 // the address the reader sees: the site's page that frames the trainer, or the trainer itself
 function topPath() { try { return window.top.location.pathname + window.top.location.search; } catch (e) { return location.pathname + location.search; } }

@@ -13,7 +13,7 @@ try { document.fonts && document.fonts.ready.then(() => { if (!renderer) return;
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };
 $('#btnRecClose').onclick = () => $('#recM').classList.add('hidden');
 $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = t('records.resetSure'); return; } Records.reset(); renderRecords(); renderMenu(); };
-['#circ', '#trainer', '#cadSpeed', '#bikeType', '#bikeKg', '#height', '#mass', '#bots', '#level', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderStartSum(); if (id === '#bikeType') { const bt = bikeType(); settings.bikeKg = bt.kg; settings.circ = bt.circ; $('#bikeKg').value = bt.kg; $('#circ').value = bt.circ; store.set('settings', settings); }
+['#circ', '#trainer', '#cadSpeed', '#bikeType', '#bikeKg', '#height', '#mass', '#bots', '#level', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderStartSum(); if (id === '#bikeType') { const bt = bikeType(); settings.bikeKg = bt.kg; settings.circ = bt.circ; $('#bikeKg').value = bt.kg; $('#circ').value = bt.circ; saveSettings(); }
     if (id === '#bikeKg') $('#bikeKg').value = settings.bikeKg;
     if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
 $('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' ' + t('u.w'); });
@@ -21,7 +21,7 @@ $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateM
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };
 $('#gearV').parentElement.style.pointerEvents = 'auto'; $('#gearV').title = t('plan.chainringTitle');
 $('#gearV').onclick = () => { gearF = gearF >= bikeF().length ? 1 : gearF + 1; updateModeUI(); };
-document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { settings.mode = b.dataset.mode; store.set('settings', settings); renderPlanEditor(); });
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { settings.mode = b.dataset.mode; saveSettings(); renderPlanEditor(); });
 $('#plFront').onchange = e => { settings.plan.front = e.target.value; savePlan(); renderPlanEditor(); updateModeUI(); };
 $('#plCass').onchange = e => { settings.plan.cass = e.target.value; savePlan(); renderPlanEditor(); updateModeUI(); };
 $('#plFrontCustom').onchange = e => { const a = parseTeeth(e.target.value, 20, 60).sort((x, y) => x - y).slice(0, 3); if (a.length) { settings.plan.frontCustom = a; savePlan(); } renderPlanEditor(); updateModeUI(); };
@@ -31,7 +31,7 @@ $('#plStartR').onchange = e => shiftPlan(0, +e.target.value - settings.plan.step
 $('#plAdd').onclick = () => { const st = settings.plan.steps, l = st[st.length - 1]; st.push({ f: l.f, r: Math.min(bikeR().length, l.r + 1), cad: l.cad, min: l.min }); savePlan(); renderPlanEditor(); };
 $('#plTpl').onclick = () => { const d = defaultPlan(); settings.plan.steps = d.steps; savePlan(); renderPlanEditor(); };
 // ERG on or off for the rest of the workout: the trainer holds the power, or follows the grade while the rider holds it
-$('#btnErg').onclick = () => { settings.erg = settings.erg === false; store.set('settings', settings); Trainer.last = -10; updateModeUI(); toast(settings.erg ? t('erg.on') : t('erg.off'), 3); };
+$('#btnErg').onclick = () => { settings.erg = settings.erg === false; saveSettings(); Trainer.last = -10; updateModeUI(); toast(settings.erg ? t('erg.on') : t('erg.off'), 3); };
 $('#btnPause').onclick = () => { if (phase === 'race' || phase === 'countdown') { paused = !groupRide; $('#pauseM').classList.remove('hidden'); } };
 $('#btnResume').onclick = () => { paused = false; $('#pauseM').classList.add('hidden'); };
 $('#btnFinish').onclick = () => { $('#pauseM').classList.add('hidden'); paused = false; if (rideMode === 'free') finishFree(); else if (rideMode === 'plan' && phase === 'race') finishWorkout(); };

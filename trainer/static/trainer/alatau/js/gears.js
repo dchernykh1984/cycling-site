@@ -30,13 +30,13 @@ if (!CASSETTES[settings.plan.cass] && settings.plan.cass !== 'custom') settings.
 if (!settings.plan.updated && settings.plan.cass === '11-32') settings.plan.cass = '10:11-28';
 let planSaveT = null;
 function savePlan() {
-  settings.plan.updated = Date.now(); store.set('settings', settings);
+  settings.plan.updated = Date.now(); saveSettings();
   if (Records.data) { Records.data.plan = settings.plan; clearTimeout(planSaveT); planSaveT = setTimeout(() => Records.save(), 1200); }
   renderPlanTotal();
 }
 function syncPlanFromRecords() {
   const rp = Records.data && Records.data.plan;
-  if (rp && Array.isArray(rp.steps) && (rp.updated || 0) > (settings.plan.updated || 0)) { settings.plan = JSON.parse(JSON.stringify(rp)); store.set('settings', settings); renderPlanEditor(); }
+  if (rp && Array.isArray(rp.steps) && (rp.updated || 0) > (settings.plan.updated || 0)) { settings.plan = JSON.parse(JSON.stringify(rp)); saveSettings(); renderPlanEditor(); }
 }
 const planTotalMin = () => settings.plan.steps.reduce((a, s) => a + (+s.min || 0), 0);
 function renderPlanTotal() {
