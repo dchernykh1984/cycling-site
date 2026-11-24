@@ -64,7 +64,9 @@ and protocols with the event's upload token. The API has no language prefix.
    settings are kept with the member: `GET /settings` hands back the copy kept and the site's stamp of it,
    `PUT /settings` keeps the page's object (64 KB at most) under a new stamp when the page names the copy
    it had (`base`), and otherwise leaves the later copy in place and answers with it
-   (`tests/test_virtual_ride_api.py`).
+   (`tests/test_virtual_ride_api.py`). A ride sent to Strava or intervals.icu carries an invitation in the
+   member's language: their profile's, else the one the call names in its `X-Page-Language` header, which
+   the trainer page sends with every call (`tests/test_virtual_ride_strava.py`).
 8. **Given** managing another member's registrations and photos ([accounts](accounts.md), issue
    #315), **Then** a confirmed member (session or token) reads their link, managers, requests
    waiting and members (`GET /managing/`), makes a link or a new one -- 409 while their profile has
