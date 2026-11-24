@@ -24,22 +24,38 @@ from .models import VERSIONS_KEPT, Protocol, ProtocolSection
 # Strip elements that could redirect or load external code.
 # CSP (default-src 'none') already blocks most attack vectors; these regexes
 # are defense-in-depth for <script src=...>, <base>, and meta-refresh.
-_EXT_SCRIPT_RE = re.compile(
-    rb"<script\b[^>]*\bsrc\s*=[^>]*>.*?</script\s*>",
-    re.IGNORECASE | re.DOTALL,
-)
-_BASE_TAG_RE = re.compile(rb"<base\b[^>]*/?>", re.IGNORECASE)
-_META_REFRESH_RE = re.compile(
-    rb'<meta\b(?=[^>]*\bhttp-equiv\s*=\s*["\']?refresh)[^>]*/?>',
-    re.IGNORECASE,
-)
+# A tag runs to its first ">" -- or to the end, and is then kept -- and each is taken whole, so every
+# byte is read once: patterns that read far ahead, failed and started again a byte later took seconds
+# a view on a file of unclosed tags, holding the server meanwhile.
+_SCRIPT_TAG_RE = re.compile(rb"<script\b[^>]*>?", re.IGNORECASE)
+_SCRIPT_END_RE = re.compile(rb"</script\s*>", re.IGNORECASE)
+_SRC_RE = re.compile(rb"\bsrc\s*=", re.IGNORECASE)
+_BASE_TAG_RE = re.compile(rb"<base\b[^>]*>?", re.IGNORECASE)
+_META_TAG_RE = re.compile(rb"<meta\b[^>]*>?", re.IGNORECASE)
+_REFRESH_RE = re.compile(rb'\bhttp-equiv\s*=\s*["\']?refresh', re.IGNORECASE)
+
+
+def _strip_external_scripts(content: bytes) -> bytes:
+    """Every ``<script src=...>`` left out with its body, up to the first ``</script>`` after it."""
+    kept, pos = [], 0
+    for tag in _SCRIPT_TAG_RE.finditer(content):
+        if tag.start() < pos or not tag.group().endswith(b">") or not _SRC_RE.search(tag.group()):
+            continue
+        end = _SCRIPT_END_RE.search(content, tag.end())
+        if end is None:  # nothing closes it, nor any script after it
+            break
+        kept.append(content[pos : tag.start()])
+        pos = end.end()
+    kept.append(content[pos:])
+    return b"".join(kept)
 
 
 def _sanitize_protocol_html(content: bytes) -> bytes:
-    content = _EXT_SCRIPT_RE.sub(b"", content)
-    content = _BASE_TAG_RE.sub(b"", content)
-    content = _META_REFRESH_RE.sub(b"", content)
-    return content
+    content = _strip_external_scripts(content)
+    content = _BASE_TAG_RE.sub(lambda tag: b"" if tag.group().endswith(b">") else tag.group(), content)
+    return _META_TAG_RE.sub(
+        lambda tag: b"" if tag.group().endswith(b">") and _REFRESH_RE.search(tag.group()) else tag.group(), content
+    )
 
 
 _RESIZE_SCRIPT = (
