@@ -457,6 +457,7 @@ _A_MEMBER_ASKS = {
     "GET /api/v1/virtual-ride/me",
     "GET /api/v1/virtual-ride/records",
     "GET /api/v1/virtual-ride/rides?limit=30",
+    "GET /api/v1/virtual-ride/settings",
     "POST /api/v1/virtual-ride/presence",
 }
 
@@ -482,7 +483,7 @@ def test_the_trainer_asks_the_site_only_what_a_ride_needs(page: Page, live_serve
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(1500)  # the lobby reports itself once settled
     # the ride itself runs in the browser: a guest is only asked who they are, a member also gets their
-    # records and tells the lobby where they are -- in the fields the site takes, nothing more
+    # records and settings and tells the lobby where they are -- in the fields the site takes, nothing more
     assert set(asked) <= (_A_MEMBER_ASKS if member else {"GET /api/v1/virtual-ride/me"}), asked
     assert all(set(body) <= set(PresenceIn.model_fields) for body in sent), sent
     ready = page.frame_locator("iframe.virtual-ride-frame").locator("html").evaluate("() => phase === 'menu'")
@@ -1241,7 +1242,33 @@ def test_an_old_browser_s_settings_never_replace_the_account_s(page: Page, live_
 
     member = _member_on_the_trainer(page, live_server, stored={"height": 185, "mass": 70})
     TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82}, saved_at=1000)
-    with page.expect_response(lambda r: r.url.endswith("/virtual-ride/settings") and r.request.method == "PUT"):
-        _trainer_in_its_menu(page, live_server)
+    sent = []
+    page.on("request", lambda r: sent.append(r.method) if r.url.endswith("/virtual-ride/settings") else None)
+    _trainer_in_its_menu(page, live_server)
     expect(page.locator("#height")).to_have_value("191")
+    page.wait_for_timeout(2500)  # past the pause a change waits before it is sent
+    assert sent == ["GET"], sent
     assert _kept(member) == ({"height": 191, "mass": 82}, 1000)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("own_copy", [True, False])
+def test_a_browser_another_member_used_never_sends_their_settings_into_this_one_s_account(
+    page: Page, live_server, own_copy
+):
+    from trainer.models import TrainerSettings
+
+    other = {"height": 185, "mass": 70, "owner": 987654, "synced": 5, "unsent": True}
+    member = _member_on_the_trainer(page, live_server, stored=other)
+    if own_copy:
+        TrainerSettings.objects.create(user=member, data={"height": 191, "mass": 82}, saved_at=1000)
+    sent = []
+    page.on("request", lambda r: sent.append(r.method) if r.url.endswith("/virtual-ride/settings") else None)
+    _trainer_in_its_menu(page, live_server)
+    page.wait_for_timeout(2500)  # past the pause a change waits before it is sent
+    assert sent == ["GET"], sent
+    if own_copy:
+        expect(page.locator("#height")).to_have_value("191")
+        assert _kept(member) == ({"height": 191, "mass": 82}, 1000)
+    else:
+        assert _kept(member) is None
