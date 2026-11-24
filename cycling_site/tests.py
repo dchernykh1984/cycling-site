@@ -432,6 +432,14 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertIn("background-color: #ff0", out)
         self.assertNotIn("position", out)
 
+    def test_a_colour_of_a_long_run_of_spaces_is_refused_in_well_under_a_second(self):
+        # A protocol's header lines are sanitised on every draw: 100 lines of 20 000 such spaces took 80 seconds while
+        # the spaces could be read two ways. The bound is generous; a check gone quadratic still fails it.
+        started = time.perf_counter()
+        out = sanitize_rich_html('<span style="color: rgb(' + " " * 40000 + 'x)">a</span>')
+        self.assertLess(time.perf_counter() - started, 1.0)
+        self.assertNotIn("rgb", out)
+
     def test_align_and_indent_classes_kept_others_dropped(self):
         out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
         self.assertIn('class="ql-align-center"', out)
