@@ -1,6 +1,7 @@
 import hashlib
 import shutil
 import tempfile
+import time
 
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -380,6 +381,31 @@ class ProtocolHtmlTest(TestCase):
         body = _inject_resize_script(b"<body></body>", {"hash": "</script><b>", "is_live": True, "shown": "html"})
         self.assertNotIn(b"</script><b>", body)
         self.assertIn(b"\\u003c/script>", body)
+
+    def test_a_script_from_elsewhere_a_base_and_a_refresh_are_left_out_and_the_rest_kept(self):
+        protocol = self._create_protocol(
+            b'<html><head><base href="https://elsewhere.example/"><meta http-equiv="refresh" content="0;url=x">'
+            b'<meta charset="utf-8"><SCRIPT SRC="https://elsewhere.example/x.js"></script ></head>'
+            b"<body><script>var own = 1;</script><table><tr><td>8,4</td></tr></table>"
+            b"<script src=y.js>var left = 1;</script></body></html>"
+        )
+        body = self.client.get(f"/ru/protocols/{protocol.pk}/html/").content
+        for gone in (b"elsewhere.example", b"refresh", b"y.js", b"var left"):
+            self.assertNotIn(gone, body)
+        for kept in (b'<meta charset="utf-8">', b"<script>var own = 1;</script>", b"<td>8,4</td>"):
+            self.assertIn(kept, body)
+
+    def test_a_file_of_unclosed_tags_is_served_in_well_under_a_second(self):
+        # Each of these took 17 to 50 seconds a view while the patterns read ahead, failed and started again a
+        # byte later. The bound is generous, so a slow runner passes it and a quadratic pattern still fails it.
+        for content in (b"<script src=x>" * 20000, b"<script " * 30000, b"<base" * 50000, b"<meta " * 40000):
+            with self.subTest(tag=content[:6]):
+                Protocol.objects.all().delete()
+                protocol = self._create_protocol(content)
+                started = time.perf_counter()
+                response = self.client.get(f"/ru/protocols/{protocol.pk}/html/")
+                self.assertLess(time.perf_counter() - started, 1.0)
+                self.assertEqual(response.status_code, 200)
 
     def test_protocol_without_file_returns_404(self):
         protocol = Protocol.objects.create(
