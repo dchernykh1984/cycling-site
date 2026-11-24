@@ -5,7 +5,8 @@
 feat/menu-my-account on 2026-11-21, its place before Search against feat/menu-cabinet-before-search,
 the profile in a desktop's row against branch menu-cabinet-desktop-deploy-schedule on 2026-11-22, the virtual
 ride's settings with the account, remembered devices, setup layout and ride invitation against branch
-virtual-ride-tweaks on 2026-11-24
+virtual-ride-tweaks on 2026-11-24, the setup on a 320 px phone (Safari's menus, the route cards) against branch
+fix/trainer-webkit-narrow-setup on 2026-11-24
 **Code**: `cycling_site/` (templates `base.html`, `_setup_hint.html`, `_share_button.html`;
 `setup_hints.py`, `context_processors.py`, `middleware.py`, `richtext.py`, `storage.py`), `home/` (home page, site
 content, legal pages), `search/`
