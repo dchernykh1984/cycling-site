@@ -134,8 +134,9 @@ class LongFileNameTest(_MediaMixin, TestCase):
             return Client(raise_request_exception=False).post(URL, data)
 
     def test_a_long_file_name_is_cut_to_fit_however_often_it_comes(self):
-        # 73 characters failed once a version's name was taken, on the second upload; 81 failed at once.
-        for name in ("a" * 68 + ".html", "b" * 76 + ".html", "c." * 60 + "html"):
+        # 73 characters failed once a version's name was taken, on the second upload; 81 failed at once. Letters of
+        # 4 bytes fit the column cut to 67 and still overran the 255 bytes a Linux file name holds.
+        for name in ("a" * 68 + ".html", "b" * 76 + ".html", "c." * 60 + "html", "\U0001d411" * 90 + ".html"):
             with self.subTest(length=len(name)):
                 Protocol.objects.all().delete()
                 for text in ("first", "second", "third"):
@@ -145,6 +146,9 @@ class LongFileNameTest(_MediaMixin, TestCase):
                     self.assertIn(b"third", stored.read())
                 names = [protocol.html_file.name, *(v.html_file.name for v in protocol.versions.all())]
                 self.assertTrue(all(stored_name.endswith(".html") for stored_name in names), names)
+                self.assertTrue(
+                    all(len(stored_name.rpartition("/")[2].encode()) <= 255 for stored_name in names), names
+                )
 
 
 class ConcurrentUploadTest(_MediaMixin, TransactionTestCase):

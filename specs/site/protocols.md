@@ -156,8 +156,9 @@ their heats (issue #454).
   type, an over-size file or neither a file nor a document: 400; a stage label over its 200
   characters: 422 naming the limit, and nothing kept; GET on the upload endpoint: 405.
 - A section number below 1 or beyond the column's range, or one the event does not have: 400.
-- An HTML file's own name is cut to fit the name the site stores it under, upload after upload: the
-  name is the site's, and a reader gets the file as `protocol-<id>.html`, so no name is too long.
+- An HTML file's own name is cut to fit the name the site stores it under, and the 255 bytes a file
+  name holds on the server's disk, upload after upload: the name is the site's, and a reader gets the
+  file as `protocol-<id>.html`, so no name is too long.
 - A protocol of an event that is not approved, hidden or deleted -- its page, its file, its fragment
   and its last-updated hash -- is 404; a protocol of an invite-only event is 404 to anyone not let in.
   So the event's page -- which its managers still open while it is hidden, and its author and
