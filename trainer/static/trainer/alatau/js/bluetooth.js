@@ -301,6 +301,7 @@ function renderDevs() {
     li.innerHTML = '<div><b></b><br><small></small><div class="tags">' + tags + '</div></div>';
     li.querySelector('b').textContent = d.name; li.querySelector('small').textContent = d.status === 'online' ? t('dev.online') : d.status === 'reconnecting' ? t('dev.reconnecting') : t('dev.connecting');
     const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = t('dev.disconnect'); btn.onclick = () => Sensors.remove(d);
+    btn.setAttribute('aria-label', t('dev.disconnect') + ': ' + d.name); // which device, for a screen reader: the words first
     li.appendChild(btn); ul.appendChild(li);
   });
   // remembered devices not connected now: one press connects one, Forget drops it
@@ -310,6 +311,7 @@ function renderDevs() {
     li.querySelector('b').textContent = s.name || t('dev.unnamed'); li.querySelector('small').textContent = t('dev.notConnected');
     [[t('dev.connectSaved'), () => Sensors.reopen(s)], [t('dev.forget'), () => Sensors.forget(s)]].forEach(([label, act]) => {
       const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = label; btn.onclick = act;
+      btn.setAttribute('aria-label', label + ': ' + (s.name || t('dev.unnamed')));
       li.querySelector('.devBtns').appendChild(btn);
     });
     ul.appendChild(li);
