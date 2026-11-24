@@ -36,7 +36,8 @@ function saveSettings() {
   settings.unsent = true; store.set('settings', settings);
   if (Records.synced) SettingsSync.later();
 }
-// the account's copy, saved later than this browser's: taken whole, and the menu shows it
+// the account's copy, saved later than this browser's: laid over it -- a key the copy lacks stays as it was here --
+// and the menu shows the result
 function takeSettings(kept, savedAt) {
   if (!kept || typeof kept !== 'object' || Array.isArray(kept)) return;
   Object.assign(settings, kept, { owner: SettingsSync.me(), synced: savedAt, unsent: false }); store.set('settings', settings);
