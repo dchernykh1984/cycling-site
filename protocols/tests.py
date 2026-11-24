@@ -410,6 +410,19 @@ class ProtocolHtmlTest(TestCase):
         for kept in (b'<meta charset="utf-8">', b"<script>var own = 1;</script>", b"<td>8,4</td>"):
             self.assertIn(kept, body)
 
+    def test_a_malformed_file_loses_no_markup_of_its_own(self):
+        # A script tag inside one being left out, or a <base> no ">" closes, must not take the protocol's own markup
+        # with it: what the patterns before the one reading kept, the strip keeps.
+        for content, served in (
+            (b"<script src=a>x<script src=b</script>KEEP<script>own</script>", b"KEEP<script>own</script>"),
+            (b"x<base", b"x<base"),
+        ):
+            with self.subTest(content=content[:14]):
+                Protocol.objects.all().delete()
+                protocol = self._create_protocol(content)
+                body = self.client.get(f"/ru/protocols/{protocol.pk}/html/").content
+                self.assertEqual(body.partition(b"<script>(function(){")[0], served)  # then the view's own script
+
     def test_a_file_of_unclosed_tags_is_served_in_well_under_a_second(self):
         # Each of these took 17 to 50 seconds a view while the patterns read ahead, failed and started again a
         # byte later. The bound is generous, so a slow runner passes it and a quadratic pattern still fails it.
