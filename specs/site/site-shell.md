@@ -36,7 +36,9 @@ home page, Map, Knowledge Base) is addressed under its own language's prefix
 
 **Virtual ride** (`trainer/`, `/<lang>/virtual-ride/`) frames an indoor-trainer page,
 `trainer/static/trainer/alatau.html`, in an iframe that may use Web Bluetooth, the screen wake
-lock and full screen; a link opens the same page on its own. The page is a static file that loads
+lock and full screen. "Open full screen" puts that frame on the whole screen, as a protocol's button does, and
+Escape brings the page back; where a frame cannot go full screen (an iPhone) the link opens the same page on its
+own (`trainer/static/trainer/virtual-ride.js`, `tests/e2e/test_virtual_ride.py`). The page is a static file that loads
 its own files from `trainer/static/trainer/alatau/`, in the order it lists them: `alatau.css`, its
 words (`text/<lang>.js`), its maps (`maps/`, below), its rider catalogue (`data/`) and its code, a file
 per part of it (`js/`: the physics, the ride, the scene, the riders, the devices, the HUD, the site's API and the
