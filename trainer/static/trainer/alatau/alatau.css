@@ -18,6 +18,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0B1118}
 body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 *,*::before,*::after{box-sizing:border-box}
 button,input,select{font:inherit;color:inherit}
+/* WebKit counts a menu's chosen text wider than the menu as the page's width: a narrow phone scrolled sideways */
+select{overflow:hidden}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}

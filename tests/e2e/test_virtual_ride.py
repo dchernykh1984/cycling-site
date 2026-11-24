@@ -875,9 +875,9 @@ _FRAMES = """(() => {
 })()"""
 
 
-def _trainer_in_its_menu(page: Page, live_server) -> None:
+def _trainer_in_its_menu(page: Page, live_server, lang: str = "en") -> None:
     page.add_init_script(_FRAMES)
-    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang={lang}")
     page.evaluate("drawFrame(16)")
     if not page.evaluate("typeof phase !== 'undefined' && phase === 'menu'"):
         pytest.skip("this browser cannot draw 3D, so no ride starts in it")
@@ -1287,6 +1287,22 @@ def test_a_device_s_long_name_never_pushes_the_setup_sideways_on_a_narrow_phone(
     page.add_init_script(f"localStorage.setItem('alatau:devices', {json.dumps(json.dumps(devices))})")
     page.set_viewport_size({"width": 320, "height": 700})
     _trainer_in_its_menu(page, live_server)
+    wide, room = page.evaluate(
+        "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
+    )
+    assert wide <= room, (wide, room)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_a_menu_s_longest_choice_never_pushes_the_setup_sideways_on_a_narrow_phone(page: Page, live_server, lang):
+    page.set_viewport_size({"width": 320, "height": 700})
+    _trainer_in_its_menu(page, live_server, lang)
+    page.evaluate(
+        "document.querySelectorAll('.setup select').forEach(menu => {"
+        " const longest = [...menu.options].sort((a, b) => b.text.length - a.text.length)[0];"
+        " if (longest) menu.value = longest.value; })"
+    )
     wide, room = page.evaluate(
         "[document.querySelector('.setup').scrollWidth, document.querySelector('.setup').clientWidth]"
     )
