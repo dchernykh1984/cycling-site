@@ -182,27 +182,81 @@ class BLEDev {
   }
   disconnect() { this.manual = true; try { this.dev.gatt.disconnect(); } catch (e) {} }
 }
+const SERVICES = [UUID.ftms, UUID.cp, UUID.csc, UUID.hr];
+const ANY_SENSOR = { filters: SERVICES.map(u => ({ services: [u] })), optionalServices: SERVICES };
+// Devices once connected are remembered by the id the browser gives them for this site and by their name.
+// A page opens a remembered device without the chooser only where the browser lists the devices the site was
+// given (navigator.bluetooth.getDevices) -- Chrome behind chrome://flags/#enable-web-bluetooth-new-permissions-backend;
+// elsewhere Connect opens the chooser with that device alone in it.
 const Sensors = {
   devs: [],
+  saved: [], auto: false,
+  // what the page remembered: read as the page starts, the browser's storage being the page's (js/helpers.js)
+  restore() {
+    const kept = store.get('devices', []);
+    this.saved = (Array.isArray(kept) ? kept : []).filter(s => s && typeof s.id === 'string').slice(0, 8);
+    this.auto = store.get('btAuto', false) === true;
+  },
   supported() { return !!(navigator.bluetooth && navigator.bluetooth.requestDevice); },
+  canReopen() { return !!(navigator.bluetooth && navigator.bluetooth.getDevices); },
   async add() {
     if (!this.supported()) { btHint(isIOS() ? t('bt.iosAdd') : t('bt.noneAdd'), true); return; }
+    await this.pick(ANY_SENSOR);
+  },
+  async pick(options) {
     let dev;
-    try {
-      dev = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [UUID.ftms] }, { services: [UUID.cp] }, { services: [UUID.csc] }, { services: [UUID.hr] }],
-        optionalServices: [UUID.ftms, UUID.cp, UUID.csc, UUID.hr]
-      });
-    } catch (e) {
+    try { dev = await navigator.bluetooth.requestDevice(options); } catch (e) {
       if (e.name === 'NotFoundError') return; // окно выбора закрыто
       btHint(e.name === 'SecurityError' ? t('bt.blocked') : t('bt.pickFailed', { msg: e.message }), true); return;
     }
-    if (this.devs.some(d => d.dev.id === dev.id)) { btHint(t('bt.already')); return; }
+    await this.open(dev);
+  },
+  // quiet: opened with the page, so a device still asleep is tried again until it wakes, not given up on
+  async open(dev, quiet) {
+    if (this.devs.some(d => d.dev.id === dev.id)) { if (!quiet) btHint(t('bt.already')); return; }
     const d = new BLEDev(dev); this.devs.push(d); this.changed();
     try {
-      await d.connect();
+      await d.connect(); this.remember(d);
       btHint(d.roles.has('trainer') ? (d.ctrl ? t('bt.trainerCtrl') : t('bt.trainerNoCtrl')) : d.roles.has('hr') && d.roles.size === 1 ? t('bt.hrOk') : t('bt.connected', { name: d.name }));
-    } catch (e) { this.devs = this.devs.filter(x => x !== d); this.changed(); btHint(t('bt.failed'), true); }
+    } catch (e) {
+      if (quiet) { d.onDisc(); return; }
+      this.devs = this.devs.filter(x => x !== d); this.changed(); btHint(t('bt.failed'), true);
+    }
+  },
+  // the newest first; one entry a device, matched by its id or, where the browser gave it a new id, its name
+  remember(d) {
+    const name = d.dev.name || '';
+    this.saved = [{ id: d.dev.id, name }, ...this.saved.filter(s => s.id !== d.dev.id && !(name && s.name === name))].slice(0, 8);
+    store.set('devices', this.saved); this.changed();
+  },
+  async permitted(entry) {
+    if (!this.canReopen()) return null;
+    try { return (await navigator.bluetooth.getDevices()).find(x => x.id === entry.id) || null; } catch (e) { return null; }
+  },
+  async reopen(entry) {
+    if (!this.supported()) { btHint(isIOS() ? t('bt.iosAdd') : t('bt.noneAdd'), true); return; }
+    const dev = await this.permitted(entry);
+    if (dev) await this.open(dev);
+    else await this.pick(entry.name ? { filters: [{ name: entry.name }], optionalServices: SERVICES } : ANY_SENSOR);
+  },
+  forget(entry) {
+    this.saved = this.saved.filter(s => s.id !== entry.id); store.set('devices', this.saved); this.changed();
+    this.permitted(entry).then(dev => { if (dev && dev.forget) dev.forget().catch(() => {}); });
+  },
+  setAuto(on) {
+    this.auto = on; store.set('btAuto', on);
+    if (on && this.supported() && !this.canReopen()) btHint(t('bt.autoBlocked'), true); else if (on) this.autoConnect();
+  },
+  // with the page: every remembered device the browser still lets the site open, each one tried until it wakes
+  async autoConnect() {
+    if (!this.auto || !this.saved.length || !this.supported()) return;
+    if (!this.canReopen()) { btHint(t('bt.autoBlocked'), true); return; }
+    for (const entry of this.saved) {
+      const dev = await this.permitted(entry);
+      if (!dev) continue;
+      if (dev.watchAdvertisements) dev.watchAdvertisements().catch(() => {}); // so the browser looks for it while it sleeps
+      this.open(dev, true);
+    }
   },
   remove(d) { d.disconnect(); this.devs = this.devs.filter(x => x !== d); this.changed(); },
   tick(now) { this.devs.forEach(d => d.tick(now)); },
@@ -249,4 +303,16 @@ function renderDevs() {
     const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = t('dev.disconnect'); btn.onclick = () => Sensors.remove(d);
     li.appendChild(btn); ul.appendChild(li);
   });
+  // remembered devices not connected now: one press connects one, Forget drops it
+  Sensors.saved.filter(s => !Sensors.devs.some(d => d.dev.id === s.id)).forEach(s => {
+    const li = document.createElement('li'); li.className = 'dev saved';
+    li.innerHTML = '<div><b></b><br><small></small></div><div class="devBtns"></div>';
+    li.querySelector('b').textContent = s.name || t('dev.unnamed'); li.querySelector('small').textContent = t('dev.notConnected');
+    [[t('dev.connectSaved'), () => Sensors.reopen(s)], [t('dev.forget'), () => Sensors.forget(s)]].forEach(([label, act]) => {
+      const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button'; btn.textContent = label; btn.onclick = act;
+      li.querySelector('.devBtns').appendChild(btn);
+    });
+    ul.appendChild(li);
+  });
+  const auto = $('#btAuto'); if (auto) auto.checked = Sensors.auto;
 }

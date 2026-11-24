@@ -53,6 +53,13 @@ slopes further out, so it is gone 4.2 m back or 1.2-1.4 m aside; a smart trainer
 of that drag within the second. A cadence sensor alone rides by the physics, from the trainer's
 power curve, unless the rider chose the gear's speed; a step of the own plan by gears rides at its
 gear's speed whatever the choice.
+Every device once connected is remembered in the browser, by the id the browser gives it for the site
+and its name, newest first, at most eight; one not connected now is listed with Connect and Forget.
+Connect opens it again without the chooser where the browser lists the site's devices
+(`navigator.bluetooth.getDevices`, in Chrome behind `chrome://flags/#enable-web-bluetooth-new-permissions-backend`),
+and elsewhere opens the chooser with that device alone in it. With "Connect automatically" on, the
+page opens every remembered device it may as it starts and tries each until it wakes; where the
+browser does not allow it, the box says which flag turns it on (`tests/e2e/test_virtual_ride.py`).
 A smart trainer is sent one command at a time, each once it has answered the one
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
