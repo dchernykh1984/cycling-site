@@ -9,7 +9,11 @@ function renderBodyHint() {
 let paused = false, photo = false, demoP = 150;
 let routeSel = store.get('route', null);
 if (!ROUTES.some(r => r.id === routeSel)) routeSel = ROUTES[0].id; // the first visit, or a route no map has any more
-const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me' }, store.get('settings', {}));
+const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me', wind: { on: false, from: 0, ms: 5 } }, store.get('settings', {}));
+// the wind the settings ask for, { ms, from }, or none; the words for it: "5 m/s from the north"
+const ownWind = () => settings.wind && settings.wind.on && settings.wind.ms > 0 ? { ms: settings.wind.ms, from: settings.wind.from || 0 } : null;
+const windFrom = from => [t('wind.n'), t('wind.ne'), t('wind.e'), t('wind.se'), t('wind.s'), t('wind.sw'), t('wind.w'), t('wind.nw')][Math.round((from || 0) / 45) % 8];
+const windWords = w => t('wind.sum', { ms: Math.round(w.ms), from: windFrom(w.from) }); // whole m/s, as it is set
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
 // #471: a cadence sensor alone rides by the physics by default, once for everyone: the gear's speed was the default
 // and is kept by whoever picks it again
@@ -69,12 +73,14 @@ function renderStartSum() {
   const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? t('sum.group') : settings.mode === 'plan' ? planSummary() : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
   const sm = Sensors.mode(), dev = sm === 'demo' ? t('sum.demo') : sm === 'power' ? t('sum.power') : sm === 'speed' ? t('sum.speed') : t('sum.cadence');
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
-  el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', ' + t('sum.hr') : '') + ', ' + lc(bikeType().name) + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' ' + t('u.kg') + '.';
+  const w = (typeof MP !== 'undefined' && mpMyGroup()) ? null : ownWind();
+  el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', ' + t('sum.hr') : '') + ', ' + lc(bikeType().name) + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' ' + t('u.kg') + (w ? ', ' + windWords(w) : '') + '.';
 }
 // страница 2: заезд
 function startRace() {
   readSettings();
   rideMode = groupRide ? 'race' : settings.mode;
+  rideWind = groupRide ? groupRide.wind : ownWind(); // in a group race, its host's: everyone in it rides in one air
   const route = ROUTES.find(r => r.id === routeSel);
   showLoading(true);
   setTimeout(() => {
@@ -109,7 +115,7 @@ function finishRace() {
   const t = me.finishT, st = me.stats, distKm = (world.FIN - world.S0) / 1000;
   const list = raceList(), place = list.findIndex(x => x.me) + 1, humans = list.filter(x => x.human).length;
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
-  const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char, group: !!groupRide };
+  const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char, group: !!groupRide, wind: rideWind };
   const rec = Records.add(ride, me.powerLog || []), pb = rec.prev && rec.prev.time;
   $('#resTitle').textContent = place === 1 && bots.length ? (groupRide ? tr('res.winGroup') : tr('res.win')) : tr('res.finish');
   $('#resSub').textContent = world.route.name + (bots.length ? tr('res.place', { p: place, n: list.length }) : '') + (pb && t >= pb ? tr('res.best', { t: fmtTime(pb) }) : '.') + (humans && list.some(x => x.human && x.est) ? tr('res.pending') : '');

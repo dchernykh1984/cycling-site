@@ -16,6 +16,7 @@ $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.arm
 ['#circ', '#trainer', '#cadSpeed', '#bikeType', '#bikeKg', '#height', '#mass', '#bots', '#level', '#difficulty', '#hrmax', '#view'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderStartSum(); if (id === '#bikeType') { const bt = bikeType(); settings.bikeKg = bt.kg; settings.circ = bt.circ; $('#bikeKg').value = bt.kg; $('#circ').value = bt.circ; saveSettings(); }
     if (id === '#bikeKg') $('#bikeKg').value = settings.bikeKg;
     if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
+['#windOn', '#windFrom', '#windMs'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderWind(); renderStartSum(); }));
 $('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' ' + t('u.w'); });
 $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateModeUI(); };
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };

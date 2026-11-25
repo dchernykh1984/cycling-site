@@ -28,6 +28,6 @@ function recordsFromServer(sum, rides, plan) {
     v: 1, routes, peaks, plan,
     maxSpeed: sum.max_speed_kmh ? { v: sum.max_speed_kmh } : null,
     totals: { rides: sum.rides, dist: sum.distance_km, gain: sum.elevation_m, time: sum.time_s },
-    history: (rides || []).map(h => ({ id: 's' + h.id, date: Date.parse(h.finished_at), kind: h.kind === 'race' ? undefined : h.kind, route: h.route, time: h.duration_s, avgSpeed: h.avg_speed_kmh, avgPower: h.avg_power_w || 0, place: h.place || 1, of: h.field_size || 1, demo: h.power_source === 'demo' }))
+    history: (rides || []).map(h => ({ id: 's' + h.id, date: Date.parse(h.finished_at), kind: h.kind === 'race' ? undefined : h.kind, route: h.route, time: h.duration_s, avgSpeed: h.avg_speed_kmh, avgPower: h.avg_power_w || 0, place: h.place || 1, of: h.field_size || 1, demo: h.power_source === 'demo', wind: h.wind_ms ? { ms: h.wind_ms, from: h.wind_from_deg } : null }))
   };
 }

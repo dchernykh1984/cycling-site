@@ -178,6 +178,32 @@ class SavedRidesTests(MemberClientMixin, TestCase):
         self.assertEqual(summary["routes"][0]["duration_s"], 1500)
         self.assertEqual(summary["peaks"]["peak_5s_w"], 600)
 
+    def test_a_ride_with_wind_is_kept_with_it_and_counts_for_power_but_sets_no_time_or_speed(self):
+        self.post(self.client_a, "/rides", _ride())
+        windy = _ride(duration_s=1100, max_speed_kmh=60, peak_5s_w=700, wind_ms=8, wind_from_deg=315)
+        saved = self.post(self.client_a, "/rides", windy).json()
+        # a wind behind the rider is no record of theirs; their power is
+        self.assertEqual(saved["records"], ["peak_5s_w"])
+        self.assertEqual((saved["ride"]["wind_ms"], saved["ride"]["wind_from_deg"]), (8, 315))
+        summary = self.client_a.get(f"{API}/records").json()
+        self.assertEqual(summary["routes"][0]["duration_s"], 1500)
+        self.assertEqual(summary["max_speed_kmh"], 41.2)
+        self.assertEqual(summary["peaks"]["peak_5s_w"], 700)
+        self.assertEqual(self.client_a.get(f"{API}/rides").json()[0]["wind_ms"], 8)
+
+    def test_the_first_race_without_wind_on_a_route_is_its_first_result(self):
+        self.post(self.client_a, "/rides", _ride(wind_ms=5))
+        self.assertEqual(self.post(self.client_a, "/rides", _ride(duration_s=1700)).json()["records"], ["route_first"])
+
+    def test_a_wind_is_a_speed_and_a_bearing(self):
+        self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=31)).status_code, 422)
+        self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=5, wind_from_deg=360)).status_code, 422)
+
+    def test_the_profile_marks_a_ride_ridden_with_wind(self):
+        self.post(self.client_a, "/rides", _ride(wind_ms=6))
+        with translation_override("en"):
+            self.assertContains(self.client_a.get(reverse("account_profile")), ", " + gettext("wind") + "</span>")
+
     def test_records_sum_up_every_ride_and_keep_the_best_per_route(self):
         self.post(self.client_a, "/rides", _ride())
         self.post(self.client_a, "/rides", _ride(duration_s=1450))
@@ -251,6 +277,17 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         joined = self.post(self.client_g, f"/groups/{group_id}/join").json()
         self.assertTrue(joined["is_member"])
         self.assertEqual({m["user_id"] for m in joined["members"]}, {self.host.pk, self.guest.pk})
+
+    def test_a_race_keeps_its_host_s_wind_for_every_member(self):
+        group_id = self.create(start_in_s=60, wind_ms=6, wind_from_deg=270).json()["id"]
+        seen = self.post(self.client_g, f"/groups/{group_id}/join").json()
+        self.assertEqual((seen["wind_ms"], seen["wind_from_deg"]), (6, 270))
+        listed = self.client_g.get(f"{API}/groups").json()[0]
+        self.assertEqual((listed["wind_ms"], listed["wind_from_deg"]), (6, 270))
+        # without one, the race is ridden in still air
+        GroupRide.objects.filter(pk=group_id).update(cancelled=True)
+        calm = self.create(start_in_s=60).json()
+        self.assertEqual(calm["wind_ms"], 0)
 
     def test_one_waiting_race_per_host(self):
         self.create()

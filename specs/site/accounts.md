@@ -149,7 +149,8 @@ once; confirming the address unlocks everything that writes.
 4. **Given** a member picks a skin, **Then** it is kept in their profile (see [skins](skins.md)).
 5. **Given** a member has finished rides on the virtual ride page, **Then** the profile shows their
    totals, best time per route with attempts, peak power over 5 s, 1, 5 and 20 min, top speed and the
-   latest rides; demo rides are listed but never count ([site shell](site-shell.md)).
+   latest rides; demo rides are listed but never count, and a ride with wind is marked "wind" and sets no
+   best time or top speed ([site shell](site-shell.md)).
 6. **Given** the "Virtual rides" card (issue #471), **Then** its "Where your rides go" block lists
    Strava and intervals.icu, each as the site offers it: connected or not.
    - A connected one carries the box "Send my rides to ..."; off keeps it connected and sends
