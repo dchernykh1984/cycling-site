@@ -81,20 +81,24 @@ def test_the_count_under_the_star_can_be_read_in_this_skin(page: Page, live_serv
 
 @pytest.mark.django_db(transaction=True)
 def test_the_star_stays_put_when_the_count_gains_a_digit(page: Page, live_server, superuser, approved_competition):
-    """A click taking the count from 99 to 100 moves neither the star nor the title (principle 5)."""
-    fans = User.objects.bulk_create(User(username=f"fan{n}", email=f"fan{n}@test.local") for n in range(99))
+    """A click taking the count from 999 to 1000 leaves the star's column as wide as the star (principle 5).
+
+    The column's width, not the star's place, is compared: an engine may draw the empty and the filled star
+    at different widths, which the count has nothing to do with.
+    """
+    fans = User.objects.bulk_create(User(username=f"fan{n}", email=f"fan{n}@test.local") for n in range(999))
     CompetitionFavorite.objects.bulk_create(
         CompetitionFavorite(user=fan, competition=approved_competition) for fan in fans
     )
     page.set_viewport_size({"width": 360, "height": 800})
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
-    star, title = page.locator("#favorite-btn"), page.locator(".event-heading h1")
-    before = (star.bounding_box(), title.bounding_box())
+    star, column = page.locator("#favorite-btn"), page.locator("#favorite-form")
+    assert column.bounding_box()["width"] == star.bounding_box()["width"]
 
     star.click()
-    expect(page.locator("#favorite-count")).to_have_text("100")
-    assert (star.bounding_box(), title.bounding_box()) == before
+    expect(page.locator("#favorite-count")).to_have_text("1000")
+    assert column.bounding_box()["width"] == star.bounding_box()["width"]
 
 
 @pytest.mark.django_db(transaction=True)
