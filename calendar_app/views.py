@@ -32,6 +32,7 @@ from accounts.access import ParticipantRequiredMixin
 from accounts.models import User
 from assistant.conversations import link as link_conversation
 from cycling_site.forms import flash_first_error, save_comment
+from cycling_site.sanitize import sanitize_rich_html
 from cycling_site.setup_hints import sign_in_url
 from locations.maps import map_links, start_point
 from locations.models import (
@@ -1350,6 +1351,33 @@ def _category_rows(comp, birth_date_mode: str = "") -> list[dict]:
     ]
 
 
+# A draft of an event another page hands the event form to start from (the virtual ride's "Add event"): kept for
+# the member's session until the event is submitted. Its words in each language, its date, and its types and
+# disciplines named in English, as every database's lists name them -- their ids are each database's own.
+EVENT_DRAFT = "event_draft"
+_DRAFT_WORDS = ("title_ru", "title_kk", "title_en", "preview_text_ru", "preview_text_kk", "preview_text_en")
+_DRAFT_RICH = ("description_ru", "description_kk", "description_en")
+# far more than a draft's words need, and little enough for a session to carry
+_DRAFT_MAX_CHARS = 20000
+
+
+class SubmitDraftView(ParticipantRequiredMixin, View):
+    """Keep a draft for the event form, then open the form filled with it; nothing is an event until submitted."""
+
+    def post(self, request):
+        draft = {name: request.POST.get(name, "")[:_DRAFT_MAX_CHARS] for name in _DRAFT_WORDS}
+        draft.update({name: sanitize_rich_html(request.POST.get(name, "")[:_DRAFT_MAX_CHARS]) for name in _DRAFT_RICH})
+        try:
+            draft["date_start"] = datetime.date.fromisoformat(request.POST.get("date_start", "")).isoformat()
+        except ValueError:
+            pass  # no date, or none a calendar has: the form asks for it
+        for field, model, name in (("event_types", EventType, "event_type"), ("disciplines", Discipline, "discipline")):
+            named = model.objects.filter(name_en__in=request.POST.getlist(name))
+            draft[field] = list(named.values_list("pk", flat=True))
+        request.session[EVENT_DRAFT] = draft
+        return redirect(reverse("calendar_submit") + "?draft=1")
+
+
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
     template_name = "calendar_app/submit.html"
 
@@ -1389,7 +1417,9 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
     def get(self, request):
         source = self._clone_source(request)
         if source is None:
-            form = SubmitCompetitionForm(user=request.user)
+            # a draft another page handed over (SubmitDraftView), when the address asks for it
+            draft = request.session.get(EVENT_DRAFT) if request.GET.get("draft") else None
+            form = SubmitCompetitionForm(initial=draft, user=request.user)
             reg_form = RegistrationSettingsForm()
             categories_json = "[]"
         else:
@@ -1463,6 +1493,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
             else:
+                request.session.pop(EVENT_DRAFT, None)  # the draft became an event
                 return redirect("calendar_list")
         return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
 
