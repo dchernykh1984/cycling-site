@@ -1,7 +1,8 @@
 """Personal records derived from a member's saved virtual rides.
 
 Records are computed from the rides rather than stored, so deleting a ride can never leave a stale
-record behind. Rides in demo mode (power set by hand) are kept in the history but never count.
+record behind. Rides in demo mode (power set by hand) are kept in the history but never count; rides with wind
+count for power, which is the rider's own, but set no route record or top speed, which a wind behind them makes.
 """
 
 from dataclasses import dataclass
@@ -19,6 +20,11 @@ def counted(user):
     return VirtualRide.objects.filter(user=user).exclude(power_source=VirtualRide.PowerSource.DEMO)
 
 
+def still_air(user):
+    """The counted rides that may set a time or a speed: those ridden without wind."""
+    return counted(user).filter(wind_ms=0)
+
+
 @dataclass
 class RouteBest:
     route: str
@@ -31,7 +37,7 @@ class RouteBest:
 
 def route_bests(user) -> list[RouteBest]:
     """The fastest race on each route the member has raced, with how many times they raced it."""
-    races = counted(user).filter(kind=VirtualRide.Kind.RACE)
+    races = still_air(user).filter(kind=VirtualRide.Kind.RACE)
     stats = {
         row["route"]: row for row in races.values("route").annotate(attempts=Count("id"), best_power=Max("avg_power_w"))
     }
@@ -57,7 +63,8 @@ def summary(user) -> dict:
     totals = rides.aggregate(
         rides=Count("id"), distance_m=Sum("distance_m"), elevation_m=Sum("elevation_gain_m"), time_s=Sum("duration_s")
     )
-    peaks = counted(user).aggregate(**{field: Max(field) for field in PEAK_FIELDS}, max_speed_kmh=Max("max_speed_kmh"))
+    peaks = counted(user).aggregate(**{field: Max(field) for field in PEAK_FIELDS})
+    peaks["max_speed_kmh"] = still_air(user).aggregate(top=Max("max_speed_kmh"))["top"]
     return {
         "rides": totals["rides"] or 0,
         "distance_km": round((totals["distance_m"] or 0) / 1000, 1),
@@ -80,20 +87,24 @@ def new_records(user, ride: VirtualRide) -> list[str]:
         return []
     before = counted(user).exclude(pk=ride.pk).filter(finished_at__lte=ride.finished_at)
     found = []
-    if ride.kind == VirtualRide.Kind.RACE:
-        best = before.filter(kind=VirtualRide.Kind.RACE, route=ride.route).aggregate(best=Min("duration_s"))["best"]
+    if ride.kind == VirtualRide.Kind.RACE and not ride.wind_ms:
+        best = before.filter(kind=VirtualRide.Kind.RACE, route=ride.route, wind_ms=0).aggregate(best=Min("duration_s"))[
+            "best"
+        ]
         if best is None:
             found.append("route_first")
         elif ride.duration_s < best:
             found.append("route_best")
     if not before.exists():
         return found
-    previous = before.aggregate(**{field: Max(field) for field in PEAK_FIELDS}, max_speed=Max("max_speed_kmh"))
+    previous = before.aggregate(**{field: Max(field) for field in PEAK_FIELDS})
+    previous["max_speed"] = before.filter(wind_ms=0).aggregate(top=Max("max_speed_kmh"))["top"]
     for field in PEAK_FIELDS:
         value = getattr(ride, field)
         if value and value > (previous[field] or 0):
             found.append(field)
-    if ride.max_speed_kmh > (previous["max_speed"] or 0):
+    # a top speed beats one ridden in still air, and none before it was
+    if not ride.wind_ms and previous["max_speed"] is not None and ride.max_speed_kmh > previous["max_speed"]:
         found.append("max_speed_kmh")
     return found
 

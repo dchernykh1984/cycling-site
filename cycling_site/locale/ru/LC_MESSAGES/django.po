@@ -5834,3 +5834,7 @@ msgstr "<strong>Уведомления об изменениях в аккаун
 #, python-format
 msgid "Ride with %(club)s!"
 msgstr "Катайся вместе с %(club)s!"
+
+#: accounts/templates/accounts/profile.html:302
+msgid "wind"
+msgstr "ветер"

@@ -6,6 +6,7 @@
 let world = null; // the course being ridden (js/track.js)
 let phase = 'loading', bots = [], me = null, raceT = 0, cdT = 0;
 let rideMode = 'race';  // режим текущего заезда: race | plan | free
+let rideWind = null; // the wind of the ride under way, { ms, from }: a group race's, else the rider's own when on
 // what the page does when something happens in the ride: go, lap, backToStart, sight, finish, planStep, planSoon, planDone
 const rideHooks = {};
 function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args); }
@@ -19,8 +20,11 @@ function wakeOf(r, o) {
   const T = world.T; let d = o.s - r.s; if (T.loop) d = ((d % T.L) + T.L) % T.L;
   return draftShare(d - BIKE_LENGTH, o.lane - r.lane);
 }
-// the air a rider rides in this step: its density at their height y, and the best wake among the riders ahead
+// the air a rider rides in this step: its density at their height y, the best wake among the riders ahead and the
+// wind along their way
+const _wa = {};
 function airAround(r, y) {
+  const o = sampleAt(world.T, r.s, _wa); r.tail = tailwind(rideWind, o.tx, o.tz);
   r.rho = airDensity(y); r.draft = wakeOf(r, me);
   for (const b of bots) r.draft = Math.max(r.draft, wakeOf(r, b));
 }

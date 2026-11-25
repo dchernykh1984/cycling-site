@@ -35,7 +35,8 @@ const Records = {
       avg_cadence_rpm: num(ride.avgCad, 0, 250), avg_hr_bpm: num(ride.avgHR, 0, 260), max_hr_bpm: me && me.stats && me.stats.maxHR ? num(me.stats.maxHR, 0, 260) : null,
       power_source: ride.demo ? 'demo' : ride.real ? 'measured' : 'estimated', place: ride.of > 1 ? ride.place : null, field_size: ride.of > 1 ? ride.of : null,
       peak_5s_w: num(peaks.p5, 0, 3000), peak_1m_w: num(peaks.p60, 0, 3000), peak_5m_w: num(peaks.p300, 0, 3000), peak_20m_w: num(peaks.p1200, 0, 3000),
-      track: !ride.demo && me && me.track && me.track.length > 1 ? me.track : null
+      track: !ride.demo && me && me.track && me.track.length > 1 ? me.track : null,
+      wind_ms: ride.wind ? ride.wind.ms : 0, wind_from_deg: ride.wind ? ride.wind.from : 0
     };
     Site.post('/rides', body)
       .then(res => { if (phase === 'done') { showServerRecords(res.records, ride, peaks); stravaShow(res.ride.id, res.strava); intervalsShow(res.ride.id, res.intervals); } return this.pull(); })
@@ -49,7 +50,8 @@ const Records = {
     const prev = D.routes[ride.route];
     const rr = prev ? Object.assign({}, prev) : { attempts: 0 };
     rr.attempts = (rr.attempts || 0) + 1;
-    if (!prev || !prev.time || ride.time < prev.time) {
+    // a wind behind the rider is no record of theirs: a ride with wind sets no route record, nor a top speed
+    if (!ride.wind && (!prev || !prev.time || ride.time < prev.time)) {
       news.push(prev && prev.time ? t('rec.bestFaster', { t: fmtTime(ride.time), d: fmtTime(prev.time - ride.time) }) : t('rec.first', { t: fmtTime(ride.time) }));
       Object.assign(rr, { time: ride.time, date: now, char: ride.char, demo: ride.demo, place: ride.place, of: ride.of });
     }
@@ -62,9 +64,9 @@ const Records = {
         if (best > 0 && (!old || best > old.w)) { D.peaks[k] = { w: best, date: now, route: ride.route, est: !ride.real }; news.push(t('rec.peak', { d: label, w: best }) + (ride.real ? '' : t('rec.est'))); }
       });
     }
-    if (ride.avgSpeed > (rr.avgSpeed || 0)) rr.avgSpeed = ride.avgSpeed;
+    if (!ride.wind && ride.avgSpeed > (rr.avgSpeed || 0)) rr.avgSpeed = ride.avgSpeed;
     D.routes[ride.route] = rr;
-    if (!ride.demo && (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v)) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push(t('rec.maxSpeed', { v: fmt1(ride.maxSpeed) })); }
+    if (!ride.demo && !ride.wind && (!D.maxSpeed || ride.maxSpeed > D.maxSpeed.v)) { D.maxSpeed = { v: ride.maxSpeed, date: now, route: ride.route }; if (D.totals.rides) news.push(t('rec.maxSpeed', { v: fmt1(ride.maxSpeed) })); }
     D.totals.rides++; D.totals.dist += ride.dist; D.totals.gain += ride.gain; D.totals.time += ride.time;
     D.history.unshift(ride); D.history = D.history.slice(0, 30);
     this.save(); this.push(ride, powerLog);
@@ -87,6 +89,6 @@ function renderRecords() {
     const x = D.routes[r.id];
     return '<div class="rrow"><div><b>' + r.name + '</b><small>' + (x && x.time ? fmtDate(x.date) + (x.demo ? t('rec.demo') : '') + t('rec.attempts', { n: x.attempts }) : t('rec.notYet')) + '</small></div><div class="rv">' + (x && x.time ? fmtTime(x.time) : '—') + (x && x.avgPower ? '<small>' + t('rec.avgW', { w: x.avgPower }) + '</small>' : '') + '</div></div>';
   }).join('');
-  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? t('hist.plan') : h.kind === 'free' ? t('hist.free') : '') + routeName(h.route) + (h.of > 1 ? t('hist.place', { p: h.place, n: h.of }) : '') + (h.demo ? t('rec.demo') : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' ' + t('u.kmh') + ', ' + h.avgPower + ' ' + t('u.w') + '</small></span></li>').join('') : '<li class="empty">' + t('hist.empty') + '</li>';
+  $('#recHist').innerHTML = D.history.length ? D.history.slice(0, 12).map(h => '<li><span>' + fmtDate(h.date) + '</span><span>' + (h.kind === 'plan' ? t('hist.plan') : h.kind === 'free' ? t('hist.free') : '') + routeName(h.route) + (h.of > 1 ? t('hist.place', { p: h.place, n: h.of }) : '') + (h.demo ? t('rec.demo') : '') + (h.wind ? t('wind.mark') : '') + '</span><span>' + fmtTime(h.time) + '<small>' + fmt1(h.avgSpeed) + ' ' + t('u.kmh') + ', ' + h.avgPower + ' ' + t('u.w') + '</small></span></li>').join('') : '<li class="empty">' + t('hist.empty') + '</li>';
   const rb = $('#btnRecReset'); rb.textContent = t('records.reset'); rb.dataset.armed = ''; rb.classList.toggle('hidden', !!Records.synced);
 }

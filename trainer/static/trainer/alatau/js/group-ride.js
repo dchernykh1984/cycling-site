@@ -26,7 +26,8 @@ async function mpCheckLink() {
   try { const g = await Site.get('/groups/' + LINKED); mpNote(g.cancelled ? t('mp.linkCancelled') : t('mp.linkStarted')); }
   catch (e) { if (e.status === 404) mpNote(t('mp.linkMissing')); }
 }
-let groupRide = null;   // { gid, startAt } во время групповой гонки
+let groupRide = null;   // { gid, startAt, wind } во время групповой гонки; wind, { ms, from }, is its host's
+const groupWind = g => g.wind_ms > 0 ? { ms: g.wind_ms, from: g.wind_from_deg || 0 } : null;
 const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
 const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
 const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
@@ -60,7 +61,7 @@ function mpMyGroup() { return MP.groups.find(g => g.is_member); }
 function mpMaybeStart() {
   const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
   const at = mpStartLocal(g), now = Date.now();
-  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at }; routeSel = g.route; renderMenu(); startRace(); }
+  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g) }; routeSel = g.route; renderMenu(); startRace(); }
 }
 async function mpAction(path, body) {
   try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
@@ -69,7 +70,8 @@ async function mpAction(path, body) {
 function mpCreateGroup() {
   if (MP.status !== 'on' || mpMyGroup()) return;
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60 });
+  const w = ownWind(); // the host's wind is the race's
+  mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 });
 }
 // "Start" while waiting: the rider rides alone and the race goes on without them (a host hands it on)
 async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) await mpAction('/groups/' + g.id + '/leave'); }
@@ -147,7 +149,7 @@ function renderMP() {
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
     if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
     card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
-    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') });
+    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }

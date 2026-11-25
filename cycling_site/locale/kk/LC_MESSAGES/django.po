@@ -5826,3 +5826,7 @@ msgstr "<strong>Тіркелгідегі өзгерістер туралы ха�
 #, python-format
 msgid "Ride with %(club)s!"
 msgstr "%(club)s командасымен бірге велосипед теп!"
+
+#: accounts/templates/accounts/profile.html:302
+msgid "wind"
+msgstr "жел"

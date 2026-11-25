@@ -48,6 +48,11 @@
       <p class="hint" id="plTotal"></p>
       </div>
     </div>
+    <label class="chk"><input type="checkbox" id="windOn"> <span data-t="wind.on"></span></label>
+    <div id="windOpts" class="cols hidden"><div class="field"><label for="windFrom" data-t="wind.from"></label>
+      <select id="windFrom"><option value="0" data-t="wind.n"></option><option value="45" data-t="wind.ne"></option><option value="90" data-t="wind.e"></option><option value="135" data-t="wind.se"></option><option value="180" data-t="wind.s"></option><option value="225" data-t="wind.sw"></option><option value="270" data-t="wind.w"></option><option value="315" data-t="wind.nw"></option></select></div>
+    <div class="field"><label for="windMs" data-t="wind.ms"></label><input id="windMs" type="number" min="1" max="20" step="1" value="5" inputmode="numeric"></div></div>
+    <p class="hint hidden" id="windHint" data-t="wind.hint"></p>
 
       </section>
       <section class="box wide" aria-labelledby="hMp">
@@ -164,7 +169,7 @@
   </div>
   <!-- top right: one card, the grade over the map; the riders nearby under it -->
   <div class="hud" id="hudTR">
-    <div class="mapcard panel"><div id="grade"><b id="vGrade">0%</b><span id="uGrade" data-t="hud.grade"></span></div><canvas id="mini" width="300" height="300" data-t-label="a11y.minimap"></canvas></div>
+    <div class="mapcard panel"><div id="grade"><b id="vGrade">0%</b><span id="uGrade" data-t="hud.grade"></span></div><div id="hudWind" class="hidden"></div><canvas id="mini" width="300" height="300" data-t-label="a11y.minimap"></canvas></div>
     <div class="panel hidden" id="board"><div class="bh" data-t="hud.near"></div><ol id="boardList"></ol></div>
   </div>
   <!-- left: the steps of a cadence plan -->

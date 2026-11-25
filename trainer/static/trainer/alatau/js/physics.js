@@ -19,11 +19,15 @@ function airDensity(h) { return 1.225 * Math.pow(1 - .0065 * clamp(h || 0, -500,
 // 1.2-1.4 m aside by the gap.
 const DRAFT = { share: .45, at: .7, back: .13, side: .39 };
 function draftShare(gap, side) { return gap < 0 ? 0 : clamp(DRAFT.share - DRAFT.back * (gap - DRAFT.at) - DRAFT.side * Math.abs(side), 0, 1); }
-// a rider's step: r.rho is the air they are in, r.draft the share of their drag a wake ahead takes
+// The wind, { ms, from }: its speed and the bearing it blows from, degrees (0 north, 90 east). What a rider feels of
+// it is its share along their way (tx, tz: east and south on the scene), m/s, + behind them; the side wind is left out
+function tailwind(wind, tx, tz) { if (!wind || !wind.ms) return 0; const a = wind.from * Math.PI / 180; return wind.ms * (Math.cos(a) * tz - Math.sin(a) * tx); }
+// a rider's step: r.rho is the air they are in, r.draft the share of their drag a wake ahead takes, r.tail the wind behind
+// them; the air drags by the speed through it, and a wind faster than the rider pushes
 function stepRider(r, P, grade, dt) {
   const m = r.mass + (r.bike || PHYS.bike), th = Math.atan(grade);
-  const v = Math.max(r.v, .5);
-  const F = P / v - .5 * r.rho * r.CdA * (1 - r.draft) * r.v * r.v - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
+  const v = Math.max(r.v, .5), va = r.v - (r.tail || 0);
+  const F = P / v - .5 * r.rho * r.CdA * (1 - r.draft) * va * Math.abs(va) - (r.Crr || PHYS.Crr) * m * PHYS.g * Math.cos(th) - m * PHYS.g * Math.sin(th);
   r.v = Math.max(0, r.v + F / (m * 1.04) * dt);
   if (r.v > 30) r.v = 30;
   return r.v * dt;
@@ -51,9 +55,10 @@ function botPower(b, grade, toFinish, t) {
 function botCadence(b, grade, t) {
   return b.v > .5 ? clamp((b.finishT != null ? 62 : (b.ch.style === 'sprinter' ? 94 : b.ch.style === 'climber' ? 86 : 90)) + Math.sin(t * .37 + b.seed) * 4 - Math.max(0, grade) * 120, 58, 115) : 0;
 }
-// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, with no wind, and to the
+// a smart trainer (FTMS) is set to the route's grade scaled by the difficulty, to the wind against the rider
+// (a headwind above zero, as ANT+ FE-C has it) and to the
 // rider's own drag as the ride counts it: rolling resistance Crr and wind resistance Cw = CdA·ρ in kg/m
 // (as ANT+ FE-C defines it: frontal area × drag coefficient × air density; the air drag is ½·Cw·v²), less
 // the share a wake ahead takes
 function trainerGrade(gradePct, difficulty) { return Math.round(gradePct * difficulty / 100 * 10) / 10; }
-function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * (1 - r.draft) * r.rho }; }
+function trainerDrag(r) { return { crr: r.Crr || PHYS.Crr, cw: r.CdA * (1 - r.draft) * r.rho, wind: -(r.tail || 0) }; }

@@ -46,6 +46,10 @@ class VirtualRide(models.Model):
     peak_1m_w = models.PositiveIntegerField(null=True, blank=True)
     peak_5m_w = models.PositiveIntegerField(null=True, blank=True)
     peak_20m_w = models.PositiveIntegerField(null=True, blank=True)
+    # The wind the ride was ridden in (0: none) and the bearing it blew from: a wind behind the rider is no record
+    # of theirs, so a ride with wind sets no route record or top speed (trainer/records.py).
+    wind_ms = models.FloatField(default=0)
+    wind_from_deg = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ("-finished_at",)
@@ -64,6 +68,9 @@ class GroupRide(models.Model):
     start_at = models.DateTimeField(db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     cancelled = models.BooleanField(default=False)
+    # The host's wind (0: none) and the bearing it blows from: every member rides the race in it.
+    wind_ms = models.FloatField(default=0)
+    wind_from_deg = models.PositiveSmallIntegerField(default=0)
     members: models.ManyToManyField = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through="GroupRideMember", related_name="group_rides"
     )

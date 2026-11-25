@@ -40,6 +40,8 @@ router = Router(tags=["virtual-ride"])
 
 
 _ROUTE = r"^[a-z0-9][a-z0-9_-]{0,39}$"
+# The strongest wind a ride or a group race is ridden in, m/s: a storm
+_MAX_WIND_MS = 30
 _MAX_HISTORY = 100
 # The trainer page's settings, as JSON: a long own plan is a few kilobytes
 _MAX_SETTINGS = 64 * 1024
@@ -122,6 +124,8 @@ class RideIn(Schema):
     peak_5m_w: int | None = Field(None, ge=0, le=3000)
     peak_20m_w: int | None = Field(None, ge=0, le=3000)
     track: list[list[float]] | None = Field(None, max_length=_MAX_TRACK)
+    wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
+    wind_from_deg: int = Field(0, ge=0, le=359)
 
     @field_validator("track")
     @classmethod
@@ -160,6 +164,8 @@ class RideOut(Schema):
     peak_1m_w: int | None
     peak_5m_w: int | None
     peak_20m_w: int | None
+    wind_ms: float
+    wind_from_deg: int
 
 
 class StravaOut(Schema):
@@ -268,12 +274,16 @@ class GroupOut(Schema):
     is_member: bool
     is_host: bool
     cancelled: bool = False
+    wind_ms: float = 0
+    wind_from_deg: int = 0
 
 
 class GroupIn(Schema):
     route: str = Field(..., pattern=_ROUTE, max_length=40)
     route_name: str = Field("", max_length=120)
     start_in_s: int = Field(60, ge=live.MIN_START_DELAY_S, le=live.MAX_START_DELAY_S)
+    wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
+    wind_from_deg: int = Field(0, ge=0, le=359)
 
 
 class GroupResultOut(Schema):
@@ -346,6 +356,8 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         is_member=any(u.pk == user.pk for u in members),
         is_host=group.host_id == user.pk,
         cancelled=group.cancelled,
+        wind_ms=group.wind_ms,
+        wind_from_deg=group.wind_from_deg,
     )
 
 
@@ -709,6 +721,8 @@ def create_group(request, payload: GroupIn):
             route_name=payload.route_name,
             host=request.auth,
             start_at=now + timedelta(seconds=payload.start_in_s),
+            wind_ms=payload.wind_ms,
+            wind_from_deg=payload.wind_from_deg,
         )
         GroupRideMember.objects.create(group=group, user=request.auth)
     return Status(HTTPStatus.CREATED, _group_out(group, request.auth))

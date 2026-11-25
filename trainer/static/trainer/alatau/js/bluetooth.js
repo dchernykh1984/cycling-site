@@ -124,8 +124,8 @@ class BLEDev {
     } finally { this.busy = false; }
   }
   setGrade(g, drag) {
-    const v = Math.round(clamp(g, -10, 20) * 100);
-    return this.control([0x11, 0, 0, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); // FTMS: wind speed 0, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
+    const v = Math.round(clamp(g, -10, 20) * 100), w = Math.round(clamp(drag.wind || 0, -30, 30) * 1000);
+    return this.control([0x11, w & 255, (w >> 8) & 255, v & 255, (v >> 8) & 255, Math.round(drag.crr * 1e4), Math.round(drag.cw * 100)]); // FTMS: wind speed in 0.001 m/s, grade in 0.01 %, Crr in 0.0001, Cw in 0.01 kg/m
   }
   // ERG: the trainer holds the power whatever the cadence (FTMS Set Target Power, watts within its range). One
   // that said it can and still refuses the command (Op Code Not Supported, Invalid Parameter) is ridden by the
@@ -275,10 +275,10 @@ const Sensors = {
 // Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении (и раз в 5 с без него);
 // сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG
 // on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it.
-// A change of the rider's wind resistance (a wake ahead, the air higher up) is sent as a change of the grade is;
-// cw is the last one sent, in the 0.01 kg/m the trainer reads
+// A change of the rider's wind resistance (a wake ahead, the air higher up) or of the wind against them (the road
+// turning) is sent as a change of the grade is; cw and wind are the last ones sent, in the 0.01 kg/m and 0.5 m/s steps
 const Trainer = {
-  last: -10, sent: null, held: null, cw: null,
+  last: -10, sent: null, held: null, cw: null, wind: null,
   update(t, grade, rider, watts) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
     if (t - this.last < 1) return;
@@ -286,9 +286,9 @@ const Trainer = {
       if (this.held !== null && Math.abs(watts - this.held) < 1 && t - this.last < 5) return;
       this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) this.held = watts; }); return;
     }
-    const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100);
-    if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && t - this.last < 5) return;
-    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.held = null; } });
+    const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100), wind = Math.round(drag.wind * 2);
+    if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && wind === this.wind && t - this.last < 5) return;
+    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.wind = wind; this.held = null; } });
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
   canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }

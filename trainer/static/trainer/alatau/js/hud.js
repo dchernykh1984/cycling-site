@@ -64,6 +64,9 @@ function updateHUD(inp, grade) {
   if (hr != null) { const z = hrZone(hr); $('#vHR').textContent = hr; $('#uHR').textContent = t('hud.hrZone', { z }); hb.style.setProperty('--zone', ZONE_BG[z].replace(/,[\d.]+\)$/, ',1)')); }
   // the grade strip over the map
   $('#vGrade').textContent = fmtPct(grade * 100);
+  // the wind as the rider feels it here: ahead, behind or from the side
+  const hw = $('#hudWind'), tail = me.tail || 0; hw.classList.toggle('hidden', !rideWind);
+  if (rideWind) hw.textContent = tail > .5 ? t('wind.tail', { v: fmt1(tail) }) : tail < -.5 ? t('wind.head', { v: fmt1(-tail) }) : t('wind.cross');
   const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');
   $('#grade').style.background = gradeColor(grade);
   // under the power: the step's average cadence in a plan, the ride's average power otherwise

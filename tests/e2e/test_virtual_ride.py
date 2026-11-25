@@ -91,6 +91,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             ]};
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, LINKED = null;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
+            const groupWind = () => null; // a race in still air
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
             window.renderMP = renderMP;
@@ -319,6 +320,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             ]};
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, groupLink = id => 'LINK-' + id;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
+            const groupWind = () => null; // a race in still air
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
             window.t = t;
@@ -689,13 +691,48 @@ def test_a_rider_settles_where_the_power_meets_the_drag(page: Page):
     assert v == pytest.approx(_settled(rho, 0.3, g), abs=0.01)
 
 
-def _settled(rho: float, cda: float, g: float) -> float:
-    """The speed at which 200 W meets the drag on the flat: rider and bike of 83 kg, Crr .004."""
+def _settled(rho: float, cda: float, g: float, tail: float = 0.0) -> float:
+    """The speed at which 200 W meets the drag on the flat: rider and bike of 83 kg, Crr .004, the air dragging by
+    the speed through it -- a wind of ``tail`` m/s behind the rider, ahead when below zero."""
     lo, hi = 0.0, 30.0
     for _ in range(60):
-        mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if mid * (rho * cda * mid * mid / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
+        mid, air = (lo + hi) / 2, (lo + hi) / 2 - tail
+        lo, hi = (mid, hi) if mid * (rho * cda * air * abs(air) / 2 + 0.004 * 83 * g) < 200 else (lo, mid)
     return lo
+
+
+def test_a_headwind_slows_the_rider_and_a_tailwind_carries_them(page: Page):
+    """On the flat road north, 200 W in a wind of 5 m/s: from the north it is ahead of the rider, from the south
+    behind them, from the east beside them, which the ride leaves out."""
+    errors = _ride_alone(page)
+    speeds, rho, g = page.evaluate(
+        """() => {
+            const inp = { P: 200, cad: 85, mode: 'power', direct: false };
+            const speeds = [0, null, 180, 90].map(from => {
+                rideWind = from === null ? null : { ms: 5, from }; me.v = 0; me.s = world.S0;
+                for (let i = 1; i <= 240 * 60; i++) stepRide(1 / 60, inp, i / 60);
+                return me.v;
+            });
+            return [speeds, me.rho, PHYS.g];
+        }"""
+    )
+    ahead, still, behind, beside = speeds
+    assert ahead == pytest.approx(_settled(rho, 0.3, g, tail=-5), abs=0.01)
+    assert still == pytest.approx(_settled(rho, 0.3, g), abs=0.01)
+    assert behind == pytest.approx(_settled(rho, 0.3, g, tail=5), abs=0.01)
+    assert beside == pytest.approx(still, abs=0.01)
+    assert errors == [], errors
+
+
+def test_a_smart_trainer_is_told_the_wind_against_the_rider(page: Page):
+    _ride_alone(page)
+    winds = page.evaluate(
+        f"""() => [0, 180].map(from => {{
+            rideWind = {{ ms: 4, from }}; stepRide(1 / 60, {_STILL}, 0); return trainerDrag(me).wind;
+        }})"""
+    )
+    # a headwind above zero, as ANT+ FE-C has it: on the road north the wind from the north is ahead
+    assert winds == pytest.approx([4, -4])
 
 
 _STILL = "{ P: 0, cad: 0, mode: 'power', direct: false }"
@@ -1117,6 +1154,24 @@ def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server
         city.scroll_into_view_if_needed()
         wide, high = city.evaluate(_REACH)
         assert wide >= 44 and high >= 44, (city.text_content(), wide, high)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_wind_is_kept_with_the_settings_and_named_before_the_start(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#windOpts")).to_be_hidden()
+    page.check("#windOn")
+    expect(page.locator("#windOpts")).to_be_visible()
+    page.select_option("#windFrom", "270")
+    page.fill("#windMs", "7")
+    page.locator("#windMs").dispatch_event("change")
+    assert page.evaluate("store.get('settings', {}).wind") == {"on": True, "from": 270, "ms": 7}
+    # kept for the next visit, as the other settings are (and with the account, for a member)
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#windOn")).to_be_checked()
+    expect(page.locator("#windFrom")).to_have_value("270")
+    expect(page.locator("#windMs")).to_have_value("7")
+    expect(page.locator("#startSum")).to_contain_text("wind 7 m/s from the west")
 
 
 @pytest.mark.django_db(transaction=True)

@@ -299,7 +299,7 @@
                 <ul class="list-unstyled small mb-0">
                     {% for ride in virtual_ride.recent %}
                     <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
-                        <span><span class="text-muted">{{ ride.finished_at|date:"d.m.Y" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}</span>
+                        <span><span class="text-muted">{{ ride.finished_at|date:"d.m.Y" }}</span> {{ ride.route_name|default:ride.route }}, {{ ride.get_kind_display|lower }}{% if ride.place and ride.field_size and ride.field_size > 1 %}, {{ ride.place }}/{{ ride.field_size }}{% endif %}{% if ride.power_source == ride.PowerSource.DEMO %}, {% trans "demo" %}{% endif %}{% if ride.wind_ms %}, {% trans "wind" %}{% endif %}</span>
                         {% comment %}Each piece stays whole and the pieces wrap: a ride on both services is wider than a phone in one line.{% endcomment %}
                         <span class="text-end"><span class="text-nowrap">{{ ride.time_label }}, {{ ride.distance_km }} {% trans "km" %}</span>{% if ride.strava.activity_url %}, <a href="{{ ride.strava.activity_url }}" class="fw-semibold text-nowrap" target="_blank" rel="noopener">View on Strava</a>{% endif %}{% if ride.intervals.activity_url %}, <a href="{{ ride.intervals.activity_url }}" class="fw-semibold text-nowrap" target="_blank" rel="noopener">{% trans "View on intervals.icu" %}</a>{% endif %}</span>
                     </li>
