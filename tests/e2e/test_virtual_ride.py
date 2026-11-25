@@ -233,6 +233,38 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_road_ridden_out_and_back_is_drawn_once_and_finishes_at_its_start(page: Page, live_server):
+    # the way back runs on the road the way out drew: drawn again at the same height, the two would flicker
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
+    found = page.evaluate(
+        """() => {
+          if (!scene) { // a browser without 3D still builds the scene
+            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+          }
+          const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), o = {};
+          return ROUTES.map(r => {
+            const w = buildWorld(r), T = w.T, kids = scenery.children;
+            const road = kids.filter(m => m.isMesh && m.geometry.type === 'BufferGeometry' && m.material.map);
+            let twice = 0;
+            for (let s = 50; s < T.L; s += 100) {
+              sampleAt(T, s, o); ray.set(new THREE.Vector3(o.x, o.y + 50, o.z), down);
+              const ys = ray.intersectObjects(road, false).map(h => h.point.y).sort((a, b) => a - b);
+              if (ys.some((y, i) => i && y - ys[i - 1] < .005)) twice++;
+            }
+            const arches = kids.filter(g => g.isGroup && g.children.some(c => c.material && c.material.length)).length;
+            return { id: r.id, twice, back: w.back, finish: w.FIN, end: T.L - w.S0, arches };
+          });
+        }"""
+    )
+    back = [route for route in found if route["back"]]
+    assert back, found  # a route out and back is on the maps
+    assert [route["twice"] for route in found] == [0] * len(found), found
+    # it finishes on its start's line, under one arch for both
+    assert all(route["finish"] == pytest.approx(route["end"]) and route["arches"] == 1 for route in back), back
+
+
+@pytest.mark.django_db(transaction=True)
 def test_open_full_screen_puts_the_trainer_on_the_whole_screen(page: Page, live_server):
     page.goto(f"{live_server.url}/en/virtual-ride/")
     if not page.evaluate("!!(document.fullscreenEnabled || document.webkitFullscreenEnabled)"):
