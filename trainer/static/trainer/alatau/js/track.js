@@ -78,6 +78,19 @@ function nearest(T, x, z) {
   for (let i = 0; i < C.x.length; i++) { const dx = C.x[i] - x, dz = C.z[i] - z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
   return { d: Math.sqrt(best), y: C.y[bi], s: C.d[bi] };
 }
+// how far a point is from the route itself: nearest() measures to its coarse points, 32 m apart along it, which
+// puts a point on the road up to 16 m away. Within ROUTE_CELL of the route the route's own points say it exactly (a
+// grid of them, laid once per track); further out the coarse measure is near enough.
+const ROUTE_CELL = 16;
+function routeGap(T, x, z) {
+  if (!T.grid) {
+    T.grid = new Map();
+    for (let i = 0; i < T.N; i++) { const k = Math.floor(T.X[i] / ROUTE_CELL) + ',' + Math.floor(T.Z[i] / ROUTE_CELL); if (!T.grid.has(k)) T.grid.set(k, []); T.grid.get(k).push(i); }
+  }
+  const cx = Math.floor(x / ROUTE_CELL), cz = Math.floor(z / ROUTE_CELL); let best = Infinity;
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const i of T.grid.get((cx + a) + ',' + (cz + b)) || []) best = Math.min(best, Math.hypot(T.X[i] - x, T.Z[i] - z));
+  return best <= ROUTE_CELL ? best : Math.min(best, nearest(T, x, z).d);
+}
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
 function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + o.rx * R.lane; o.pz = o.z + o.rz * R.lane; return o; }
 function nearLandmarks(T) {
