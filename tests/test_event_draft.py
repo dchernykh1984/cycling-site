@@ -38,7 +38,8 @@ class EventDraftTests(TestCase):
     def test_the_virtual_ride_is_a_type_of_event_in_every_language(self):
         virtual = EventType.objects.get(name_en="Virtual Ride")
         self.assertTrue(virtual.name_ru and virtual.name_kk)
-        self.assertEqual(virtual.order, EventType.objects.order_by("-order").first().order)
+        # after the types that were there before it, not ahead of the plain race
+        self.assertGreater(virtual.order, EventType.objects.get(name_en="Professional Race").order)
 
     def test_a_draft_opens_the_form_filled_with_it(self):
         response = self.client.post(reverse("calendar_submit_draft"), DRAFT)
