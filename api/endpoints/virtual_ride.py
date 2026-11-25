@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from ninja import Field, Path, Router, Schema, Status
 from ninja.errors import HttpError
 from pydantic import SecretStr, field_validator
@@ -729,6 +730,13 @@ def create_group(request, payload: GroupIn):
             HTTPStatus.UNPROCESSABLE_ENTITY, _("A group race starts %(seconds)d seconds to a year from now") % soonest
         )
     mine = GroupRide.objects.filter(host=request.auth, cancelled=False, start_at__gt=now)
+    if mine.count() >= live.MAX_WAITING:
+        many = ngettext(
+            "You already have %(n)d group race waiting to start",
+            "You already have %(n)d group races waiting to start",
+            live.MAX_WAITING,
+        )
+        raise HttpError(HTTPStatus.CONFLICT, many % {"n": live.MAX_WAITING})
     if mine.filter(start_at__gt=start - live.RACE_GAP, start_at__lt=start + live.RACE_GAP).exists():
         raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race starting within an hour of that time"))
     with transaction.atomic():

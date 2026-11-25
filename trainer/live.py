@@ -21,6 +21,8 @@ MAX_START_DELAY_S = 3600
 MAX_AHEAD = timedelta(days=365)
 # One host's races start at least this far apart: a rider rides one at a time.
 RACE_GAP = timedelta(hours=1)
+# How many races one host may have waiting: every member's lobby lists them all, every few seconds.
+MAX_WAITING = 10
 
 
 def online(now=None):

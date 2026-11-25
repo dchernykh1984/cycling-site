@@ -5851,3 +5851,11 @@ msgstr "Групповая гонка начинается не раньше ч�
 #: api/endpoints/virtual_ride.py
 msgid "You already have a group race starting within an hour of that time"
 msgstr "У вас уже есть групповая гонка, которая начинается в пределах часа от этого времени"
+
+#: api/endpoints/virtual_ride.py
+#, python-format
+msgid "You already have %(n)d group race waiting to start"
+msgid_plural "You already have %(n)d group races waiting to start"
+msgstr[0] "У вас уже %(n)d групповая гонка ждёт старта"
+msgstr[1] "У вас уже %(n)d групповые гонки ждут старта"
+msgstr[2] "У вас уже %(n)d групповых гонок ждут старта"
