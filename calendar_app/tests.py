@@ -4025,8 +4025,10 @@ class ProfessionalRaceEventTypeTests(TestCase):
     def test_it_is_listed_after_the_types_that_were_already_there(self):
         """``order`` defaults to 0, which would put the newest type ahead of the plain race."""
         listed = list(EventType.objects.values_list("name_en", flat=True))
-        self.assertEqual(listed[-1], self.NAME_EN)
+        later = {"Virtual Ride"}  # added after it by 0042, and listed after it
+        self.assertEqual([name for name in listed if name not in later][-1], self.NAME_EN)
         self.assertLess(listed.index("Race"), listed.index(self.NAME_EN))
+        self.assertLess(listed.index(self.NAME_EN), listed.index("Virtual Ride"))
 
     def test_it_sits_beside_the_types_that_were_already_there(self):
         """It is one more type, not a replacement: the amateur ones stay exactly as they were."""
