@@ -95,7 +95,7 @@ function buildWorld(route) {
   // --- здания ---
   const bl = [];
   const osmB = route.osm ? prepOSM(route.osm.buildings) : null;
-  const tooClose = (x, z, rad) => nearest(T, x, z).d < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
+  const tooClose = (x, z, rad) => routeGap(T, x, z) < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
   const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'right' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
   if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB); }

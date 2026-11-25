@@ -239,6 +239,33 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
 
 
 @pytest.mark.django_db(transaction=True)
+def test_no_tree_stands_on_a_road_or_its_shoulder(page: Page, live_server):
+    # measured to the route itself: its coarse points are 32 m apart, and a bend between two of them looked far away
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
+    close = page.evaluate(
+        """() => {
+          if (!scene) { // a browser without 3D still builds the scene
+            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+          }
+          const m = new THREE.Matrix4(), p = new THREE.Vector3();
+          return ROUTES.flatMap(r => {
+            const T = buildWorld(r).T, out = [];
+            const trunks = scenery.children.find(o => o.isInstancedMesh && o.geometry.type === 'CylinderGeometry');
+            for (let i = 0; i < trunks.count; i++) {
+              trunks.getMatrixAt(i, m); p.setFromMatrixPosition(m);
+              let gap = Infinity;
+              for (let j = 0; j < T.N; j++) gap = Math.min(gap, Math.hypot(T.X[j] - p.x, T.Z[j] - p.z));
+              if (gap < r.width / 2 + 2.5) out.push(r.id + ': a tree ' + gap.toFixed(1) + ' m from the route');
+            }
+            return out;
+          });
+        }"""
+    )
+    assert not close, close
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_road_ridden_out_and_back_is_drawn_once_and_finishes_at_its_start(page: Page, live_server):
     # the way back runs on the road the way out drew: drawn again at the same height, the two would flicker
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
