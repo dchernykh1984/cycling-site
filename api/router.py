@@ -1,13 +1,18 @@
+import re
 from http import HTTPStatus
 
 from ninja import NinjaAPI
 from ninja.errors import HttpError
 from ninja.parser import Parser
 
+# Text no column can store: the NUL character, and a lone surrogate -- half of a UTF-16 pair, which a JSON escape
+# ("\ud83d") writes alone and UTF-8 cannot hold.
+_UNSTORABLE = re.compile(r"[\x00\ud800-\udfff]")
+
 
 def _carries_nul(value) -> bool:
     if isinstance(value, str):
-        return "\x00" in value
+        return _UNSTORABLE.search(value) is not None
     if isinstance(value, dict):
         return any(_carries_nul(key) or _carries_nul(item) for key, item in value.items())
     if isinstance(value, list):
@@ -15,7 +20,7 @@ def _carries_nul(value) -> bool:
     return False
 
 
-NUL_IN_TEXT = "Text must not contain the NUL character"
+NUL_IN_TEXT = "Text must not contain the NUL character or a lone surrogate (half of a UTF-16 pair)"
 
 
 class _NulInTextError(ValueError):
@@ -24,10 +29,10 @@ class _NulInTextError(ValueError):
 
 
 class _TextParser(Parser):
-    """Ninja's parser, refusing the NUL character no text column can hold.
+    """Ninja's parser, refusing the NUL character and the lone surrogate no text column can hold.
 
-    PostgreSQL rejects it on save, so a title that carried one came back as a 500 instead of a 422;
-    the site's own forms refuse it field by field (Django's ProhibitNullCharactersValidator).
+    Neither can be saved, so a title that carried one came back as a 500 instead of a 422; the site's
+    own forms refuse NUL field by field (Django's ProhibitNullCharactersValidator).
     """
 
     def parse_body(self, request):

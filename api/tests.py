@@ -4100,6 +4100,43 @@ class RequestLengthLimitTests(ApiTestMixin, TestCase):
         self.assertEqual(schemas.MAX_PREVIEW_TEXT_LENGTH, Competition._meta.get_field("preview_text").max_length)
 
 
+class LoneSurrogateTests(ApiTestMixin, TestCase):
+    """Half of a UTF-16 pair, as a JSON escape writes it alone ("\\ud83d"), is text no column can store: a 422,
+    as the NUL character is, never a 500 on save that every retry of the same snapshot met again."""
+
+    def test_a_lone_surrogate_is_refused_wherever_it_is_sent(self):
+        from protocols.models import ProtocolSection
+        from trainer.models import TrainerSettings
+
+        author = _user("lone-org", role=User.Role.ORGANIZER)
+        comp = _competition(submitted_by=author)
+        token = str(comp.upload_token)
+        stream = {"competition_token": token, "device_id": "dev-a", "client_revision": 1}
+        for method, url, body in (
+            ("post", "/api/v1/finish-times/", {**stream, "items": ["7#12:00:01.000#DSQ: fell \ud83d#"]}),
+            ("post", "/api/v1/finish-times/", {**stream, "device_id": "dev-\ud83d", "items": []}),
+            ("post", "/api/v1/start-list/", {**stream, "items": ["7#Ivanov\ud83d#M40#1#1#1990#team#city##0##"]}),
+            ("post", "/api/v1/live-stats/", {"competition_token": token, "stats": {"7": {"place": "1\ud83d"}}}),
+            (
+                "post",
+                f"/api/v1/protocols/competitions/{comp.pk}/sections",
+                {"name": {"ru": "Day \ud83d", "kk": "Day", "en": "Day"}},
+            ),
+            ("put", "/api/v1/virtual-ride/settings", {"settings": {"plan": "a\ud83d"}, "base": 0}),
+            ("put", "/api/v1/virtual-ride/settings", {"settings": {"k\ud83d": 1}, "base": 0}),
+        ):
+            sent = json.dumps(body)  # the surrogate as its escape, as a client writes it, and as xdist can report it
+            with self.subTest(url=url, body=sent):
+                send = getattr(self.client, method)
+                response = send(url, sent, content_type="application/json", **self.auth(author))
+                self.assertEqual(response.status_code, 422, response.content[:200])
+        for model in (FinishTimesUpload, StartListUpload, CompetitionLiveStats, ProtocolSection, TrainerSettings):
+            self.assertFalse(model.objects.exists(), model.__name__)
+        # Both halves together are one character, an emoji, sent as two escapes and kept.
+        whole = self.post("/api/v1/finish-times/", {**stream, "items": ["7#12:00:01.000#DSQ: fell \U0001f600#"]})
+        self.assertEqual(whole.status_code, 200, whole.content[:200])
+
+
 class LocationNameLengthTests(ApiTestMixin, TestCase):
     """A location name longer than its column is a 422, not a database error behind a 500."""
 
