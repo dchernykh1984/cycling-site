@@ -3459,8 +3459,12 @@ class FavoriteTests(TestCase):
         CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
         CompetitionFavorite.objects.create(user=self.user, competition=self.comp2)
         self.client.force_login(self.user)
-        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        response = self.client.get(in_language(reverse("competition_detail", args=[self.comp.pk]), "ru"))
         self.assertContains(response, '<span id="favorite-count">3</span>')
+        with translation_override("ru"):
+            hidden = gettext("In favorites:")
+        # What a screen reader hears right before the number.
+        self.assertContains(response, f'<span class="visually-hidden">{hidden} </span><span id="favorite-count">')
 
     def test_toggle_answers_with_how_many_members_have_the_event_in_favorites_now(self):
         CompetitionFavorite.objects.create(
