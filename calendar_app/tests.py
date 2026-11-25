@@ -3016,6 +3016,68 @@ class CompetitionRichDescriptionTests(TestCase):
         self.assertIn("&lt;script&gt;", comp.description_en)
 
 
+class StoredRichTextCommentsMigrationTests(TestCase):
+    """Rich text saved before the sanitizer dropped comments and CDATA loses them once (migration 0044)."""
+
+    def setUp(self):
+        import importlib
+
+        from django.db import connection
+        from django.db.migrations.loader import MigrationLoader
+
+        name = "0044_drop_comments_and_cdata_from_rich_text"
+        # The models as the migration meets them: plain columns, with no save()-time sanitizer and no
+        # modeltranslation alias in place of "description" or "body".
+        self.apps = MigrationLoader(connection).project_state(("calendar_app", name)).apps
+        self.migration = importlib.import_module(f"calendar_app.migrations.{name}")
+
+    def test_a_handler_hidden_in_a_comment_or_cdata_is_dropped_from_stored_rich_text(self):
+        from home.models import HomeCard
+        from knowledge.models import KnowledgeArticle
+        from news.models import NewsArticle
+
+        cdata = "<p>kept</p><![CDATA[><img src=x onerror=alert(1)>]]>"
+        comment = "<p>kept</p><!--><img src=x onerror=alert(1)>-->"
+        stored = {
+            ("calendar_app", "Competition", _make_competition(title="Old").pk): {
+                "description": cdata,
+                "description_kk": comment,
+            },
+            ("news", "NewsArticle", NewsArticle.objects.create(title_ru="Old").pk): {"body": comment, "body_en": cdata},
+            ("knowledge", "KnowledgeArticle", KnowledgeArticle.objects.create(title="Old", locale="ru").pk): {
+                "body": comment
+            },
+            ("home", "HomeCard", HomeCard.objects.create(title_ru="Old").pk): {"body_ru": cdata},
+        }
+        for (app_label, model_name, pk), columns in stored.items():
+            self.apps.get_model(app_label, model_name).objects.filter(pk=pk).update(**columns)
+
+        self.migration.drop_comments_and_cdata(self.apps, None)
+
+        for (app_label, model_name, pk), columns in stored.items():
+            row = self.apps.get_model(app_label, model_name).objects.get(pk=pk)
+            for field in columns:
+                with self.subTest(model=model_name, field=field):
+                    self.assertNotIn("onerror", getattr(row, field))
+                    self.assertTrue(getattr(row, field).startswith("<p>kept</p>"))
+
+    def test_a_stored_text_holding_no_comment_keeps_its_bytes(self):
+        from cycling_site.sanitize import sanitize_rich_html
+
+        # An older save wrote the quotes and the link's rel otherwise than the sanitizer does now.
+        older = (
+            '<p>&quot;Tau&quot; <a target="_blank" rel="noopener noreferrer nofollow" href="https://t.me/x">x</a></p>'
+        )
+        self.assertNotEqual(sanitize_rich_html(older, allow_img=True), older)
+        competition = self.apps.get_model("calendar_app", "Competition")
+        pk = _make_competition(title="Older").pk
+        competition.objects.filter(pk=pk).update(description_en=older)
+
+        self.migration.drop_comments_and_cdata(self.apps, None)
+
+        self.assertEqual(competition.objects.get(pk=pk).description_en, older)
+
+
 class LocationsDataOrderingTests(TestCase):
     """_get_locations_data feeds the cascade filters, so hidden / coordinate-less nodes must
     come last in its output (the filters preserve this order when building options)."""
