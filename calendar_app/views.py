@@ -1011,6 +1011,10 @@ class CompetitionDetailView(View):
             "user_can_delete_comment": is_manager,
             "is_favorited": request.user.is_authenticated
             and CompetitionFavorite.objects.filter(user=request.user, competition=competition).exists(),
+            # How many members have the event in favorites, shown under the star a member gets.
+            "favorites_count": competition.favorited_by.count()
+            if request.user.is_authenticated and competition.status == Competition.Status.APPROVED
+            else None,
             # Approve/reject is offered only to moderators (organizer+) and only while pending.
             "can_moderate": can_moderate and competition.status == Competition.Status.PENDING_APPROVAL,
             "reject_form": RejectCompetitionForm(),
@@ -1769,8 +1773,9 @@ class ToggleFavoriteView(LoginRequiredMixin, View):
     """Toggle the signed-in user's favorite mark on a competition (issue #183).
 
     Progressive enhancement: the star on the detail page posts here. A fetch() request (sending the
-    ``X-Requested-With`` header) gets JSON ``{"favorited": bool}`` back so the star can update in
-    place; a plain form submit (no JS) toggles and redirects to the detail page.
+    ``X-Requested-With`` header) gets JSON ``{"favorited": bool, "count": int}`` back -- the count is
+    how many members have the event in favorites now -- so the star and the number under it can
+    update in place; a plain form submit (no JS) toggles and redirects to the detail page.
     """
 
     def post(self, request, pk):
@@ -1781,7 +1786,7 @@ class ToggleFavoriteView(LoginRequiredMixin, View):
         if not created:
             favorite.delete()
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"favorited": created})
+            return JsonResponse({"favorited": created, "count": competition.favorited_by.count()})
         return redirect("competition_detail", pk=pk)
 
 

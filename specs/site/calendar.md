@@ -132,6 +132,10 @@ filters, carried in the address so a filtered view can be bookmarked and shared.
 1. **Given** a signed-in member stars an event, **Then** it is saved once per member and event,
    the star reflects it, and "favorites only" filters the grid, list and map; a visitor gets no
    star and the favorites filter is empty for them.
+2. **Given** a signed-in member opens an approved event, **Then** under the star they see how
+   many members have it in favorites, theirs included, and the number follows their own star
+   without a reload; a screen reader hears it as "In favorites: N". The API's event detail
+   carries the same number as `favorites_count`, null for a visitor and for an event not approved.
 
 ### Edge Cases
 

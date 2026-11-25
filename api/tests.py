@@ -2890,6 +2890,32 @@ class EventTypeListTest(TestCase, ApiTestMixin):
 # ===========================================================================
 
 
+class CompetitionFavoritesCountTest(TestCase, ApiTestMixin):
+    """The event detail says how many members have the event in favorites, as its page does under the star."""
+
+    def setUp(self):
+        self.member = _user("fc_member")
+        self.event = Competition.objects.create(
+            title_ru="Fav", date_start=date(2026, 7, 1), status=Competition.Status.APPROVED
+        )
+        CompetitionFavorite.objects.create(user=_user("fc_fan"), competition=self.event)
+
+    def test_a_member_reads_how_many_members_have_the_event_in_favorites(self):
+        data = self.get(f"/api/v1/competitions/{self.event.pk}", user=self.member).json()
+        self.assertEqual(data["favorites_count"], 1)
+
+    def test_a_visitor_and_an_event_not_approved_get_no_count(self):
+        self.assertIsNone(self.get(f"/api/v1/competitions/{self.event.pk}").json()["favorites_count"])
+        pending = Competition.objects.create(
+            title_ru="Pending",
+            date_start=date(2026, 7, 1),
+            status=Competition.Status.PENDING_APPROVAL,
+            submitted_by=self.member,
+        )
+        data = self.get(f"/api/v1/competitions/{pending.pk}", user=self.member).json()
+        self.assertIsNone(data["favorites_count"])
+
+
 class CompetitionLocaleCRUDTest(TestCase, ApiTestMixin):
     def setUp(self):
         self.admin = _user("cl_admin", role=User.Role.ADMIN)

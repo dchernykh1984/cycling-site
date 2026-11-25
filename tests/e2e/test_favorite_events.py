@@ -50,6 +50,35 @@ def test_the_empty_star_can_be_seen_in_this_skin(page: Page, live_server, superu
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_count_under_the_star_follows_every_members_star(
+    page: Page, live_server, superuser, organizer, approved_competition
+):
+    """Under the star, how many members have the event in favorites, the reader's own star included."""
+    CompetitionFavorite.objects.create(user=organizer, competition=approved_competition)
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
+    star, count = page.locator("#favorite-btn"), page.locator("#favorite-count")
+    expect(count).to_have_text("1")
+
+    star.click()
+    expect(star).to_have_attribute("aria-pressed", "true")
+    expect(count).to_have_text("2")
+
+    star.click()
+    expect(star).to_have_attribute("aria-pressed", "false")
+    expect(count).to_have_text("1")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_count_under_the_star_can_be_read_in_this_skin(page: Page, live_server, superuser, approved_competition):
+    """The number is text, so it needs 4.5:1 (WCAG 1.4.3) in every skin."""
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
+    page.mouse.move(0, 0)
+    assert legibility(page.locator("#favorite-count")) >= 4.5
+
+
+@pytest.mark.django_db(transaction=True)
 def test_list_favorites_only_checkbox_filters(page: Page, live_server, superuser, organizer):
     """Ticking 'Only favorites' on the list narrows it to the user's favorited events."""
     favorited = Competition.objects.create(

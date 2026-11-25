@@ -1313,6 +1313,10 @@ msgstr "Таңдаулыларға қосу"
 msgid "Remove from favorites"
 msgstr "Таңдаулылардан алып тастау"
 
+#: calendar_app/templates/calendar_app/detail.html:43
+msgid "In favorites:"
+msgstr "Таңдаулыларда:"
+
 #: calendar_app/templates/calendar_app/detail.html:48
 #: calendar_app/templates/calendar_app/list.html:166
 #: calendar_app/templates/calendar_app/list.html:188

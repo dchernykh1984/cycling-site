@@ -1314,6 +1314,10 @@ msgstr "В избранное"
 msgid "Remove from favorites"
 msgstr "Убрать из избранного"
 
+#: calendar_app/templates/calendar_app/detail.html:43
+msgid "In favorites:"
+msgstr "В избранном:"
+
 #: calendar_app/templates/calendar_app/detail.html:48
 #: calendar_app/templates/calendar_app/list.html:166
 #: calendar_app/templates/calendar_app/list.html:188
