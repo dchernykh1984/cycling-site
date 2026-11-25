@@ -60,8 +60,9 @@ and protocols with the event's upload token. The API has no language prefix.
    A group race starts `start_in_s` from now (20 s to 1 h) or `start_at`, a moment with its time zone up to a
    year ahead (422 otherwise); one host's races start an hour apart at least, ten waiting at most (409). `/me` names the event
    form's draft address (`event_draft_url`), where the page's "Add event" sends a race's event.
-   A ride and a group race carry the wind they were ridden in (`wind_ms`, `wind_from_deg`; 0: none): a
-   ride with wind counts for power but sets no route record or top speed.
+   A ride and a group race carry the wind they were ridden in (`wind_ms`, `wind_from_deg`; 0: none; a ride of a
+   group race takes the race's, whatever the page sends): a ride with wind counts for power but sets no route
+   record or top speed.
    A saved ride may carry its track; with Strava connected, a ride that is not in demo mode goes to
    Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
