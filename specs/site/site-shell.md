@@ -293,9 +293,11 @@ their tops where they were. Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e
   it, a limited set of formatting, image size/float and text colour kept, in time in proportion to
   the text however a colour is written and however deep its tags nest
   (`cycling_site/tests.py::SanitizeRichHtmlTests`, `tests/e2e/test_article_contents.py`). Rich text
-  stored before the sanitiser dropped comments and CDATA lost them once, in `calendar_app`
-  migration 0044, which leaves every other stored text as it was
-  (`calendar_app/tests.py::StoredRichTextCommentsMigrationTests`).
+  stored before the sanitiser dropped them is cleaned once, by `calendar_app` migration 0044: a
+  text holding `<!` or `<?` goes through the sanitiser again, and every other keeps its bytes
+  (`calendar_app/tests.py::StoredRichTextCommentsMigrationTests`). The deploy runs it while the
+  previous release still saves text; what that release saves in between is cleaned only when the
+  migration is applied once more after the deploy.
 - **FR-SHL-004**: The navbar stays on top with a solid background while scrolling. Its open menu
   wraps whole links and tool groups when needed instead of widening the page, in every locale
   and skin (`tests/e2e/test_interface_rules.py::test_no_tab_scrolls_sideways`).
