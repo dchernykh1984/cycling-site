@@ -159,6 +159,9 @@ class CompetitionDetailOut(CompetitionOut):
     approved_by_id: int | None = None
     approved_at: datetime | None = None
     moderation_history: list[StatusChangeOut] | None = None
+    # How many members have the event in favorites -- for a signed-in caller on an approved event, as its
+    # page shows it under the star; null for everyone else.
+    favorites_count: int | None = None
 
     @staticmethod
     def resolve_competition_token(obj: Competition) -> str | None:
@@ -176,6 +179,10 @@ class CompetitionDetailOut(CompetitionOut):
     @staticmethod
     def resolve_moderation_history(obj: Competition) -> list | None:
         return list(obj.status_changes.all()) if getattr(obj, "_approval_visible", False) else None
+
+    @staticmethod
+    def resolve_favorites_count(obj: Competition) -> int | None:
+        return getattr(obj, "_favorites_count", None)
 
 
 class RouteTrackOut(Schema):
@@ -364,6 +371,12 @@ def _to_detail(competition: Competition, user=None) -> Competition:
     # upload_token is nullable (a manager can delete it); don't serialize a null as "None".
     competition._api_token = str(competition.upload_token) if can_see and competition.upload_token else None
     competition._approval_visible = user is not None and roles.at_least(user, roles.MANAGE_ALL_EVENTS)
+    # A visitor comes as AnonymousUser, not None.
+    competition._favorites_count = (
+        competition.favorited_by.count()
+        if user is not None and user.is_authenticated and competition.status == Competition.Status.APPROVED
+        else None
+    )
     return competition
 
 

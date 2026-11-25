@@ -30,7 +30,7 @@
       {% if competition.status == competition.Status.APPROVED %}{% include "_calendar_button.html" %}{% endif %}
       {% if user.is_authenticated and competition.status == competition.Status.APPROVED %}
       <form method="post" action="{% url 'competition_toggle_favorite' competition.pk %}"
-            id="favorite-form" class="mt-1">
+            id="favorite-form" class="mt-1 d-flex flex-column align-items-center">
         {% csrf_token %}
         <button type="submit" id="favorite-btn"
                 class="btn btn-link p-0 border-0 lh-1 fs-3 text-decoration-none {% if is_favorited %}text-warning{% else %}text-secondary{% endif %}"
@@ -40,6 +40,7 @@
                 title="{% if is_favorited %}{% trans 'Remove from favorites' %}{% else %}{% trans 'Add to favorites' %}{% endif %}">
           <span aria-hidden="true">{% if is_favorited %}&#9733;{% else %}&#9734;{% endif %}</span>
         </button>
+        <span class="small"><span class="visually-hidden">{% trans "In favorites:" %} </span><span id="favorite-count">{{ favorites_count }}</span></span>
       </form>
       {% endif %}
     </div>
@@ -538,6 +539,7 @@
         btn.classList.toggle('text-secondary', !on);
         btn.title = on ? btn.dataset.labelRemove : btn.dataset.labelAdd;
         btn.querySelector('span').innerHTML = on ? '★' : '☆';
+        document.getElementById('favorite-count').textContent = data.count;
       })
       .catch(function () { form.submit(); });  // network/JS error: let the server round-trip it
   });

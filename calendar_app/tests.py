@@ -3439,6 +3439,24 @@ class FavoriteTests(TestCase):
         response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
         self.assertFalse(response.context["is_favorited"])
         self.assertNotContains(response, 'id="favorite-form"')
+        self.assertNotContains(response, 'id="favorite-count"')
+
+    def test_the_star_shows_how_many_members_have_the_event_in_favorites(self):
+        for email in ("one@example.com", "two@example.com"):
+            CompetitionFavorite.objects.create(user=_make_user(email, User.Role.PARTICIPANT), competition=self.comp)
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp2)
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
+        self.assertContains(response, '<span id="favorite-count">2</span>')
+
+    def test_toggle_answers_with_how_many_members_have_the_event_in_favorites_now(self):
+        CompetitionFavorite.objects.create(
+            user=_make_user("other@example.com", User.Role.PARTICIPANT), competition=self.comp
+        )
+        self.client.force_login(self.user)
+        ajax = {"x-requested-with": "XMLHttpRequest"}
+        self.assertEqual(self.client.post(self.toggle_url, headers=ajax).json(), {"favorited": True, "count": 2})
+        self.assertEqual(self.client.post(self.toggle_url, headers=ajax).json(), {"favorited": False, "count": 1})
 
     def test_calendar_feed_flags_and_filters_favorites(self):
         CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
