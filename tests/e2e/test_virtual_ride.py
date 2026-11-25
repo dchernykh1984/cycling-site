@@ -1112,7 +1112,7 @@ def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server
     page.set_viewport_size({"width": width, "height": 740})
     _trainer_in_its_menu(page, live_server)
     cities = page.locator("#cities .city")
-    expect(cities).to_have_count(3)
+    expect(cities).to_have_count(len(trainer_page.maps()))
     for city in cities.all():
         city.scroll_into_view_if_needed()
         wide, high = city.evaluate(_REACH)
