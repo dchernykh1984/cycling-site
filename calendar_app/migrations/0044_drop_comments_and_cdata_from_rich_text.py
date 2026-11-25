@@ -210,6 +210,10 @@ def drop_comments_and_cdata(apps, schema_editor):
     touched -- the sanitizer writes every other "<" as "&lt;", so no other text holds one of these
     nodes -- and every other keeps its bytes, though an older save wrote some of them otherwise.
     A no-op on a fresh database.
+
+    The deploy runs it before the release that drops these nodes starts, while the previous one still
+    saves text: what that one saves in between keeps them, until this is applied once more with the
+    new release live ("migrate calendar_app 0043", then "0044", while 0044 is the newest).
     """
     for app_label, model_name, fields in _COLUMNS:
         model = apps.get_model(app_label, model_name)
