@@ -8,6 +8,8 @@ $('#btnStart').onclick = async () => {
   groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace();
 };
 $('#mpCreate').onclick = mpCreateGroup;
+$('#mpEvent').onclick = mpAddEvent;
+$('#mpDelay').addEventListener('change', () => { renderWhen(); renderMP(); });
 // когда шрифт загрузится, перерисовываем форму, чтобы надпись была нужным шрифтом
 try { document.fonts && document.fonts.ready.then(() => { if (!renderer) return; setPlayerChar(settings.char); setPreview(settings.char); }); } catch (e) {} // no 3D on this device: the page already said so
 $('#btnRecords').onclick = () => { renderRecords(); $('#recM').classList.remove('hidden'); };

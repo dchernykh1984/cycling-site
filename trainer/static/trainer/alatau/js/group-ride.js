@@ -57,7 +57,26 @@ async function mpPoll() {
   MP.busy = false;
   mpSchedule(phase === 'menu' ? 3000 : 1000);
 }
-function mpMyGroup() { return MP.groups.find(g => g.is_member); }
+// The hour a page waits for a race to start, and the least gap between one host's races (trainer/live.py). The race
+// a page waits for is its member's first to start within the hour; one further ahead waits on its own, and a
+// member joins any race that keeps the hour from theirs.
+const MP_HOUR = 3600e3;
+function mpMyGroup() { return MP.groups.find(g => g.is_member && mpStartLocal(g) - Date.now() < MP_HOUR); }
+const mpClash = g => MP.groups.some(o => o.is_member && o.id !== g.id && Math.abs(Date.parse(o.start_at) - Date.parse(g.start_at)) < MP_HOUR);
+// the start the menu asks for: { start_in_s }, or { start_at, at } at a date and time on the member's own clock, or
+// null for a moment too soon, too far or not filled in
+function mpWhen() {
+  if ($('#mpDelay').value !== 'at') return { start_in_s: +$('#mpDelay').value || 60 };
+  const at = new Date($('#mpDate').value + 'T' + $('#mpTime').value), ahead = at - Date.now();
+  return isNaN(at) || ahead < 60e3 || ahead > 365 * 864e5 ? null : { start_at: at.toISOString(), at };
+}
+// a date and time to start from: the next whole hour but one, today or tomorrow
+function renderWhen() {
+  const at = $('#mpDelay').value === 'at', pad = n => String(n).padStart(2, '0'), day = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  ['#mpWhen', '#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !at));
+  if (at && !$('#mpDate').value) { const d = new Date(Date.now() + 2 * MP_HOUR); $('#mpDate').value = day(d); $('#mpTime').value = pad(d.getHours()) + ':00'; }
+  $('#mpDate').min = day(new Date()); $('#mpDate').max = day(new Date(Date.now() + 365 * 864e5));
+}
 function mpMaybeStart() {
   const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
   const at = mpStartLocal(g), now = Date.now();
@@ -67,11 +86,62 @@ async function mpAction(path, body) {
   try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
   mpSchedule(50);
 }
+// a race on the chosen route, in the host's wind, which is the race's
+function mpRace(when) {
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind();
+  return Object.assign({ route: r.id, route_name: r.name, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
+}
 function mpCreateGroup() {
-  if (MP.status !== 'on' || mpMyGroup()) return;
-  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  const w = ownWind(); // the host's wind is the race's
-  mpAction('/groups', { route: r.id, route_name: r.name, start_in_s: +$('#mpDelay').value || 60, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 });
+  if (MP.status !== 'on') return;
+  const when = mpWhen(); if (!when) { mpNote(t('mp.badTime')); return; }
+  mpAction('/groups', mpRace(when));
+}
+// "Add event": the race at that date and time -- the member's own on this route at that minute, or a new one -- and
+// the event form, filled from the route's template, for the member to check and submit
+async function mpAddEvent() {
+  const when = mpWhen(); if (!when || !when.start_at) { mpNote(t('mp.badTime')); return; }
+  if (MP.status !== 'on' || MP.eventBusy) return;
+  MP.eventBusy = true; $('#mpEvent').disabled = true; // one race and one form for one press
+  try {
+    const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
+    const g = MP.groups.find(x => x.is_host && x.route === r.id && Math.abs(Date.parse(x.start_at) - when.at) < 60e3) || await Site.post('/groups', mpRace(when));
+    sendEventDraft(r, g, new Date(Date.parse(g.start_at)));
+  } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
+  MP.eventBusy = false; mpSchedule(50);
+}
+const LOCALES = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-GB' };
+// the race's words in one language for its route's template: its time on the member's clock with the clock's offset
+// from UTC, the day, the link to it on the site's page in that language, the route's length and climb, its wind and
+// the word on the button that joins it
+function eventWords(lang, r, g, at) {
+  const loc = LOCALES[lang], T = buildTrack(r), off = -at.getTimezoneOffset(), abs = Math.abs(off);
+  const zone = 'UTC' + (off ? (off > 0 ? '+' : '-') + Math.floor(abs / 60) + (abs % 60 ? ':' + String(abs % 60).padStart(2, '0') : '') : '');
+  const page = Records.me.page_url.replace(/^\/(ru|kk|en)\//, '/' + lang + '/');
+  return {
+    time: at.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) + ' (' + zone + ')',
+    date: at.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'long' }),
+    link: location.origin + page + '?group=' + g.id,
+    km: (T.L / 1000).toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    climb: String(Math.round(T.gain)),
+    wind: g.wind_ms > 0 ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg, lang) }, lang) : '',
+    join: t('mp.join', null, lang)
+  };
+}
+// The form the site keeps a draft from (calendar's SubmitDraftView), sent to the whole window: the route's words in
+// every language, the date of the start for the event's date, its type and discipline by their English names
+function sendEventDraft(r, g, at) {
+  const form = document.createElement('form'), tpl = r.event;
+  form.method = 'post'; form.action = langPath(Records.me.event_draft_url); form.target = '_top';
+  const put = (name, value) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; form.appendChild(i); };
+  const pad = n => String(n).padStart(2, '0');
+  put('csrfmiddlewaretoken', Site.csrf()); put('date_start', at.getFullYear() + '-' + pad(at.getMonth() + 1) + '-' + pad(at.getDate()));
+  Object.keys(LOCALES).forEach(lang => {
+    const v = eventWords(lang, r, g, at), html = s => s.replace(/\{(\w+)\}/g, (m, k) => k in v ? escapeHTML(v[k]) : m);
+    put('title_' + lang, tpl.title[lang]); put('preview_text_' + lang, tpl.preview[lang].replace(/\{(\w+)\}/g, (m, k) => k in v ? v[k] : m));
+    put('description_' + lang, html(tpl.text[lang]));
+  });
+  tpl.types.forEach(n => put('event_type', n)); tpl.disciplines.forEach(n => put('discipline', n));
+  document.body.appendChild(form); form.submit(); form.remove();
 }
 // "Start" while waiting: the rider rides alone and the race goes on without them (a host hands it on)
 async function mpLeaveMyGroup() { const g = mpMyGroup(); if (g) await mpAction('/groups/' + g.id + '/leave'); }
@@ -121,7 +191,7 @@ function renderMP() {
   const create = $('#mpCreate'), online = $('#mpOnline'), box = $('#mpGroups');
   online.innerHTML = '';
   if (MP.status !== 'on') {
-    create.disabled = true; box.innerHTML = '';
+    create.disabled = true; $('#mpEvent').disabled = true; box.innerHTML = '';
     if (MP.status === 'guest') { st.innerHTML = escapeHTML(LINKED ? t('mp.guestLinked') : t('mp.guest')) + ' <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">' + escapeHTML(t('signIn')) + '</a>'; }
     else st.textContent = MP.status === 'connecting' ? t('mp.connecting') : t('mp.offSite');
     renderStartSum(); return;
@@ -139,7 +209,8 @@ function renderMP() {
   const ids = MP.groups.map(g => String(g.id));
   [...box.children].forEach(c => { if (!ids.includes(c.dataset.gid)) c.remove(); });
   MP.groups.forEach(g => {
-    const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000));
+    const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000)), far = left * 1000 >= MP_HOUR;
+    const when = far ? new Date(mpStartLocal(g)).toLocaleString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '';
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
       card = document.createElement('div'); card.dataset.gid = g.id;
@@ -149,14 +220,15 @@ function renderMP() {
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
     if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
     card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
-    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
+    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
     else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
-    else { btn.textContent = t('mp.join'); btn.disabled = !!mine || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
+    else { btn.textContent = t('mp.join'); btn.disabled = mpClash(g) || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });
-  create.disabled = !!mine;
+  // one race to wait for at a time; one at a date and time keeps an hour from the others, as the site checks
+  create.disabled = !!mine && $('#mpDelay').value !== 'at'; $('#mpEvent').disabled = !!MP.eventBusy;
   renderStartSum();
 }
 function raceList() {

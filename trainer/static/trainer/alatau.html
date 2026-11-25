@@ -61,7 +61,8 @@
         <div class="mp-online" id="mpOnline"></div>
         <div class="mp-groups" id="mpGroups"></div>
         <p class="hint hidden" id="mpNote" role="status"></p>
-        <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option></select><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button></div>
+        <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option><option value="at" data-t="mp.atTime"></option></select><span class="mp-when hidden" id="mpWhen"><input type="date" id="mpDate" data-t-label="mp.date"><input type="time" id="mpTime" step="60" data-t-label="mp.time"></span><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button><button class="btn hidden" id="mpEvent" type="button" disabled data-t="mp.event"></button></div>
+        <p class="hint hidden" id="mpEventHint" data-t="mp.eventHint"></p>
         <p class="hint" data-t="mp.hint"></p>
       </section>
       <section class="box" aria-labelledby="hRider">

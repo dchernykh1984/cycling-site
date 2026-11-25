@@ -1,8 +1,9 @@
 'use strict';
 /* ---------------- Слова страницы: t(), формы числа, единицы и перевод разметки ---------------- */
-// t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key
-function t(key, vars) {
-  const s = (TEXT[LANG][key] != null ? TEXT[LANG] : TEXT.ru)[key] ?? key;
+// t(key, { name }) fills {name}; a key missing in a language falls back to Russian, then to the key. The words are
+// the page's language's, or another's when named (an event's words go out in all three)
+function t(key, vars, lang = LANG) {
+  const s = (TEXT[lang][key] != null ? TEXT[lang] : TEXT.ru)[key] ?? key;
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m)) : s;
 }
 const tr = t; // the same, for the functions that keep the ride time in a local `t`
@@ -18,5 +19,5 @@ document.querySelectorAll('[data-t]').forEach(el => { el.textContent = t(el.data
 document.querySelectorAll('[data-t-label]').forEach(el => el.setAttribute('aria-label', t(el.dataset.tLabel)));
 document.querySelectorAll('[data-t-alt]').forEach(el => el.setAttribute('alt', t(el.dataset.tAlt)));
 document.querySelectorAll('[data-tyre]').forEach(o => { o.textContent = o.dataset.tyre + ' — ' + o.value + ' ' + t('u.mm'); });
-document.querySelectorAll('#mpDelay option').forEach(o => { o.textContent = t('mp.startIn', { t: durLabel(+o.value) }); });
+document.querySelectorAll('#mpDelay option:not([data-t])').forEach(o => { o.textContent = t('mp.startIn', { t: durLabel(+o.value) }); });
 const fmt1 = v => numF(v, 1);

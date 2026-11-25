@@ -12,7 +12,7 @@ if (!ROUTES.some(r => r.id === routeSel)) routeSel = ROUTES[0].id; // the first 
 const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me', wind: { on: false, from: 0, ms: 5 } }, store.get('settings', {}));
 // the wind the settings ask for, { ms, from }, or none; the words for it: "5 m/s from the north"
 const ownWind = () => settings.wind && settings.wind.on && settings.wind.ms > 0 ? { ms: settings.wind.ms, from: settings.wind.from || 0 } : null;
-const windFrom = from => [t('wind.n'), t('wind.ne'), t('wind.e'), t('wind.se'), t('wind.s'), t('wind.sw'), t('wind.w'), t('wind.nw')][Math.round((from || 0) / 45) % 8];
+const windFrom = (from, lang = LANG) => [t('wind.n', null, lang), t('wind.ne', null, lang), t('wind.e', null, lang), t('wind.se', null, lang), t('wind.s', null, lang), t('wind.sw', null, lang), t('wind.w', null, lang), t('wind.nw', null, lang)][Math.round((from || 0) / 45) % 8];
 const windWords = w => t('wind.sum', { ms: Math.round(w.ms), from: windFrom(w.from) }); // whole m/s, as it is set
 if (!settings.viewDefault3) { settings.view = 'chase'; settings.viewDefault3 = true; } // стандартный вид — от третьего лица
 // #471: a cadence sensor alone rides by the physics by default, once for everyone: the gear's speed was the default

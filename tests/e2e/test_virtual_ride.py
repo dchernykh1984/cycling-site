@@ -9,9 +9,11 @@ from playwright.sync_api import Page, ViewportSize, expect
 
 from accounts.models import User
 from api.endpoints.virtual_ride import PresenceIn
+from calendar_app.models import Discipline, DisciplineCategory, EventType
 from tests import trainer_page
 from tests.e2e.conftest import inject_session
 from tests.e2e.test_interface_rules import _REACH
+from trainer.models import GroupRide
 
 
 def _language_block(source: str) -> str:
@@ -80,7 +82,9 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
     function = re.search(r"^function renderMP\(\) \{.*?^\}", source, re.DOTALL | re.MULTILINE)
     assert function is not None
     page.set_content(
-        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div><button id="mpCreate"></button>'
+        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div>'
+        '<select id="mpDelay"><option value="60"></option></select><button id="mpCreate"></button>'
+        '<button id="mpEvent"></button>'
     )
     page.evaluate(
         """({words, render}) => {
@@ -92,6 +96,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, LINKED = null;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const groupWind = () => null; // a race in still air
+            const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
             window.renderMP = renderMP;
@@ -305,7 +310,9 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
         )
     ]
     page.set_content(
-        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div><button id="mpCreate"></button>'
+        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div>'
+        '<select id="mpDelay"><option value="60"></option></select><button id="mpCreate"></button>'
+        '<button id="mpEvent"></button>'
         '<p id="mpNote" class="hidden"></p>'
     )
     page.evaluate(
@@ -321,6 +328,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, groupLink = id => 'LINK-' + id;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const groupWind = () => null; // a race in still air
+            const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
             window.t = t;
@@ -1154,6 +1162,49 @@ def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server
         city.scroll_into_view_if_needed()
         wide, high = city.evaluate(_REACH)
         assert wide >= 44 and high >= 44, (city.text_content(), wide, high)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_add_event_gathers_the_race_and_opens_the_event_form_filled_from_the_route(page: Page, live_server):
+    rider = User.objects.create_user(
+        username="e2e_vr_event", email="e2e_vr_event@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    # the lists as the migrations seed them -- laid again where a test before this one emptied the tables
+    virtual, _ = EventType.objects.get_or_create(name_en="Virtual Ride", defaults={"name_ru": "Virtual", "order": 1})
+    road, _ = DisciplineCategory.objects.get_or_create(name_en="Road Cycling", defaults={"name_ru": "Road", "order": 1})
+    coffee, _ = Discipline.objects.get_or_create(
+        name_en="Coffee Ride", category=road, defaults={"name_ru": "Coffee Ride", "order": 1}
+    )
+    inject_session(page, live_server, rider)
+    page.goto(f"{live_server.url}/en/virtual-ride/")
+    frame = page.frame_locator("iframe.virtual-ride-frame")
+    page.wait_for_load_state("networkidle")
+    if not frame.locator("html").evaluate("() => typeof phase !== 'undefined' && phase === 'menu'"):
+        pytest.skip("this browser cannot draw 3D, so the trainer stops before its menu")
+    expect(frame.locator("#mpCreate")).to_be_enabled()  # the lobby answered: the member rides together
+    frame.locator("#mpDelay").select_option("at")
+    # tomorrow at seven in the evening, on the member's own clock
+    day = frame.locator("html").evaluate(
+        "() => { const d = new Date(Date.now() + 864e5), p = n => String(n).padStart(2, '0');"
+        " return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }"
+    )
+    frame.locator("#mpDate").fill(day)
+    frame.locator("#mpTime").fill("19:00")
+    with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
+        frame.locator("#mpEvent").click()
+    race = GroupRide.objects.get(host=rider)
+    assert race.route == "center"
+    expect(page.locator("#id_title_en")).to_have_value("Virtual group race: Central loop")
+    expect(page.locator("#id_title_ru")).to_have_value(re.compile(r"\S"))
+    expect(page.locator("#id_date_start")).to_have_value(day)
+    description = page.locator("#id_description_en").input_value()
+    assert f"{live_server.url}/en/virtual-ride/?group={race.pk}" in description, description
+    assert "19:00 (UTC" in description and "{" not in description, description
+    assert f"/kk/virtual-ride/?group={race.pk}" in page.locator("#id_description_kk").input_value()
+    types = page.locator("#id_event_types option:checked").evaluate_all("options => options.map(o => +o.value)")
+    assert types == [virtual.pk], types
+    chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
+    assert chosen == [coffee.pk], chosen
 
 
 @pytest.mark.django_db(transaction=True)
