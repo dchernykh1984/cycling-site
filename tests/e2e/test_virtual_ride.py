@@ -179,6 +179,58 @@ def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server):
+    # the ground as drawn is flat between the terrain's vertices, tens of metres apart: set on the shape those vertices
+    # sample rather than on the ground itself, a tree or a house hangs in the air where the ground dips under it
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
+    faults = page.evaluate(
+        """() => {
+          if (!scene) { scene = new THREE.Scene(); makeMaterials(); } // a browser without 3D still builds the scene
+          const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), m = new THREE.Matrix4();
+          const p = new THREE.Vector3(), q = new THREE.Quaternion(), k = new THREE.Vector3();
+          return ROUTES.flatMap(r => {
+            buildWorld(r);
+            const out = [], kids = scenery.children;
+            const land = kids.find(o => o.isMesh && o.geometry.type === 'PlaneGeometry' && o.material.vertexColors);
+            const at = (x, z) => {
+              ray.set(new THREE.Vector3(x, 1e5, z), down);
+              const hit = ray.intersectObject(land, false)[0];
+              return hit ? hit.point.y : null;
+            };
+            const high = (what, base, x, z) => {
+              const g = at(x, z);
+              if (g != null && base > g + 1e-3) out.push(r.id + ': ' + what + ' ' + (base - g).toFixed(2) + ' m up');
+            };
+            const each = (type, n, f) => {
+              const mesh = kids.find(o => o.isInstancedMesh && o.geometry.type === type);
+              if (!mesh) return;
+              const step = Math.max(1, Math.floor(mesh.count / n));
+              for (let i = 0; i < mesh.count; i += step) { mesh.getMatrixAt(i, m); m.decompose(p, q, k); f(); }
+            };
+            each('CylinderGeometry', 40, () => high('a tree', p.y, p.x, p.z));
+            each('BoxGeometry', 30, () => {
+              for (const [a, b] of [[-.5, -.5], [-.5, .5], [.5, -.5], [.5, .5]]) {
+                const c = new THREE.Vector3(a * k.x, 0, b * k.z).applyQuaternion(q).add(p);
+                high('a house', p.y, c.x, c.z);
+              }
+            });
+            const placed = o => world.lms.some(l => l.x === o.position.x && l.z === o.position.z);
+            const sights = kids.filter(o => o.isGroup && placed(o));
+            sights.forEach(G => {
+              const box = new THREE.Box3().setFromObject(G), w = box.max.x - box.min.x, d = box.max.z - box.min.z;
+              for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
+                high('a sight', box.min.y, box.min.x + w * i / 4, box.min.z + d * j / 4);
+              }
+            });
+            return out;
+          });
+        }"""
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_open_full_screen_puts_the_trainer_on_the_whole_screen(page: Page, live_server):
     page.goto(f"{live_server.url}/en/virtual-ride/")
     if not page.evaluate("!!(document.fullscreenEnabled || document.webkitFullscreenEnabled)"):
