@@ -28,7 +28,33 @@ function buildTrack(r) {
       px = q.x; pz = q.z; py = e[2]; pd += len; });
   }
   const C = { x: Float32Array.from(cx), z: Float32Array.from(cz), y: Float32Array.from(cy), d: Float32Array.from(cd) };
-  return { route: r, origin: O, N, X, Y, Z, D, L: D[N - 1], loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C };
+  const L = D[N - 1], { again, over } = ridden(X, Z, D, L, !!r.loop, r.width || 8);
+  return { route: r, origin: O, N, X, Y, Z, D, L, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over };
+}
+// Where a route comes back onto road it rode before -- out and back along one road, a loop round a turn: again[i]
+// is 1 where point i lies on the road of a stretch ridden earlier (its own lane apart), over[i] how many earlier
+// stretches its road overlaps. A stretch is earlier when it is more than two road widths behind along the route.
+function segDist(px, pz, ax, az, bx, bz) {
+  const dx = bx - ax, dz = bz - az, f = clamp(((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+  return Math.hypot(px - ax - dx * f, pz - az - dz * f);
+}
+function ridden(X, Z, D, L, loop, W) {
+  const N = X.length, again = new Uint8Array(N), over = new Uint8Array(N), cell = new Map(), gap = 2 * W + 20;
+  const key = (x, z) => Math.floor(x / W) + ',' + Math.floor(z / W);
+  for (let i = 0; i < N; i++) {
+    const near = [];
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      for (const j of cell.get((Math.floor(X[i] / W) + a) + ',' + (Math.floor(Z[i] / W) + b)) || []) {
+        const back = D[i] - D[j];
+        if (back > gap && (!loop || L - back > gap) && Math.hypot(X[i] - X[j], Z[i] - Z[j]) < W) near.push(j);
+      }
+    }
+    if (near.some(j => j + 1 < N && segDist(X[i], Z[i], X[j], Z[j], X[j + 1], Z[j + 1]) < 1.5)) again[i] = 1; // points 4 m apart
+    near.sort((a, b) => D[a] - D[b]);
+    for (let k = 0; k < near.length; k++) if (!k || D[near[k]] - D[near[k - 1]] > gap) over[i]++;
+    const c = key(X[i], Z[i]); if (!cell.has(c)) cell.set(c, []); cell.get(c).push(i);
+  }
+  return { again, over };
 }
 function sampleAt(T, s, o) {
   if (T.loop) s = ((s % T.L) + T.L) % T.L; else s = clamp(s, 0, T.L);
@@ -66,7 +92,8 @@ function nearLandmarks(T) {
   return out;
 }
 // the course of a ride: its track, where it starts and finishes, and the sights along it
+// a route out and back ends where it starts: its finish is the start's line, under the one arch of both
 function buildCourse(route) {
-  const T = buildTrack(route), S0 = 20;
-  return { T, S0, FIN: T.loop ? S0 + T.L : T.L - 8, route, lms: nearLandmarks(T) };
+  const T = buildTrack(route), S0 = 20, back = !T.loop && Math.hypot(T.X[T.N - 1] - T.X[0], T.Z[T.N - 1] - T.Z[0]) < route.width;
+  return { T, S0, FIN: T.loop ? S0 + T.L : back ? T.L - S0 : T.L - 8, back, route, lms: nearLandmarks(T) };
 }

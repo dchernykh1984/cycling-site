@@ -153,7 +153,7 @@ among its routes the scene is laid out from in metres east and south, so a map a
 distances and a rider's track its coordinates; its mountains, when it has a range rising to the south
 (how far south of the origin its foot lies at the nearest; a map without them gets none); its routes,
 each a key, a name and a description, the points (latitude, longitude, height in metres), whether it
-is a loop, the road's width and lanes and the scenery drawn along it (`city` or `gorge`); and the
+is a loop, the road's width and lanes and the scenery drawn along it (`city`, `gorge` or `steppe`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
 line each, in the order the menu shows the cities, so a new map is its folder and that line; a map
@@ -163,7 +163,12 @@ route's key is its own across every map and stays as it is: the members' saved r
 keep it. The objects the sights are built from are shared by every map, a file each in `objects/`,
 named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the
 page too; a new kind of sight is its object's file and that line.
-Tests: `tests/test_virtual_ride_maps.py`.
+A route may come back onto road it rode -- out to a turn and back along one road, round a loop of a turn: that
+road is drawn once, each way in its own lane, and a route that ends where it starts finishes on its start's line,
+under one arch for both. A range farther than 9.5 km from the map's origin rises to its foot from the plain and
+shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses and sights
+stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
+their tops where they were. Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`.
 
 ## User Scenarios
 
