@@ -114,6 +114,54 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
     expect(page.locator("#mpGroups > *")).to_have_count(0)
 
 
+def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own_cannot_be_joined(page: Page):
+    source = _trainer_source()
+    pieces = [
+        _cut(source, pattern)
+        for pattern in (
+            r"^const MP_HOUR = .*?;$",
+            r"^const mpClash = .*?;$",
+            r"^const groupWind = .*?;$",
+            r"^const windFrom = .*?;$",
+            r"^function renderMP\(\) \{.*?^\}",
+        )
+    ]
+    page.set_content(
+        '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div>'
+        '<select id="mpDelay"><option value="60"></option></select><button id="mpCreate"></button>'
+        '<button id="mpEvent"></button>'
+    )
+    page.evaluate(
+        """({words, code}) => {
+            const $ = s => document.querySelector(s);
+            const host = {user_id: 1, name: 'Anna'}, me = {user_id: 2, name: 'Me'}, day = 864e5, hour = 3600e3;
+            const at = ms => new Date(Date.now() + ms).toISOString();
+            // mine in two days; one an hour and a half after it; one half an hour after it, in a west wind
+            window.MP = {status: 'on', online: [], offset: 0, groups: [
+                {id: 1, route: 'center', route_name: 'Center', host: me, members: [me], is_host: true, is_member: true,
+                 start_at: at(2 * day)},
+                {id: 2, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false,
+                 start_at: at(2 * day + 1.5 * hour)},
+                {id: 3, route: 'center', route_name: 'Center', host, members: [host], is_host: false, is_member: false,
+                 start_at: at(2 * day + .5 * hour), wind_ms: 6, wind_from_deg: 270}
+            ]};
+            const Records = {me: {user_id: 2}}, mpStartLocal = g => Date.parse(g.start_at), LINKED = null;
+            const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
+            const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
+            eval(words + code);
+            window.t = t;
+            renderMP();
+        }""",
+        {"words": _language_block(source), "code": "\n".join(pieces)},
+    )
+    cards = page.locator("#mpGroups > div")
+    expect(cards.nth(0).locator("small")).to_contain_text(page.evaluate("t('mp.startsOn', { when: '' })").strip())
+    expect(cards.nth(2).locator("small")).to_contain_text(page.evaluate("t('mp.wind', { ms: 6, from: t('wind.w') })"))
+    # a race an hour and a half from the member's own may be joined; one half an hour from it may not
+    expect(cards.nth(1).locator("button.act")).to_be_enabled()
+    expect(cards.nth(2).locator("button.act")).to_be_disabled()
+
+
 @pytest.mark.django_db(transaction=True)
 def test_the_profile_link_to_the_ride_is_big_enough_to_tap(page: Page, live_server):
     member = User.objects.create_user(
