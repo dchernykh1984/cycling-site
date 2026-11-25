@@ -72,6 +72,8 @@ class MeOut(Schema):
     login_url: str = ""
     # the site's page that frames the trainer: where a shared link to a group race should lead
     page_url: str = ""
+    # where the page sends a group race's event to fill the event form with (calendar's draft)
+    event_draft_url: str = ""
     # Sending rides to Strava: whether the site can, whether this member turned it on, where to turn it on
     strava_available: bool = False
     strava_connected: bool = False
@@ -410,6 +412,7 @@ def me(request):
         name=user.public_display_name,
         profile_url=reverse("account_profile"),
         page_url=reverse("virtual_ride"),
+        event_draft_url=reverse("calendar_submit_draft"),
         strava_available=strava.available(),
         strava_connected=connection is not None,
         strava_athlete=connection.athlete_name if connection else "",

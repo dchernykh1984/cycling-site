@@ -354,5 +354,12 @@ const TEXT_EN = {
     "wind.tail": "tailwind {v} m/s",
     "wind.cross": "crosswind",
     "wind.mark": ", wind",
-    "mp.wind": " Wind {ms} m/s from the {from}."
+    "mp.wind": " Wind {ms} m/s from the {from}.",
+    "mp.atTime": "At a date and time",
+    "mp.date": "Start date",
+    "mp.time": "Start time",
+    "mp.event": "Add event",
+    "mp.badTime": "Choose the start's date and time: a minute from now at the soonest, a year at the latest.",
+    "mp.eventHint": "“Add event” gathers the race for that time and opens the event form filled from the route's template in three languages: check it and submit it.",
+    "mp.startsOn": "Starts {when}"
 };

@@ -119,6 +119,8 @@ button{cursor:pointer}
 .mp-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
 .mp-create{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .mp-create select{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px}
+.mp-when{display:flex;gap:8px;flex-wrap:wrap}
+.mp-when input{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:10px;min-height:44px;font:inherit}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .startbar{display:flex;align-items:center;gap:16px;background:var(--panel);border-top:1px solid var(--line);
   padding:12px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(18px,env(safe-area-inset-left,0px))}

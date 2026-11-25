@@ -103,6 +103,22 @@ class MapsTests(SimpleTestCase):
         # the API saves a ride, a group race and a position only under a key like these
         self.assertEqual([key for key in keys if not re.fullmatch(_ROUTE, key)], [])
 
+    def test_every_route_carries_the_event_announcing_a_group_race_on_it(self):
+        # "Add event" fills the event form with it: what an event's form takes, in every language, the race's own
+        # link and time in its description; the type and the discipline by the English names the lists have
+        placeholders = {"link", "time", "date", "km", "climb", "wind", "join"}
+        for route in _routes():
+            event = route["event"]
+            for part in ("title", "preview", "text"):
+                self.assertEqual(set(event[part]), {"ru", "kk", "en"}, route["id"])
+                for text in event[part].values():
+                    self.assertTrue(text.strip(), route["id"])
+                    self.assertLessEqual(set(re.findall(r"\{(\w+)\}", text)), placeholders, (route["id"], text))
+            for text in event["text"].values():
+                self.assertIn('<a href="{link}">', text, route["id"])
+                self.assertIn("{time}", text, route["id"])
+            self.assertTrue(all(text.strip() for text in event["types"] + event["disciplines"]), route["id"])
+
     def test_a_route_s_name_fits_the_site_in_every_language(self):
         # the page sends the name it shows with a saved ride and a group race, as it is
         longest = VirtualRide._meta.get_field("route_name").max_length

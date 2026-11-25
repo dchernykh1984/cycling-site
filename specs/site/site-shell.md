@@ -132,8 +132,17 @@ sets no route record or top speed. In a group race every member rides in its hos
 named on its card; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,
 `tests/test_virtual_ride_api.py`). Members ride together: the settings page lists who else is on it and the
 open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away (the
-page offers 30 s to 1 h), others join, and every member's page starts it at the same server time.
-"Start" while waiting rides alone and leaves the race to the others: a host who leaves hands it to the
+page offers 30 s to 1 h) or at a date and time on their own clock, up to a year ahead; one host's races start an
+hour apart at least, and a member joins any race an hour from the others they are in. Others join, and every
+member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
+and a card further ahead names its day and time. Beside a date and time, "Add event" gathers the race then (or
+takes the member's own on that route at that minute) and sends the whole window to the event form filled from the
+route's template ([events](events.md), story 1.6): each route of a map carries one, `event`, with the event's
+title, link preview and description in ru, kk and en and its type and discipline by their English names ("Virtual
+Ride", "Coffee Ride": the member changes them in the form). The page fills the start's time with its UTC offset,
+its day, the race's link on the site's page in each language, the route's length and climb, the race's wind and the
+word on the button that joins it; the date goes into the event's date. "Start" while waiting rides alone and
+leaves the race to the others: a host who leaves hands it to the
 rider who joined next, and only a host alone in it cancels it that way ("Cancel" cancels it for all). Each
 race card has "Share": the phone's share sheet, or the link copied, to `/<lang>/virtual-ride/?group=<id>`;
 that address opens the trainer with the race marked on its card in words and colour and scrolled
@@ -160,7 +169,8 @@ among its routes the scene is laid out from in metres east and south, so a map a
 distances and a rider's track its coordinates; its mountains, when it has a range rising to the south
 (how far south of the origin its foot lies at the nearest; a map without them gets none); its routes,
 each a key, a name and a description, the points (latitude, longitude, height in metres), whether it
-is a loop, the road's width and lanes and the scenery drawn along it (`city`, `gorge` or `steppe`); and the
+is a loop, the road's width and lanes, the scenery drawn along it (`city`, `gorge` or `steppe`) and the event
+announcing a group race on it (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
 line each, in the order the menu shows the cities, so a new map is its folder and that line; a map
