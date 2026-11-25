@@ -5843,3 +5843,10 @@ msgstr "Топтық жарыс кемінде %(seconds)d секундтан к
 #: api/endpoints/virtual_ride.py
 msgid "You already have a group race starting within an hour of that time"
 msgstr "Сізде осы уақыттан бір сағат ішінде басталатын топтық жарыс бар"
+
+#: api/endpoints/virtual_ride.py
+#, python-format
+msgid "You already have %(n)d group race waiting to start"
+msgid_plural "You already have %(n)d group races waiting to start"
+msgstr[0] "Сізде старт күтіп тұрған %(n)d топтық жарыс бар"
+msgstr[1] "Сізде старт күтіп тұрған %(n)d топтық жарыс бар"

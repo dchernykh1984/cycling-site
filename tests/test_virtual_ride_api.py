@@ -297,6 +297,21 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         self.assertEqual(self.create(start_at=(later + timedelta(minutes=59)).isoformat()).status_code, 409)
         self.assertEqual(self.create(start_at=(later + timedelta(minutes=61)).isoformat()).status_code, 201)
 
+    def test_a_host_has_ten_races_waiting_at_most(self):
+        # every member's lobby lists them all, every few seconds
+        for day in range(1, 11):
+            at = (timezone.now() + timedelta(days=day)).isoformat()
+            self.assertEqual(self.create(start_at=at).status_code, 201, day)
+        refused = self.create(start_at=(timezone.now() + timedelta(days=20)).isoformat())
+        self.assertEqual(refused.status_code, 409)
+        with translation_override("ru"):
+            many = ngettext(
+                "You already have %(n)d group race waiting to start",
+                "You already have %(n)d group races waiting to start",
+                10,
+            )
+        self.assertEqual(refused.json()["detail"], many % {"n": 10})
+
     def test_a_race_is_gathered_for_a_date_and_time_up_to_a_year_ahead(self):
         at = (timezone.now() + timedelta(days=200)).replace(microsecond=0)
         created = self.create(start_at=at.isoformat())
