@@ -439,6 +439,8 @@ def save_ride(request, payload: RideIn):
         group = get_object_or_404(GroupRide, pk=group_id)
         if not group.memberships.filter(user=request.auth).exists():
             raise HttpError(HTTPStatus.FORBIDDEN, "You did not ride in this group race")
+        # a group race is ridden in its host's wind, whatever a page says it felt
+        data.update(wind_ms=group.wind_ms, wind_from_deg=group.wind_from_deg)
     with transaction.atomic():
         if group is not None:
             # Members finishing together take turns, so each ranking sees the rides saved before it.

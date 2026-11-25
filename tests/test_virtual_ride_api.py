@@ -289,6 +289,16 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         calm = self.create(start_in_s=60).json()
         self.assertEqual(calm["wind_ms"], 0)
 
+    def test_a_ride_of_a_race_keeps_the_race_s_wind_whatever_the_page_sends(self):
+        group = GroupRide.objects.create(
+            route="center", host=self.host, start_at=timezone.now() - timedelta(minutes=30), wind_ms=7, wind_from_deg=90
+        )
+        GroupRideMember.objects.create(group=group, user=self.guest)
+        saved = self.post(self.client_g, "/rides", _ride(group_id=group.pk, wind_ms=0)).json()
+        self.assertEqual((saved["ride"]["wind_ms"], saved["ride"]["wind_from_deg"]), (7, 90))
+        # a wind behind the riders is no record of theirs
+        self.assertNotIn("route_first", saved["records"])
+
     def test_a_host_s_races_start_an_hour_apart_at_least(self):
         self.create()
         self.assertEqual(self.create().status_code, 409)
