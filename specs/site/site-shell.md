@@ -133,7 +133,8 @@ named on its card; the own wind is for riding alone (`tests/e2e/test_virtual_rid
 `tests/test_virtual_ride_api.py`). Members ride together: the settings page lists who else is on it and the
 open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away (the
 page offers 30 s to 1 h) or at a date and time on their own clock, up to a year ahead; one host's races start an
-hour apart at least, and a member joins any race an hour from the others they are in. Others join, and every
+hour apart at least, ten waiting at most (every lobby lists them all), and a member joins any race an hour from the
+others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
 and a card further ahead names its day and time. Beside a date and time, "Add event" gathers the race then (or
 takes the member's own on that route at that minute) and sends the whole window to the event form filled from the

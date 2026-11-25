@@ -58,7 +58,7 @@ and protocols with the event's upload token. The API has no language prefix.
    opens one group race by its id as a shared link names it (cancelled ones say so), reads a race's
    results, and reports their live position to get the riders beside them ([site shell](site-shell.md)).
    A group race starts `start_in_s` from now (20 s to 1 h) or `start_at`, a moment with its time zone up to a
-   year ahead (422 otherwise); one host's races start an hour apart at least (409). `/me` names the event
+   year ahead (422 otherwise); one host's races start an hour apart at least, ten waiting at most (409). `/me` names the event
    form's draft address (`event_draft_url`), where the page's "Add event" sends a race's event.
    A ride and a group race carry the wind they were ridden in (`wind_ms`, `wind_from_deg`; 0: none): a
    ride with wind counts for power but sets no route record or top speed.
