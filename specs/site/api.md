@@ -162,7 +162,8 @@ and protocols with the event's upload token. The API has no language prefix.
 - Text carrying the NUL character or a lone surrogate (half of a UTF-16 pair, as the JSON escape
   `\ud83d` alone writes it), neither of which a column can store, is a 422 wherever it is sent in
   a request's JSON, form fields or query, in a key as in a value; inside an uploaded protocol
-  document it is that document's refusal, a 400 ([protocols](protocols.md)).
+  document it is that document's refusal: a 400 when the document comes alone, `document_error` on
+  the 200 when HTML comes with it ([protocols](protocols.md)).
 - The event listing gives admins everything; anyone else gets approved events that are neither
   hidden nor invite-only, plus their own submissions; deleted events only on request, to an admin
   (all) or a signed-in author (their own).
