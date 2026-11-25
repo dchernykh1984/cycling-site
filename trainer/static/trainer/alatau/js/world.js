@@ -14,6 +14,20 @@ function terrainH(T, x, z) {
   } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
   return h;
 }
+// The ground as drawn: the height of the terrain's grid at a point, each cell split along the diagonal three.js's
+// PlaneGeometry splits it on, (ix, iz+1)-(ix+1, iz). terrainH is the shape the grid samples; between its vertices,
+// tens of metres apart, the drawn ground is a plane and can sit metres above or below it.
+function groundOf(pos, x0, z0, x1, z1, nx, nz) {
+  const w = nx + 1, y = (ix, iz) => pos.getY(ix + w * iz);
+  return (x, z) => {
+    const fx = clamp((x - x0) / (x1 - x0) * nx, 0, nx - 1e-6), fz = clamp((z - z0) / (z1 - z0) * nz, 0, nz - 1e-6);
+    const ix = Math.floor(fx), iz = Math.floor(fz), u = fx - ix, v = fz - iz;
+    const a = y(ix, iz), b = y(ix, iz + 1), c = y(ix + 1, iz + 1), d = y(ix + 1, iz);
+    return u + v <= 1 ? a + (d - a) * u + (b - a) * v : c + (b - c) * (1 - u) + (d - c) * (1 - v);
+  };
+}
+// how deep a trunk goes into the ground: a slope under it leaves no gap at its foot
+const ROOT_M = .3;
 let world_osmKept = 0;
 // the course to ride, and the scenery along it
 function buildWorld(route) {
@@ -36,6 +50,15 @@ function buildWorld(route) {
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   grp.add(new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+  const ground = groundOf(pos, x0, z0, x1, z1, nx, nz);
+  // the lowest ground under a footprint d by w turned by rot: its corners, the middles of its sides and its centre
+  const lowest = (x, z, d, w, rot) => {
+    const c = Math.cos(rot), sn = Math.sin(rot); let m = Infinity;
+    for (const a of [-.5, 0, .5]) for (const b of [-.5, 0, .5]) m = Math.min(m, ground(x + a * d * c + b * w * sn, z - a * d * sn + b * w * c));
+    return m;
+  };
+  // a block goes down to the lowest ground under it, its roof where it was
+  const standing = (b, top) => { b.y = Math.min(b.y, lowest(b.x, b.z, b.d, b.w, b.rot) - ROOT_M); b.h = top - b.y; return b; };
   const under = new THREE.Mesh(new THREE.PlaneGeometry(160000, 160000), new THREE.MeshLambertMaterial({ color: 0x7f8a60 }));
   under.rotation.x = -Math.PI / 2; under.position.y = T.minY - 30; grp.add(under);
 
@@ -78,14 +101,14 @@ function buildWorld(route) {
         const x = o.x + o.rx * off * side, z = o.z + o.rz * off * side;
         const roll = r(); let h = roll < .7 ? 15 + r() * 12 : roll < .9 ? 30 + r() * 18 : 50 + r() * 45;
         if (row === 1) h *= 1.15;
-        if (!inView(s, side) && !tooClose(x, z, W / 2 + 6 + Math.max(w, d) * .55)) bl.push({ x, z, y: o.y - 2, w, d, h: h + 2, rot: Math.atan2(o.tx, o.tz), c: r() });
+        if (!inView(s, side) && !tooClose(x, z, W / 2 + 6 + Math.max(w, d) * .55)) bl.push(standing({ x, z, y: o.y - 2, w, d, rot: Math.atan2(o.tx, o.tz), c: r() }, o.y + h));
         s += w + 6 + r() * 16;
       }
     }
   } else {
     let s = 120;
     while (s < 4200) { const o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 18 + r() * 40, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side, w = 10 + r() * 10, d = 9 + r() * 8;
-      if (!tooClose(x, z, W / 2 + 5 + w * .6)) bl.push({ x, z, y: terrainH(T, x, z) - 2, w, d, h: 8 + r() * 9, rot: Math.atan2(o.tx, o.tz), c: r() });
+      if (!tooClose(x, z, W / 2 + 5 + w * .6)) { const y = terrainH(T, x, z) - 2, h = 8 + r() * 9; bl.push(standing({ x, z, y, w, d, rot: Math.atan2(o.tx, o.tz), c: r() }, y + h)); }
       s += 30 + r() * 70; }
   }
   if (bl.length) {
@@ -97,19 +120,20 @@ function buildWorld(route) {
   }
 
   // --- деревья: тополя в городе, тянь-шаньские ели в ущелье ---
+  // each stands on the ground as drawn, its trunk a little way into it
   const trees = [];
   if (!gorge) {
-    for (const side of [-1, 1]) { let s = r() * 6; while (s < T.L) { const o = sampleAt(T, s, {}), off = W / 2 + 6.5 + r() * .8, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 4)) trees.push({ x, z, y: o.y, k: 'p', s: .85 + r() * .4 }); s += 7 + r() * 4; } }
-    for (let i = 0; i < 1400; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 40 + r() * 600, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: terrainH(T, x, z) + 1, k: r() < .5 ? 'p' : 'd', s: .7 + r() * .5 }); }
+    for (const side of [-1, 1]) { let s = r() * 6; while (s < T.L) { const o = sampleAt(T, s, {}), off = W / 2 + 6.5 + r() * .8, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 4)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'p', s: .85 + r() * .4 }); s += 7 + r() * 4; } }
+    for (let i = 0; i < 1400; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 40 + r() * 600, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .5 ? 'p' : 'd', s: .7 + r() * .5 }); }
   } else {
-    for (let i = 0; i < 5200; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 7 + Math.pow(r(), 1.6) * 650, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; const h = terrainH(T, x, z); if (h > 2700 || tooClose(x, z, W / 2 + 5)) continue; trees.push({ x, z, y: h + .5, k: s < 2500 && r() < .6 ? 'd' : 's', s: .7 + r() * .7 }); }
+    for (let i = 0; i < 5200; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 7 + Math.pow(r(), 1.6) * 650, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; const h = ground(x, z); if (h > 2700 || tooClose(x, z, W / 2 + 5)) continue; trees.push({ x, z, y: h - ROOT_M, k: s < 2500 && r() < .6 ? 'd' : 's', s: .7 + r() * .7 }); }
   }
   addTrees(grp, trees);
 
   // --- a mountain range to the south, on a map that has one ---
   const range = mapOf(route).mountains; if (range) addMountains(grp, T, range.south);
   // --- ориентиры ---
-  lms.forEach(lm => addLandmark(grp, lm, T));
+  lms.forEach(lm => addLandmark(grp, lm, T, ground));
   // --- старт и финиш ---
   if (T.loop) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 
