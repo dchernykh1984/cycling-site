@@ -40,7 +40,7 @@
                 title="{% if is_favorited %}{% trans 'Remove from favorites' %}{% else %}{% trans 'Add to favorites' %}{% endif %}">
           <span aria-hidden="true">{% if is_favorited %}&#9733;{% else %}&#9734;{% endif %}</span>
         </button>
-        <span class="small"><span class="visually-hidden">{% trans "In favorites:" %} </span><span id="favorite-count">{{ favorites_count }}</span></span>
+        <span class="small" role="status"><span class="visually-hidden">{% trans "In favorites:" %} </span><span id="favorite-count">{{ favorites_count }}</span></span>
       </form>
       {% endif %}
     </div>
