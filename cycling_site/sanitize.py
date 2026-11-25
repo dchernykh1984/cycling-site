@@ -245,8 +245,12 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
     soup = BeautifulSoup(raw or "", "html.parser")
     # A comment, CDATA, doctype or processing instruction is written back as it came, and a browser may end it at the
     # first ">" where html.parser read on: "<![CDATA[><img onerror=...>]]>" ran the handler. Rich text needs none.
-    for node in soup.find_all(string=lambda text: isinstance(text, PreformattedString)):
-        node.extract()
+    # Backwards through each parent's children, so each is removed at a known index: extract() alone walks the
+    # children from the first to find it, quadratic in their number.
+    for parent in [soup, *soup.find_all(True)]:
+        for index in range(len(parent.contents) - 1, -1, -1):
+            if isinstance(parent.contents[index], PreformattedString):
+                parent.contents[index].extract(_self_index=index)
     for bad in soup(["script", "style", "iframe", "object", "embed", "form", "link", "meta", "svg"]):
         bad.decompose()
     for tag in soup.find_all(True):

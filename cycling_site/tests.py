@@ -463,6 +463,14 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertLess(time.perf_counter() - started, 1.0)
         self.assertEqual(out, "kept")
 
+    def test_a_line_of_many_comments_is_cleaned_in_well_under_a_second(self):
+        # Each comment was found by walking its parent's children from the first: 100 000 characters took two seconds,
+        # and a document's 100 header and footer lines of them more each draw. The bound is generous, as above.
+        started = time.perf_counter()
+        out = sanitize_rich_html("a<!---->" * 12500, allow_img=True)
+        self.assertLess(time.perf_counter() - started, 1.0)
+        self.assertEqual(out, "a" * 12500)
+
     def test_align_and_indent_classes_kept_others_dropped(self):
         out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
         self.assertIn('class="ql-align-center"', out)
