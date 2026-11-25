@@ -4,7 +4,7 @@ import datetime
 
 import pytest
 from django.conf import settings
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 
 from accounts.models import User
 from calendar_app.models import Competition, CompetitionFavorite
@@ -79,6 +79,12 @@ def test_the_count_under_the_star_can_be_read_in_this_skin(page: Page, live_serv
     assert legibility(page.locator("#favorite-count")) >= 4.5
 
 
+def _width(locator: Locator) -> float:
+    box = locator.bounding_box()
+    assert box is not None
+    return box["width"]
+
+
 @pytest.mark.django_db(transaction=True)
 def test_the_star_stays_put_when_the_count_gains_a_digit(page: Page, live_server, superuser, approved_competition):
     """A click taking the count from 999 to 1000 leaves the star's column as wide as the star (principle 5).
@@ -94,11 +100,11 @@ def test_the_star_stays_put_when_the_count_gains_a_digit(page: Page, live_server
     inject_session(page, live_server, superuser)
     page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
     star, column = page.locator("#favorite-btn"), page.locator("#favorite-form")
-    assert column.bounding_box()["width"] == star.bounding_box()["width"]
+    assert _width(column) == _width(star)
 
     star.click()
     expect(page.locator("#favorite-count")).to_have_text("1000")
-    assert column.bounding_box()["width"] == star.bounding_box()["width"]
+    assert _width(column) == _width(star)
 
 
 @pytest.mark.django_db(transaction=True)
