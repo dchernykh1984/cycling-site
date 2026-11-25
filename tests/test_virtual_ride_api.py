@@ -289,9 +289,34 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         calm = self.create(start_in_s=60).json()
         self.assertEqual(calm["wind_ms"], 0)
 
-    def test_one_waiting_race_per_host(self):
+    def test_a_host_s_races_start_an_hour_apart_at_least(self):
         self.create()
         self.assertEqual(self.create().status_code, 409)
+        later = timezone.now() + timedelta(days=3)
+        self.assertEqual(self.create(start_at=later.isoformat()).status_code, 201)
+        self.assertEqual(self.create(start_at=(later + timedelta(minutes=59)).isoformat()).status_code, 409)
+        self.assertEqual(self.create(start_at=(later + timedelta(minutes=61)).isoformat()).status_code, 201)
+
+    def test_a_race_is_gathered_for_a_date_and_time_up_to_a_year_ahead(self):
+        at = (timezone.now() + timedelta(days=200)).replace(microsecond=0)
+        created = self.create(start_at=at.isoformat())
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(GroupRide.objects.get(pk=created.json()["id"]).start_at, at)
+        # others join it long before it starts, and it is listed meanwhile
+        self.assertEqual(self.post(self.client_g, f"/groups/{created.json()['id']}/join").status_code, 200)
+        self.assertEqual([g["id"] for g in self.client_g.get(f"{API}/groups").json()], [created.json()["id"]])
+
+    def test_a_start_too_soon_too_late_or_without_its_time_zone_is_refused(self):
+        now = timezone.now()
+        for at in (now + timedelta(seconds=5), now + timedelta(days=366), now - timedelta(hours=1)):
+            self.assertEqual(self.create(start_at=at.isoformat()).status_code, 422, at)
+        self.assertEqual(self.create(start_at="2027-03-01T19:00:00").status_code, 422)
+
+    def test_a_member_joins_races_on_different_days(self):
+        first = self.create(start_at=(timezone.now() + timedelta(days=1)).isoformat()).json()["id"]
+        second = self.create(start_at=(timezone.now() + timedelta(days=8)).isoformat()).json()["id"]
+        for group_id in (first, second):
+            self.assertTrue(self.post(self.client_g, f"/groups/{group_id}/join").json()["is_member"])
 
     def test_the_start_cannot_be_too_soon(self):
         self.assertEqual(self.create(start_in_s=5).status_code, 422)

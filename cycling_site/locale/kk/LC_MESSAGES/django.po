@@ -5830,3 +5830,16 @@ msgstr "%(club)s командасымен бірге велосипед теп!"
 #: accounts/templates/accounts/profile.html:302
 msgid "wind"
 msgstr "жел"
+
+#: api/endpoints/virtual_ride.py
+msgid "A start needs its time zone"
+msgstr "Стартта уақыт белдеуі көрсетілуі керек"
+
+#: api/endpoints/virtual_ride.py
+#, python-format
+msgid "A group race starts %(seconds)d seconds to a year from now"
+msgstr "Топтық жарыс кемінде %(seconds)d секундтан кейін, ең кеші бір жылдан кейін басталады"
+
+#: api/endpoints/virtual_ride.py
+msgid "You already have a group race starting within an hour of that time"
+msgstr "Сізде осы уақыттан бір сағат ішінде басталатын топтық жарыс бар"
