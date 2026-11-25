@@ -348,6 +348,21 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         out = sanitize_rich_html('<a href="#section-2" target="_blank" rel="opener">x</a>')
         self.assertEqual(out, '<a href="#section-2">x</a>')
 
+    def test_a_comment_or_cdata_a_browser_ends_at_its_first_gt_brings_no_handler_through(self):
+        # html.parser read each of these as one comment or CDATA, written back as it came; a browser ends it at the
+        # first ">" and runs the handler behind it. Which of them html.parser reads whole depends on the Python.
+        for raw in (
+            '<!--><img src=x onerror="alert(1)">-->',
+            '<!---><img src=x onerror="alert(1)">-->',
+            '<![CDATA[><img src=x onerror="alert(1)">]]>',
+            '<p>ok</p><![CDATA[><a href="https://x.com" onmouseover="alert(1)">t</a>]]>',
+        ):
+            for allow_img in (False, True):
+                with self.subTest(raw=raw, allow_img=allow_img):
+                    out = sanitize_rich_html(raw, allow_img=allow_img)
+                    self.assertNotIn("onerror", out)
+                    self.assertNotIn("onmouseover", out)
+
     def test_data_href_dropped_on_anchor(self):
         out = sanitize_rich_html('<a href="data:text/html,<script>alert(1)</script>">x</a>')
         self.assertNotIn("href=", out)

@@ -239,9 +239,14 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
     raster data URI) are kept; everything else stays on the text-formatting allowlist.
     """
     from bs4 import BeautifulSoup
+    from bs4.element import PreformattedString
 
     allowed_tags = _ALLOWED_BODY_TAGS | ({"img"} if allow_img else frozenset())
     soup = BeautifulSoup(raw or "", "html.parser")
+    # A comment, CDATA, doctype or processing instruction is written back as it came, and a browser may end it at the
+    # first ">" where html.parser read on: "<![CDATA[><img onerror=...>]]>" ran the handler. Rich text needs none.
+    for node in soup.find_all(string=lambda text: isinstance(text, PreformattedString)):
+        node.extract()
     for bad in soup(["script", "style", "iframe", "object", "embed", "form", "link", "meta", "svg"]):
         bad.decompose()
     for tag in soup.find_all(True):
