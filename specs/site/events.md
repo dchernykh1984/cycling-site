@@ -9,7 +9,7 @@
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
 materials, upload token, rich description, several event types), `calendar_app/test_timezones.py`,
 `tests/test_invite_only_events.py`,
-`tests/test_clone_competition.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
+`tests/test_clone_competition.py`, `tests/test_event_draft.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
 `tests/test_top_events.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
@@ -58,6 +58,13 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 5. **Given** someone who may edit an event, **Then** "copy" opens the form filled from it --
    registration settings, categories and the link preview text included, dates and last year's
    results not.
+6. **Given** another page hands the form a draft (the virtual ride's "Add event": a POST to
+   `/<lang>/calendar/submit/draft/` with the titles, link preview lines and descriptions in each language,
+   the start date, and event types and disciplines named in English, as every database's lists name them),
+   **Then** it is kept for the member's session and the form opens filled with it
+   (`/calendar/submit/?draft=1`) -- the descriptions cleaned as an event's are, a name no list has left out,
+   nothing an event until submitted; submitting drops the draft. "Virtual ride" is a type of event of its own
+   (`tests/test_event_draft.py`).
 
 ### Story 2 -- Review (P1)
 
