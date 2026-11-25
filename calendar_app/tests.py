@@ -3036,30 +3036,41 @@ class StoredRichTextCommentsMigrationTests(TestCase):
         from knowledge.models import KnowledgeArticle
         from news.models import NewsArticle
 
-        cdata = "<p>kept</p><![CDATA[><img src=x onerror=alert(1)>]]>"
-        comment = "<p>kept</p><!--><img src=x onerror=alert(1)>-->"
-        stored = {
-            ("calendar_app", "Competition", _make_competition(title="Old").pk): {
-                "description": cdata,
-                "description_kk": comment,
-            },
-            ("news", "NewsArticle", NewsArticle.objects.create(title_ru="Old").pk): {"body": comment, "body_en": cdata},
-            ("knowledge", "KnowledgeArticle", KnowledgeArticle.objects.create(title="Old", locale="ru").pk): {
-                "body": comment
-            },
-            ("home", "HomeCard", HomeCard.objects.create(title_ru="Old").pk): {"body_ru": cdata},
+        payloads = (
+            "<p>kept</p><![CDATA[><img src=x onerror=alert(1)>]]>",
+            "<p>kept</p><!--><img src=x onerror=alert(1)>-->",
+            # An older html.parser (3.13.0's) stored "<![if x>y <img ...>]>" as a declaration, which bs4
+            # writes with "<?".
+            "<p>kept</p><?if x>y <img src=x onerror=alert(1)>?>",
+        )
+        # Every column the migration is to clean, written out rather than read from it.
+        rows = {
+            ("calendar_app", "Competition", _make_competition(title="Old").pk): (
+                "description",
+                "description_ru",
+                "description_kk",
+                "description_en",
+            ),
+            ("news", "NewsArticle", NewsArticle.objects.create(title_ru="Old").pk): (
+                "body",
+                "body_ru",
+                "body_kk",
+                "body_en",
+            ),
+            ("knowledge", "KnowledgeArticle", KnowledgeArticle.objects.create(title="Old", locale="ru").pk): ("body",),
+            ("home", "HomeCard", HomeCard.objects.create(title_ru="Old").pk): ("body", "body_ru", "body_kk", "body_en"),
         }
-        for (app_label, model_name, pk), columns in stored.items():
-            self.apps.get_model(app_label, model_name).objects.filter(pk=pk).update(**columns)
+        columns = [(row, field) for row, fields in rows.items() for field in fields]
+        for n, ((app_label, model_name, pk), field) in enumerate(columns):
+            self.apps.get_model(app_label, model_name).objects.filter(pk=pk).update(**{field: payloads[n % 3]})
 
         self.migration.drop_comments_and_cdata(self.apps, None)
 
-        for (app_label, model_name, pk), columns in stored.items():
-            row = self.apps.get_model(app_label, model_name).objects.get(pk=pk)
-            for field in columns:
-                with self.subTest(model=model_name, field=field):
-                    self.assertNotIn("onerror", getattr(row, field))
-                    self.assertTrue(getattr(row, field).startswith("<p>kept</p>"))
+        for (app_label, model_name, pk), field in columns:
+            value = getattr(self.apps.get_model(app_label, model_name).objects.get(pk=pk), field)
+            with self.subTest(model=model_name, field=field):
+                self.assertNotIn("onerror", value)
+                self.assertTrue(value.startswith("<p>kept</p>"))
 
     def test_a_stored_text_holding_no_comment_keeps_its_bytes(self):
         from cycling_site.sanitize import sanitize_rich_html
