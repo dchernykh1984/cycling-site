@@ -3463,8 +3463,11 @@ class FavoriteTests(TestCase):
         self.assertContains(response, '<span id="favorite-count">3</span>')
         with translation_override("ru"):
             hidden = gettext("In favorites:")
-        # What a screen reader hears right before the number.
-        self.assertContains(response, f'<span class="visually-hidden">{hidden} </span><span id="favorite-count">')
+        # What a screen reader hears right before the number, and again when a click changes it (WCAG 4.1.3).
+        status = '<span class="small" role="status">'
+        self.assertContains(
+            response, f'{status}<span class="visually-hidden">{hidden} </span><span id="favorite-count">'
+        )
 
     def test_toggle_answers_with_how_many_members_have_the_event_in_favorites_now(self):
         CompetitionFavorite.objects.create(
