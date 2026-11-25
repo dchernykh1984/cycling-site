@@ -297,7 +297,8 @@ their tops where they were. Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e
   text holding `<!` or `<?` goes through the sanitiser again, and every other keeps its bytes
   (`calendar_app/tests.py::StoredRichTextCommentsMigrationTests`). The deploy runs it while the
   previous release still saves text; what that release saves in between is cleaned only when the
-  migration is applied once more after the deploy.
+  migration's cleaning runs once more after the deploy, from the shell -- never by unapplying it,
+  which unapplies whatever has come to depend on it.
 - **FR-SHL-004**: The navbar stays on top with a solid background while scrolling. Its open menu
   wraps whole links and tool groups when needed instead of widening the page, in every locale
   and skin (`tests/e2e/test_interface_rules.py::test_no_tab_scrolls_sideways`).

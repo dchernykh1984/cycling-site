@@ -212,8 +212,9 @@ def drop_comments_and_cdata(apps, schema_editor):
     A no-op on a fresh database.
 
     The deploy runs it before the release that drops these nodes starts, while the previous one still
-    saves text: what that one saves in between keeps them, until this is applied once more with the
-    new release live ("migrate calendar_app 0043", then "0044", while 0044 is the newest).
+    saves text: what that one saves in between keeps them, until this runs once more with the new
+    release live -- from "manage.py shell", on this migration's historical models, as the test does.
+    Never by unapplying 0044: that unapplies every migration of any app that has come to depend on it.
     """
     for app_label, model_name, fields in _COLUMNS:
         model = apps.get_model(app_label, model_name)
