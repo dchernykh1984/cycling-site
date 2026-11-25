@@ -17,6 +17,10 @@ ONLINE_SECONDS = 15
 GROUP_LISTED_AFTER_START = timedelta(minutes=5)
 MIN_START_DELAY_S = 20
 MAX_START_DELAY_S = 3600
+# A race gathered for a date and time may start up to a year ahead: an event on the calendar announces it.
+MAX_AHEAD = timedelta(days=365)
+# One host's races start at least this far apart: a rider rides one at a time.
+RACE_GAP = timedelta(hours=1)
 
 
 def online(now=None):

@@ -281,7 +281,9 @@ class GroupOut(Schema):
 class GroupIn(Schema):
     route: str = Field(..., pattern=_ROUTE, max_length=40)
     route_name: str = Field("", max_length=120)
+    # the start: so many seconds from now, or at a moment with its time zone, up to a year ahead
     start_in_s: int = Field(60, ge=live.MIN_START_DELAY_S, le=live.MAX_START_DELAY_S)
+    start_at: datetime | None = None
     wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
     wind_from_deg: int = Field(0, ge=0, le=359)
 
@@ -712,15 +714,26 @@ def list_groups(request):
 
 @router.post("/groups", response={HTTPStatus.CREATED: GroupOut}, auth=member_auth, summary="Gather a group race")
 def create_group(request, payload: GroupIn):
+    """A race on a route: starting in so many seconds, or at a date and time up to a year ahead. A host's races start
+    an hour apart at least, as a rider rides one at a time."""
     now = timezone.now()
-    if GroupRide.objects.filter(host=request.auth, cancelled=False, start_at__gt=now).exists():
-        raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race waiting to start"))
+    start = payload.start_at or now + timedelta(seconds=payload.start_in_s)
+    if timezone.is_naive(start):
+        raise HttpError(HTTPStatus.UNPROCESSABLE_ENTITY, _("A start needs its time zone"))
+    if not now + timedelta(seconds=live.MIN_START_DELAY_S) <= start <= now + live.MAX_AHEAD:
+        soonest = {"seconds": live.MIN_START_DELAY_S}
+        raise HttpError(
+            HTTPStatus.UNPROCESSABLE_ENTITY, _("A group race starts %(seconds)d seconds to a year from now") % soonest
+        )
+    mine = GroupRide.objects.filter(host=request.auth, cancelled=False, start_at__gt=now)
+    if mine.filter(start_at__gt=start - live.RACE_GAP, start_at__lt=start + live.RACE_GAP).exists():
+        raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race starting within an hour of that time"))
     with transaction.atomic():
         group = GroupRide.objects.create(
             route=payload.route,
             route_name=payload.route_name,
             host=request.auth,
-            start_at=now + timedelta(seconds=payload.start_in_s),
+            start_at=start,
             wind_ms=payload.wind_ms,
             wind_from_deg=payload.wind_from_deg,
         )

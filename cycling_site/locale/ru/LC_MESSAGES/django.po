@@ -5838,3 +5838,16 @@ msgstr "Катайся вместе с %(club)s!"
 #: accounts/templates/accounts/profile.html:302
 msgid "wind"
 msgstr "ветер"
+
+#: api/endpoints/virtual_ride.py
+msgid "A start needs its time zone"
+msgstr "У старта должен быть часовой пояс"
+
+#: api/endpoints/virtual_ride.py
+#, python-format
+msgid "A group race starts %(seconds)d seconds to a year from now"
+msgstr "Групповая гонка начинается не раньше чем через %(seconds)d секунд и не позже чем через год"
+
+#: api/endpoints/virtual_ride.py
+msgid "You already have a group race starting within an hour of that time"
+msgstr "У вас уже есть групповая гонка, которая начинается в пределах часа от этого времени"
