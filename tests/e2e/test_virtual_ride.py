@@ -186,7 +186,9 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
     page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
     faults = page.evaluate(
         """() => {
-          if (!scene) { scene = new THREE.Scene(); makeMaterials(); } // a browser without 3D still builds the scene
+          if (!scene) { // a browser without 3D still builds the scene
+            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+          }
           const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), m = new THREE.Matrix4();
           const p = new THREE.Vector3(), q = new THREE.Quaternion(), k = new THREE.Vector3();
           return ROUTES.flatMap(r => {
