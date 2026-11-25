@@ -40,7 +40,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 2. **Given** the form, **Then** it takes a title (required in Russian, optional in Kazakh and
    English), a rich-text description (sanitised, size-limited, edited with a bundled Quill editor),
    a start date and an optional end date (not before the start), several event types and several
-   disciplines (both optional), a location from the tree or a new venue
+   disciplines (both optional; the types include events with no ride or race in them -- "Lecture /
+   Seminar", where someone tells, and "Workshop", where someone shows, `calendar_app` 0043), a location from the tree or a new venue
    proposed in a city (see [locations](locations.md)), a registration link, links and files for
    announcement, regulations, route and results (files: PDF, Office documents, GPX, KML, ZIP or
    images, up to 10 MB; the route takes KMZ, TCX, FIT and GeoJSON too -- on a computer a file may be

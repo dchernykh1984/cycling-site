@@ -4025,7 +4025,7 @@ class ProfessionalRaceEventTypeTests(TestCase):
     def test_it_is_listed_after_the_types_that_were_already_there(self):
         """``order`` defaults to 0, which would put the newest type ahead of the plain race."""
         listed = list(EventType.objects.values_list("name_en", flat=True))
-        later = {"Virtual Ride"}  # added after it by 0042, and listed after it
+        later = {"Virtual Ride", "Lecture / Seminar", "Workshop"}  # added after it by 0042 and 0043, listed after it
         self.assertEqual([name for name in listed if name not in later][-1], self.NAME_EN)
         self.assertLess(listed.index("Race"), listed.index(self.NAME_EN))
         self.assertLess(listed.index(self.NAME_EN), listed.index("Virtual Ride"))
@@ -4490,3 +4490,38 @@ class CompetitionAbsoluteUrlTests(TestCase):
         response = self.client.get(comp.get_absolute_url())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["competition"].pk, comp.pk)
+
+
+class LectureAndWorkshopTypesTests(TestCase):
+    """0043: events where people gather to listen and watch -- a lecture or seminar, a workshop -- have their types."""
+
+    MIGRATION = "calendar_app.migrations.0043_add_lecture_and_workshop_event_types"
+
+    NAMES = ("Lecture / Seminar", "Workshop")
+
+    def test_each_is_seeded_in_every_language_after_the_types_before_it(self):
+        virtual = EventType.objects.get(name_en="Virtual Ride")
+        for name in self.NAMES:
+            event_type = EventType.objects.get(name_en=name)
+            self.assertTrue(event_type.name_ru and event_type.name_kk, name)
+            self.assertEqual(event_type.name, event_type.name_ru, name)
+            self.assertGreater(event_type.order, virtual.order, name)
+
+    def test_seeding_again_adds_no_second_copy(self):
+        import importlib
+
+        from django.apps import apps
+
+        importlib.import_module(self.MIGRATION).add_talks(apps, None)
+        for name in self.NAMES:
+            self.assertEqual(EventType.objects.filter(name_en=name).count(), 1, name)
+
+    def test_it_is_not_removed_while_an_event_is_marked_with_it(self):
+        import importlib
+
+        from django.apps import apps
+
+        workshop = EventType.objects.get(name_en="Workshop")
+        _make_competition("Wheel truing workshop", event_types=[workshop])
+        with self.assertRaises(RuntimeError):
+            importlib.import_module(self.MIGRATION).remove_talks(apps, None)
