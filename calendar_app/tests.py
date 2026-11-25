@@ -3455,15 +3455,18 @@ class FavoriteTests(TestCase):
     def test_the_star_shows_how_many_members_have_the_event_in_favorites(self):
         for email in ("one@example.com", "two@example.com"):
             CompetitionFavorite.objects.create(user=_make_user(email, User.Role.PARTICIPANT), competition=self.comp)
+        # The reader's own star counts; one on another event does not.
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp)
         CompetitionFavorite.objects.create(user=self.user, competition=self.comp2)
         self.client.force_login(self.user)
         response = self.client.get(reverse("competition_detail", args=[self.comp.pk]))
-        self.assertContains(response, '<span id="favorite-count">2</span>')
+        self.assertContains(response, '<span id="favorite-count">3</span>')
 
     def test_toggle_answers_with_how_many_members_have_the_event_in_favorites_now(self):
         CompetitionFavorite.objects.create(
             user=_make_user("other@example.com", User.Role.PARTICIPANT), competition=self.comp
         )
+        CompetitionFavorite.objects.create(user=self.user, competition=self.comp2)  # another event: not counted
         self.client.force_login(self.user)
         ajax = {"x-requested-with": "XMLHttpRequest"}
         self.assertEqual(self.client.post(self.toggle_url, headers=ajax).json(), {"favorited": True, "count": 2})

@@ -2901,8 +2901,14 @@ class CompetitionFavoritesCountTest(TestCase, ApiTestMixin):
         CompetitionFavorite.objects.create(user=_user("fc_fan"), competition=self.event)
 
     def test_a_member_reads_how_many_members_have_the_event_in_favorites(self):
+        # The caller's own star counts; one on another event does not.
+        CompetitionFavorite.objects.create(user=self.member, competition=self.event)
+        other = Competition.objects.create(
+            title_ru="Other", date_start=date(2026, 7, 2), status=Competition.Status.APPROVED
+        )
+        CompetitionFavorite.objects.create(user=self.member, competition=other)
         data = self.get(f"/api/v1/competitions/{self.event.pk}", user=self.member).json()
-        self.assertEqual(data["favorites_count"], 1)
+        self.assertEqual(data["favorites_count"], 2)
 
     def test_a_visitor_and_an_event_not_approved_get_no_count(self):
         self.assertIsNone(self.get(f"/api/v1/competitions/{self.event.pk}").json()["favorites_count"])
