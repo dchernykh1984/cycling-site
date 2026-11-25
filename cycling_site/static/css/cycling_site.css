@@ -341,6 +341,10 @@ main .competition-description ul, main .competition-description ol {
     list-style-position: inside;
 }
 
+/* The favorites count under an event's star takes no width of its own and overflows the star evenly,
+   so a click that gives it another digit moves neither the star nor the title beside it. */
+.favorite-count-line { width: 0; display: flex; justify-content: center; white-space: nowrap; }
+
 /* The home page's cards in the site's own skins (home/home_page.html): a tile each, as many to a row
    as fit -- one on a phone --, the first across the whole row when it introduces the rest. */
 .home-tiles {

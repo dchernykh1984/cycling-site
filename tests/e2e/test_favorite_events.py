@@ -6,6 +6,7 @@ import pytest
 from django.conf import settings
 from playwright.sync_api import Page, expect
 
+from accounts.models import User
 from calendar_app.models import Competition, CompetitionFavorite
 from tests.e2e.conftest import AROUND_UPCOMING, UPCOMING, inject_session, open_filter_panel
 from tests.e2e.contrast import legibility
@@ -76,6 +77,24 @@ def test_the_count_under_the_star_can_be_read_in_this_skin(page: Page, live_serv
     page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
     page.mouse.move(0, 0)
     assert legibility(page.locator("#favorite-count")) >= 4.5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_star_stays_put_when_the_count_gains_a_digit(page: Page, live_server, superuser, approved_competition):
+    """A click taking the count from 99 to 100 moves neither the star nor the title (principle 5)."""
+    fans = User.objects.bulk_create(User(username=f"fan{n}", email=f"fan{n}@test.local") for n in range(99))
+    CompetitionFavorite.objects.bulk_create(
+        CompetitionFavorite(user=fan, competition=approved_competition) for fan in fans
+    )
+    page.set_viewport_size({"width": 360, "height": 800})
+    inject_session(page, live_server, superuser)
+    page.goto(f"{live_server.url}/ru/calendar/{approved_competition.pk}/")
+    star, title = page.locator("#favorite-btn"), page.locator(".event-heading h1")
+    before = (star.bounding_box(), title.bounding_box())
+
+    star.click()
+    expect(page.locator("#favorite-count")).to_have_text("100")
+    assert (star.bounding_box(), title.bounding_box()) == before
 
 
 @pytest.mark.django_db(transaction=True)
