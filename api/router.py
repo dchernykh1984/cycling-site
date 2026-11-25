@@ -10,20 +10,20 @@ from ninja.parser import Parser
 _UNSTORABLE = re.compile(r"[\x00\ud800-\udfff]")
 
 
-def _carries_nul(value) -> bool:
+def _carries_unstorable(value) -> bool:
     if isinstance(value, str):
         return _UNSTORABLE.search(value) is not None
     if isinstance(value, dict):
-        return any(_carries_nul(key) or _carries_nul(item) for key, item in value.items())
+        return any(_carries_unstorable(key) or _carries_unstorable(item) for key, item in value.items())
     if isinstance(value, list):
-        return any(_carries_nul(item) for item in value)
+        return any(_carries_unstorable(item) for item in value)
     return False
 
 
-NUL_IN_TEXT = "Text must not contain the NUL character or a lone surrogate (half of a UTF-16 pair)"
+UNSTORABLE_TEXT = "Text must not contain the NUL character or a lone surrogate (half of a UTF-16 pair)"
 
 
-class _NulInTextError(ValueError):
+class _UnstorableTextError(ValueError):
     """The parser's refusal. Raised while ninja reads a body, it comes wrapped in ninja's 400 "Cannot
     parse request body"; `_http_error` answers it as the 422 it is."""
 
@@ -37,14 +37,14 @@ class _TextParser(Parser):
 
     def parse_body(self, request):
         data = super().parse_body(request)
-        if _carries_nul(data):
-            raise _NulInTextError(NUL_IN_TEXT)
+        if _carries_unstorable(data):
+            raise _UnstorableTextError(UNSTORABLE_TEXT)
         return data
 
     def parse_querydict(self, data, list_fields, request):
         result = super().parse_querydict(data, list_fields, request)
-        if _carries_nul(result):
-            raise _NulInTextError(NUL_IN_TEXT)
+        if _carries_unstorable(result):
+            raise _UnstorableTextError(UNSTORABLE_TEXT)
         return result
 
 
@@ -119,14 +119,14 @@ def _register_routers() -> None:
 _register_routers()
 
 
-@api.exception_handler(_NulInTextError)
-def _nul_in_text(request, exc):
+@api.exception_handler(_UnstorableTextError)
+def _unstorable_text(request, exc):
     return api.create_response(request, {"detail": str(exc)}, status=HTTPStatus.UNPROCESSABLE_ENTITY)
 
 
 @api.exception_handler(HttpError)
 def _http_error(request, exc):
     # Ninja's own answer for every other HttpError, word for word.
-    if isinstance(exc.__cause__, _NulInTextError):
-        return _nul_in_text(request, exc.__cause__)
+    if isinstance(exc.__cause__, _UnstorableTextError):
+        return _unstorable_text(request, exc.__cause__)
     return api.create_response(request, {"detail": str(exc)}, status=exc.status_code)
