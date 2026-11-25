@@ -4123,7 +4123,7 @@ class LoneSurrogateTests(ApiTestMixin, TestCase):
                 {"name": {"ru": "Day \ud83d", "kk": "Day", "en": "Day"}},
             ),
             ("put", "/api/v1/virtual-ride/settings", {"settings": {"plan": "a\ud83d"}, "base": 0}),
-            ("put", "/api/v1/virtual-ride/settings", {"settings": {"k\ud83d": 1}, "base": 0}),
+            ("put", "/api/v1/virtual-ride/settings", {"settings": {"k\ude00": 1}, "base": 0}),  # the other half
         ):
             sent = json.dumps(body)  # the surrogate as its escape, as a client writes it, and as xdist can report it
             with self.subTest(url=url, body=sent):
