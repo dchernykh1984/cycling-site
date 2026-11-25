@@ -14,7 +14,7 @@ filters), `calendar_app/test_date_words.py`, `tests/test_calendar_toolbar.py`, `
 `test_save_filter_preferences.py`, `test_calendar_phone_list.py`, `test_period_nav.py`,
 `test_calendar_busy_day.py`, `test_filter_chips.py`, `test_filter_toggle.py`, `test_top_events.py`,
 `test_organizer_filter.py`; `tests/test_top_events.py`, `tests/test_guest_region.py`,
-`tests/test_organizer_filter.py`
+`tests/test_organizer_filter.py`; `api/tests.py` (the favorites count in the event detail)
 **Related**: [events](events.md), [locations](locations.md), [accounts](accounts.md) (saved
 preferences), [search visibility](search-visibility.md)
 
