@@ -341,10 +341,6 @@ main .competition-description ul, main .competition-description ol {
     list-style-position: inside;
 }
 
-/* The favorites count under an event's star takes no width of its own and overflows the star evenly,
-   so a click that gives it another digit moves neither the star nor the title beside it. */
-.favorite-count-line { width: 0; display: flex; justify-content: center; white-space: nowrap; }
-
 /* The home page's cards in the site's own skins (home/home_page.html): a tile each, as many to a row
    as fit -- one on a phone --, the first across the whole row when it introduces the rest. */
 .home-tiles {
@@ -650,6 +646,9 @@ main .event-photo-preview img { object-fit: contain; }
     content: ""; position: absolute; top: 50%; height: 2.75rem; transform: translateY(-50%);
     left: min(0px, calc((100% - 2.75rem) / 2)); right: min(0px, calc((100% - 2.75rem) / 2));
 }
+/* The favorites count under an event's star takes no width of its own and overflows the star evenly,
+   so a click that gives it another digit moves neither the star nor the title beside it. */
+.favorite-count-line { width: 0; display: flex; justify-content: center; white-space: nowrap; }
 /* The event page's start point, opened in the map service the reader picks from one menu (#335): the
    button and each service answer a tap across 44 px, whatever height the skin gives them. */
 .map-links .btn, .map-links .dropdown-item {
