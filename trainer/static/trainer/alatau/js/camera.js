@@ -17,16 +17,18 @@ function updateCamera(dt, cad, speed) {
     // вид от третьего лица: камера едет за гонщиком по той же полосе
     playerAvatar.g.visible = true; bars.visible = false; setFov(Math.min(look.fov, 78));
     const b = sampleAt(T, me.s - 6.5, _p2), f = sampleAt(T, me.s + 7, _p1);
-    _v3.set(b.x + b.rx * me.lane, Math.max(b.y, o.y) + 2.3 + (Math.random() - .5) * .01 * rough * sw, b.z + b.rz * me.lane);
+    const bl = laneOf(me, b), fl = laneOf(me, f);
+    _v3.set(b.x + b.rx * bl, Math.max(b.y, o.y) + 2.3 + (Math.random() - .5) * .01 * rough * sw, b.z + b.rz * bl);
     if (!cam.cinit) { camera.position.copy(_v3); cam.cinit = true; } else camera.position.lerp(_v3, 1 - Math.exp(-dt * 6));
-    _v2.set(f.x + f.rx * me.lane, f.y + 1.05, f.z + f.rz * me.lane);
+    _v2.set(f.x + f.rx * fl, f.y + 1.05, f.z + f.rz * fl);
     camera.lookAt(_v2);
   } else {
     const bob = (Math.sin(ph * 2) * .012 + (Math.random() - .5) * .006 * rough) * sw;
     const lat = Math.sin(ph) * .025 * sw * (cad > 0 ? 1 : 0);
     playerAvatar.g.visible = false; bars.visible = true; setFov(look.fov);
     camera.position.set(o.px + o.rx * lat, o.y + look.h + bob, o.pz + o.rz * lat);
-    _v2.set(a.x + a.rx * me.lane, a.y + look.h - .25, a.z + a.rz * me.lane);
+    const al = laneOf(me, a);
+    _v2.set(a.x + a.rx * al, a.y + look.h - .25, a.z + a.rz * al);
     _m4.lookAt(camera.position, _v2, camera.up); _qd.setFromRotationMatrix(_m4);
     if (!cam.init) { cam.q.copy(_qd); cam.init = true; } else cam.q.slerp(_qd, 1 - Math.exp(-dt * 5));
     camera.quaternion.copy(cam.q);
