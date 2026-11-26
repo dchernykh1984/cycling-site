@@ -102,7 +102,8 @@ site down for up to a minute.
   Blueprint, this repository, branch `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same
   hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
   and no other permission: without one GitHub answers 60 requests an hour per address, and Render's
-  outbound addresses are shared. The hook now lives in both places: a regenerated one goes into the
+  outbound addresses are shared. GitHub refuses an expired token even for public data, so each night
+  run then fails, and Render e-mails it, until a new token replaces it. The hook now lives in both places: a regenerated one goes into the
   GitHub secret and into the Cron Job's variable. The Cron Job's Trigger Run in the daytime shows
   that it builds and starts: the run says it is outside the window and deploys nothing, before it
   reads GitHub or calls the hook, so the token and the hook are first used at night.
