@@ -60,6 +60,15 @@ and protocols with the event's upload token. The API has no language prefix.
    A group race starts `start_in_s` from now (20 s to 1 h) or `start_at`, a moment with its time zone up to a
    year ahead (422 otherwise); one host's races start an hour apart at least, ten waiting at most (409). `/me` names the event
    form's draft address (`event_draft_url`), where the page's "Add event" sends a race's event.
+   A group race may be a race with protocols for an event (specs/495-virtual-race): `GET /events` lists the
+   asking member's own events to come that a race may be made for (any for an admin); a race made with
+   `competition_id` (403 for anyone else's event) carries `mode` (`group` or `itt`), `group_gap_s`,
+   `itt_interval_s`, `draft_between_groups` and `loop`, names its `event` and, for a member riding it, `me` --
+   their bib, category, laps and own start. Joining one needs a registration for the event that is not rejected
+   (403 with the event's link) and a free bib in the category's range (409). `/presence` takes the rider's drag
+   area (`cda`) and up to 50 `crossings` (a point, its moment `at_ms`, `last` for the finish), each written once
+   into the event's timing streams while the event has its upload token, and gives each rider beside them with
+   their bib, category and drag area (`tests/test_virtual_race.py`).
    A ride and a group race carry the wind they were ridden in (`wind_ms`, `wind_from_deg`; 0: none; a ride of a
    group race takes the race's, whatever the page sends): a ride with wind counts for power but sets no route
    record or top speed.

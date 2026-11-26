@@ -165,5 +165,22 @@ function poseRider(R, phase) {
 }
 // the riders' 3D models, kept apart from the riders the ride steps
 const riderModels = new WeakMap();
-function addRiderModel(b, ch) { const m = makeRider(ch); riderModels.set(b, m); scene.add(m.g); }
+function addRiderModel(b, ch) { const m = makeRider(ch); riderModels.set(b, m); scene.add(m.g); if (b.bib) setBib(m, b.bib); }
+// a race number on the rider's back (specs/495-virtual-race): white, the bib in black, facing up and back from the
+// torso as the model draws it; none for an empty bib
+function setBib(model, bib) {
+  if (!model) return;
+  if (model.bibPlate) { model.g.remove(model.bibPlate); model.bibPlate.material.map.dispose(); model.bibPlate.material.dispose(); model.bibPlate = null; }
+  if (!bib) return;
+  const tex = canvasTex(256, 192, (c, w, h) => {
+    c.fillStyle = '#fbfbf7'; c.fillRect(0, 0, w, h); c.strokeStyle = '#16191d'; c.lineWidth = 6; c.strokeRect(5, 5, w - 10, h - 10);
+    c.fillStyle = '#16191d'; c.font = '700 ' + (String(bib).length > 3 ? 84 : 116) + 'px Unbounded, "Arial Black", sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(bib), w / 2, h / 2 + 6);
+  });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(.24, .18), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }));
+  const hip = new THREE.Vector3(0, 1.0, -.17), sh = new THREE.Vector3(0, 1.36, .23), d = sh.clone().sub(hip).normalize(), out = new THREE.Vector3(0, d.z, -d.y);
+  plate.position.copy(hip).add(sh).multiplyScalar(.5).addScaledVector(out, .14 * (model.ch.build || 1));
+  plate.lookAt(plate.position.clone().add(out)); plate.name = 'bib';
+  model.g.add(plate); model.bibPlate = plate;
+}
 function removeRiderModel(b) { const m = riderModels.get(b); if (m) { scene.remove(m.g); riderModels.delete(b); } }

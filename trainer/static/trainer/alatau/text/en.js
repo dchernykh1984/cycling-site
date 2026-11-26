@@ -364,5 +364,19 @@ const TEXT_EN = {
     "mp.event": "Add event",
     "mp.badTime": "Choose the start's date and time: a minute from now at the soonest, a year at the latest.",
     "mp.eventHint": "“Add event” gathers the race for that time and opens the event form filled from the route's template in three languages: check it and submit it.",
-    "mp.startsOn": "Starts {when}"
+    "mp.startsOn": "Starts {when}",
+    "mp.raceEvent": "A race with protocols for the event",
+    "mp.raceNone": "No event",
+    "mp.raceMode": "Mode",
+    "mp.modeGroup": "Group race",
+    "mp.modeItt": "Individual time trial",
+    "mp.raceGap": "Gap between categories, s",
+    "mp.raceInterval": "Interval between riders, s",
+    "mp.raceDraft": "Drafting between categories",
+    "mp.raceHint": "The riders are those registered for the event: bibs, categories and laps come from its registration. The site writes the start list, the groups' starts and every crossing into the event for FinishProtocolGenerator.",
+    "mp.raceOf": " Event: {title}.",
+    "mp.raceItt": " Individual time trial.",
+    "mp.raceMe": " Your bib {bib}, {group}, laps: {laps}.",
+    "mp.raceStart": " Your start {t} after the race's.",
+    "toast.race": "A race with protocols: bib {bib}"
 };

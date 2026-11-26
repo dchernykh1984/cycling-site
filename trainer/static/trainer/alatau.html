@@ -63,6 +63,16 @@
         <p class="hint hidden" id="mpNote" role="status"></p>
         <div class="mp-create"><select id="mpDelay" data-t-label="mp.delay"><option value="30"></option><option value="60" selected></option><option value="120"></option><option value="300"></option><option value="900"></option><option value="1800"></option><option value="3600"></option><option value="at" data-t="mp.atTime"></option></select><span class="mp-when hidden" id="mpWhen"><input type="date" id="mpDate" data-t-label="mp.date"><input type="time" id="mpTime" step="60" data-t-label="mp.time"></span><button class="btn" id="mpCreate" type="button" disabled data-t="mp.create"></button><button class="btn hidden" id="mpEvent" type="button" disabled data-t="mp.event"></button></div>
         <p class="hint hidden" id="mpEventHint" data-t="mp.eventHint"></p>
+        <div class="mp-race hidden" id="mpRaceBox">
+          <label class="mp-field"><span data-t="mp.raceEvent"></span><select id="mpRaceEvent"><option value="" data-t="mp.raceNone"></option></select></label>
+          <div class="mp-race-opts hidden" id="mpRaceOpts">
+            <label class="mp-field"><span data-t="mp.raceMode"></span><select id="mpRaceMode"><option value="group" data-t="mp.modeGroup"></option><option value="itt" data-t="mp.modeItt"></option></select></label>
+            <label class="mp-field" id="mpRaceGapL"><span data-t="mp.raceGap"></span><input type="number" id="mpRaceGap" min="0" max="3600" step="30" value="0" inputmode="numeric"></label>
+            <label class="mp-field hidden" id="mpRaceIntervalL"><span data-t="mp.raceInterval"></span><input type="number" id="mpRaceInterval" min="5" max="600" step="5" value="30" inputmode="numeric"></label>
+            <label class="mp-check" id="mpRaceDraftL"><input type="checkbox" id="mpRaceDraft" checked><span data-t="mp.raceDraft"></span></label>
+            <p class="hint" data-t="mp.raceHint"></p>
+          </div>
+        </div>
         <p class="hint" data-t="mp.hint"></p>
       </section>
       <section class="box" aria-labelledby="hRider">

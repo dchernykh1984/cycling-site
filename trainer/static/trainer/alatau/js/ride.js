@@ -14,10 +14,16 @@ function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args)
 function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, rho: airDensity(0), draft: 0, phase: Math.random() * 6, finishT: null, P: 0 }; }
 // The bikes as drawn (js/riders.js) are 1.71 m from tyre to tyre: two riders' points that far apart leave no gap
 const BIKE_LENGTH = 1.71;
-// the share of r's drag that o's wake takes, o being anyone on the road: on a loop the one just behind is a lap ahead;
-// the rider ahead's size counts (draftScale)
+// The rules of a race with protocols being ridden (specs/495-virtual-race) -- its mode, whether categories draft each
+// other, and the rider's bib, category and laps -- or null; the page keeps them (js/group-ride.js)
+const raceRules = () => (typeof groupRide !== 'undefined' && groupRide && groupRide.race) || null;
+// the share of r's drag that o's wake takes, o being anyone on the road: on a loop the one just behind is a lap ahead.
+// In a race with protocols a time trial has nobody's wake, and a group race whose maker said so none across
+// categories; the rider ahead's size counts (draftScale).
 function wakeOf(r, o) {
   if (o === r) return 0;
+  const rules = raceRules();
+  if (rules && (rules.mode === 'itt' || (!rules.draftBetween && (o.group || '') !== (r.group || '')))) return 0;
   const T = world.T; let d = o.s - r.s; if (T.loop) d = ((d % T.L) + T.L) % T.L;
   return draftShare(d - BIKE_LENGTH, o.lane - r.lane) * draftScale(o.CdA, r.CdA);
 }
@@ -80,6 +86,20 @@ const Work = {
     return false;
   }
 };
+// A race with protocols: the rider's crossings of the start-finish line between `from` and `to` along the route --
+// each lap's, the last the finish -- and of its turns (turnPoints), each told to the page with how many seconds ago
+// it was, the step having gone from `from` to `to` in the last `dt` seconds
+function raceCrossings(from, to, dt) {
+  const rules = raceRules(); if (!rules || !rules.me || to <= from) return;
+  const T = world.T, S0 = world.S0, L = T.L, found = [];
+  if (T.loop) { for (let k = Math.floor((from - S0) / L) + 1; S0 + k * L <= to; k++) if (k >= 1 && k <= rules.me.laps) found.push({ s: S0 + k * L, point: 0, last: k === rules.me.laps }); }
+  else if (from < world.FIN && to >= world.FIN) found.push({ s: world.FIN, point: 0, last: true });
+  turnPoints(T).forEach((p, i) => {
+    if (!T.loop) { if (from < p && to >= p) found.push({ s: p, point: i + 1, last: false }); return; }
+    for (let m = Math.floor((from - p) / L) + 1; p + m * L <= to; m++) if (p + m * L > S0 && p + m * L < world.FIN) found.push({ s: p + m * L, point: i + 1, last: false });
+  });
+  found.sort((a, b) => a.s - b.s).forEach(c => rideEvent('crossing', c.point, c.last, dt * (to - c.s) / (to - from)));
+}
 // A frame's time is ridden in steps of at most RIDE_STEP s: a device that draws few frames rides the same
 // road in the same time as one that draws many. A frame longer than MAX_FRAME s is a stall (a hidden page)
 // and counts as MAX_FRAME.
@@ -96,7 +116,8 @@ function stepRide(dt, inp, t) {
   } else if (phase === 'race' || phase === 'done') {
     if (cdT > -0.8) cdT -= dt;
     if (phase === 'race') {
-      raceT += dt; const ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
+      raceT += dt; const s0 = me.s, ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
+      if (rideMode === 'race') raceCrossings(s0, me.s, dt);
       const st = me.stats, y1 = sampleAt(T, me.s, _ry).y; if (y1 > y0) st.gain += y1 - y0;
       st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); } if (inp.mode === 'power') st.real = true; if (inp.hr) { st.sumHR += inp.hr; st.nHR++; st.maxHR = Math.max(st.maxHR, inp.hr); }
       if (rideMode === 'plan' || rideMode === 'free') {
@@ -106,6 +127,10 @@ function stepRide(dt, inp, t) {
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
         if (rideMode === 'plan' && Work.active && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
       } else if (me.s >= world.FIN) { me.finishT = raceT; rideEvent('finish'); }
+      else if (T.loop && world.FIN - world.S0 > T.L * 1.5) { // a race of several laps: each one said
+        const lap = Math.floor((me.s - world.S0) / T.L);
+        if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
+      }
       world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; rideEvent('sight', l); } });
     } else { me.s += stepRider(me, 60, grade, dt); }
   }

@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Совместная езда: лобби, групповые гонки и соперники онлайн ---------------- */
-const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false };
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [], events: null };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
 // the address of a group race: the site's page that frames the trainer, which also hands a newcomer
@@ -26,14 +26,35 @@ async function mpCheckLink() {
   try { const g = await Site.get('/groups/' + LINKED); mpNote(g.cancelled ? t('mp.linkCancelled') : t('mp.linkStarted')); }
   catch (e) { if (e.status === 404) mpNote(t('mp.linkMissing')); }
 }
-let groupRide = null;   // { gid, startAt, wind } во время групповой гонки; wind, { ms, from }, is its host's
+let groupRide = null;   // { gid, startAt, wind, race } во время групповой гонки; wind, { ms, from }, is its host's
+// A race with protocols (specs/495-virtual-race): its event, mode and drafting rule, and what the member rides in it --
+// bib, group, laps and own start
+const groupRules = g => g.event ? { event: g.event, mode: g.mode, draftBetween: g.draft_between_groups !== false, me: g.me || null } : null;
+// a crossing the ride reports (js/ride.js), `ago` seconds ago: queued with its race for the site, at the moment it
+// happened on the site's clock, as a chronometer would take it -- a rider who started late carries the time they lost
+function mpCrossing(point, last, ago) { MP.crossings.push({ gid: groupRide.gid, point, last, at_ms: Math.round(Date.now() + MP.offset - ago * 1000) }); }
 const groupWind = g => g.wind_ms > 0 ? { ms: g.wind_ms, from: g.wind_from_deg || 0 } : null;
 const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
 const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
 const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
 function mpInit() {
   if (!Records.synced) { MP.status = Records.me ? 'guest' : 'off'; renderMP(); return; }
-  MP.status = 'on'; mpPoll();
+  MP.status = 'on'; mpPoll(); mpLoadEvents();
+}
+// the member's own events a race with protocols can be made for: none, and the choice stays hidden
+async function mpLoadEvents() {
+  try { MP.events = await Site.get('/events'); } catch (e) { MP.events = []; }
+  const sel = $('#mpRaceEvent'); if (!sel) return;
+  [...sel.options].slice(1).forEach(o => o.remove());
+  MP.events.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.title + ' (' + new Date(ev.date_start + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }) + ')'; sel.appendChild(o); });
+  $('#mpRaceBox').classList.toggle('hidden', !MP.events.length); renderRaceOpts();
+}
+// the race's settings once an event is chosen: a gap between categories in a group race, an interval in a time trial
+function renderRaceOpts() {
+  const on = !!$('#mpRaceEvent').value, itt = $('#mpRaceMode').value === 'itt';
+  $('#mpRaceOpts').classList.toggle('hidden', !on);
+  $('#mpRaceGapL').classList.toggle('hidden', itt); $('#mpRaceDraftL').classList.toggle('hidden', itt);
+  $('#mpRaceIntervalL').classList.toggle('hidden', !itt); renderWhen();
 }
 function mpSchedule(ms) { clearTimeout(MP.timer); MP.timer = setTimeout(mpPoll, ms); }
 async function mpPoll() {
@@ -41,12 +62,17 @@ async function mpPoll() {
   if (MP.busy) { mpSchedule(300); return; }
   MP.busy = true;
   const riding = phase !== 'menu' && world && me, inp = MP.lastInp || {};
+  // a race with protocols: the crossings the site has not taken yet go with every call until one is answered, one
+  // race's at a time -- the race ridden, else, in the menu, the one left over: a rider gone back at once still sends it
+  const gid = riding ? (groupRide ? groupRide.gid : null) : (MP.crossings.length ? MP.crossings[0].gid : null);
+  const sent = MP.crossings.filter(c => c.gid === gid).slice(0, 50), crossings = sent.map(c => ({ point: c.point, at_ms: c.at_ms, last: c.last }));
   const body = riding
-    ? { status: 'ride', route: world.route.id, mode: rideMode, group_id: groupRide ? groupRide.gid : null, distance_m: Math.round(me.s * 10) / 10, speed_ms: Math.round(me.v * 100) / 100, cadence_rpm: Math.round(clamp(inp.cad || 0, 0, 250)), power_w: Math.round(clamp(inp.P || 0, 0, 3000)), lane_m: Math.round(me.lane * 10) / 10, finished_s: me.finishT != null ? Math.round(me.finishT * 10) / 10 : null }
-    : { status: 'lobby', route: routeSel };
+    ? { status: 'ride', route: world.route.id, mode: rideMode, group_id: groupRide ? groupRide.gid : null, distance_m: Math.round(me.s * 10) / 10, speed_ms: Math.round(me.v * 100) / 100, cadence_rpm: Math.round(clamp(inp.cad || 0, 0, 250)), power_w: Math.round(clamp(inp.P || 0, 0, 3000)), lane_m: Math.round(me.lane * 10) / 10, finished_s: me.finishT != null ? Math.round(me.finishT * 10) / 10 : null, cda: Math.round(clamp(me.CdA || PHYS.CdA, .1, 1.2) * 1000) / 1000, crossings }
+    : Object.assign({ status: 'lobby', route: routeSel }, sent.length ? { group_id: gid, crossings } : {});
   const t0 = Date.now();
   try {
     const res = await Site.post('/presence', body), t1 = Date.now();
+    MP.crossings = MP.crossings.filter(c => !sent.includes(c));
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
     MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
     if (!riding) MP.groups = res.groups || [];
@@ -73,14 +99,17 @@ function mpWhen() {
 // a date and time to start from: the next whole hour but one, today or tomorrow
 function renderWhen() {
   const at = $('#mpDelay').value === 'at', pad = n => String(n).padStart(2, '0'), day = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  ['#mpWhen', '#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !at));
+  // a race tied to an event already has its event: no new one is made for it
+  const tied = !!$('#mpRaceEvent').value;
+  $('#mpWhen').classList.toggle('hidden', !at); ['#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !at || tied));
   if (at && !$('#mpDate').value) { const d = new Date(Date.now() + 2 * MP_HOUR); $('#mpDate').value = day(d); $('#mpTime').value = pad(d.getHours()) + ':00'; }
   $('#mpDate').min = day(new Date()); $('#mpDate').max = day(new Date(Date.now() + 365 * 864e5));
 }
 function mpMaybeStart() {
   const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
-  const at = mpStartLocal(g), now = Date.now();
-  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g) }; routeSel = g.route; renderMenu(); startRace(); }
+  // in a time trial the rider's own start, their place in the start order after the race's
+  const at = mpStartLocal(g) + ((g.me && g.me.start_offset_s) || 0) * 1000, now = Date.now();
+  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g), race: groupRules(g) }; routeSel = g.route; renderMenu(); startRace(); }
 }
 async function mpAction(path, body) {
   try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
@@ -88,8 +117,10 @@ async function mpAction(path, body) {
 }
 // a race on the chosen route, in the host's wind, which is the race's
 function mpRace(when) {
-  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind();
-  return Object.assign({ route: r.id, route_name: r.name, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind(), ev = $('#mpRaceEvent') && $('#mpRaceEvent').value;
+  // for an event: its riders, bibs and laps from its registration, and the maker's mode, gaps and drafting rule
+  const race = ev ? { competition_id: +ev, loop: !!r.loop, mode: $('#mpRaceMode').value, group_gap_s: clamp(+$('#mpRaceGap').value || 0, 0, 3600), itt_interval_s: clamp(+$('#mpRaceInterval').value || 30, 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
+  return Object.assign({ route: r.id, route_name: r.name, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
 }
 function mpCreateGroup() {
   if (MP.status !== 'on') return;
@@ -159,9 +190,12 @@ function mpSyncRemotes() {
     if (!b) {
       const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col });
       b = newRider(r.name || t('mp.rider'), col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
-      Object.assign(b, { remote: true, uid, ch, seed: 0, wkg: 0 });
+      Object.assign(b, { remote: true, uid, ch, seed: 0, wkg: 0, bib: r.bib || '' });
       addRiderModel(b, ch); bots.push(b);
     }
+    // their drag area, for the wake they leave; their category and bib in a race with protocols
+    b.CdA = r.cda || PHYS.CdA; b.group = r.group || '';
+    if ((r.bib || '') !== (b.bib || '')) { b.bib = r.bib || ''; setBib(riderModels.get(b), b.bib); }
     b.seenAt = nowMs; b.sampleS = r.distance_m; b.sampleT = performance.now() - (r.age_s || 0) * 1000; b.v = r.speed_ms || 0; b.cad = r.cadence_rpm || 0; b.P = r.power_w || 0;
     b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || t('mp.rider');
     const f = typeof r.finished_s === 'number' ? r.finished_s : null; if (f !== b.finishT) { b.finishT = f; changedFinish = true; }
@@ -220,7 +254,9 @@ function renderMP() {
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
     if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
     card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
-    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => (Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
+    // a race with protocols: its event, a time trial said so, and the member's own bib, category, laps and start
+    const race = g.event ? t('mp.raceOf', { title: g.event.title }) + (g.mode === 'itt' ? t('mp.raceItt') : '') + (g.me ? t('mp.raceMe', { bib: g.me.bib, group: g.me.group, laps: g.me.laps }) + (g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : '') : '') : '';
+    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '') + race;
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }

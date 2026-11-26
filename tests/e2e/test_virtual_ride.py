@@ -689,6 +689,7 @@ def test_a_device_without_3d_is_told_so_and_the_page_raises_nothing_more(page: P
 
 
 _A_MEMBER_ASKS = {
+    "GET /api/v1/virtual-ride/events",  # the member's own events a race with protocols may be made for
     "GET /api/v1/virtual-ride/me",
     "GET /api/v1/virtual-ride/records",
     "GET /api/v1/virtual-ride/rides?limit=30",

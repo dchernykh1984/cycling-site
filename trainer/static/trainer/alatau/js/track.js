@@ -142,9 +142,27 @@ function nearLandmarks(T) {
   });
   return out;
 }
+// A route's control points beyond its start-finish line: its turns back -- the road reversing its way within 60 m
+// either side, a U-turn across a dual carriageway, the loop at the end of an out-and-back -- each at its sharpest,
+// as distances along the route (specs/495-virtual-race). Two within 120 m are one turn; a turn after which the route
+// does not come back alongside itself -- 200 m either side further apart than 60 m, a circuit's hairpin -- is none.
+function turnPoints(T) {
+  if (T.turns) return T.turns;
+  const k = 15, way = i => Math.atan2(T.Z[i + 1] - T.Z[i], T.X[i + 1] - T.X[i]), found = [], a = {}, b = {};
+  for (let i = k; i + k + 1 < T.N; i++) {
+    const turn = Math.abs(((way(i + k) - way(i - k) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+    if (turn < Math.PI * .8) continue;
+    const last = found[found.length - 1];
+    if (last && T.D[i] - last.s < 120) { if (turn > last.turn) Object.assign(last, { s: T.D[i], turn }); }
+    else found.push({ s: T.D[i], turn });
+  }
+  T.turns = found.filter(f => { sampleAt(T, f.s - 200, a); sampleAt(T, f.s + 200, b); return Math.hypot(a.x - b.x, a.z - b.z) < 60; }).map(f => f.s);
+  return T.turns;
+}
 // the course of a ride: its track, where it starts and finishes, and the sights along it
 // a route out and back ends where it starts: its finish is the start's line, under the one arch of both
 function buildCourse(route) {
   const T = buildTrack(route), S0 = 20, back = !T.loop && Math.hypot(T.X[T.N - 1] - T.X[0], T.Z[T.N - 1] - T.Z[0]) < route.width;
-  return { T, S0, FIN: T.loop ? S0 + T.L : back ? T.L - S0 : T.L - 8, back, route, lms: nearLandmarks(T) };
+  const FIN = T.loop ? S0 + T.L : back ? T.L - S0 : T.L - 8;
+  return { T, S0, FIN, FIN1: FIN, back, route, lms: nearLandmarks(T) };
 }
