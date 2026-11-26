@@ -26,9 +26,10 @@ function reliefAt(T, x, z) {
 const RELIEF_FROM = 80, RELIEF_OVER = 500;
 function terrainH(T, x, z) {
   const n = nearest(T, x, z); let h = n.y - 1.2;
-  // beside a tunnel's ramps the land keeps its level: the road goes down into a cutting, the ground does not
+  // round a tunnel and its ramps the land keeps the ground line up to their walls: the road goes down into a cutting,
+  // the ground does not; inside the walls the land is left out (landMaterial)
   const cut = T.route.tunnels ? cutGround(T, n.s) : null;
-  if (cut != null) h += (cut - n.y) * clamp((n.d - T.route.width / 2 - 2) / 26, 0, 1);
+  if (cut != null) h = cut - 1.2;
   if (T.route.scenery !== 'gorge') {
     const far = n.d > T.route.width / 2 + RELIEF_FROM ? reliefAt(T, x, z) : null;
     if (far != null) { const k = clamp((n.d - T.route.width / 2 - RELIEF_FROM) / RELIEF_OVER, 0, 1); h += (far - 1.2 - h) * k * k * (3 - 2 * k); }
@@ -78,7 +79,7 @@ function buildWorld(route) {
     cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
-  grp.add(new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+  grp.add(new THREE.Mesh(tg, landMaterial(T, W)));
   const ground = groundOf(pos, x0, z0, x1, z1, nx, nz);
   // the lowest ground under a footprint d by w turned by rot: its corners, the middles of its sides and its centre
   const lowest = (x, z, d, w, rot) => {

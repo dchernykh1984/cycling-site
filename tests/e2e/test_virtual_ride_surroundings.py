@@ -144,6 +144,38 @@ def test_a_tunnel_s_roof_clears_the_road_under_it_and_the_land_keeps_its_level_b
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_land_is_left_out_of_a_tunnel_and_its_cutting_from_wall_to_wall(page: Page, live_server):
+    # the land is drawn in cells 40 m across: over a tunnel and its cutting it would span the road like a lid and cut
+    # through the tunnel (Granfondo 2026's, the centre's under Al-Farabi), so its shader leaves it out in boxes along
+    # the road -- each point of the road down there, from wall to wall, in one of them and under its top
+    faults = _faults(
+        page,
+        live_server,
+        """
+        const zones = tunnelZones(T), o = {};
+        if (!zones.length) return;
+        out.push('seen:' + r.id);
+        const land = kids.find(m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors);
+        if (!land.material.onBeforeCompile) { out.push(r.id + ': its land leaves nothing out'); return; }
+        const holes = holesOf(T, W);
+        for (const z of zones) for (let s = z.s0; s <= z.s1; s += 2) {
+          sampleAt(T, s, o);
+          for (const k of [-1, 0, 1]) {
+            const x = o.x + o.rx * k * W / 2, y = terrainH(T, x, o.z + o.rz * k * W / 2), zz = o.z + o.rz * k * W / 2;
+            const lid = holes.every(([a, b]) => {
+              const dx = x - a.x, dz = zz - a.y, u = dx * a.z + dz * a.w, v = dz * a.z - dx * a.w;
+              const top = b.z + (b.w - b.z) * Math.min(1, Math.max(0, u / (2 * b.x) + .5)) + 1.5;
+              return Math.abs(u) >= b.x || Math.abs(v) >= b.y || y >= top;
+            });
+            if (lid) { out.push(r.id + ': the land over its road at ' + Math.round(s) + ' m'); return; }
+          }
+        }
+        """,
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_barrier_between_a_dual_carriageway_s_halves_stands_off_both(page: Page, live_server):
     faults = _faults(
         page,
