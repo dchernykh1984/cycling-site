@@ -48,6 +48,15 @@ only marks a search in progress (`protocol-searching`), which hides the lines an
 `fitColumns` fits each heat's table into its column like any other. A heat's time in the
 finals has priority 4 (the generator's choice), so a narrow column keeps place and name.
 
+## A virtual race writes timing too (specs/495-virtual-race)
+
+A group race in the virtual ride tied to an event writes into the event's timing streams as one more device,
+`virtual-race-<id>` (`trainer/race.py`): StartProtocolMaker's start list lines (the bib -- kept or first free in the
+category's range -- name, category as the group, its laps, a time trial's start delay, `r<registration>`), the groups'
+starts and every crossing in the chronometer's format, `nextLap` and the last lap's `finish`, a turn back a control
+point. The site writes them itself and only while the event has its upload token, which never leaves the server;
+FinishProtocolGenerator's "Get data from site" reads them with that token as it reads a chronometer's.
+
 ## It is somebody else's HTML on our domain
 
 So it is served under a deliberately narrow policy (`protocols/views.py`): `default-src 'none'`,
