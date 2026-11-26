@@ -14,11 +14,12 @@ function rideEvent(type, ...args) { const f = rideHooks[type]; if (f) f(...args)
 function newRider(name, color, mass, s, lane) { return { name, color, mass, v: 0, s, lane, CdA: PHYS.CdA, rho: airDensity(0), draft: 0, phase: Math.random() * 6, finishT: null, P: 0 }; }
 // The bikes as drawn (js/riders.js) are 1.71 m from tyre to tyre: two riders' points that far apart leave no gap
 const BIKE_LENGTH = 1.71;
-// the share of r's drag that o's wake takes, o being anyone on the road: on a loop the one just behind is a lap ahead
+// the share of r's drag that o's wake takes, o being anyone on the road: on a loop the one just behind is a lap ahead;
+// the rider ahead's size counts (draftScale)
 function wakeOf(r, o) {
   if (o === r) return 0;
   const T = world.T; let d = o.s - r.s; if (T.loop) d = ((d % T.L) + T.L) % T.L;
-  return draftShare(d - BIKE_LENGTH, o.lane - r.lane);
+  return draftShare(d - BIKE_LENGTH, o.lane - r.lane) * draftScale(o.CdA, r.CdA);
 }
 // the air a rider rides in this step: its density at their height y, the best wake among the riders ahead and the
 // wind along their way
