@@ -24,6 +24,7 @@ from accounts import roles
 from accounts.access import needs_email_confirmation
 from api.auth import OptionalApiTokenAuth, member_auth
 from calendar_app.models import Competition
+from calendar_app.visibility import is_public, public_events
 from trainer import intervals, live, race, records, services, strava
 from trainer.models import (
     GroupRide,
@@ -432,7 +433,8 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         cancelled=group.cancelled,
         wind_ms=group.wind_ms,
         wind_from_deg=group.wind_from_deg,
-        event=_event_out(group.competition) if group.competition else None,
+        # every member's lobby lists the race: its event named only while the event is public
+        event=_event_out(group.competition) if group.competition and is_public(group.competition) else None,
         mode=GroupRide.Mode(group.mode),
         group_gap_s=group.group_gap_s,
         itt_interval_s=group.itt_interval_s,
@@ -854,9 +856,7 @@ def create_group(request, payload: GroupIn):
 def race_events(request):
     """The member's own approved events that are not over (every such event for an admin), soonest first."""
     today = timezone.localdate()
-    events = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).exclude(
-        date_end__lt=today
-    )
+    events = public_events().exclude(date_end__lt=today)
     events = events.filter(date_start__gte=today) | events.filter(date_end__gte=today)
     if not roles.at_least(request.auth, roles.MANAGE_ALL_EVENTS):
         events = events.filter(submitted_by=request.auth)
