@@ -337,7 +337,8 @@ shows on a route within its own reach, else 14 km for one seen from afar, else 1
   instruction, which a browser may end sooner than the sanitiser's parser does, on any Python; a
   link to another page opens in a new tab while one to a part of the same page (`#...`) stays on
   it, a limited set of formatting, image size/float and text colour kept, in time in proportion to
-  the text however a colour is written and however deep its tags nest
+  the text however a colour is written, however deep its tags nest and however many images without
+  a safe source it drops
   (`cycling_site/tests.py::SanitizeRichHtmlTests`, `tests/e2e/test_article_contents.py`). Rich text
   stored before the sanitiser dropped them is cleaned once, by `calendar_app` migration 0044: a
   text holding `<!` or `<?` goes through the sanitiser again, and every other keeps its bytes

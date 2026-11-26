@@ -258,7 +258,9 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
             # Its children written without its own markup: unwrap() walks all under it again, quadratic in depth.
             tag.hidden = True
         elif not _clean_attrs_and_links(tag):
-            tag.decompose()
+            # An image has no children, so it is gone the same way: decompose() walks its parent's children from the
+            # first to find it, and even at a known index each removal moves all after it, quadratic in their number.
+            tag.hidden = True
     return str(soup).strip()
 
 

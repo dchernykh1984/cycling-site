@@ -471,6 +471,14 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertLess(time.perf_counter() - started, 1.0)
         self.assertEqual(out, "a" * 12500)
 
+    def test_a_line_of_many_images_without_a_safe_src_is_cleaned_in_well_under_two_seconds(self):
+        # Each such image was found by walking its parent's children from the first: 200 000 characters took 13
+        # seconds, and a description may hold a million. The bound is generous, as above.
+        started = time.perf_counter()
+        out = sanitize_rich_html("a<img>" * 33334, allow_img=True)
+        self.assertLess(time.perf_counter() - started, 2.0)
+        self.assertEqual(out, "a" * 33334)
+
     def test_align_and_indent_classes_kept_others_dropped(self):
         out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
         self.assertIn('class="ql-align-center"', out)
