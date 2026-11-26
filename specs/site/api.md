@@ -62,7 +62,7 @@ and protocols with the event's upload token. The API has no language prefix.
    form's draft address (`event_draft_url`), where the page's "Add event" sends a race's event.
    A group race may be a race with protocols for an event (specs/495-virtual-race): `GET /events` lists the
    asking member's own events to come that a race may be made for (any for an admin); a race made with
-   `competition_id` (403 for anyone else's event) carries `mode` (`group` or `itt`), `group_gap_s`,
+   `competition_id` (403 for anyone else's event, or one that is not public) carries `mode` (`group` or `itt`), `group_gap_s`,
    `itt_interval_s`, `draft_between_groups` and `loop`, names its `event` and, for a member riding it, `me` --
    their bib, category, laps and own start. Joining one needs a registration for the event that is not rejected
    (403 with the event's link) and a free bib in the category's range (409). `/presence` takes the rider's drag

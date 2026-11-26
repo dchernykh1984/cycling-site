@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from accounts import roles
 from calendar_app.models import Competition
+from calendar_app.visibility import is_public
 from event_photos.bindings import recompute as recompute_bindings
 from event_photos.models import IssuedBib
 from protocols.models import FinishTimesUpload, GroupTimesUpload, RemotePointUpload, StartListUpload
@@ -36,8 +37,9 @@ def device_id(race) -> str:
 
 
 def can_tie(user, competition: Competition) -> bool:
-    """An event's own organizer ties a race to it, an admin to any; the event approved, not deleted, not over."""
-    if competition.is_deleted or competition.status != Competition.Status.APPROVED:
+    """An event's own organizer ties a race to it, an admin to any; the event public -- every member's lobby names it
+    on the race's card -- and not over."""
+    if not is_public(competition):
         return False
     if (competition.date_end or competition.date_start) < timezone.localdate():
         return False

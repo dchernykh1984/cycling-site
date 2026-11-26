@@ -154,7 +154,7 @@ has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
 fastest first; deleting one moves the others up. A race with protocols (specs/495-virtual-race) is a group race
-tied to an event: its maker -- the event's organizer, or an admin for any event approved and not over -- picks the
+tied to an event: its maker -- the event's organizer, or an admin for any public event not over -- picks the
 event under "Riding with friends" and sets the mode (a group race, or an individual time trial in which nobody
 drafts), the gap between the categories' starts or the interval between the riders', and in a group race whether
 riders of different categories draft each other. Only riders registered for the event join it (a rider who is not

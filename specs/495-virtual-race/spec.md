@@ -33,7 +33,7 @@ phone is told so, and a route is lightened only without losing quality.
 ### User Story 1 - An organizer makes a race for their event (Priority: P1)
 
 1. **Given** an organizer on the virtual ride page, **When** they gather a group race, **Then** they may tie it to
-   one of their own events that is approved and not over, and set: the mode (a group race or an individual time
+   one of their own events that is public (approved, neither hidden nor invite-only) and not over, and set: the mode (a group race or an individual time
    trial), the gap between the groups' starts in a group race (0: one mass start), the interval between riders in a
    time trial, whether riders of different categories draft each other in a group race, and the wind.
 2. **Given** a race tied to an event, **Then** its card names the event and links to it; the API carries the same.
@@ -96,7 +96,8 @@ phone is told so, and a route is lightened only without losing quality.
 
 - **FR-001**: A group race may carry an event (`competition_id`), a mode (`group` or `itt`), a gap between groups
   (s), an interval between time-trial riders (s) and whether categories draft each other; only the event's
-  organizer or an admin may tie it, and only to an approved event that is not over.
+  organizer or an admin may tie it, and only to a public event that is not over: every member's lobby lists the
+  race and names its event, and an event no longer public is not named there.
 - **FR-002**: Joining a race with an event needs a registration for it that is not rejected; the member gets a bib
   as the decisions above say, kept across leaving and joining.
 - **FR-003**: The race's start list, the groups' start times and the crossings go into the event's timing streams

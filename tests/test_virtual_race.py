@@ -96,6 +96,20 @@ class MakingARaceTests(RaceTestCase):
         self.event.save(update_fields=["date_start", "date_end"])
         self.assertEqual(self.make().status_code, 403)
 
+    def test_a_hidden_or_invite_only_event_takes_no_race_and_one_closed_later_is_not_named(self):
+        for closed in ("is_hidden", "invite_only"):
+            setattr(self.event, closed, True)
+            self.event.save(update_fields=[closed])
+            self.assertEqual(self.make().status_code, 403, closed)
+            self.assertEqual(self.client_of(self.organizer).get(f"{API}/events").json(), [], closed)
+            setattr(self.event, closed, False)
+            self.event.save(update_fields=[closed])
+        group = self.make().json()["id"]
+        self.event.invite_only = True
+        self.event.save(update_fields=["invite_only"])
+        # every member's lobby lists the race: an event that is no longer public is not named there
+        self.assertIsNone(self.client_of(_member("someone")).get(f"{API}/groups/{group}").json()["event"])
+
     def test_the_organizer_s_list_of_events_holds_their_own_to_come(self):
         mine = self.client_of(self.organizer).get(f"{API}/events").json()
         self.assertEqual([e["id"] for e in mine], [self.event.pk])
