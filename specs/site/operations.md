@@ -1,10 +1,11 @@
 # Site Specification: Running the site
 
 **Status**: Baseline -- describes the system as it works today
-**Verified against**: `main` on 2026-10-21; the night deploy's hourly runs against branch
-menu-cabinet-desktop-deploy-schedule on 2026-11-22
+**Verified against**: `main` on 2026-10-21; the night deploy's two schedules against branch
+nightly-deploy-render-cron on 2026-11-26
 **Code**: `cycling_site/settings/` (`base.py`, `prod.py`), `scripts/backup.sh`, `scripts/restore.sh`,
-`scripts/restore_smoke_test.sh`, `.github/workflows/`, `accounts/management/commands/migrate.py`
+`scripts/restore_smoke_test.sh`, `scripts/deploy_if_behind.py`, `render.yaml`, `.github/workflows/`,
+`accounts/management/commands/migrate.py`
 **Tests**: `cycling_site/tests.py` (logging, media), `accounts/tests.py` (initial superuser, site
 host), `tests/test_agent_schedules.py`, `tests/test_deploy_if_behind.py`
 **Related**: the `production-access` and `shipping-changes` skills; `README.md` ("Deployment",
@@ -24,16 +25,18 @@ restored, locally or onto production.
    commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
    suite on five browser/device combinations and once per skin.
 2. **Given** a merge to `main`, **Then** it reaches the site at night. Render's auto-deploy is off.
-   `.github/workflows/deploy.yml` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
+   `scripts/deploy_if_behind.py` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
    Almaty), and only when two things hold: the site names another commit at `/api/v1/version/`,
    and every check `main`'s push started is green (CI, the Dropbox check, any added later). It
    waits up to 30 minutes for a check still running, and a red one holds the deploy, by night or by
    hand. It then waits until the site names the new commit, so a deploy that fails turns the run
    red.
-   - GitHub starts a cron when it has capacity: on the first three nights it started the one night
-     run 4 to 5 hours late, past the window, and nothing was deployed. The workflow asks for a run
-     every hour from 17:07 to 00:07 UTC; the first that starts inside the window deploys, the others
-     do nothing.
+   - The night run is a Render Cron Job at 21:07 UTC (`render.yaml`). GitHub starts a cron when it
+     has capacity: on three nights of the four from 2026-11-22 none of the workflow's hourly runs
+     started inside the window. Render e-mails a failed run when the workspace's notifications
+     include failures.
+   - `.github/workflows/deploy.yml` is the fallback: GitHub is asked for a run at 22:37, 23:37 and
+     00:37 UTC, after the Render run has ended, so the two never deploy at once.
    - An urgent change goes out by running the workflow by hand, or with Render's Manual Deploy.
    - Render runs `migrate` as a pre-deploy step.
    - Configuration comes from environment variables set on Render.

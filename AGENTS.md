@@ -55,10 +55,11 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 - Lint and format: `ruff` via pre-commit; `mypy` runs there too.
 - Every reader-facing URL carries a language prefix (`/ru/`, `/kk/`, `/en/`); machine-facing ones
   (`/api/v1/`, admin, media, sitemap, robots) do not.
-- A merged change goes live at night: `.github/workflows/deploy.yml` deploys `main` between 02:00
-  and 06:00 in Almaty (21:00-01:00 UTC), from the first of its hourly runs GitHub starts in that
-  window, and `/api/v1/version/` names the commit the site runs. Run that workflow only on the
-  maintainer's word -- every deploy takes the site down for up to a minute.
+- A merged change goes live at night: a Render Cron Job (`render.yaml`) runs
+  `scripts/deploy_if_behind.py` at 02:07 in Almaty (21:07 UTC), which deploys `main` when
+  `/api/v1/version/` names another commit; `.github/workflows/deploy.yml` is its fallback at 03:37,
+  04:37 and 05:37, inside the window that closes at 06:00 (01:00 UTC). Run that workflow only on
+  the maintainer's word -- every deploy takes the site down for up to a minute.
 
 ## Coding agent context
 
