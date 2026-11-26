@@ -141,6 +141,37 @@ def test_the_road_onto_a_bridge_over_the_route_climbs_onto_its_deck(page: Page, 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_slip_road_from_a_bridge_s_end_into_the_route_starts_at_the_deck_s_height(page: Page, live_server):
+    # a road north, a road bridge across it, and from the bridge's end, 12 m off the route's middle, a slip road
+    # that runs on 200 m into the route: only its last metres come down to the route, not its start by the deck
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
+    gap = page.evaluate(
+        """() => {
+          if (!scene) {
+            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+          }
+          const named = { ru: 'n', kk: 'n', en: 'n' }, lat0 = 43.2, lon0 = 76.9;
+          const at = (east, north) => [lat0 + north / 111195, lon0 + east / (111320 * Math.cos(lat0 * Math.PI / 180))];
+          const route = { id: 'slip-test', name: named, desc: named, loop: false, width: 10, lanes: 2, scenery: 'city',
+            pts: [[...at(0, 0), 800], [...at(0, 500), 800], [...at(0, 1000), 800]],
+            over: [{ w: 8, pts: [at(-12, 300), at(12, 300)] }],
+            roads: [{ w: 6, pts: [at(12, 300), at(40, 380), at(6, 500)] }] };
+          addMap({ id: 'slip-test', name: named, origin: { lat: lat0, lon: lon0 }, routes: [route] });
+          const w = buildWorld(ROUTES.find(r => r.id === 'slip-test')), T = w.T, end = xzOf(T, at(12, 300));
+          const deck = overDecks(T, route.width, route.over)[0].deck, p = scenery.children.find(m => m.name === 'roads')
+            .geometry.attributes.position;
+          let best = Infinity;
+          for (let i = 0; i < p.count; i++) {
+            if (Math.hypot(p.getX(i) - end.x, p.getZ(i) - end.z) < 5) best = Math.min(best, Math.abs(p.getY(i) - deck));
+          }
+          return best;
+        }"""
+    )
+    assert gap < 0.3, gap
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_tunnel_s_roof_clears_the_road_under_it_and_the_land_keeps_its_level_beside_it(page: Page, live_server):
     faults = _faults(
         page,
