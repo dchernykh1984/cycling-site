@@ -1249,10 +1249,12 @@ def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_s
     # once: the frames after it leave another message in its place
     page.evaluate("() => { toast('another', 3); drawFrame(200); }")
     expect(page.locator("#toast")).to_have_text("another")
-    # the next ride says it again
+    # the next ride says it again, once the message on screen is gone rather than over it
     page.evaluate("() => { startMenu(); startRace(); }")
     page.wait_for_function("phase === 'countdown'", polling=100)
-    page.evaluate("drawFrame(200)")
+    page.evaluate("() => { toast('another', 3); drawFrame(200); }")
+    expect(page.locator("#toast")).to_have_text("another")
+    page.evaluate("() => { for (let i = 0; i < 7; i++) drawFrame(500); }")
     expect(page.locator("#toast")).to_have_text(said)
 
 
