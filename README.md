@@ -103,8 +103,9 @@ site down for up to a minute.
   hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
   and no other permission: without one GitHub answers 60 requests an hour per address, and Render's
   outbound addresses are shared. The hook now lives in both places: a regenerated one goes into the
-  GitHub secret and into the Cron Job's variable. The Cron Job's Trigger Run is a safe check in the
-  daytime: the run starts, says it is outside the window and deploys nothing.
+  GitHub secret and into the Cron Job's variable. The Cron Job's Trigger Run in the daytime shows
+  that it builds and starts: the run says it is outside the window and deploys nothing, before it
+  reads GitHub or calls the hook, so the token and the hook are first used at night.
 - **The secrets of GitHub Actions** live in the repository's `production` environment (Settings ->
   Environments), whose deployment branches are `main` only. A job receives them only when it names
   the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
