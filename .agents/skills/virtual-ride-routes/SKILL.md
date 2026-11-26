@@ -69,12 +69,48 @@ The data format is in `trainer/static/trainer/alatau/js/maps.js`; the scene is d
 - Every value that is not from a source is a guess, and the map file's comment says so: the Sokol
   Racetrack's heights of buildings and its barrier distance are the model.
 
+## Building a route from a ride's laps (`scripts/virtual_ride/`)
+
+The Institute of Nuclear Physics and Granfondo 2026 routes were built this way; rerun on the same inputs, the tools
+give the same data byte for byte.
+
+1. **The laps.** Decode the FIT with `fitdecode` into records of latitude, longitude, height and distance;
+   `laps.py ride.json name` finds the passes of an anchor 300 m into the ride. A lap through its anchor twice (a
+   figure-eight, a road out and back) is two passes; a first lap that went elsewhere is left out.
+2. **OpenStreetMap.** Geofabrik's country extract and `extract_boxes.py` (pyosmium's `FileProcessor` with a
+   `KeyFilter`: a Python handler for every node, catching an exception for every way, took an hour, this takes 90 s).
+3. **The road** (`build_route.py config.json`): the median lap matched to OSM's ways (Viterbi over distance,
+   direction, one-way, class and continuity), a match run past a junction's node and back dropped, the loop
+   simplified in two halves, each corner rounded to the road's width plus 8 m. Heights: the barometer, each lap's
+   mean taken off, averaged over the laps by place and set on SRTM's mean; one road ridden twice -- a dual
+   carriageway's halves, a crossing passed on each loop -- gets one height, since the barometer reads late, by its
+   lag times the slope, high one way and low the other. The rider's line: the laps' mean offset from the road's
+   middle, used only where the road turns and only toward the turn's inside -- one outside is GPS and the map apart.
+   The start line is given with its bearing: beside a dual carriageway its nearest road may run the other way.
+4. **What stands round it** (`surroundings.py route.json osm.json out.json [near]`): buildings within 250 m (tall
+   ones to 500 m) with heights from `height`, `building:levels` or the kind, colours where tagged; roads that meet
+   the route to 400 m, the others to 150 m, no parking aisles; bridges crossing over it, roads under it, its own
+   bridges and tunnels; power lines, railways, water, trees. About 70 KB for 7 km in the country, 290 KB for 15 km
+   in a city: the map file is the page's, so keep what a rider sees.
+5. **Into the map** (`finish.py route.json around.json meta.json map.js`, meta the names, description and event in
+   three languages): a tunnel gets its real profile, 6.5 m under the ground line between ramps of 100 m -- the
+   barometer smooths the dip away -- and the route goes into the map's routes, the other entries' text untouched.
+6. **Look at it.** The route on satellite imagery (zoom 17 to 19, coloured from start to end, arrows every 150 m),
+   then in a browser: its start, every turn, the tunnel, under each footbridge, sideways at each sight, and from above
+   round the sights.
+
+Sights for a route: a sight that spreads over the land (a cable car, ski jumps) stands each of its parts on the land
+under it and marks them (`userData.stands`); its `reach` keeps it to the routes it stands on drawn land for. A hill a
+sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m apart, through OpenTopoData).
+
 ## Checks before calling a route done
 
 - The data tests: `tests/test_virtual_ride_maps.py` (names in three languages, origins within 50 km,
   keys, shapes of buildings, barriers and trees).
 - The scene tests: `tests/e2e/test_virtual_ride.py` -- trees, houses and sights in the ground, nothing
-  on the road or its shoulder, road ridden twice drawn once, barriers beyond the edges.
+  on the road or its shoulder, road ridden twice drawn once, barriers beyond the edges -- and
+  `tests/e2e/test_virtual_ride_surroundings.py`: roads under the route where they cross it, bridges clear of it,
+  a tunnel's roof over it, a median's barrier and power lines off it, the rider's line on the road.
 - Look at it: screenshots from the saddle at the start, at every turn and junction, on the way back
   and towards the far relief; a top view next to satellite imagery.
 - Keep it light for phones: trees and posts instanced, a route's buildings one mesh, far relief on a
