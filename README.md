@@ -102,7 +102,8 @@ site down for up to a minute.
   Blueprint, this repository, branch `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same
   hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
   and no other permission: without one GitHub answers 60 requests an hour per address, and Render's
-  outbound addresses are shared.
+  outbound addresses are shared. The hook now lives in both places: a regenerated one goes into the
+  GitHub secret and into the Cron Job's variable.
 - **The secrets of GitHub Actions** live in the repository's `production` environment (Settings ->
   Environments), whose deployment branches are `main` only. A job receives them only when it names
   the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
