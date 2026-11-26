@@ -47,7 +47,9 @@ rest). The ride is stepped apart from its drawing: the physics (`js/physics.js` 
 power or gear, the riders' drag, the bots, what a smart trainer is set to) and the ride's state and
 step (`js/ride.js` -- the countdown, the rider, the bots, laps, sights, the finish, a plan's steps)
 neither read the page nor draw, and nothing else steps the physics. Each frame the ride takes its
-step, the trainer is told the grade and the rider's own drag (the rolling resistance of their bike
+step, the trainer is told the grade -- scaled by the setup page's difficulty, which the page says the legs feel and
+the speed never does: that comes from the route's own grade and the power -- and the rider's own drag (the
+rolling resistance of their bike
 and CdA x air density from their height, weight and bike, the numbers the ride moves them by, less
 the share a wake ahead takes), and the scene and the HUD are drawn from the ride's state; what
 happened in the step reaches the page through `rideHooks`. The air's density is the International
