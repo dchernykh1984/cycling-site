@@ -19,8 +19,10 @@ and drafts by the race's rules.
 - **VII (API)**: making, joining and riding a race are API operations (`/api/v1/virtual-ride/`), tested.
 - **VIII (one fact, one home)**: laps and bib ranges stay the category's; the bib is the member's, and the start
   list stream says it to the rest of the site as StartProtocolMaker's does.
-- **X (checked, private)**: the token stays on the server; crossings are bounded and checked against the route and
-  the rider's start; only the event's organizer or an admin ties a race to it.
+- **X (checked, private)**: the token stays on the server; crossings are bounded -- 50 a call, points 0 to 20, as
+  many of each point as the rider has laps -- and checked against the rider's start and the site's clock (the site
+  does not know a route's turns, the page does); only the event's organizer or an admin ties a race to it, and only
+  to a public event.
 - **XI (API promises)**: new optional fields only.
 
 ## Data model
