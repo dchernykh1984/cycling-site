@@ -443,33 +443,50 @@ for e in ways:
             if r1 >= r0:
                 out.setdefault(kind, []).append([r0, min(N - 1, r1 + 1)])
 
+
 # ---------------------------------------------------------------- power lines, railways, water, trees
+def within(pts, reach):
+    """The runs of a line within reach of the route, each with the point beyond either end: a power line or a river
+    that runs on for tens of kilometres is drawn as far as it is seen."""
+    near_ = [gap(p) < reach for p in pts]
+    runs, cur = [], []
+    for i, p in enumerate(pts):
+        if near_[i] or (i + 1 < len(pts) and near_[i + 1]) or (i and near_[i - 1]):
+            cur.append(p)
+        elif cur:
+            runs.append(cur)
+            cur = []
+    if cur:
+        runs.append(cur)
+    return [r for r in runs if len(r) > 1]
+
+
 for e in ways:
     t = e["tags"]
     pts = e["xy"]
     near = min(gap(p) for p in [*pts[:: max(1, len(pts) // 30)], pts[-1]])
     if t.get("power") in ("line", "minor_line") and near < NEAR["lines"]:
-        out["lines"].append(
-            {
-                "k": "power" if t["power"] == "line" else "minor",
-                "pts": [ll(p) for p in pts],
-            }
-        )
+        for run in within(pts, NEAR["lines"]):
+            out["lines"].append({"k": "power" if t["power"] == "line" else "minor", "pts": [ll(p) for p in run]})
     elif t.get("railway") in ("rail", "light_rail", "narrow_gauge") and near < NEAR["lines"] and not t.get("tunnel"):
-        out["lines"].append({"k": "rail", "pts": [ll(p) for p in simplify(pts, 1)]})
+        for run in within(simplify(pts, 1), NEAR["lines"]):
+            out["lines"].append({"k": "rail", "pts": [ll(p) for p in run]})
     elif t.get("waterway") in ("river", "canal", "stream") and near < NEAR["water"] and not t.get("tunnel"):
         w = {"river": 12, "canal": 6, "stream": 2.5}[t["waterway"]]
         try:
             w = float(t.get("width", w))
         except ValueError:
             pass
-        out["water"].append({"w": w, "pts": [ll(p) for p in simplify(pts, 1)]})
+        for run in within(simplify(pts, 1), NEAR["water"]):
+            out["water"].append({"w": w, "pts": [ll(p) for p in run]})
     elif (
         (t.get("natural") == "water" or t.get("landuse") in ("reservoir", "basin"))
         and closed(e)
         and near < NEAR["water"]
     ):
-        out["water"].append({"area": [ll(p) for p in simplify(pts, 1.5)[:-1]]})
+        shore = [ll(p) for p in simplify(pts, 1.5)[:-1]]
+        if len(shore) >= 3:  # a pond a few metres across simplifies to a line: there is nothing to draw
+            out["water"].append({"area": shore})
     elif t.get("natural") == "tree_row" and near < min(NEAR["trees"], 300):
         out["trees"]["rows"].append([ll(p) for p in simplify(pts, 1)])
     elif (
@@ -477,7 +494,9 @@ for e in ways:
         and closed(e)
         and near < NEAR["trees"]
     ):
-        out["trees"]["woods"].append([ll(p) for p in simplify(pts, 2)[:-1]])
+        outline = [ll(p) for p in simplify(pts, 2)[:-1]]
+        if len(outline) >= 3:
+            out["trees"]["woods"].append(outline)
 for e in osm:
     if e["t"] == "n" and e["tags"].get("natural") == "tree" and gap(xy(*e["ll"])) < NEAR["trees"]:
         out["trees"]["pts"].append(ll(xy(*e["ll"])))
