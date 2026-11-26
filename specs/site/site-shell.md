@@ -174,7 +174,8 @@ each a key, a name and a description, the points (latitude, longitude, height in
 is a loop, the road's width and lanes (one lane, a racetrack's, has no centre line), the scenery drawn along it
 (`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges), its own buildings, barriers and
 trees when it has them (footprints with a height; a guardrail and a catch fence a gap beyond each edge, broken at the
-buildings; rows and woods, as OpenStreetMap maps them) and the event
+buildings; rows and woods, in the steppe or on a racetrack, instead of trees scattered at random -- all as
+OpenStreetMap maps them) and the event
 announcing a group race on it (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
