@@ -116,9 +116,12 @@ class MapsTests(SimpleTestCase):
             if "barriers" in route:
                 self.assertEqual(set(route["barriers"]), {"gap"}, route["id"])
                 self.assertGreater(route["barriers"]["gap"], 0, route["id"])
+                if "c" in building:
+                    self.assertRegex(building["c"], r"^#[0-9a-f]{6}$", route["id"])
             trees = route.get("trees", {})
-            self.assertLessEqual(set(trees), {"rows", "woods"}, route["id"])
+            self.assertLessEqual(set(trees), {"rows", "woods", "pts"}, route["id"])
             lines = [(row, 2) for row in trees.get("rows", [])] + [(wood, 3) for wood in trees.get("woods", [])]
+            lines += [([tree], 1) for tree in trees.get("pts", [])]
             lines += [(building["pts"], 3) for building in route.get("buildings", [])]
             for line, least in lines:
                 self.assertGreaterEqual(len(line), least, route["id"])

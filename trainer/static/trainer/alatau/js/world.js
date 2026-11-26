@@ -9,6 +9,9 @@ function disposeWorld() {
 }
 function terrainH(T, x, z) {
   const n = nearest(T, x, z); let h = n.y - 1.2;
+  // beside a tunnel's ramps the land keeps its level: the road goes down into a cutting, the ground does not
+  const cut = T.route.tunnels ? cutGround(T, n.s) : null;
+  if (cut != null) h += (cut - n.y) * clamp((n.d - T.route.width / 2 - 2) / 26, 0, 1);
   if (T.route.scenery === 'gorge') {
     if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
   } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
@@ -71,34 +74,52 @@ function buildWorld(route) {
   under.rotation.x = -Math.PI / 2; under.position.y = rel ? Math.min(T.minY - 30, reliefLow(rel) - 100) : T.minY - 30; grp.add(under);
 
   // --- дорога, тротуары ---
-  const ribbon = (off0, off1, dy, mat, uvScale) => {
+  // offsets right of the middle, a number or one per point (null: nothing there)
+  const ribbon = (off0, off1, dy, mat, uvScale, skip) => {
     const N = T.N, P = new Float32Array(N * 6), U = new Float32Array(N * 4), I = [];
-    const o = {};
+    const o = {}, a0 = typeof off0 === 'function' ? off0 : () => off0, a1 = typeof off1 === 'function' ? off1 : () => off1;
     for (let i = 0; i < N; i++) {
       sampleAt(T, T.D[i], o);
       // a stretch over road drawn before lies a centimetre above it for each one under it, so the two never flicker
-      const y = o.y + dy + .01 * T.over[i];
-      P.set([o.x + o.rx * off0, y, o.z + o.rz * off0, o.x + o.rx * off1, y, o.z + o.rz * off1], i * 6);
+      const y = o.y + dy + .01 * T.over[i], f0 = a0(i), f1 = a1(i);
+      P.set([o.x + o.rx * f0, y, o.z + o.rz * f0, o.x + o.rx * f1, y, o.z + o.rz * f1], i * 6);
       U.set([0, T.D[i] / uvScale, 1, T.D[i] / uvScale], i * 4);
-      if (i < N - 1 && !(T.again[i] && T.again[i + 1])) { const a = i * 2; I.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      if (i < N - 1 && !(T.again[i] && T.again[i + 1]) && !(skip && (skip(i) || skip(i + 1)))) { const a = i * 2; I.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
     }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2)); g.setIndex(I); g.computeVertexNormals();
     const m = new THREE.Mesh(g, mat); grp.add(m); return m;
   };
-  const rtex = roadTexture(route.lanes); rtex.wrapS = THREE.ClampToEdgeWrapping; rtex.wrapT = THREE.RepeatWrapping;
+  const rtex = roadTexture(route.lanes, route.oneway); rtex.wrapS = THREE.ClampToEdgeWrapping; rtex.wrapT = THREE.RepeatWrapping;
   ribbon(-W / 2, W / 2, .06, new THREE.MeshLambertMaterial({ map: rtex }), 9);
+  // what lies beside the road on each side: as wide as the land the route leaves -- half the strip between a dual
+  // carriageway's two halves -- broken where a road round it meets it
+  const room = roomBeside(T, W), onRoad = roadsNear(T, route.roads), o2 = {};
+  const sideOf = (k, wide) => i => clamp(room[k][i] / 2, 0, wide);
+  // none where the land between is under a metre, where a road meets the route, or over another stretch's road
+  const mouth = (k, wide) => i => {
+    sampleAt(T, T.D[i], o2); const off = (k ? 1 : -1) * (W / 2 + sideOf(k, wide)(i) * .5), x = o2.x + o2.rx * off, z = o2.z + o2.rz * off;
+    return room[k][i] < 1 || onRoad(x, z, 0) || routeGap(T, x, z) < W / 2 - .1;
+  };
   if (!gorge && !steppe) {
     const walk = new THREE.MeshLambertMaterial({ color: 0xa7a59c });
-    ribbon(-W / 2 - 5, -W / 2, .18, walk, 1); ribbon(W / 2, W / 2 + 5, .18, walk, 1);
+    ribbon(i => -W / 2 - sideOf(0, 5)(i), -W / 2, .18, walk, 1, mouth(0, 5)); ribbon(W / 2, i => W / 2 + sideOf(1, 5)(i), .18, walk, 1, mouth(1, 5));
   } else {
     const grav = new THREE.MeshLambertMaterial({ color: 0x8b8574 });
-    ribbon(-W / 2 - 2.5, -W / 2, .02, grav, 1); ribbon(W / 2, W / 2 + 2.5, .02, grav, 1);
+    ribbon(i => -W / 2 - sideOf(0, 2.5)(i), -W / 2, .02, grav, 1, mouth(0, 2.5)); ribbon(W / 2, i => W / 2 + sideOf(1, 2.5)(i), .02, grav, 1, mouth(1, 2.5));
   }
+  addMedianBarriers(grp, T, W, room);
+  // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
+  if (route.roads) addRoads(grp, T, W, route.roads, ground);
+  if (route.over) addOverpasses(grp, T, W, route.over, ground);
+  if (route.under) addUnderpasses(grp, T, W, route.under, ground);
+  if (route.bridges || route.tunnels) addRouteStructures(grp, T, W, ground);
+  if (route.lines) addLines(grp, T, route.lines, ground);
+  if (route.water) addWater(grp, T, route.water, ground);
 
   // --- здания ---
   const bl = [];
   const osmB = route.osm ? prepOSM(route.osm.buildings) : route.buildings ? routeBuildings(route, T) : null;
-  const tooClose = (x, z, rad) => routeGap(T, x, z) < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
+  const tooClose = (x, z, rad) => routeGap(T, x, z) < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false) || onRoad(x, z, 1.5);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
   const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'right' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
   if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB); }
@@ -133,7 +154,8 @@ function buildWorld(route) {
   // --- деревья: тополя в городе, тянь-шаньские ели в ущелье, редкие карагачи в степи ---
   // each stands on the ground as drawn, its trunk a little way into it
   const trees = [];
-  if (steppe) {
+  if (route.trees && !gorge) plantOwnTrees(T, route.trees, r, tooClose, ground, W, trees); // where OpenStreetMap maps them
+  else if (steppe) {
     // along the road a tree now and then, in ones, twos and threes, beyond the shoulder; and a few alone in the grass
     if (!track) for (const side of [-1, 1]) {
       let s = r() * 40;
@@ -146,8 +168,7 @@ function buildWorld(route) {
         s += 18 + r() * 70;
       }
     }
-    if (route.trees) plantOwnTrees(T, route.trees, r, tooClose, ground, W, trees); // where OpenStreetMap maps them
-    else for (let i = 0; i < 120; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 60 + r() * 700, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (r() < .35 && !againAt(s) && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'd', s: .8 + r() * .5 }); }
+    for (let i = 0; i < 120; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 60 + r() * 700, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (r() < .35 && !againAt(s) && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'd', s: .8 + r() * .5 }); }
   } else if (!gorge) {
     for (const side of [-1, 1]) { let s = r() * 6; while (s < T.L) { const o = sampleAt(T, s, {}), off = W / 2 + 6.5 + r() * .8, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!againAt(s) && !tooClose(x, z, W / 2 + 4)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'p', s: .85 + r() * .4 }); s += 7 + r() * 4; } }
     for (let i = 0; i < 1400; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 40 + r() * 600, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .5 ? 'p' : 'd', s: .7 + r() * .5 }); }
@@ -169,12 +190,14 @@ function buildWorld(route) {
   world = course; // only once its scenery stands: a build that failed half way leaves nothing to ride
   return world;
 }
-// a route's own trees, as OpenStreetMap maps them: rows along the fields' edges, a tree about every 7 m, and woods,
-// one tree to about 90 square metres; none nearer the road than the steppe's trees out in the grass, and none past
-// 1.5 km from it -- the ground is drawn 1.6 km beyond the route, and a tree further out would hang over the plain
+// a route's own trees, as OpenStreetMap maps them: rows along the fields' edges, a tree about every 7 m, woods, one
+// tree to about 90 square metres, and trees alone; none on the road's shoulder (a racetrack's: none on its run-off,
+// 30 m) and none past 1.5 km from it -- the ground is drawn 1.6 km beyond the route, and a tree further out would
+// hang over the plain
 function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
-  const at = p => proj(p[0], p[1], T.origin);
-  const add = (x, z) => { if (routeGap(T, x, z) < 1500 && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
+  const at = p => proj(p[0], p[1], T.origin), clear = T.route.scenery === 'racetrack' ? 30 : 4;
+  const add = (x, z) => { if (routeGap(T, x, z) < 1500 && !tooClose(x, z, W / 2 + clear)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
+  (own.pts || []).forEach(p => { const q = at(p); add(q.x, q.z); });
   (own.rows || []).forEach(row => {
     const q = row.map(at);
     for (let i = 0; i + 1 < q.length; i++) {

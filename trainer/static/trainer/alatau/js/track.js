@@ -110,6 +110,14 @@ function routeGap(T, x, z) {
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const i of T.grid.get((cx + a) + ',' + (cz + b)) || []) best = Math.min(best, Math.hypot(T.X[i] - x, T.Z[i] - z));
   return best <= ROUTE_CELL ? best : Math.min(best, nearest(T, x, z).d);
 }
+// the route's nearest point to (x, z) as routeGap finds it: { d: how far, y: its height, s: where along the route }
+function routeNearest(T, x, z) {
+  if (!T.grid) routeGap(T, x, z);
+  const cx = Math.floor(x / ROUTE_CELL), cz = Math.floor(z / ROUTE_CELL); let best = Infinity, bi = -1;
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const i of T.grid.get((cx + a) + ',' + (cz + b)) || []) { const d = Math.hypot(T.X[i] - x, T.Z[i] - z); if (d < best) { best = d; bi = i; } }
+  if (best <= ROUTE_CELL) return { d: best, y: T.Y[bi], s: T.D[bi] };
+  const n = nearest(T, x, z); return { d: Math.min(best, n.d), y: n.y, s: n.s };
+}
 // The lane a rider keeps on a road this wide: the right one, a metre and a half in from the edge
 const keepLane = W => Math.min(3.2, W / 2 - 1.5);
 // how far right of the road's middle a rider rides at the place o (a sample of the track): their lane; on a route
