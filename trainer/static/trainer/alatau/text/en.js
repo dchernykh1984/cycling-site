@@ -340,7 +340,7 @@ const TEXT_EN = {
     "erg.label": "ERG: the trainer holds the workout's power",
     "erg.on": "ERG on: the trainer holds the power",
     "erg.off": "ERG off: the trainer follows the gradient, hold the power yourself",
-    "wind.on": "Wind (experimental)",
+    "wind.on": "Wind",
     "wind.from": "Blowing from",
     "wind.ms": "Wind speed, m/s",
     "wind.n": "north",
