@@ -95,7 +95,7 @@ function buildWorld(route) {
 
   // --- здания ---
   const bl = [];
-  const osmB = route.osm ? prepOSM(route.osm.buildings) : null;
+  const osmB = route.osm ? prepOSM(route.osm.buildings) : route.buildings ? routeBuildings(route, T) : null;
   const tooClose = (x, z, rad) => routeGap(T, x, z) < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
   const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'right' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
@@ -144,7 +144,8 @@ function buildWorld(route) {
         s += 18 + r() * 70;
       }
     }
-    for (let i = 0; i < 120; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 60 + r() * 700, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (r() < .35 && !againAt(s) && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'd', s: .8 + r() * .5 }); }
+    if (route.trees) plantOwnTrees(T, route.trees, r, tooClose, ground, W, trees); // where OpenStreetMap maps them
+    else for (let i = 0; i < 120; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 60 + r() * 700, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (r() < .35 && !againAt(s) && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'd', s: .8 + r() * .5 }); }
   } else if (!gorge) {
     for (const side of [-1, 1]) { let s = r() * 6; while (s < T.L) { const o = sampleAt(T, s, {}), off = W / 2 + 6.5 + r() * .8, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!againAt(s) && !tooClose(x, z, W / 2 + 4)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: 'p', s: .85 + r() * .4 }); s += 7 + r() * 4; } }
     for (let i = 0; i < 1400; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 40 + r() * 600, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .5 ? 'p' : 'd', s: .7 + r() * .5 }); }
@@ -152,6 +153,7 @@ function buildWorld(route) {
     for (let i = 0; i < 5200; i++) { const s = r() * T.L, o = sampleAt(T, s, {}), side = r() < .5 ? -1 : 1, off = W / 2 + 7 + Math.pow(r(), 1.6) * 650, x = o.x + o.rx * off * side, z = o.z + o.rz * off * side; const h = ground(x, z); if (h > 2700 || tooClose(x, z, W / 2 + 5)) continue; trees.push({ x, z, y: h - ROOT_M, k: s < 2500 && r() < .6 ? 'd' : 's', s: .7 + r() * .7 }); }
   }
   addTrees(grp, trees);
+  if (route.barriers) addBarriers(grp, T, W, route.barriers.gap, ground, (x, z) => !!osmB && osmB.near(x, z, 2));
 
   // --- a mountain range to the south, on a route or a map that has one ---
   const range = route.mountains || mapOf(route).mountains; if (range) addMountains(grp, T, range.south, plain);
@@ -163,6 +165,65 @@ function buildWorld(route) {
   scene.add(grp); scenery = grp;
   world = course; // only once its scenery stands: a build that failed half way leaves nothing to ride
   return world;
+}
+// a route's own trees, as OpenStreetMap maps them: rows along the fields' edges, a tree about every 7 m, and woods,
+// one tree to about 90 square metres; none nearer the road than the steppe's trees out in the grass
+function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
+  const at = p => proj(p[0], p[1], T.origin);
+  const add = (x, z) => { if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
+  (own.rows || []).forEach(row => {
+    const q = row.map(at);
+    for (let i = 0; i + 1 < q.length; i++) {
+      const a = q[i], b = q[i + 1], L = Math.hypot(b.x - a.x, b.z - a.z);
+      for (let s = r() * 4; s < L; s += 5 + r() * 4) add(a.x + (b.x - a.x) * s / L, a.z + (b.z - a.z) * s / L);
+    }
+  });
+  (own.woods || []).forEach(wood => {
+    const ring = wood.map(at).map(p => [p.x, p.z]), xs = ring.map(p => p[0]), zs = ring.map(p => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
+    let area = 0; ring.forEach((p, i) => { const n = ring[(i + 1) % ring.length]; area += p[0] * n[1] - n[0] * p[1]; });
+    const want = Math.min(1500, Math.round(Math.abs(area) / 2 / 90));
+    for (let k = 0, put = 0; put < want && k < want * 6; k++) {
+      const x = x0 + r() * (x1 - x0), z = z0 + r() * (z1 - z0);
+      if (insideRing(ring, x, z)) { add(x, z); put++; }
+    }
+  });
+}
+// A racetrack's guardrail along both edges, gap metres beyond the road, and its catch fence of mesh on posts a metre
+// behind it: broken where a building stands, and where the line would come nearer another stretch of the track than
+// its own -- inside a hairpin tighter than the gap
+function addBarriers(grp, T, W, gap, ground, building) {
+  const STEP = 2, o = {}, rail = [], mesh = [], posts = [];
+  const line = (off, side, out, postEvery) => {
+    let prev = null;
+    for (let s = 0, i = 0; s <= T.L; s += STEP, i++) {
+      sampleAt(T, s, o);
+      const x = o.x + o.rx * off * side, z = o.z + o.rz * off * side;
+      if (building(x, z) || routeGap(T, x, z) < off - 1) { prev = null; continue; }
+      const p = { x, z, y: ground(x, z) };
+      if (prev) out.push(prev, p);
+      if (postEvery && i % postEvery === 0) posts.push(p);
+      prev = p;
+    }
+  };
+  for (const side of [-1, 1]) { line(W / 2 + gap, side, rail, 0); line(W / 2 + gap + 1, side, mesh, 3); }
+  const strip = (pairs, y0, y1, mat, name) => { // a band standing on the ground between y0 and y1 above it
+    if (!pairs.length) return;
+    const P = new Float32Array(pairs.length * 9);
+    for (let i = 0; i < pairs.length; i += 2) {
+      const a = pairs[i], b = pairs[i + 1];
+      P.set([a.x, a.y + y0, a.z, b.x, b.y + y0, b.z, b.x, b.y + y1, b.z, a.x, a.y + y0, a.z, b.x, b.y + y1, b.z, a.x, a.y + y1, a.z], i * 9);
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat); m.name = name; grp.add(m);
+  };
+  strip(rail, .45, .8, new THREE.MeshLambertMaterial({ color: 0xc3c8cc, side: THREE.DoubleSide }), 'rail');
+  strip(mesh, 0, 3.6, new THREE.MeshLambertMaterial({ color: 0x7d838a, side: THREE.DoubleSide, transparent: true, opacity: .25, depthWrite: false }), 'fence');
+  if (!posts.length) return;
+  const bg = new THREE.BoxGeometry(1, 1, 1); bg.translate(0, .5, 0);
+  const im = new THREE.InstancedMesh(bg, new THREE.MeshLambertMaterial({ color: 0x5b6066 }), posts.length), M = new THREE.Matrix4();
+  posts.forEach((p, i) => im.setMatrixAt(i, M.makeScale(.1, 4.2, .1).setPosition(p.x, p.y - ROOT_M, p.z)));
+  im.name = 'posts'; grp.add(im);
 }
 function addTrees(grp, list) {
   const kinds = { p: [], d: [], s: [] }; list.forEach(t => kinds[t.k].push(t));

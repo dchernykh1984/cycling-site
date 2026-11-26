@@ -7,6 +7,9 @@
 // ({ south: metres }) has a range rising to the south, its foot that far south of the origin or further.
 // A route far from the map's others -- a region's lie tens of kilometres apart -- carries its own origin, a point
 // among its own points, and its own mountains: the map's are then for its other routes.
+// A route may also carry its own buildings ({ h: metres, pts: [[latitude, longitude], ...] }, drawn as OpenStreetMap's
+// are), barriers ({ gap: metres }: a guardrail and a catch fence that far beyond each edge, broken at the buildings)
+// and trees ({ rows: [lines], woods: [rings] }), each where OpenStreetMap maps it.
 // A map without routes yet is shown as coming soon.
 // A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
 // objects/ and its line (js/landmarks.js).

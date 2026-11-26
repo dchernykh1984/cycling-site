@@ -172,7 +172,9 @@ distances and a rider's track its coordinates; its mountains, when it has a rang
 its map's others, as a region's lie tens of kilometres apart, carries its own origin and mountains; its routes,
 each a key, a name and a description, the points (latitude, longitude, height in metres), whether it
 is a loop, the road's width and lanes (one lane, a racetrack's, has no centre line), the scenery drawn along it
-(`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges) and the event
+(`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges), its own buildings, barriers and
+trees when it has them (footprints with a height; a guardrail and a catch fence a gap beyond each edge, broken at the
+buildings; rows and woods, as OpenStreetMap maps them) and the event
 announcing a group race on it (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a

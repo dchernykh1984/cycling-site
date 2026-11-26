@@ -1263,6 +1263,53 @@ def test_a_racetrack_keeps_its_edges_clear_and_its_one_lane_has_no_centre_line(p
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_racetrack_s_barriers_break_at_its_buildings_and_its_trees_grow_where_mapped(page: Page, live_server):
+    """A route's own scenery: its guardrail and catch fence run a gap beyond each edge and break where a building
+    stands, the building is drawn from its footprint, and its trees grow along the rows the map gives, nowhere else."""
+    _trainer_in_its_menu(page, live_server)
+    seen = page.evaluate(
+        """() => {
+            const named = { ru: 'n', kk: 'n', en: 'n' }, ring = [];
+            for (let i = 0; i < 40; i++) {
+                const a = i / 40 * 2 * Math.PI;
+                ring.push([43.6 + 0.006 * Math.sin(a), 76.5 + 0.008 * Math.cos(a), 650]);
+            }
+            // a building by the ring's east point, its near wall 12.5 m from the middle of the road, 40 m long
+            const m = 1 / (111320 * Math.cos(43.6 * Math.PI / 180)), n = 1 / 111195, e = 76.508;
+            const box = [[43.6 - 20 * n, e + 12.5 * m], [43.6 - 20 * n, e + 40 * m], [43.6 + 20 * n, e + 40 * m],
+                         [43.6 + 20 * n, e + 12.5 * m]];
+            const route = { id: 'lap', name: named, desc: named, loop: true, width: 12, lanes: 1, scenery: 'racetrack',
+                            pts: ring, barriers: { gap: 6 }, buildings: [{ h: 8, pts: box }],
+                            trees: { rows: [[[43.615, 76.49], [43.615, 76.51]]] } };
+            addMap({ id: 'circuit', name: named, origin: { lat: 43.6, lon: 76.5 }, routes: [route] });
+            const T = buildWorld(ROUTES.find(r => r.id === 'lap')).T;
+            const verts = name => {
+                const mesh = scenery.children.find(o => o.name === name), out = [];
+                const a = mesh.geometry.attributes.position;
+                for (let i = 0; i < a.count; i++) out.push([a.getX(i), a.getZ(i)]);
+                return out;
+            };
+            const foot = box.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x, q.z]; });
+            const barrier = verts('rail').concat(verts('fence'));
+            const trunks = scenery.children.find(o => o.isInstancedMesh && o.geometry.type === 'CylinderGeometry');
+            const mx = new THREE.Matrix4(), p = new THREE.Vector3(), row = proj(43.615, 76.5, T.origin).z;
+            let offRow = 0;
+            for (let i = 0; i < trunks.count; i++) {
+                trunks.getMatrixAt(i, mx); p.setFromMatrixPosition(mx); if (Math.abs(p.z - row) > 1) offRow++;
+            }
+            return {
+                nearest: Math.min(...verts('rail').map(([x, z]) => routeGap(T, x, z))),
+                atBuilding: barrier.filter(([x, z]) => insideRing(foot, x, z) || ringGap(foot, x, z) < 1.9).length,
+                drawn: world_osmKept, trees: trunks.count, offRow,
+            };
+        }"""
+    )
+    assert seen["nearest"] > 12 - 1.01, seen
+    assert seen["atBuilding"] == 0 and seen["drawn"] == 1, seen
+    assert seen["trees"] > 100 and seen["offRow"] == 0, seen
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

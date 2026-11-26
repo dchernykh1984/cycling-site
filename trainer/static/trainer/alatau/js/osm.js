@@ -56,8 +56,26 @@ function prepOSM(arr) {
   });
   return {
     list,
+    // inside a footprint or within m metres of its walls: hit() takes a building for the circle round it, which for a
+    // grandstand 376 m long covers the road beside it
+    near(x, z, m) { return list.some(b => Math.hypot(b.cx - x, b.cz - z) < b.r + m && (insideRing(b.ring, x, z) || ringGap(b.ring, x, z) < m)); },
     hit(x, z) { const ci = Math.floor(x / cell), cj = Math.floor(z / cell); for (let a = -2; a <= 2; a++) for (let d = -2; d <= 2; d++) { const L = g.get((ci + a) + ',' + (cj + d)); if (L) for (const b of L) if (Math.hypot(b.cx - x, b.cz - z) < b.r + 1.5) return true; } return false; }
   };
+}
+function insideRing(ring, x, z) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside; }
+  return inside;
+}
+function ringGap(ring, x, z) {
+  let best = Infinity;
+  for (let i = 0; i < ring.length; i++) { const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], dx = bx - ax, dz = bz - az, f = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1); best = Math.min(best, Math.hypot(x - ax - dx * f, z - az - dz * f)); }
+  return best;
+}
+// a route's own buildings -- footprints in latitude and longitude with a height each, a map's data -- packed as
+// prepOSM reads a file's, in the route's metres
+function routeBuildings(route, T) {
+  return prepOSM(route.buildings.map(b => [b.h * 10, 0].concat(...b.pts.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x * 10, q.z * 10]; }))));
 }
 // Все здания маршрута — одна геометрия: стены, крыша, цвет фасада в вершинах
 function addOSMBuildings(grp, T, W, lms, osmB) {
