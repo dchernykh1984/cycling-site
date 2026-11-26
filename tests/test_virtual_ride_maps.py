@@ -12,7 +12,7 @@ from tests import trainer_page
 from trainer.models import VirtualRide
 
 # The members' saved rides and group races keep the key of the route they were ridden on
-RIDDEN = {"center", "medeu", "oldtown", "farabi"}
+RIDDEN = {"center", "medeu", "oldtown", "farabi", "kyrbaltabay-tuganbay"}  # the last live since 2026-11-26
 # What world.js draws along a route
 SCENERIES = {"city", "gorge", "steppe", "racetrack"}
 OBJECTS = trainer_page.PAGE.parent / "alatau" / "objects"
