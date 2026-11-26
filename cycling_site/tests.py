@@ -471,12 +471,13 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertLess(time.perf_counter() - started, 1.0)
         self.assertEqual(out, "a" * 12500)
 
-    def test_a_line_of_many_images_without_a_safe_src_is_cleaned_in_well_under_two_seconds(self):
+    def test_a_line_of_many_images_without_a_safe_src_is_cleaned_in_well_under_five_seconds(self):
         # Each such image was found by walking its parent's children from the first: 200 000 characters took 13
-        # seconds, and a description may hold a million. The bound is generous, as above.
+        # seconds, and a description may hold a million. Five seconds, not the one above: under coverage this
+        # line takes most of a second on a fast machine, and a CI runner is slower.
         started = time.perf_counter()
         out = sanitize_rich_html("a<img>" * 33334, allow_img=True)
-        self.assertLess(time.perf_counter() - started, 2.0)
+        self.assertLess(time.perf_counter() - started, 5.0)
         self.assertEqual(out, "a" * 33334)
 
     def test_a_line_of_tags_nested_too_deep_to_write_back_comes_back_as_its_escaped_text(self):
