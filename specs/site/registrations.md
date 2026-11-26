@@ -4,8 +4,8 @@
 **Verified against**: `main` on 2026-10-21; a member's manager (issue #315) against branch `315-managing-registrations` on 2026-10-28; people without accounts, the folded details and the filters of the page for several, and the entries API (issues #438-#440) against branch `438-virtual-members` on 2026-11-05
 **Code**: `registrations/` (models, forms, registering, views), registration settings on `calendar_app.Competition`,
 `api/endpoints/registrations.py`
-**Tests**: `registrations/tests.py`, `tests/test_profile_registration_actions.py`,
-`tests/test_bib_numbers.py`, `tests/test_additional_info_label.py`,
+**Tests**: `registrations/tests.py`, `tests/test_profile_registration_actions.py`, `tests/e2e/test_typed_date.py`,
+`tests/test_bib_numbers.py`, `tests/test_additional_info_label.py`, `tests/test_additional_info_birth_date.py`,
 `tests/test_list_site_registration.py`, `calendar_app/tests.py` (registration open/limits),
 `calendar_app/test_timezones.py`,
 `tests/e2e/test_participant_list.py`, `test_relay_registration.py`, `test_profile_registrations.py`,
@@ -26,7 +26,10 @@ list groups riders by category with start numbers; the timing apps fetch the sam
 ### Story 1 -- Enter a race (P1)
 
 1. **Given** registration is open, **When** a participant opens the form, **Then** team, city and
-   birth date come prefilled from their profile (birth date in ISO form whatever the language).
+   birth date come prefilled from their profile. A date of birth is typed as DD.MM.YYYY whatever the language,
+   the dots put in as the digits come, with the browser's calendar on a button beside it opening on the date
+   typed (`cycling_site/typed_date.py`) -- on the registration page, the organizer's add and edit pages, and the
+   additional field that collects it; the categories offered follow the date as it is typed.
 2. **Given** self-only mode, **Then** a rider registers only themselves, needs a gender and a birth
    date in their profile, and their identity fields (names, birth, gender) are locked to the
    profile; **given** free mode, **Then** any person can
@@ -145,8 +148,8 @@ list groups riders by category with start numbers; the timing apps fetch the sam
   the member's profile holds its date to the same bounds.
 - **FR-REG-003**: Additional info: off, free text, a Strava link (prefilled from the profile,
   with a banner when the profile has none), or the date of birth in full, for an event that asks
-  only the year: a date field filled in from the person's account -- a member's or a person's
-  without one -- kept as ISO, from 1900 to today; where the event takes only one's own data it is
+  only the year: a typed date filled in from the person's account -- a member's or a person's
+  without one -- kept as ISO, from 1900 to today, without a calendar where it is the account's; where the event takes only one's own data it is
   the account's, whatever the form says, and the participant's own edit leaves it; optional or required; the organizer may name the field,
   and that wording reaches the form, the list column and the export (the built-in name follows the
   reader's language, and the list heads the column "Info" instead of the built-in free-text name;

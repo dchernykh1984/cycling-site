@@ -10,7 +10,9 @@ from playwright.sync_api import Page, expect
 
 from accounts import virtual_members
 from accounts.models import User, VirtualMember
+from calendar_app.models import Competition
 from cycling_site.typed_date import FORMAT_ERROR
+from registrations.models import CompetitionRegistration, RegistrationCategory
 from tests.e2e.conftest import inject_session
 
 #: Records the date each calendar was opened on, in place of the browser's own calendar a test cannot see.
@@ -132,3 +134,42 @@ def test_the_card_s_span_of_dates_of_birth_is_typed_as_well(page: Page, live_ser
     expect(card.locator("#vm-born-to")).to_have_value("31.12.2012")
     expect(shown).to_have_count(2)
     expect(card.locator(".vm-shown")).to_have_text("2")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_registration_page_takes_the_date_typed_and_its_categories_follow_it(page: Page, live_server, organizer):
+    """An event that enters anyone and asks the full date of birth: the date typed on the registration page gets its
+    dots, the categories follow it as it is typed, the calendar opens on it, and the entry keeps it."""
+    comp = Competition.objects.create(
+        title_ru="Typed Date Race",
+        date_start=datetime.date.today() + datetime.timedelta(days=30),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+        birth_date_mode=Competition.BirthDateMode.DATE,
+    )
+    young = dict(birth_from=datetime.date(2010, 1, 1), birth_to=datetime.date(2015, 12, 31))
+    RegistrationCategory.objects.create(competition=comp, name="Kids 2010-2015", male=True, female=True, **young)
+    RegistrationCategory.objects.create(
+        competition=comp, name="Adults", male=True, female=True, birth_to=datetime.date(2009, 12, 31)
+    )
+    page.add_init_script(PICKER_SPY)
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/competitions/{comp.pk}/register/")
+    page.fill("#last_name", "Ivanova")
+    page.fill("#first_name", "Anna")
+    page.check("#gender_f")
+    field = page.locator("#birth_date")
+    field.press_sequentially("05032012")
+    expect(field).to_have_value("05.03.2012")
+    # a child born in 2012 is offered the children's category alone
+    expect(page.locator("#category-select option", has_text="Kids 2010-2015")).to_have_count(1)
+    expect(page.locator("#category-select option", has_text="Adults")).to_have_count(0)
+    # a tap or a click lands on the date input over the button, which opens the calendar on the date typed
+    page.locator(".typed-date-pick").first.click()
+    assert page.evaluate("window.openedOn") == ["2012-03-05"]
+    page.select_option("#category-select", label="Kids 2010-2015")
+    page.get_by_role("button", name="Register").click()
+    page.wait_for_url(f"**/competitions/{comp.pk}/**")
+    assert CompetitionRegistration.objects.get().birth_date == datetime.date(2012, 3, 5)

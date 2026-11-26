@@ -37,11 +37,22 @@ class TypedDateInput(forms.DateInput):
         super().__init__({**base, **(attrs or {})}, format="%d.%m.%Y")
         self.earliest = earliest
 
+    def format_value(self, value):
+        # a date kept as text -- an event's additional field keeps the date of birth as YYYY-MM-DD -- shown as typed
+        if isinstance(value, str):
+            try:
+                value = datetime.date.fromisoformat(value.strip())
+            except ValueError:
+                return value
+        return super().format_value(value)
+
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         widget = context["widget"]
         if widget["attrs"].get("aria-invalid") == "true":  # the server refused it: drawn as refused
             widget["attrs"]["class"] = (widget["attrs"].get("class", "") + " is-invalid").strip()
+        # a date the reader cannot change -- the account's, where an event takes only one's own data -- has no calendar
+        widget["locked"] = bool(widget["attrs"].get("readonly") or widget["attrs"].get("disabled"))
         # the words come from here, not the template: a template's DD.MM.YYYY reads like a model's choice to the checks
         widget.update(
             earliest=self.earliest.isoformat(),

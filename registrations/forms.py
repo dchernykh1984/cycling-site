@@ -7,6 +7,7 @@ from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import FIRST_BIRTH_YEAR, User, validate_birth_date, validate_birth_year
+from cycling_site.typed_date import FORMAT_ERROR, TypedDateField, TypedDateInput
 
 from .models import RELAY_SEPARATOR, CompetitionRegistration, RegistrationCategory
 
@@ -15,15 +16,15 @@ from .models import RELAY_SEPARATOR, CompetitionRegistration, RegistrationCatego
 GENDER_CHOICES = User.Gender.choices
 
 
-def _date_widget() -> forms.DateInput:
-    """A date field, as a browser draws one, for the additional field that collects a date of birth:
-    the organizer's add page and the edit page draw the form's own widget."""
-    return forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+def _date_widget() -> TypedDateInput:
+    """The date typed as DD.MM.YYYY with a calendar button beside it (cycling_site/typed_date.py) for the additional
+    field that collects a date of birth: the organizer's add page and the edit page draw the form's own widget."""
+    return TypedDateInput()
 
 
 def _birth_date_info(form) -> str:
-    """The additional field of an event that collects the date of birth in full: a date from 1900 to
-    today, kept as ISO, as a date field sends it; any other field as typed."""
+    """The additional field of an event that collects the date of birth in full: a date from 1900 to today, typed as
+    DD.MM.YYYY (or ISO) and kept as ISO; any other field as typed."""
     value = form.cleaned_data.get("additional_info", "")
     competition = form.competition
     if not (value and competition and competition.additional_info_is_birth_date):
@@ -33,9 +34,9 @@ def _birth_date_info(form) -> str:
         # field asked for a date holds stays, and the rest of the entry still takes their changes
         return value
     try:
-        born = datetime.date.fromisoformat(value.strip())
-    except ValueError:
-        raise forms.ValidationError(_("Enter a valid date.")) from None
+        born = TypedDateField().clean(value)
+    except forms.ValidationError:
+        raise forms.ValidationError(FORMAT_ERROR) from None
     validate_birth_date(born)
     return born.isoformat()
 
@@ -44,11 +45,8 @@ class RegistrationForm(forms.Form):
     first_name = forms.CharField(max_length=100, label=_("First name"))
     last_name = forms.CharField(max_length=100, label=_("Last name"))
     gender = forms.ChoiceField(choices=GENDER_CHOICES, widget=forms.RadioSelect, label=_("Gender"))
-    birth_date = forms.DateField(
-        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
-        label=_("Date of birth"),
-        validators=[validate_birth_date],
-    )
+    # typed as DD.MM.YYYY, the calendar on a button beside it (cycling_site/typed_date.py)
+    birth_date = TypedDateField(label=_("Date of birth"), validators=[validate_birth_date])
     birth_year = forms.IntegerField(
         min_value=FIRST_BIRTH_YEAR, required=False, label=_("Year of birth"), validators=[validate_birth_year]
     )
@@ -145,8 +143,9 @@ class EditRegistrationForm(forms.ModelForm):
             "is_approved",
             "is_paid",
         ]
+        field_classes: ClassVar[dict] = {"birth_date": TypedDateField}
         widgets: ClassVar[dict] = {
-            "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "birth_date": TypedDateInput(),
             "participant_names": forms.Textarea(attrs={"rows": 4, "placeholder": _("Name1<BR>Name2<BR>Name3")}),
             "participant_birth_years": forms.TextInput(attrs={"placeholder": "1990<BR>1995<BR>2000"}),
             "participant_cities": forms.TextInput(attrs={"placeholder": _("City1<BR>City2<BR>City3")}),

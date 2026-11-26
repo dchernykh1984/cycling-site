@@ -7,10 +7,10 @@ import re
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
-from django.utils.translation import gettext
 
 from accounts import virtual_members
 from accounts.models import User, VirtualMember
+from cycling_site.typed_date import FORMAT_ERROR
 from registrations.forms import EditRegistrationForm, RegistrationForm
 from registrations.models import CompetitionRegistration
 from registrations.tests import make_category, make_open_competition, make_registration, make_user
@@ -50,10 +50,13 @@ class BirthDateModeTests(TestCase):
         comp = self._event()
         with translation.override("en"):
             self.assertEqual(str(RegistrationForm(competition=comp).fields["additional_info"].label), "Date of birth")
-        field = _field(self.client.get(self._url(comp)).content.decode())
-        self.assertIn('type="date"', field)
-        self.assertIn(f'value="{BORN.isoformat()}"', field)
+        page = self.client.get(self._url(comp)).content.decode()
+        field = _field(page)
+        # typed as DD.MM.YYYY (cycling_site/typed_date.py), the account's and so read-only, with no calendar to open
+        self.assertIn('inputmode="numeric"', field)
+        self.assertIn(f'value="{BORN:%d.%m.%Y}"', field)
         self.assertIn("readonly", field)
+        self.assertNotIn("typed-date-pick", page)
 
     def test_the_participant_list_heads_its_column_with_the_date_of_birth_and_shows_it_as_dates_are(self):
         comp = self._event()
@@ -85,12 +88,13 @@ class BirthDateModeTests(TestCase):
         comp = self._event(mode="free")
         cat = comp.registration_categories.get()
         data = {"first_name": "Oleg", "last_name": "Kim", "gender": "M", "birth_year": 1995, "category": cat.pk}
-        refused = self.client.post(self._url(comp), {**data, "additional_info": "17.04.1995"})
+        refused = self.client.post(self._url(comp), {**data, "additional_info": "31.02.1995"})
         with translation.override("ru"):
-            self.assertIn(gettext("Enter a valid date."), refused.context["form"].errors["additional_info"])
-        future = self.client.post(self._url(comp), {**data, "additional_info": "2999-01-01"})
+            self.assertIn(str(FORMAT_ERROR), refused.context["form"].errors["additional_info"])
+        future = self.client.post(self._url(comp), {**data, "additional_info": "01.01.2999"})
         self.assertIn("additional_info", future.context["form"].errors)
-        self.client.post(self._url(comp), {**data, "additional_info": "1995-06-02"})
+        # typed as DD.MM.YYYY, kept as YYYY-MM-DD as before
+        self.client.post(self._url(comp), {**data, "additional_info": "02.06.1995"})
         self.assertEqual(CompetitionRegistration.objects.get().additional_info, "1995-06-02")
 
     def test_a_person_without_an_account_is_entered_with_their_own_date_on_the_page_and_through_the_api(self):
@@ -148,7 +152,7 @@ class BirthDateModeTests(TestCase):
 
 class OtherPagesTests(TestCase):
     """The organizer's page to add an entry and the page to edit one draw the form's own widgets: the
-    date of birth is a date field there too, so a date is picked rather than typed in some format."""
+    date of birth is typed there too, as DD.MM.YYYY, with the calendar on a button beside it."""
 
     def setUp(self):
         self.organizer = make_user("org", role=User.Role.ORGANIZER)
@@ -161,10 +165,10 @@ class OtherPagesTests(TestCase):
     def test_the_organizer_adds_and_edits_the_date_in_a_date_field(self):
         with translation.override("en"):
             added = self.client.get(reverse("registrations:manual_add", args=[self.comp.pk]))
-        self.assertIn('type="date"', _field(added.content.decode()))
+        self.assertIn('inputmode="numeric"', _field(added.content.decode()))
         entry = make_registration(self.comp, user=self.organizer, additional_info="1990-04-17")
         with translation.override("en"):
             edited = self.client.get(reverse("registrations:edit_registration", args=[self.comp.pk, entry.pk]))
         field = _field(edited.content.decode())
-        self.assertIn('type="date"', field)
-        self.assertIn('value="1990-04-17"', field)
+        self.assertIn('inputmode="numeric"', field)
+        self.assertIn('value="17.04.1990"', field)
