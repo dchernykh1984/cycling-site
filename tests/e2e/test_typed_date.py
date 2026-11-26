@@ -173,3 +173,15 @@ def test_the_registration_page_takes_the_date_typed_and_its_categories_follow_it
     page.get_by_role("button", name="Register").click()
     page.wait_for_url(f"**/competitions/{comp.pk}/**")
     assert CompetitionRegistration.objects.get().birth_date == datetime.date(2012, 3, 5)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_date_out_of_sight_does_not_hold_the_form_back(page: Page, live_server, member):
+    # a person's fields folded away on the page for several: their half-typed date is the server's to answer, it
+    # does not stop the form going with nothing to see
+    _edit(page, live_server, member)
+    field = page.locator("#id_birth_date")
+    field.fill("31.02")
+    field.evaluate("el => el.closest('[data-typed-date]').style.setProperty('display', 'none', 'important')")
+    page.locator("main form").get_by_role("button", name="Save").click()
+    expect(page.locator("[data-error-for=birth_date]")).to_have_count(1)  # the server's answer: the page was sent
