@@ -24,7 +24,7 @@ restored, locally or onto production.
 1. **Given** a pull request, **Then** CI runs pre-commit (ruff, mypy, ASCII, requirements export),
    commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
    suite on five browser/device combinations and once per skin.
-2. **Given** a merge to `main`, **Then** it reaches the site at night. Render's auto-deploy is off.
+2. **Given** a merge to `main`, **Then** it reaches the site at night. The web service's auto-deploy is off.
    `scripts/deploy_if_behind.py` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
    Almaty), and only when two things hold: the site names another commit at `/api/v1/version/`,
    and every check `main`'s push started is green (CI, the Dropbox check, any added later). It
