@@ -13,14 +13,14 @@ function along(q, step) {
   if (q.length) out.push(q[q.length - 1]);
   return out;
 }
-// a band of half-width h along points, each of its edges' points at the height y gives that point, its geometry's
-// positions and indexes added to P and I
+// a band of half-width h along points, each of its edges' points at the height y gives that point (and its index),
+// its geometry's positions and indexes added to P and I
 function band(P, I, pts, h, y) {
   const base = P.length / 3;
   pts.forEach((p, i) => {
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
     const rx = -(b.z - a.z) / L, rz = (b.x - a.x) / L, l = { x: p.x - rx * h, z: p.z - rz * h }, r = { x: p.x + rx * h, z: p.z + rz * h };
-    P.push(l.x, y(l), l.z, r.x, y(r), r.z);
+    P.push(l.x, y(l, i), l.z, r.x, y(r, i), r.z);
     if (i) { const v = base + i * 2; I.push(v - 2, v - 1, v, v - 1, v + 1, v); }
   });
 }
@@ -100,41 +100,96 @@ function landMaterial(T, W) {
 }
 
 // --- the roads round the route: on the ground, rising onto the route's own road where they meet it
-function addRoads(G, T, W, roads, ground) {
-  const P = [], I = [];
+function addRoads(G, T, W, roads, ground, decks = []) {
+  const P = [], I = [], WP = [], WI = [], ramps = rampsOf(T, roads, decks, ground);
+  // a deck's end, where a road onto a bridge begins: not a place where the road runs into the route's own
+  const deckEnds = decks.filter(d => !d.b.foot).flatMap(d => [d.q[0], d.q[d.q.length - 1]]);
+  const atDeck = p => deckEnds.some(e => Math.hypot(e.x - p.x, e.z - p.z) < TOUCH_M);
   roads.forEach((r, k) => {
-    const lift = .02 + (k % 5) * .015; // two roads that meet never flicker
-    band(P, I, along(r.pts.map(p => xzOf(T, p)), 5), r.w / 2, p => {
-      const n = routeNearest(T, p.x, p.z), g = ground(p.x, p.z) + lift;
-      if (n.d > W / 2 + 22) return g;
+    const lift = .02 + (k % 5) * .015, q = along(r.pts.map(p => xzOf(T, p)), 5), up = ramps[k]; // two roads that meet never flicker
+    // a slip road that runs into the route's own road comes down to it over its last 22 m, from a ramp too; a road
+    // onto a bridge that only passes the route, its deck's end beside the route's edge, keeps its ramp's height
+    const joins = [q[0], q[q.length - 1]].some(p => routeNearest(T, p.x, p.z).d < W / 2 + 3 && !atDeck(p));
+    const height = (p, i) => {
+      const n = routeNearest(T, p.x, p.z), g = Math.max(ground(p.x, p.z) + lift, up ? up[i] : -Infinity);
+      if (n.d > W / 2 + 22 || (up && up[i] > -Infinity && !joins)) return g;
       // over a tunnel the street keeps the ground line; under the route's own road a hand's breadth below it, so the
       // two never flicker; off its edge rising to it over 22 m
       const top = overTunnel(T, n.s);
       if (top != null) return top + .05;
       if (n.d < W / 2 + .3) return n.y - .05;
       return n.y + (g - n.y) * clamp((n.d - W / 2) / 22, 0, 1);
-    });
+    };
+    band(P, I, q, r.w / 2, height);
+    if (!up) return;
+    // a ramp up to a bridge stands between retaining walls, from the ground to a parapet over the road
+    for (const side of [-1, 1]) {
+      let run = [];
+      q.forEach((p, i) => {
+        const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+        const e = { x: p.x - (b.z - a.z) / L * (r.w / 2 + .15) * side, z: p.z + (b.x - a.x) / L * (r.w / 2 + .15) * side };
+        const y = height(e, i), g = ground(e.x, e.z);
+        if (y > g + .3) run.push({ x: e.x, z: e.z, y0: g - ROOT_M, y1: y + .9 });
+        else { if (run.length > 1) wallOf(WP, WI, run, .3); run = []; }
+      });
+      if (run.length > 1) wallOf(WP, WI, run, .3);
+    }
   });
-  const m = meshOf(G, P, I, new THREE.MeshLambertMaterial({ color: 0x55575b, side: THREE.DoubleSide }), 'roads');
-  return m;
+  meshOf(G, WP, WI, new THREE.MeshLambertMaterial({ color: 0xb9b6ae, side: THREE.DoubleSide }), 'ramps');
+  return meshOf(G, P, I, new THREE.MeshLambertMaterial({ color: 0x55575b, side: THREE.DoubleSide }), 'roads');
+}
+// The roads that climb onto a bridge over the route. OpenStreetMap draws a bridge apart from the roads that lead to
+// it, so the road touching an end of a road bridge's deck goes down from the deck at RAMP_GRADE to the ground, and on
+// into the next road where the ramp runs on past a junction. Per road, the ramp's height at each of its points (as
+// `along` lays them, 5 m apart), or null for a road on the ground.
+const RAMP_GRADE = .06, TOUCH_M = 2.5;
+function rampsOf(T, roads, decks, ground) {
+  const lines = roads.map(r => along(r.pts.map(p => xzOf(T, p)), 5)), out = roads.map(() => null), done = new Set();
+  const queue = decks.filter(d => !d.b.foot).flatMap(d => [d.q[0], d.q[d.q.length - 1]].map(p => ({ x: p.x, z: p.z, y: d.deck })));
+  while (queue.length) {
+    const end = queue.shift();
+    lines.forEach((q, k) => [0, q.length - 1].forEach(e => {
+      const key = k + ':' + e;
+      if (done.has(key) || Math.hypot(q[e].x - end.x, q[e].z - end.z) > TOUCH_M) return;
+      done.add(key);
+      const step = e ? -1 : 1, far = e ? 0 : q.length - 1;
+      let s = 0, y = end.y;
+      for (let i = e; ; i += step) {
+        if (i !== e) s += Math.hypot(q[i].x - q[i - step].x, q[i].z - q[i - step].z);
+        y = end.y - RAMP_GRADE * s;
+        if (y <= ground(q[i].x, q[i].z)) return;
+        const h = out[k] || (out[k] = new Float32Array(q.length).fill(-Infinity));
+        h[i] = Math.max(h[i], y);
+        if (i === far) break;
+      }
+      done.add(k + ':' + far);
+      queue.push({ x: q[far].x, z: q[far].z, y }); // the ramp runs on past the junction
+    }));
+  }
+  return out;
 }
 
 // --- what crosses over the route: a footbridge or a road's bridge, its deck clear of the route's road
-function addOverpasses(G, T, W, list, ground) {
-  const P = [], I = [], piers = [], conc = new THREE.MeshLambertMaterial({ color: 0xb9b6ae, side: THREE.DoubleSide });
-  list.forEach(b => {
+// Each bridge's deck: its line, 2 m apart, and its height -- clear of the highest of the road under it, across its
+// whole width (a wide one crossing a road that climbs spans a stretch of it); none for one not over the road
+function overDecks(T, W, list) {
+  return list.flatMap(b => {
     const q = along(b.pts.map(p => xzOf(T, p)), 2), h = b.w / 2;
-    // the deck clears the highest of the road under it, across its whole width: a wide one crossing a road that
-    // climbs spans a stretch of it
     let top = -Infinity;
     q.forEach((p, i) => {
       const a = q[Math.max(0, i - 1)], c = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(c.x - a.x, c.z - a.z) || 1;
       for (const k of [-1, 0, 1]) { const n = routeNearest(T, p.x - (c.z - a.z) / L * h * k, p.z + (c.x - a.x) / L * h * k); if (n.d < W / 2 + 1.5) top = Math.max(top, n.y); }
     });
-    if (!Number.isFinite(top)) return;
-    const deck = top + (b.foot ? 5.4 : 6), th = b.foot ? .6 : 1.2;
-    // the deck, its underside and its two parapets
-    band(P, I, q, h, () => deck); band(P, I, q, h, () => deck - th);
+    return Number.isFinite(top) ? [{ b, q, deck: top + (b.foot ? 5.4 : 6) }] : [];
+  });
+}
+function addOverpasses(G, T, W, decks, ground) {
+  const P = [], I = [], RP = [], RI = [], piers = [], conc = new THREE.MeshLambertMaterial({ color: 0xb9b6ae, side: THREE.DoubleSide });
+  decks.forEach(({ b, q, deck }) => {
+    const h = b.w / 2, th = b.foot ? .6 : 1.2;
+    // the deck -- a road's in the asphalt of the roads that climb onto it -- its underside and its two parapets
+    if (b.foot) band(P, I, q, h, () => deck); else band(RP, RI, q, h, () => deck);
+    band(P, I, q, h, () => deck - th);
     for (const k of [-1, 1]) {
       const rail = q.map((p, i) => {
         const a = q[Math.max(0, i - 1)], c = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(c.x - a.x, c.z - a.z) || 1;
@@ -149,6 +204,7 @@ function addOverpasses(G, T, W, list, ground) {
     });
   });
   meshOf(G, P, I, conc, 'overpasses');
+  meshOf(G, RP, RI, new THREE.MeshLambertMaterial({ color: 0x55575b, side: THREE.DoubleSide }), 'overpass-roads');
   if (!piers.length) return;
   const bg = new THREE.BoxGeometry(1, 1, 1); bg.translate(0, .5, 0);
   const im = new THREE.InstancedMesh(bg, conc, piers.length), M = new THREE.Matrix4();

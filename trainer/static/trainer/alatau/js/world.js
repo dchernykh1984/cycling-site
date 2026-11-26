@@ -131,8 +131,10 @@ function buildWorld(route) {
   }
   addMedianBarriers(grp, T, W, room);
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
-  if (route.roads) addRoads(grp, T, W, route.roads, ground);
-  if (route.over) addOverpasses(grp, T, W, route.over, ground);
+  // a bridge over the route first: the roads that lead to it climb onto its deck
+  const decks = route.over ? overDecks(T, W, route.over) : [];
+  if (route.roads) addRoads(grp, T, W, route.roads, ground, decks);
+  if (decks.length) addOverpasses(grp, T, W, decks, ground);
   if (route.under) addUnderpasses(grp, T, W, route.under, ground);
   if (route.bridges || route.tunnels) addRouteStructures(grp, T, W, ground);
   if (route.lines) addLines(grp, T, route.lines, ground);
