@@ -1204,10 +1204,11 @@ def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, l
     _trainer_in_its_menu(page, live_server, lang)
     page.evaluate(
         """() => {
-            // a trainer that sends its power but gave its control to another app
+            // a trainer that sends its power but gave its control to another app; a race alone, which has no
+            // message of its own at the start (a free ride says how to end it 4.5 s in)
             const trainer = new BLEDev({ name: 'trainer' });
             trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
-            Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
+            Sensors.devs.push(trainer); settings.mode = 'race'; $('#bots').value = '0'; startRace();
         }"""
     )
     page.wait_for_function("phase === 'countdown'", polling=100)
@@ -1237,9 +1238,10 @@ def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_s
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
         """() => {
+            // a race alone: no message of its own at the start to stand in for the one looked for
             const trainer = new BLEDev({ name: 'trainer' });
             trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
-            Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
+            Sensors.devs.push(trainer); settings.mode = 'race'; $('#bots').value = '0'; startRace();
         }"""
     )
     page.wait_for_function("phase === 'countdown'", polling=100)
