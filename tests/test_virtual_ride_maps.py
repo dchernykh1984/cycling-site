@@ -121,6 +121,22 @@ class MapsTests(SimpleTestCase):
                     self.assertEqual(len(point), 2, route["id"])
                     self.assertLess(_km(origins[route["id"]], point), 50, route["id"])
 
+    def test_a_map_s_relief_is_a_whole_grid_of_heights_round_its_routes(self):
+        # SRTM heights by latitude and longitude (js/maps.js): rows from the north, every one there, each a height a
+        # place on land can have, and the grid wide enough to hold every route of the map with 20 km to spare
+        reliefs = {folder: data for folder, data in trainer_page.maps().items() if "relief" in data}
+        self.assertTrue(reliefs)
+        for folder, data in reliefs.items():
+            (north, dlat, rows), (west, dlon, cols) = data["relief"]["lat"], data["relief"]["lon"]
+            heights = data["relief"]["h"]
+            self.assertTrue(dlat < 0 < dlon, folder)
+            self.assertEqual(len(heights), rows * cols, folder)
+            self.assertTrue(all(isinstance(h, int) and -430 <= h <= 8849 for h in heights), folder)
+            south, east = north + dlat * (rows - 1), west + dlon * (cols - 1)
+            for route in data.get("routes", []):
+                for lat, lon, _ in route["pts"]:
+                    self.assertTrue(south + 0.18 < lat < north - 0.18 and west + 0.25 < lon < east - 0.25, route["id"])
+
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():
             for sight in data.get("landmarks", []):

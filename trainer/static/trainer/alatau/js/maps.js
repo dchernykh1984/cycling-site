@@ -11,13 +11,15 @@
 // are), barriers ({ gap: metres }: a guardrail and a catch fence that far beyond each edge, broken at the buildings)
 // and, in the steppe or on a racetrack, trees ({ rows: [lines], woods: [rings] }) in place of the scattered ones --
 // each where OpenStreetMap maps it.
+// A map may carry its relief ({ lat: [north, step, rows], lon: [west, step, columns], h: [metres, row by row from the
+// north] }): the land round its routes from SRTM, drawn in place of a range beyond the scenery's own ground.
 // A map without routes yet is shown as coming soon.
 // A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
 // objects/ and its line (js/landmarks.js).
 const CITIES = [], ROUTES = [], LANDMARKS = [];
 function addMap(map) {
   const routes = map.routes || [];
-  CITIES.push({ id: map.id, name: L(map.name) + (routes.length ? '' : ', ' + t('city.soon')), ready: routes.length > 0, origin: map.origin, mountains: map.mountains || null });
+  CITIES.push({ id: map.id, name: L(map.name) + (routes.length ? '' : ', ' + t('city.soon')), ready: routes.length > 0, origin: map.origin, mountains: map.mountains || null, relief: map.relief || null });
   routes.forEach(r => ROUTES.push(Object.assign({}, r, { city: map.id, name: L(r.name), desc: L(r.desc) })));
   (map.landmarks || []).forEach(l => LANDMARKS.push(Object.assign({}, l, { city: map.id, name: L(l.name) })));
 }

@@ -66,7 +66,9 @@ function buildWorld(route) {
   const standing = (b, top) => { b.y = Math.min(b.y, lowest(b.x, b.z, b.d, b.w, b.rot) - ROOT_M); b.h = top - b.y; return b; };
   const plain = steppe ? 0x9d9563 : 0x7f8a60; // the ground beyond the scenery's, to the horizon
   const under = new THREE.Mesh(new THREE.PlaneGeometry(160000, 160000), new THREE.MeshLambertMaterial({ color: plain }));
-  under.rotation.x = -Math.PI / 2; under.position.y = T.minY - 30; grp.add(under);
+  // under a map's relief, its lowest ground: the plain shows only past the relief's edge
+  const rel = mapOf(route).relief;
+  under.rotation.x = -Math.PI / 2; under.position.y = rel ? Math.min(T.minY - 30, reliefLow(rel) - 100) : T.minY - 30; grp.add(under);
 
   // --- дорога, тротуары ---
   const ribbon = (off0, off1, dy, mat, uvScale) => {
@@ -155,8 +157,9 @@ function buildWorld(route) {
   addTrees(grp, trees);
   if (route.barriers) addBarriers(grp, T, W, route.barriers.gap, ground, (x, z) => !!osmB && osmB.near(x, z, 2));
 
-  // --- a mountain range to the south, on a route or a map that has one ---
-  const range = route.mountains || mapOf(route).mountains; if (range) addMountains(grp, T, range.south, plain);
+  // --- the land beyond the scenery: the map's relief as it is, else a range to the south where a route or map has one ---
+  const range = route.mountains || mapOf(route).mountains;
+  if (rel) addRelief(grp, T, rel, plain, x0, x1, z0, z1); else if (range) addMountains(grp, T, range.south, plain);
   // --- ориентиры ---
   lms.forEach(lm => addLandmark(grp, lm, T, ground));
   // --- старт и финиш ---
@@ -265,14 +268,41 @@ function addMountains(grp, T, south, plain) {
   }
   g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); g.computeVertexNormals();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  if (ramp > 0) {
-    const C = RANGE_CLEAR_M.toFixed(1), k = RANGE_HAZE.toFixed(2);
-    mat.onBeforeCompile = sh => {
-      sh.fragmentShader = sh.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment
-        .replace('#ifdef FOG_EXP2', '#ifdef FOG_EXP2\n\t\tfloat hazeDepth = fogDepth < ' + C + ' ? fogDepth : ' + C + ' + (fogDepth - ' + C + ') * ' + k + ';')
-        .replace('fogDepth * fogDepth', 'hazeDepth * hazeDepth'));
-    };
-    mat.customProgramCacheKey = () => 'far-range';
-  }
+  if (ramp > 0) farHaze(mat);
   const range = new THREE.Mesh(g, mat); range.name = 'range'; grp.add(range);
+}
+// beyond RANGE_CLEAR_M the land shows through a quarter of the scene's haze
+function farHaze(mat) {
+  const C = RANGE_CLEAR_M.toFixed(1), k = RANGE_HAZE.toFixed(2);
+  mat.onBeforeCompile = sh => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment
+      .replace('#ifdef FOG_EXP2', '#ifdef FOG_EXP2\n\t\tfloat hazeDepth = fogDepth < ' + C + ' ? fogDepth : ' + C + ' + (fogDepth - ' + C + ') * ' + k + ';')
+      .replace('fogDepth * fogDepth', 'hazeDepth * hazeDepth'));
+  };
+  mat.customProgramCacheKey = () => 'far-range';
+}
+// A map's relief (js/maps.js): SRTM heights on a grid of latitude and longitude, the real mountains, hills and
+// valleys round its routes, laid out from the route's origin and lowered by the Earth's curve as a rider sees it -- a
+// peak 100 km off stands about 680 m lower, the air's bending taken off (0.87 of the drop). Under the scenery's own
+// ground (x0..x1, z0..z1) it sinks out of the way; beyond RANGE_CLEAR_M it shows through a quarter of the haze.
+const EARTH_R = 6371000, REFRACTION = .87;
+const reliefLow = rel => rel.low != null ? rel.low : (rel.low = rel.h.reduce((a, b) => Math.min(a, b), Infinity));
+function addRelief(grp, T, rel, plain, x0, x1, z0, z1) {
+  const [la0, dla, nr] = rel.lat, [lo0, dlo, nc] = rel.lon, H = rel.h, O = T.origin;
+  const P = new Float32Array(nr * nc * 3), cols = new Float32Array(nr * nc * 3), I = [];
+  const c = new THREE.Color(), low = new THREE.Color(plain), forest = new THREE.Color(0x40563a), rock = new THREE.Color(0x7d766c), snow = new THREE.Color(0xf3f6f8);
+  for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) {
+    const k = i * nc + j, q = proj(la0 + i * dla, lo0 + j * dlo, O), d = Math.hypot(q.x, q.z), m = H[k];
+    let h = m - d * d / (2 * EARTH_R) * REFRACTION;
+    if (q.x > x0 && q.x < x1 && q.z > z0 && q.z < z1) h = Math.min(h, T.minY - 40);
+    const n = fbm(q.x * .0004, q.z * .0004, 3);
+    c.copy(low).lerp(forest, clamp((m - 1100) / 500, 0, 1)).lerp(rock, clamp((m - 2300 - n * 300) / 500, 0, 1));
+    if (m > 3300 + n * 400) c.copy(snow);
+    P[k * 3] = q.x; P[k * 3 + 1] = h; P[k * 3 + 2] = q.z; cols[k * 3] = c.r; cols[k * 3 + 1] = c.g; cols[k * 3 + 2] = c.b;
+    if (i + 1 < nr && j + 1 < nc) I.push(k, k + nc, k + 1, k + 1, k + nc, k + nc + 1);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  g.setIndex(I); g.computeVertexNormals();
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true }); farHaze(mat);
+  const relief = new THREE.Mesh(g, mat); relief.name = 'relief'; grp.add(relief);
 }
