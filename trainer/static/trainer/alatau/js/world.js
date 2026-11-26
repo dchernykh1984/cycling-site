@@ -203,7 +203,9 @@ function buildWorld(route) {
   const range = route.mountains || mapOf(route).mountains;
   if (rel) addRelief(grp, T, rel, plain, x0, x1, z0, z1); else if (range) addMountains(grp, T, range.south, plain);
   // --- ориентиры ---
-  lms.forEach(lm => addLandmark(grp, lm, T, ground));
+  // the land as drawn: the scenery's ground, and past its edge the map's relief
+  const land = (x, z) => x > x0 && x < x1 && z > z0 && z < z1 ? ground(x, z) : (reliefAt(T, x, z) ?? terrainH(T, x, z));
+  lms.forEach(lm => addLandmark(grp, lm, T, ground, land));
   // --- старт и финиш ---
   if (T.loop || course.back) addArch(grp, T, S0 + 8, t('arch.both'), W); else { addArch(grp, T, S0 + 8, t('arch.start'), W); addArch(grp, T, FIN, t('arch.finish'), W); }
 
