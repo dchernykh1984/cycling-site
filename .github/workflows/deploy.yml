@@ -18,8 +18,9 @@ on:
     # Almaty), and finds the site on another commit: a night the Render run deployed nothing. The first
     # is asked for at 22:37, after the Render run has ended -- it waits at most 30 minutes for main's
     # checks and 20 for the site -- so the two never deploy at once: a second call of the deploy hook
-    # while a deploy runs would queue another deploy, and another minute down. GitHub never starts a
-    # cron early; a run it starts after 01:00 does nothing.
+    # while a deploy runs would start another deploy (queued or in its place, by Render's overlapping
+    # deploy policy), and another minute down. GitHub never starts a cron early; a run it starts after
+    # 01:00 does nothing.
     - cron: "37 0,22,23 * * *"
   workflow_dispatch:
 
