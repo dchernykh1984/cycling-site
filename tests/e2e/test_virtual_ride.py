@@ -1186,8 +1186,7 @@ def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, 
             const flat = { id: 'flat', name: named, desc: named, loop: false, width: 9, lanes: 2, scenery: 'city',
                            pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] };
             addMap({ id: 'steppe', name: named, origin: { lat: 51.16, lon: 71.43 }, routes: [flat] });
-            // the range is the scenery's plane 90 km wide (addMountains)
-            const wide = o => o.geometry && o.geometry.parameters && o.geometry.parameters.width === 90000;
+            const wide = o => o.name === 'range'; // addMountains
             const range = id => {
                 buildWorld(ROUTES.find(r => r.id === id));
                 let n = 0; scenery.traverse(o => { if (wide(o)) n++; }); return n;
@@ -1196,6 +1195,23 @@ def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, 
         }"""
     )
     assert ranges == {"almaty": 1, "steppe": 0}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_range_runs_on_past_where_the_view_reaches(page: Page, live_server):
+    """Ridden back towards Kyrbaltabay, the range ended in view on the left: 90 km long, it stopped 45 km east of the
+    origin while the real one goes on. It runs 150 km either way now."""
+    _trainer_in_its_menu(page, live_server)
+    reach = page.evaluate(
+        """() => {
+            buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay'));
+            const range = scenery.children.find(o => o.name === 'range');
+            range.geometry.computeBoundingBox();
+            const box = range.geometry.boundingBox;
+            return [Math.round(box.min.x / 1000), Math.round(box.max.x / 1000)];
+        }"""
+    )
+    assert reach[0] <= -150 and reach[1] >= 150, reach
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1211,7 +1227,7 @@ def test_a_route_far_from_its_map_s_others_is_drawn_from_its_own_origin_and_rang
             const far = { origin: { lat: 43.6, lon: 76.5 }, mountains: { south: 30000 } };
             addMap({ id: 'region', name: named, origin: { lat: 43.6, lon: 77.4 },
                      routes: [road('near', 77.4), road('far', 76.5, far)] });
-            const wide = o => o.geometry && o.geometry.parameters && o.geometry.parameters.width === 90000;
+            const wide = o => o.name === 'range'; // addMountains
             const drawnOn = id => {
                 const T = buildWorld(ROUTES.find(r => r.id === id)).T;
                 let ranges = 0; scenery.traverse(o => { if (wide(o)) ranges++; });

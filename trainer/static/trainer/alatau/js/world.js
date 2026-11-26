@@ -245,9 +245,13 @@ function addTrees(grp, list) {
 // quarter of the haze beyond it: the scene's haze is there to hide where the ground ends near the road, and would
 // hide a far range whole, which real air shows for a hundred kilometres. A range this near keeps the scene's haze.
 const RANGE_CLEAR_M = 9500, RANGE_HAZE = .25;
+// A range runs 150 km either way from the origin, so it never ends in view: 90 km in all ended 45 km to the east of
+// Kyrbaltabay's, inside the view on the way back towards it, where the real range goes on; 400 columns keep its
+// ridges about 750 m apart.
+const RANGE_WIDE_M = 300000, RANGE_COLUMNS = 400;
 function addMountains(grp, T, south, plain) {
-  const near = T.maxZ + 2600, zStart = Math.max(near, south), ramp = Math.max(0, zStart - Math.max(RANGE_CLEAR_M, near)), W = 90000, D = 36000 + ramp;
-  const g = new THREE.PlaneGeometry(W, D, 220, 90 + Math.ceil(ramp / 400)); g.rotateX(-Math.PI / 2); g.translate(0, 0, zStart - ramp + D / 2 - 800);
+  const near = T.maxZ + 2600, zStart = Math.max(near, south), ramp = Math.max(0, zStart - Math.max(RANGE_CLEAR_M, near)), W = RANGE_WIDE_M, D = 36000 + ramp;
+  const g = new THREE.PlaneGeometry(W, D, RANGE_COLUMNS, 90 + Math.ceil(ramp / 400)); g.rotateX(-Math.PI / 2); g.translate(0, 0, zStart - ramp + D / 2 - 800);
   const p = g.attributes.position, cols = new Float32Array(p.count * 3), c = new THREE.Color(), forest = new THREE.Color(0x40563a), rock = new THREE.Color(0x7d766c), snow = new THREE.Color(0xf3f6f8), low = new THREE.Color(plain);
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), z = Math.max(p.getZ(i), zStart - 800), dz = z - zStart; // on the rise to the foot, the foot's height
@@ -270,5 +274,5 @@ function addMountains(grp, T, south, plain) {
     };
     mat.customProgramCacheKey = () => 'far-range';
   }
-  grp.add(new THREE.Mesh(g, mat));
+  const range = new THREE.Mesh(g, mat); range.name = 'range'; grp.add(range);
 }
