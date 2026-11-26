@@ -227,13 +227,18 @@ def write_start(race) -> None:
     whenever a rider joins or leaves."""
     if race.competition is None:
         return
-    riders = _order(race)
-    race.last_start_at = last_start(race, riders)
-    race.save(update_fields=["last_start_at"])
-    if not writing(race):
-        return
+    from trainer.models import GroupRide
+
     zone = race.competition.timezone
     with transaction.atomic():
+        # one writer at a time, the riders read once it is this one's turn: two riders joining at once each write
+        # the list with both of them, whichever writes last
+        GroupRide.objects.select_for_update().filter(pk=race.pk).first()
+        riders = _order(race)
+        race.last_start_at = last_start(race, riders)
+        race.save(update_fields=["last_start_at"])
+        if not writing(race):
+            return
         _replace(_stream(StartListUpload, race), [start_line(race, m) for m in riders])
         starts: dict[str, datetime] = {}
         for m in riders:

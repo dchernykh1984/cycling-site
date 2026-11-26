@@ -3,11 +3,14 @@ riders with bibs, its start list, groups' starts and crossings written into the 
 FinishProtocolGenerator -- only while the event keeps its upload token."""
 
 import re
+import threading
 import uuid
 from datetime import timedelta
+from unittest import mock
 
+from django.db import connections
 from django.db.models import F
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.utils import timezone, translation
 
 from accounts.models import User
@@ -332,3 +335,48 @@ class RefusalsTests(TestCase):
             for text in refusals:
                 with self.subTest(language=language, text=text), translation.override(language):
                     self.assertNotEqual(translation.gettext(text), text)
+
+
+class JoiningAtOnceTests(TransactionTestCase):
+    def test_two_riders_joining_two_races_of_one_event_at_once_get_different_bibs(self):
+        organizer = _member("organizer", User.Role.ORGANIZER)
+        event = make_open_competition(submitted_by=organizer)
+        category = make_category(event, "Open", laps=1, bib_from=11, bib_to=20, order=0)
+        anna, boris = _member("anna"), _member("boris")
+        for user in (anna, boris):
+            make_registration(event, user=user, category=category, first_name=user.first_name, last_name="Rider")
+        maker = Client()
+        maker.force_login(organizer)
+        races = [
+            maker.post(f"{API}/groups", {"route": "center", "competition_id": event.pk, **when}, "application/json")
+            for when in ({"start_in_s": 600}, {"start_at": (timezone.now() + timedelta(hours=3)).isoformat()})
+        ]
+        held, go = threading.Event(), threading.Event()
+        assign = race.assign_bib
+
+        def assign_then_hold(member):
+            bib = assign(member)
+            if not held.is_set():
+                held.set()
+                go.wait(timeout=10)  # the first rider's join still open with the bib it chose
+            return bib
+
+        def join(user, group_id):
+            try:
+                rider = Client()
+                rider.force_login(user)
+                rider.post(f"{API}/groups/{group_id}/join")
+            finally:
+                connections.close_all()
+
+        with mock.patch.object(race, "assign_bib", side_effect=assign_then_hold):
+            first = threading.Thread(target=join, args=(anna, races[0].json()["id"]))
+            first.start()
+            self.assertTrue(held.wait(timeout=10))
+            second = threading.Thread(target=join, args=(boris, races[1].json()["id"]))
+            second.start()
+            second.join(timeout=1)
+            go.set()
+            first.join(timeout=10)
+            second.join(timeout=10)
+        self.assertEqual(sorted(GroupRideMember.objects.values_list("bib", flat=True)), ["11", "12"])

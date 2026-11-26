@@ -882,7 +882,7 @@ def _enter(group: GroupRide, user, quiet: bool = False) -> None:
         link = event.get_absolute_url()
         raise HttpError(HTTPStatus.FORBIDDEN, _("Register for the event first: %(link)s") % {"link": link})
     with transaction.atomic():
-        GroupRide.objects.select_for_update().get(pk=group.pk)  # one bib at a time
+        Competition.objects.select_for_update().get(pk=event.pk)  # one bib at a time across all the event's races
         member, _created = GroupRideMember.objects.get_or_create(group=group, user=user)
         member.registration = registration
         try:
@@ -917,7 +917,8 @@ def leave_group(request, group_id: int):
     with transaction.atomic():
         group = GroupRide.objects.select_for_update().get(pk=group_id)
         gone = GroupRideMember.objects.filter(group=group, user=request.auth).first()
-        if gone is not None and gone.bib and gone.registration_id:
+        if group.competition_id is not None and gone is not None and gone.bib and gone.registration_id:
+            Competition.objects.select_for_update().get(pk=group.competition_id)  # the bib pool, as a join locks it
             group.kept_bibs[str(gone.registration_id)] = gone.bib
             group.save(update_fields=["kept_bibs"])
         GroupRideMember.objects.filter(group=group, user=request.auth).delete()
