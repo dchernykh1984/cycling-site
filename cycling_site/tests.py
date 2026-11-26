@@ -479,6 +479,20 @@ class SanitizeRichHtmlTests(SimpleTestCase):
         self.assertLess(time.perf_counter() - started, 2.0)
         self.assertEqual(out, "a" * 33334)
 
+    def test_a_line_of_tags_nested_too_deep_to_write_back_comes_back_as_its_escaped_text(self):
+        # Writing tags back asks whether one has closed by comparing tags recursively: 600 nested ran out of stack,
+        # a 500 on a description's save and a failed draw for a protocol header line.
+        out = sanitize_rich_html("<b>" * 600 + "x&lt;y</b>" * 600, allow_img=True)
+        self.assertEqual(out, "x&lt;y" * 600)
+
+    def test_hidden_images_without_a_safe_src_do_not_stop_a_deep_line_from_coming_back(self):
+        # A hidden image stays among its parent's children, so that comparison went deeper than with the image
+        # removed: this line, written back before, ran out of stack. It holds no text, so none comes back.
+        raw = "<b>" * 600 + "".join(
+            ("<img>" if j % 2 else "") + "<br>" + ("" if j % 2 else "<br>") + "</b>" for j in range(600, 0, -1)
+        )
+        self.assertEqual(sanitize_rich_html(raw, allow_img=True), "")
+
     def test_align_and_indent_classes_kept_others_dropped(self):
         out = sanitize_rich_html('<p class="ql-align-center hacker">c</p><ol><li class="ql-indent-2">i</li></ol>')
         self.assertIn('class="ql-align-center"', out)
