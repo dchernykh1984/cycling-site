@@ -221,7 +221,8 @@ it over the next 500 m, to the land SRTM has there -- a city's slopes and hills,
 finer grids of their own (a gorge keeps its walls). What a route carries from OpenStreetMap stands round it: the
 buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
-piers beside it; roads under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
+piers beside it, the roads onto a road bridge climbing onto its deck up ramps between retaining walls; roads
+under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
 down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
 none inside them; power lines on towers or poles, their wires sagging high over the road, and railways and rivers,
 as far as a rider sees them; canals and ponds; trees in rows, woods, parks and alone. Every route carries them, the

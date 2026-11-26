@@ -117,7 +117,7 @@ sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m ap
   keys, shapes of buildings, barriers and trees).
 - The scene tests: `tests/e2e/test_virtual_ride.py` -- trees, houses and sights in the ground, nothing
   on the road or its shoulder, road ridden twice drawn once, barriers beyond the edges -- and
-  `tests/e2e/test_virtual_ride_surroundings.py`: roads under the route where they cross it, bridges clear of it,
+  `tests/e2e/test_virtual_ride_surroundings.py`: roads under the route where they cross it, bridges clear of it and the roads onto them climbing onto their decks,
   a tunnel's roof over it and no land left in it or its cutting, a median's barrier and power lines off it, the rider's line on the road.
 - Look at it: screenshots from the saddle at the start, at every turn and junction, on the way back
   and towards the far relief; a top view next to satellite imagery.

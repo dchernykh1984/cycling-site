@@ -74,10 +74,11 @@ def test_a_road_the_route_meets_lies_under_its_road_where_they_cross(page: Page,
         out.push('seen:' + r.id);
         const p = roads.geometry.attributes.position;
         for (let i = 0; i < p.count; i++) {
-          const n = routeNearest(T, p.getX(i), p.getZ(i));
-          if (n.d < W / 2 - .2 && overTunnel(T, n.s) == null && p.getY(i) > n.y + .05) {
-            const up = (p.getY(i) - n.y).toFixed(2);
-            out.push(r.id + ': a road ' + up + ' m over the route at ' + Math.round(n.s) + ' m');
+          const n = routeNearest(T, p.getX(i), p.getZ(i)), up = p.getY(i) - n.y;
+          // 4.5 m up and more: a road onto a bridge over the route, its end over the road's edge, clear of a rider
+          // as the bridge's deck is
+          if (n.d < W / 2 - .2 && overTunnel(T, n.s) == null && up > .05 && up < 4.5) {
+            out.push(r.id + ': a road ' + up.toFixed(2) + ' m over the route at ' + Math.round(n.s) + ' m');
             return;
           }
         }
@@ -107,6 +108,32 @@ def test_a_bridge_over_the_route_clears_its_road_and_stands_beside_it(page: Page
           piers.getMatrixAt(i, m); v.setFromMatrixPosition(m);
           const d = routeGap(T, v.x, v.z);
           if (d < W / 2 + .5) { out.push(r.id + ': a pier ' + d.toFixed(1) + ' m from the route'); return; }
+        }
+        """,
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_road_onto_a_bridge_over_the_route_climbs_onto_its_deck(page: Page, live_server):
+    # OpenStreetMap draws a bridge apart from the roads that lead to it: at each end of a road bridge's deck the road
+    # touching it stands at the deck's height, its ramp going down from there -- not on the ground under the deck
+    faults = _faults(
+        page,
+        live_server,
+        """
+        const decks = overDecks(T, W, r.over || []).filter(d => !d.b.foot);
+        if (!decks.length) return;
+        out.push('seen:' + r.id);
+        const roads = kids.find(m => m.name === 'roads'), p = roads.geometry.attributes.position;
+        for (const d of decks) for (const e of [d.q[0], d.q[d.q.length - 1]]) {
+          let on = false, near = false;
+          for (let i = 0; i < p.count; i++) {
+            if (Math.hypot(p.getX(i) - e.x, p.getZ(i) - e.z) > 8) continue;
+            near = true;
+            if (Math.abs(p.getY(i) - d.deck) < .3) on = true;
+          }
+          if (near && !on) { out.push(r.id + ': a road meets its bridge under the deck'); return; }
         }
         """,
     )
