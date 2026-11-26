@@ -988,3 +988,43 @@ main .article-body h3 {
     margin: 0;
     border-color: var(--bs-secondary-color);
 }
+
+/* A date typed as DD.MM.YYYY and the calendar's button beside it (_typed_date.html): both a finger's 44 px, the
+   browser's date input over the button unseen, so a phone's tap opens its calendar. */
+.typed-date .form-control,
+.typed-date-pick .btn {
+    min-height: 2.75rem;
+}
+.typed-date .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.typed-date-pick {
+    position: relative;
+    flex: none;
+}
+.typed-date-pick .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+/* the date input over the button takes the pointer: the button looks as the skin draws it under one */
+@media (hover: hover) {
+    .typed-date-pick:hover .btn {
+        color: var(--bs-btn-hover-color);
+        background-color: var(--bs-btn-hover-bg);
+        border-color: var(--bs-btn-hover-border-color);
+    }
+}
+.typed-date-pick input[type="date"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}

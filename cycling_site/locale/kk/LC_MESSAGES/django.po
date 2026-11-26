@@ -5850,3 +5850,16 @@ msgid "You already have %(n)d group race waiting to start"
 msgid_plural "You already have %(n)d group races waiting to start"
 msgstr[0] "Сізде старт күтіп тұрған %(n)d топтық жарыс бар"
 msgstr[1] "Сізде старт күтіп тұрған %(n)d топтық жарыс бар"
+
+#: cycling_site/typed_date.py:22 cycling_site/templates/_typed_date.html:6
+msgid "Enter the date as DD.MM.YYYY, for example 05.03.2012."
+msgstr "Күнді КК.АА.ЖЖЖЖ түрінде енгізіңіз, мысалы 05.03.2012."
+
+#: cycling_site/templates/_typed_date.html:9
+msgid "DD.MM.YYYY"
+msgstr "КК.АА.ЖЖЖЖ"
+
+#: cycling_site/templates/_typed_date.html:13
+msgctxt "a button that opens a date picker"
+msgid "Calendar"
+msgstr "Күнтізбе"

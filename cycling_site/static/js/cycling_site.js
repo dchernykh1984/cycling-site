@@ -270,3 +270,102 @@
         if (target) target.scrollIntoView();
     }
 }());
+
+(function () {
+    // A date typed as DD.MM.YYYY (_typed_date.html, cycling_site/typed_date.py). The dots come as the digits are
+    // typed; the calendar on the button beside the field opens on the date typed and writes the date picked back;
+    // a date the page cannot read is named under the field when the reader leaves it, and the form waits for it.
+    // window.typedDateIso(field) gives a field's date as YYYY-MM-DD, '' while it holds none.
+    function read(text) {
+        var s = (text || '').trim(), m, y, mo, d;
+        if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+        else if ((m = /^(\d{1,2})\s*[.\/,\- ]\s*(\d{1,2})\s*[.\/,\- ]\s*(\d{4})$/.exec(s))) { d = +m[1]; mo = +m[2]; y = +m[3]; }
+        else return null;
+        var date = new Date(Date.UTC(y, mo - 1, d));
+        if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return null;
+        return {y: y, m: mo, d: d};
+    }
+    function pad(n, k) { n = String(n); while (n.length < k) n = '0' + n; return n; }
+    function iso(date) { return pad(date.y, 4) + '-' + pad(date.m, 2) + '-' + pad(date.d, 2); }
+    function typed(date) { return pad(date.d, 2) + '.' + pad(date.m, 2) + '.' + pad(date.y, 4); }
+    window.typedDateIso = function (field) { var date = read(field.value); return date ? iso(date) : ''; };
+
+    function parts(field) {
+        var box = field.closest('[data-typed-date]');
+        return box && {box: box, calendar: box.querySelector('.typed-date-pick input[type="date"]'),
+                       error: box.nextElementSibling && box.nextElementSibling.classList.contains('typed-date-error') ? box.nextElementSibling : null};
+    }
+    function fieldOf(box) { return box.querySelector('input[type="text"]'); }
+    // What the field holds: '' empty, else a reason it cannot be taken; the server's own message under the field
+    // (data-error-for) gives way to this one
+    function check(field) {
+        var p = parts(field), text = field.value.trim(), date = read(text), why = '';
+        if (text && !date) why = p.box.dataset.msgFormat;
+        else if (date && ((p.calendar.min && iso(date) < p.calendar.min) || (p.calendar.max && iso(date) > p.calendar.max))) why = p.box.dataset.msgRange;
+        if (date) field.value = typed(date);
+        var form = field.form, theirs = form && form.querySelectorAll('[data-error-for="' + field.name + '"]');
+        if (theirs && (why || date)) Array.prototype.forEach.call(theirs, function (el) { el.hidden = true; });
+        field.classList.toggle('is-invalid', !!why);
+        if (why) field.setAttribute('aria-invalid', 'true'); else field.removeAttribute('aria-invalid');
+        if (p.error) {
+            p.error.textContent = why;
+            p.error.hidden = !why;
+            var ids = (field.getAttribute('aria-describedby') || '').split(' ').filter(function (id) { return id && id !== p.error.id; });
+            if (why && p.error.id) ids.push(p.error.id);
+            if (ids.length) field.setAttribute('aria-describedby', ids.join(' ')); else field.removeAttribute('aria-describedby');
+        }
+        return why;
+    }
+
+    document.addEventListener('input', function (event) {
+        var field = event.target;
+        if (!field.matches || !field.matches('[data-typed-date] input[type="text"]')) return;
+        // typing on at the end: the dot after the day and after the month comes by itself, and a second one is dropped
+        var atEnd = field.selectionStart === field.value.length;
+        if (atEnd && event.inputType === 'insertText') {
+            field.value = field.value.replace(/\.{2,}/g, '.');
+            if (/^\d{2}$/.test(field.value) || /^\d{1,2}\.\d{2}$/.test(field.value)) field.value += '.';
+        }
+        // a date put right while typing: its old reason goes at once, a new one waits until the reader leaves
+        if (field.getAttribute('aria-invalid') === 'true' && read(field.value)) check(field);
+    });
+    document.addEventListener('change', function (event) {
+        var el = event.target;
+        if (!el.matches) return;
+        if (el.matches('[data-typed-date] input[type="text"]')) { check(el); return; }
+        if (!el.matches('.typed-date-pick input[type="date"]') || !el.value) return;
+        // the date picked in the calendar goes into the field, as if typed
+        var field = fieldOf(el.closest('[data-typed-date]')), m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(el.value);
+        if (!field || !m) return;
+        field.value = m[3] + '.' + m[2] + '.' + m[1];
+        check(field);
+        field.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    // The calendar opens on the date in the field; a phone's tap reaches the date input itself, which lies over
+    // the button, and a mouse or the keyboard the button
+    function open(calendar) {
+        var field = fieldOf(calendar.closest('[data-typed-date]'));
+        calendar.value = field ? window.typedDateIso(field) : '';
+        try { if (calendar.showPicker) calendar.showPicker(); } catch (e) { /* this browser opens it from the tap itself */ }
+    }
+    document.addEventListener('click', function (event) {
+        var pick = event.target.closest && event.target.closest('.typed-date-pick');
+        if (!pick) return;
+        var calendar = pick.querySelector('input[type="date"]');
+        if (event.target === calendar) { calendar.value = window.typedDateIso(fieldOf(pick.closest('[data-typed-date]'))); return; }
+        event.preventDefault();
+        open(calendar);
+    });
+    document.addEventListener('pointerdown', function (event) {
+        // the value is set before the browser's own tap opens the calendar on it
+        var calendar = event.target.matches && event.target.matches('.typed-date-pick input[type="date"]') ? event.target : null;
+        if (calendar) open(calendar);
+    }, true);
+    // a form waits for its dates: the first it cannot take gets the focus and its reason
+    document.addEventListener('submit', function (event) {
+        var bad = Array.prototype.filter.call(event.target.querySelectorAll('[data-typed-date] input[type="text"]'), check);
+        if (!bad.length) return;
+        event.preventDefault();
+        bad[0].focus();
+    }, true);
+}());
