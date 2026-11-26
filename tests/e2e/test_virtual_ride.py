@@ -1212,7 +1212,8 @@ def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page
         }"""
     )
     cities, routes = page.locator("#cities"), page.locator("#routes .route b")
-    almaty, steppe = cities.get_by_role("button", name="Almaty"), cities.get_by_role("button", name="Steppe")
+    almaty = cities.get_by_role("button", name="Almaty", exact=True)  # not Almaty Region
+    steppe = cities.get_by_role("button", name="Steppe")
     expect(almaty).to_have_attribute("aria-pressed", "true")
     steppe.click()
     expect(steppe).to_have_attribute("aria-pressed", "true")
