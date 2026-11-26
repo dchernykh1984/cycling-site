@@ -116,6 +116,9 @@ phone is told so, and a route is lightened only without losing quality.
   ahead and behind, within 0.8 to 1.2 -- a model: the measurements say it grows with the leader's drag area, give
   no slope, and one study finds no effect.
 - **FR-007**: A rider's bib is drawn on their kit; the page shows the race's event and each rider's bib.
+- **FR-010**: A race's places on the page and in the members' rides are within each category, whose riders ride its
+  laps; the results name each finisher's category. The protocols FinishProtocolGenerator makes stay the official
+  ones.
 - **FR-008**: On a phone (a coarse pointer) the start's summary says a route with many buildings and streets (more
   than 800 together: Granfondo 2026, the Medeu climb and the centre's loop have 1000 to 1400, the others under
   700) may run slowly.

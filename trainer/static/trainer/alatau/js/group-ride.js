@@ -212,10 +212,10 @@ async function mpPollResults(gid, until) {
   MP.resultsFor = gid;
   try {
     const res = await Site.get('/groups/' + gid + '/results'), myId = Records.me && Records.me.user_id;
-    const done = new Set(res.finished.map(f => f.user_id));
-    const list = res.finished.map(f => ({ name: f.user_id === myId ? t('you') : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
+    const done = new Set(res.finished.map(f => f.user_id)), same = sameCategory();
+    const list = res.finished.filter(f => same(f.group)).map(f => ({ name: f.user_id === myId ? t('you') : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
     if (!done.has(myId) && me.finishT != null) list.push({ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) });
-    bots.filter(b => b.remote && !done.has(b.uid)).forEach(b => list.push({ name: b.name, t: raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: true, human: true }));
+    bots.filter(b => b.remote && !done.has(b.uid) && same(b.group)).forEach(b => list.push({ name: b.name, t: raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: true, human: true }));
     list.sort((a, b) => a.t - b.t); renderRaceList(list);
     if (bots.some(b => b.remote && !done.has(b.uid))) setTimeout(() => mpPollResults(gid, until), 2000); else MP.resultsFor = null;
   } catch (e) { setTimeout(() => mpPollResults(gid, until), 5000); }
@@ -271,8 +271,14 @@ function renderMP() {
   create.disabled = !!mine && $('#mpDelay').value !== 'at'; $('#mpEvent').disabled = !!MP.eventBusy;
   renderStartSum();
 }
+// in a race with protocols the rider's own category: its riders ride its laps, the others are not in the same race
+function sameCategory() {
+  const mine = groupRide && groupRide.race && groupRide.race.me ? groupRide.race.me.group : null;
+  return group => mine == null || (group || '') === mine;
+}
 function raceList() {
-  const list = [{ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
+  const same = sameCategory();
+  const list = [{ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.filter(b => same(b.group)).map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
   list.sort((a, b) => a.t - b.t); return list;
 }
 function renderRaceList(list) {

@@ -18,8 +18,9 @@ from event_photos.bindings import parse_line
 from event_photos.models import IssuedBib
 from protocols.models import FinishTimesUpload, GroupTimesUpload, RemotePointUpload, StartListUpload
 from registrations.tests import make_category, make_open_competition, make_registration, make_user
+from tests.test_virtual_ride_api import _ride as _saved_ride
 from trainer import race
-from trainer.models import GroupRide, GroupRideMember
+from trainer.models import GroupRide, GroupRideMember, VirtualRide
 
 API = "/api/v1/virtual-ride"
 #: The chronometer's moment, as FinishProtocolGenerator parses it: days since 1970, then the time of day
@@ -233,6 +234,28 @@ class TimingTests(RaceTestCase):
         )
         mine = next(g for g in lobby.json()["groups"] if g["id"] == group)
         self.assertEqual(mine["me"]["start_offset_s"], 360)
+
+    def test_places_are_counted_within_each_category_and_the_results_name_it(self):
+        group = self.make().json()["id"]
+        anna, boris, vera = (
+            self.rider("anna", self.elite),
+            self.rider("boris", self.women),
+            self.rider("vera", self.women),
+        )
+        for user in (anna, boris, vera):
+            self.join(user, group)
+        for user, seconds in ((anna, 3000.0), (boris, 2000.0), (vera, 2500.0)):
+            saved = self.client_of(user).post(
+                f"{API}/rides", _saved_ride(group_id=group, duration_s=seconds), content_type="application/json"
+            )
+            self.assertEqual(saved.status_code, 201, saved.content)
+        # the elite rider rides three laps, the women two: each ranked among their own category's riders
+        places = {r.user_id: (r.place, r.field_size) for r in VirtualRide.objects.all()}
+        self.assertEqual(places, {anna.pk: (1, 1), boris.pk: (1, 2), vera.pk: (2, 2)})
+        results = self.client_of(anna).get(f"{API}/groups/{group}/results").json()["finished"]
+        self.assertEqual(
+            {r["user_id"]: r["group"] for r in results}, {anna.pk: "Elite", boris.pk: "Women", vera.pk: "Women"}
+        )
 
     def _ride(self, user, group, crossings):
         return self.client_of(user).post(

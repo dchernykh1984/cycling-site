@@ -120,12 +120,16 @@ def test_a_race_rider_wears_their_bib_and_rides_their_category_s_laps(page: Page
                 finished_s: null, age_s: 0, cda: .41, bib: '12', group: 'Elite' }];
             mpSyncRemotes();
             const b = bots.find(x => x.remote), plate = riderModels.get(b).g.getObjectByName('bib');
+            // the race's list on the page is the rider's own category's: a rider of another one rides other laps
+            me.finishT = 100; const apart = raceList().length;
             const across = wakeOf(me, b); b.group = 'Women';
-            return { bib: b.bib, cda: b.CdA, plate: !!plate, across, within: wakeOf(me, b) };
+            return { bib: b.bib, cda: b.CdA, plate: !!plate, across, within: wakeOf(me, b), apart,
+                     together: raceList().length };
         }"""
     )
     assert other["bib"] == "12" and other["cda"] == pytest.approx(0.41) and other["plate"], other
     assert other["across"] == 0 and other["within"] > 0.45, other
+    assert (other["apart"], other["together"]) == (1, 2), other
 
 
 @pytest.mark.django_db(transaction=True)
