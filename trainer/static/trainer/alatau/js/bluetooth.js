@@ -43,7 +43,8 @@ class BLEDev {
     // resistance set by hand (one found and missed on a later connection is still a trainer that can be driven)
     this.cpt = null;
     // refused: the trainer answered this connection's last grade with a refusal (FTMS: op code not supported, invalid
-    // parameter, operation failed, control not permitted), so its resistance is not the route's
+    // parameter, operation failed, control not permitted), so its resistance is not the route's -- until it takes a
+    // grade, or holds a workout's power, which is riding as the rider asked
     this.refused = false;
   }
   role(r) { if (!this.roles.has(r)) { this.roles.add(r); Sensors.changed(); } }
