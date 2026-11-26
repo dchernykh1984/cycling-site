@@ -142,7 +142,8 @@ def test_a_time_trial_rider_starts_at_their_own_time(page: Page, live_server):
     assert page.evaluate("phase") == "menu"
     page.evaluate("MP.groups[0].start_at = new Date(Date.now() - 58000).toISOString(); mpMaybeStart()")
     page.wait_for_function("phase === 'countdown'", polling=100)
-    assert page.evaluate("cdT") == pytest.approx(2, abs=0.5)
+    # the countdown runs to the rider's own start, the race's and a minute
+    assert page.evaluate("groupRide.startAt - Date.parse(MP.groups[0].start_at)") == 60000
 
 
 @pytest.mark.django_db(transaction=True)
