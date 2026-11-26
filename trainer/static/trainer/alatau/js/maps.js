@@ -22,7 +22,8 @@
 //   lines   [{ k, pts }]                  power lines (k "power" on towers, "minor" on poles) and railways ("rail")
 //   water   [{ w, pts } | { area }]       rivers and canals; lakes and ponds as their shore's ring
 // A map may carry its relief ({ lat: [north, step, rows], lon: [west, step, columns], h: [metres, row by row from the
-// north] }): the land round its routes from SRTM, drawn in place of a range beyond the scenery's own ground,.
+// north] }): the land round its routes from SRTM, drawn in place of a range beyond the scenery's own ground, which
+// rises to it away from the road.
 // A map without routes yet is shown as coming soon.
 // A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
 // objects/ and its line (js/landmarks.js).
