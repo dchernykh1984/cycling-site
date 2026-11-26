@@ -82,7 +82,8 @@ is shown as not under control and left alone; a grade sent before the trainer re
 again. A ride on a trainer that does not ride the route -- it gave no control, or it refuses the grade -- says
 so under the grade in words, dark on amber, rather than only writing "gradient" where "trainer 2 %" would stand;
 once a ride, after any message already on screen, a message says why. A refusal belongs to the connection that
-made it, and a trainer holding a workout's power is riding as asked. A box on the setup page is ticked from its
+made it, a trainer holding a workout's power is riding as asked, and a bike that only sends its data (no FTMS
+control point) is not warned: its resistance is set by hand. A box on the setup page is ticked from its
 box and its words, not from the empty row beside them. A trainer whose Fitness Machine Feature says it holds a
 power (Power Target Setting) is set to
 a workout step's power instead of the grade, within the range it reports, while the HUD's ERG switch
