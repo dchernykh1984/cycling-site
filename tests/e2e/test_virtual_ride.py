@@ -1258,6 +1258,33 @@ def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_s
     expect(page.locator("#toast")).to_have_text(said)
 
 
+@pytest.mark.django_db(transaction=True)
+def test_a_trainer_whose_refusals_come_and_go_is_said_once_a_ride(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.status = 'online'; trainer.ctrl = true; trainer.roles.add('trainer'); trainer.roles.add('power');
+            Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    said = page.evaluate(
+        """() => {
+            const said = [], trainer = Sensors.trainer(), was = toast;
+            toast = (text, d) => { said.push(text); was(text, d); };
+            // a trainer that refuses some grades and takes others: its refusal comes and goes
+            for (const refused of [true, false, true, false, true]) {
+                trainer.refused = refused;
+                for (let i = 0; i < 20; i++) drawFrame(500); // ten seconds: any message on screen is gone
+            }
+            toast = was;
+            return said.filter(text => text === t('dev.refusedGrade')).length;
+        }"""
+    )
+    assert said == 1, said
+
+
 def test_a_grade_sent_before_the_trainer_reconnected_is_not_counted_as_on_it(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
