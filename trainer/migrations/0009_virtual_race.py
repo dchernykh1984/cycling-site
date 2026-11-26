@@ -40,6 +40,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="groupride",
+            name="loop",
+            field=models.BooleanField(default=True),
+        ),
+        migrations.AddField(
+            model_name="groupride",
             name="mode",
             field=models.CharField(
                 choices=[("group", "Group race"), ("itt", "Individual time trial")], default="group", max_length=5

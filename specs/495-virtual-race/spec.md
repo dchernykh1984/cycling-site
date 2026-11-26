@@ -52,7 +52,8 @@ phone is told so, and a route is lightened only without losing quality.
 1. **Given** a group race, **Then** each category (group) starts at the race's start plus its place in the
    categories' order times the gap; a time trial starts each rider their place times the interval after the
    race's start, in the order of categories, then bibs.
-2. **Given** a rider's category, **Then** they ride its laps (one when it has none) and finish after the last.
+2. **Given** a rider's category, **Then** on a loop they ride its laps (one when it has none) and finish after the
+   last; a route that is not a loop is ridden once, and the start list says one lap.
 3. **Given** a loop, **Then** the start and finish are one line (point 0); every turn back on the route -- the road
    reversing its way within a short stretch -- is a control point (1..N, in the route's order).
 4. **Given** a time trial, **Then** no rider drafts another; **given** a group race whose maker said no drafting

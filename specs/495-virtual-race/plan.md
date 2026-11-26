@@ -26,7 +26,8 @@ and drafts by the race's rules.
 ## Data model
 
 - `GroupRide`: `competition` (FK, null, SET_NULL), `mode` (`group`/`itt`), `group_gap_s`, `itt_interval_s`,
-  `draft_between_groups` (bool, default true).
+  `draft_between_groups` (bool, default true), `loop` (bool, default true: the page says whether its route is a
+  loop; a route that is not one is ridden once).
 - `GroupRideMember`: `registration` (FK, null, SET_NULL), `bib` (char, blank), `crossings` written (so a retry is
   written once -- kept in the stream itself: a line already there is not appended again).
 
