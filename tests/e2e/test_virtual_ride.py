@@ -273,12 +273,15 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
             });
             const placed = o => world.lms.some(l => l.x === o.position.x && l.z === o.position.z);
             const sights = kids.filter(o => o.isGroup && placed(o));
-            sights.forEach(G => {
-              const box = new THREE.Box3().setFromObject(G), w = box.max.x - box.min.x, d = box.max.z - box.min.z;
+            // a sight that spreads over the land -- a cable car, ski jumps -- stands on each of the parts it marks;
+            // any other on the lowest of its whole floor plan
+            const standing = G => G.userData.spread ? G.children.filter(m => m.userData.stands) : [G];
+            sights.forEach(G => standing(G).forEach(part => {
+              const box = new THREE.Box3().setFromObject(part), w = box.max.x - box.min.x, d = box.max.z - box.min.z;
               for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) {
                 high('a sight', box.min.y, box.min.x + w * i / 4, box.min.z + d * j / 4);
               }
-            });
+            }));
             return out;
           });
         }"""

@@ -5,6 +5,7 @@
 // sight's data, T: the route's track). The kit, sizes in metres: lam(colour) is a material; box(w, h, d, colour,
 // x, y, z) and cyl(r1, r2, h, colour, x, y, z, segments) stand on y and return their mesh; onion(r, colour, x, y,
 // z, spire) puts an onion dome on y, under a golden spire that tall when given. A colour is 0xRRGGBB or a material.
+// land(x, z) is the height of the land as drawn at a place on the route's metres, for a sight that spreads over it.
 // The ground slopes under a sight: what box and cyl stand at or below its base (y <= 0) reaches kit.sink further
 // down, so the sight goes into the ground at its lowest, its top where it was; a shape of its own does the same.
 const OBJECTS = {};
@@ -15,7 +16,7 @@ function lowestUnder(ground, box) {
   for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) m = Math.min(m, ground(box.min.x + (box.max.x - box.min.x) * i / 8, box.min.z + (box.max.z - box.min.z) * j / 8));
   return m;
 }
-function addLandmark(grp, lm, T, ground) {
+function addLandmark(grp, lm, T, ground, land) {
   const lam = c => new THREE.MeshLambertMaterial({ color: c });
   const M = c => typeof c === 'number' ? lam(c) : c;
   const build = sink => {
@@ -30,7 +31,7 @@ function addLandmark(grp, lm, T, ground) {
       const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 16), M(c)); m.position.set(x, y, z); G.add(m);
       if (spire) { cyl(.18, .25, spire, 0xe2b23c, x, y + r * 2.1, z, 6); box(.25, .25, spire * .35, 0xe2b23c, x, y + r * 2.1 + spire * .7, z); }
     };
-    if (OBJECTS[lm.type]) OBJECTS[lm.type](G, lm, T, { lam, box, cyl, onion, sink });
+    if (OBJECTS[lm.type]) OBJECTS[lm.type](G, lm, T, { lam, box, cyl, onion, sink, land: land || ((x, z) => terrainH(T, x, z)) });
     return G;
   };
   let G = build(0);

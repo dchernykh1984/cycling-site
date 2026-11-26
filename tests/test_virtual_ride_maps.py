@@ -177,6 +177,13 @@ class MapsTests(SimpleTestCase):
             for route in data.get("routes", []):
                 for lat, lon, *_ in route["pts"]:
                     self.assertTrue(south + 0.18 < lat < north - 0.18 and west + 0.25 < lon < east - 0.25, route["id"])
+            # a detail grid: whole, on a finer step, inside the map's own
+            for grid in data["relief"].get("detail", []):
+                (n, dla, nr), (w, dlo, nc) = grid["lat"], grid["lon"]
+                self.assertEqual(len(grid["h"]), nr * nc, folder)
+                self.assertTrue(all(isinstance(h, int) and -430 <= h <= 8849 for h in grid["h"]), folder)
+                self.assertTrue(dla < 0 < dlo and abs(dla) < abs(dlat) and dlo < dlon, folder)
+                self.assertTrue(south < n + dla * (nr - 1) < n < north and west < w < w + dlo * (nc - 1) < east, folder)
 
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():

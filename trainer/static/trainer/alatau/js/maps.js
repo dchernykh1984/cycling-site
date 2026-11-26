@@ -23,8 +23,11 @@
 //   water   [{ w, pts } | { area }]       rivers and canals; lakes and ponds as their shore's ring
 // A map may carry its relief ({ lat: [north, step, rows], lon: [west, step, columns], h: [metres, row by row from the
 // north] }): the land round its routes from SRTM, drawn in place of a range beyond the scenery's own ground, which
-// rises to it away from the road.
+// rises to it away from the road; relief.detail, grids of the same shape on a finer step, carry a hill the map's own
+// grid smooths away, such as one a sight stands on.
 // A map without routes yet is shown as coming soon.
+// A sight is { type, name, lat, lon, r } and what its object reads (objects/<type>.js): a sight is shown on a route
+// within its reach of it -- reach in metres, else 14 km for one seen from afar (far), else 1.3 km.
 // A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
 // objects/ and its line (js/landmarks.js).
 const CITIES = [], ROUTES = [], LANDMARKS = [];
