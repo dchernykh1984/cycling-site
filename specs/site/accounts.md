@@ -77,7 +77,13 @@ once; confirming the address unlocks everything that writes.
    2026-11-06).
 2. **Given** a member signed up with Strava, **Then** their Strava profile link is filled from the
    athlete id, unless they already set one.
-3. **Given** the page is Russian, **Then** the birth date field is still prefilled in ISO form.
+3. **Given** a date of birth to enter -- the member's own, a person's without an account, the card's span of
+   dates -- **Then** it is typed as DD.MM.YYYY in every language: the dots come as the digits are typed, a dot,
+   slash, dash, comma or space between the parts is taken, and so is ISO. A "Calendar" button beside the field
+   opens the browser's calendar on the date typed and writes the date picked back. A date that cannot be read,
+   or one before 1900 or after today, is named under the field in the page's language when the reader leaves
+   it, the form waits for it, and the server refuses it in the same words (the coaches through the maintainer,
+   2026-11-26: typing into the browser's date field failed for many, and its calendar opened on this month).
 
 ### Story 3 -- Sign-in methods (P2)
 
