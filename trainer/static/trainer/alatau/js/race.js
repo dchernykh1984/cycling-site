@@ -75,7 +75,11 @@ function renderStartSum() {
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
   const w = (typeof MP !== 'undefined' && mpMyGroup()) ? null : ownWind();
   el.querySelector('span').textContent = mode[0].toUpperCase() + mode.slice(1) + ', ' + dev + (Sensors.live('hr').length ? ', ' + t('sum.hr') : '') + ', ' + lc(bikeType().name) + ' ' + fmt1(settings.bikeKg || bikeType().kg) + ' ' + t('u.kg') + (w ? ', ' + windWords(w) : '') + '.';
+  if (heavyRoute(r) && matchMedia('(pointer: coarse)').matches) { const n = document.createElement('small'); n.className = 'heavy'; n.textContent = t('route.heavy'); el.appendChild(n); }
 }
+// A route this full of buildings and streets may draw slowly on a phone, which is told so (specs/495-virtual-race):
+// Granfondo 2026 has some 1400 of them, the next route under 300
+const HEAVY_SCENERY = 800, heavyRoute = r => (r.buildings || []).length + (r.roads || []).length > HEAVY_SCENERY;
 // страница 2: заезд
 function startRace() {
   readSettings();

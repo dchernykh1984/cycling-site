@@ -1,6 +1,6 @@
 """A virtual race with protocols on the trainer's page (specs/495-virtual-race): who drafts whom by its rules, the
-route's control points and the crossings the page reports, the bib on the kit and the race's settings for an
-event."""
+route's control points and the crossings the page reports, the bib on the kit, the race's settings for an event,
+and the phone told a heavy route may run slowly."""
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -215,3 +215,24 @@ def test_a_race_card_names_its_event_and_each_rider_s_bib(page: Page, live_serve
     expect(card).to_contain_text("Event: Winter Cup.")
     expect(card).to_contain_text("Anna #51")
     expect(card).to_contain_text("Your bib 51, Women, laps: 3.")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_phone_is_told_a_heavy_route_may_run_slowly(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    notice = page.locator("#startSum .heavy")
+    coarse = page.evaluate("matchMedia('(pointer: coarse)').matches")
+    page.evaluate("routeSel = 'granfondo'; renderStartSum()")
+    # on this browser as it is: told only where the pointer is a finger
+    expect(notice).to_have_count(1 if coarse else 0)
+    page.evaluate(
+        """() => {
+            const real = matchMedia.bind(window);
+            window.matchMedia = q => q === '(pointer: coarse)' ? { matches: true } : real(q);
+        }"""
+    )
+    page.evaluate("renderStartSum()")
+    expect(notice).to_have_text("May run slowly on a phone: many buildings and streets.")
+    # a route of a few streets is not heavy
+    page.evaluate("routeSel = 'center'; renderStartSum()")
+    expect(notice).to_have_count(0)

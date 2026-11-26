@@ -167,7 +167,8 @@ crossing with its moment on the site's clock, the ones not taken yet with every 
 from the menu too, so a rider gone back at once still sends their finish -- and the site writes the start list,
 the categories' starts and the crossings into the event's timing streams as the device `virtual-race-<id>`, for
 FinishProtocolGenerator's "Get data from site"; only while the event keeps its upload token, which never reaches a
-rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`). The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
+rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`). On a phone (a coarse pointer)
+the start's summary says a route with many buildings and streets (Granfondo 2026) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu; a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
