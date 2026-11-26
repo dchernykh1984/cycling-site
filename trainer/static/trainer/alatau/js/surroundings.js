@@ -147,14 +147,16 @@ function addRoads(G, T, W, roads, ground, decks = []) {
 // `along` lays them, 5 m apart), or null for a road on the ground.
 const RAMP_GRADE = .06, TOUCH_M = 2.5;
 function rampsOf(T, roads, decks, ground) {
-  const lines = roads.map(r => along(r.pts.map(p => xzOf(T, p)), 5)), out = roads.map(() => null), done = new Set();
-  const queue = decks.filter(d => !d.b.foot).flatMap(d => [d.q[0], d.q[d.q.length - 1]].map(p => ({ x: p.x, z: p.z, y: d.deck })));
+  const lines = roads.map(r => along(r.pts.map(p => xzOf(T, p)), 5)), out = roads.map(() => null);
+  // the highest ramp yet that set off from each road's end: a lower one from the same end has nothing to add, and a
+  // road between two bridges takes the ramp of each, from its own end
+  const best = new Map(), queue = decks.filter(d => !d.b.foot).flatMap(d => [d.q[0], d.q[d.q.length - 1]].map(p => ({ x: p.x, z: p.z, y: d.deck })));
   while (queue.length) {
     const end = queue.shift();
     lines.forEach((q, k) => [0, q.length - 1].forEach(e => {
       const key = k + ':' + e;
-      if (done.has(key) || Math.hypot(q[e].x - end.x, q[e].z - end.z) > TOUCH_M) return;
-      done.add(key);
+      if (Math.hypot(q[e].x - end.x, q[e].z - end.z) > TOUCH_M || end.y <= (best.get(key) ?? -Infinity) + .01) return;
+      best.set(key, end.y);
       const step = e ? -1 : 1, far = e ? 0 : q.length - 1;
       let s = 0, y = end.y;
       for (let i = e; ; i += step) {
@@ -165,7 +167,7 @@ function rampsOf(T, roads, decks, ground) {
         h[i] = Math.max(h[i], y);
         if (i === far) break;
       }
-      done.add(k + ':' + far);
+      best.set(k + ':' + far, Math.max(best.get(k + ':' + far) ?? -Infinity, y)); // not back down the same road
       queue.push({ x: q[far].x, z: q[far].z, y }); // the ramp runs on past the junction
     }));
   }
