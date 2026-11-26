@@ -1130,6 +1130,44 @@ def test_a_trainer_that_does_not_ride_the_route_says_why(page: Page):
     assert errors == [], errors
 
 
+def test_a_refusal_is_the_connection_s_that_made_it(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    troubles = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // a trainer that gives control and starts, and answers the grade with `code` (3: Invalid Parameter)
+            const trainerAnswering = code => {
+                const point = { listeners: [], addEventListener(name, fn) { this.listeners.push(fn); },
+                    async startNotifications() {},
+                    async writeValueWithResponse(data) {
+                        const op = data[0], answer = op === 0x11 ? code : 1;
+                        const value = new DataView(new Uint8Array([0x80, op, answer]).buffer);
+                        setTimeout(() => this.listeners.forEach(fn => fn({ target: { value } })), 0);
+                    } };
+                const bikeData = { addEventListener() {}, async startNotifications() {} };
+                const ftms = { async getCharacteristic(uuid) {
+                    if (uuid === 0x2AD9) return point; if (uuid === 0x2AD2) return bikeData; throw new Error('-'); } };
+                const server = {
+                    async getPrimaryService(uuid) { if (uuid === 0x1826) return ftms; throw new Error('-'); } };
+                const gatt = { async connect() { return server; } };
+                return new BLEDev({ name: 'trainer', addEventListener() {}, gatt });
+            };
+            const settle = () => new Promise(done => setTimeout(done, 50)), troubles = [];
+            const first = trainerAnswering(3); Sensors.devs.push(first); await first.connect();
+            Trainer.update(10, 4, me); await settle(); troubles.push(Trainer.trouble());
+            await first.connect(); troubles.push(Trainer.trouble());
+            Sensors.devs = [trainerAnswering(1)]; await Sensors.devs[0].connect(); troubles.push(Trainer.trouble());
+            return troubles;
+        }"""
+    )
+    # the grade refused; the same trainer connected again, and another one, have refused nothing yet
+    assert troubles == ["refused", None, None], troubles
+    assert errors == [], errors
+
+
 def test_a_trainer_that_holds_a_workout_s_power_is_not_said_to_be_off_the_route(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
