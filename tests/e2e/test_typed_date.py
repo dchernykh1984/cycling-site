@@ -176,6 +176,32 @@ def test_the_registration_page_takes_the_date_typed_and_its_categories_follow_it
 
 
 @pytest.mark.django_db(transaction=True)
+def test_on_a_phone_the_registration_page_s_date_fits_in_kazakh(page: Page, live_server, organizer):
+    comp = Competition.objects.create(
+        title_ru="Typed Date Race",
+        date_start=datetime.date.today() + datetime.timedelta(days=30),
+        submitted_by=organizer,
+        status=Competition.Status.APPROVED,
+        registration_enabled=True,
+        registration_mode=Competition.RegistrationMode.FREE,
+        birth_date_mode=Competition.BirthDateMode.DATE,
+    )
+    RegistrationCategory.objects.create(competition=comp, name="Open", male=True, female=True)
+    page.set_viewport_size({"width": 360, "height": 800})
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/kk/competitions/{comp.pk}/register/")
+    field, button = _box(page, "#birth_date"), _box(page, ".typed-date-pick .btn")
+    # the field and its calendar side by side within the page, the button big enough for a finger
+    assert button["x"] >= field["x"] + field["width"] and button["x"] + button["width"] <= 360, (field, button)
+    assert button["height"] >= 44 and field["height"] >= 44, (field, button)
+    assert page.evaluate("document.documentElement.scrollWidth") <= 360
+    # the narrowest phones: nothing cut off or spilling over
+    page.set_viewport_size({"width": 320, "height": 800})
+    button = _box(page, ".typed-date-pick .btn")
+    assert button["x"] + button["width"] <= 320 and page.evaluate("document.documentElement.scrollWidth") <= 320
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_date_out_of_sight_does_not_hold_the_form_back(page: Page, live_server, member):
     # a person's fields folded away on the page for several: their half-typed date is the server's to answer, it
     # does not stop the form going with nothing to see
