@@ -145,7 +145,12 @@ def _order(race) -> list:
         bib = m.bib
         return (index.get(category_id, len(index)), int(bib) if bib.isdecimal() else 10**9, bib)
 
-    riders = race.memberships.exclude(bib="").select_related("registration", "registration__category", "user")
+    # a rider whose registration is gone or was rejected is no longer on the start list, their bib still theirs
+    riders = (
+        race.memberships.exclude(bib="")
+        .filter(registration__isnull=False, registration__is_rejected=False)
+        .select_related("registration", "registration__category", "user")
+    )
     return sorted(riders, key=key)
 
 
@@ -245,6 +250,8 @@ def record_crossing(race, member, point: int, at: datetime, last: bool) -> bool:
     race's to write -- no token, no bib, a point out of range, a moment before the rider's start or ahead of now, or
     more crossings of the point than the rider has laps: a page sends one a lap, so a stream never grows past them."""
     if not writing(race) or not member.bib or not 0 <= point <= MAX_POINTS:
+        return False
+    if member.registration is None or member.registration.is_rejected:  # off the start list: FPG would not know them
         return False
     start = race.start_at + timedelta(seconds=start_offset_s(race, member))
     if at < start - CLOCK_SLACK or at > timezone.now() + CLOCK_SLACK:
