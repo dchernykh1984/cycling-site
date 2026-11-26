@@ -1,10 +1,12 @@
 'use strict';
-/* ---------------- Maps: a city each, in a folder of its own (maps/<id>/map.js) ---------------- */
+/* ---------------- Maps: a city or a region each, in a folder of its own (maps/<id>/map.js) ---------------- */
 // A map's file calls addMap with its data, and the page loads that file: alatau.html lists the maps in the
 // order the menu shows them. The data is JSON -- keys in double quotes, no trailing commas, no comments inside --
 // which the site's tests read too. Names are { ru, kk, en }, points [latitude, longitude, height in metres]; the scene
 // is laid out in metres east and south of the map's origin, a point among its routes. A map with mountains
 // ({ south: metres }) has a range rising to the south, its foot that far south of the origin or further.
+// A route far from the map's others -- a region's lie tens of kilometres apart -- carries its own origin, a point
+// among its own points, and its own mountains: the map's are then for its other routes.
 // A map without routes yet is shown as coming soon.
 // A new map: a folder like maps/almaty/ and its line in alatau.html; a new kind of sight: its object's file in
 // objects/ and its line (js/landmarks.js).

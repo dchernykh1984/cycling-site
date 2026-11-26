@@ -72,22 +72,28 @@ class MapsTests(SimpleTestCase):
             self.assertIn(route["scenery"], SCENERIES)
             self.assertTrue(route["width"] > 0 and route["lanes"] > 0, route["id"])
 
-    def test_a_map_with_routes_is_laid_out_from_a_point_among_them(self):
+    def test_a_route_and_a_sight_are_laid_out_from_a_point_near_them(self):
+        # the scene is flat: 50 km north or south of its origin a map's east-west metres are about 1 % off; a route
+        # far from its map's others -- a region's lie tens of kilometres apart -- carries its own origin
         for folder, data in trainer_page.maps().items():
-            if not data.get("routes"):
-                continue
-            origin = data["origin"]
-            points = [p for route in data["routes"] for p in route["pts"] + route.get("extend", [])]
-            points += [(sight["lat"], sight["lon"]) for sight in data.get("landmarks", [])]
-            # the scene is flat: 50 km north or south of its origin a map's east-west metres are about 1 % off
-            self.assertLess(max(_km(origin, point) for point in points), 50, folder)
+            routes = data.get("routes", [])
+            for route in routes:
+                origin = route.get("origin", data.get("origin"))
+                self.assertIsNotNone(origin, f"{route['id']} has no origin, nor has its map")
+                points = route["pts"] + route.get("extend", [])
+                self.assertLess(max(_km(origin, point) for point in points), 50, route["id"])
+            # a sight is drawn from the origin of the route it stands by
+            origins = [route.get("origin", data.get("origin")) for route in routes]
+            for sight in data.get("landmarks", []):
+                self.assertLess(min(_km(origin, (sight["lat"], sight["lon"])) for origin in origins), 50, folder)
 
-    def test_a_map_s_mountains_say_how_far_south_they_rise(self):
+    def test_a_map_s_and_a_route_s_mountains_say_how_far_south_they_rise(self):
         ranges = {folder: data["mountains"] for folder, data in trainer_page.maps().items() if "mountains" in data}
+        ranges |= {route["id"]: route["mountains"] for route in _routes() if "mountains" in route}
         self.assertTrue(ranges)
-        for folder, mountains in ranges.items():
-            self.assertEqual(set(mountains), {"south"}, folder)
-            self.assertGreater(mountains["south"], 0, folder)
+        for where, mountains in ranges.items():
+            self.assertEqual(set(mountains), {"south"}, where)
+            self.assertGreater(mountains["south"], 0, where)
 
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():
