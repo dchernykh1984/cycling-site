@@ -197,7 +197,21 @@ way from the origin, so it never ends in view. A range or relief farther
 than 9.5 km from the route's origin rises to its foot from the plain and
 shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses and sights
 stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
-their tops where they were. Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`.
+their tops where they were; a sight that spreads over the land, a cable car or ski jumps, stands on each of its
+pylons, stations and legs. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
+it over the next 500 m, to the land SRTM has there -- a city's slopes and hills, Kok-Tobe and the Sunkar hill on
+finer grids of their own (a gorge keeps its walls). What a route carries from OpenStreetMap stands round it: the
+buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
+its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
+piers beside it; roads under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
+down a ramp between walls under a roof the crossing street runs over, the land beside it at the ground line; power
+lines on towers or poles, their wires sagging high over the road; railways; rivers, canals and ponds; trees in rows,
+woods, parks and alone. Between a dual carriageway's two halves lies their median -- a pavement each way where it is
+wide, a concrete barrier down a narrow one -- and one road ridden twice has one height, the barometer's lag up and
+down a slope evened out. Where a route's points carry the rider's line, the rider rides it -- the source track's
+way through a corner it took by the apex, the right lane elsewhere -- with the bunch round it and the camera on it,
+always on the road. A sight shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km.
+Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_ride_surroundings.py`.
 
 ## User Scenarios
 
@@ -342,9 +356,9 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   a literal `("ru", "kk", "en")` (`api/endpoints/content.py`, `locations/models.py`,
   `cycling_site/skins.py`). A fourth language would need changes in each.
 - The virtual ride page carries its own maps (`trainer/static/trainer/alatau/maps/`, a folder per
-  city; only Almaty has routes so far) and the UBT kit its rider wears (`data/`). A new map comes with
-  a new revision of the page -- its folder and a line in it; the site stores only the route key and
-  name the page sends. Three of the page's words still name Almaty: its title and its loading line
+  city or region; Almaty and the Almaty Region have routes so far) and the UBT kit its rider wears
+  (`data/`). A new map comes with a new revision of the page -- its folder and a line in it; the site
+  stores only the route key and name the page sends. Three of the page's words still name Almaty: its title and its loading line
   ("title", "loading" in `text/<lang>.js`) and the site page's description (`trainer/views.py`);
   NEEDS CLARIFICATION: their wording once a second map has routes.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
