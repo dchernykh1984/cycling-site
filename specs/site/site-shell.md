@@ -123,7 +123,7 @@ guest's progress stays in their
 browser, as does an unconfirmed account's; for a confirmed member the page saves every finished ride through `/api/v1/virtual-ride/`
 (see [the API](api.md)), and their records -- best time per route, peak power, top speed, totals --
 are derived from those rides and shown on the profile ([accounts](accounts.md)); rides in demo mode
-are kept but never count. The mode's box "Wind (experimental)" sets a wind -- the bearing it blows from, one of
+are kept but never count. The mode's box "Wind" sets a wind -- the bearing it blows from, one of
 eight, and its speed, 1-20 m/s -- kept with the other settings (in the browser, and with a member's account): the
 air drags each rider by their speed through it, the wind's share along their way (the side wind is left out), a
 smart trainer is told the wind against the rider, the HUD says it is ahead, behind or beside them, and the start's
