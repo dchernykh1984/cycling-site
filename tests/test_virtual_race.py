@@ -7,7 +7,7 @@ import uuid
 from datetime import timedelta
 
 from django.test import Client, TestCase
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from event_photos.bindings import parse_line
@@ -274,3 +274,16 @@ class TimingTests(RaceTestCase):
         )
         seen = self._ride(anna, group, []).json()["riders"]
         self.assertEqual([(r["bib"], r["group"], r["cda"]) for r in seen], [("51", "Women", 0.41)])
+
+
+class RefusalsTests(TestCase):
+    def test_a_race_s_refusals_are_in_russian_and_kazakh_too(self):
+        refusals = (
+            "Register for the event first: %(link)s",
+            "Your category has no free bib left",
+            "Only the event's organizer can make a race for it",
+        )
+        for language in ("ru", "kk"):
+            for text in refusals:
+                with self.subTest(language=language, text=text), translation.override(language):
+                    self.assertNotEqual(translation.gettext(text), text)

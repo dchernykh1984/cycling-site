@@ -5863,3 +5863,15 @@ msgstr "КК.АА.ЖЖЖЖ"
 msgctxt "a button that opens a date picker"
 msgid "Calendar"
 msgstr "Күнтізбе"
+
+#: api/endpoints/virtual_ride.py
+msgid "Register for the event first: %(link)s"
+msgstr "Алдымен іс-шараға тіркеліңіз: %(link)s"
+
+#: api/endpoints/virtual_ride.py
+msgid "Your category has no free bib left"
+msgstr "Санатыңызда бос нөмір қалмады"
+
+#: api/endpoints/virtual_ride.py
+msgid "Only the event's organizer can make a race for it"
+msgstr "Іс-шара үшін жарысты тек оның ұйымдастырушысы құра алады"
