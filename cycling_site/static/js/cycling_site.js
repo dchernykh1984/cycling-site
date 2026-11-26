@@ -361,9 +361,13 @@
         var calendar = event.target.matches && event.target.matches('.typed-date-pick input[type="date"]') ? event.target : null;
         if (calendar) open(calendar);
     }, true);
-    // a form waits for its dates: the first it cannot take gets the focus and its reason
+    // a form waits for its dates: the first it cannot take gets the focus and its reason. A date out of sight -- a
+    // person's folded away or not ticked on the page for several -- is the server's to check: it cannot be put right
+    // where it cannot be seen, and it must not hold back the people who are sent.
     document.addEventListener('submit', function (event) {
-        var bad = Array.prototype.filter.call(event.target.querySelectorAll('[data-typed-date] input[type="text"]'), check);
+        var shown = Array.prototype.filter.call(event.target.querySelectorAll('[data-typed-date] input[type="text"]'),
+            function (field) { return !field.disabled && field.offsetParent !== null; });
+        var bad = shown.filter(check);
         if (!bad.length) return;
         event.preventDefault();
         bad[0].focus();
