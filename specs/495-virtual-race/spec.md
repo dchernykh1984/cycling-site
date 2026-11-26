@@ -84,7 +84,11 @@ phone is told so, and a route is lightened only without losing quality.
 
 - A category's range used up: the rider gets no bib and joining is refused with the reason.
 - A rider whose registration moves to another category after joining keeps the bib; their laps follow the category.
-- A crossing before the rider's start, after their finish, or of a point the route does not have is not written.
+- A crossing before the rider's start or ahead of the site's clock, or of a point beyond the route's few (20 at
+  most), is not written; the page reports none after the rider's last lap.
+- A rider who goes back to the menu as they finish: the crossings not sent yet go from the menu with their race.
+- A rider who starts late (a page may start up to 30 s after its start): each crossing is the moment it happened
+  on the site's clock, as a chronometer takes it, so the time lost is theirs.
 - A race whose event is deleted or loses its approval writes nothing.
 - An out-and-back route (not a loop): point 0 is the start's line, the finish its last crossing; its turn is a point.
 
@@ -98,8 +102,9 @@ phone is told so, and a route is lightened only without losing quality.
 - **FR-003**: The race's start list, the groups' start times and the crossings go into the event's timing streams
   as the device `virtual-race-<id>`, in StartProtocolMaker's and the chronometer's line formats; only while the event
   has a token.
-- **FR-004**: The page reports each crossing of point 0 and the control points with the time it happened; the site
-  writes each once and only for a member with a bib.
+- **FR-004**: The page reports each crossing of point 0 and the control points with the moment it happened on the
+  site's clock, until the site answers -- from the menu too; the site writes each once and only for a member with a
+  bib.
 - **FR-005**: The page ends a rider's race after their category's laps; a time trial starts each rider at their
   own time and takes no wake; a group race takes wakes across categories only when its maker allows it.
 - **FR-006**: The wake a rider takes is the measured one (`DRAFT`) scaled by the square root of the drag areas

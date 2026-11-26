@@ -89,6 +89,10 @@ function startRace() {
     world.lms.forEach(l => { l.done = false; });
     me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, keepLane(route.width)));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
+    // a race with protocols: the rider's bib and category, and their category's laps on a loop
+    const rules = groupRide && groupRide.race, mine = rules && rules.me;
+    world.FIN = world.T.loop && mine ? world.S0 + mine.laps * world.T.L : world.FIN1;
+    me.bib = mine ? mine.bib : ''; me.group = mine ? mine.group : ''; setBib(playerAvatar, me.bib);
     stravaShow(null, null); intervalsShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';
     spawnBots(planMode || freeMode || groupRide ? 0 : +settings.bots, settings.level, world.S0);
@@ -101,7 +105,7 @@ function startRace() {
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
     $('#pauseHint').textContent = freeMode ? t('pause.free') : planMode ? t('pause.plan') : t('pause.race');
     if (freeMode) setTimeout(() => toast(t('toast.free'), 5), 4500);
-    if (groupRide) { $('#pauseHint').textContent = t('pause.group'); setTimeout(() => toast(t('toast.group'), 4), 300); }
+    if (groupRide) { $('#pauseHint').textContent = t('pause.group'); setTimeout(() => toast(me.bib ? t('toast.race', { bib: me.bib }) : t('toast.group'), 4), 300); }
     $('#btnPhoto').classList.toggle('hidden', !!groupRide);
     raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');

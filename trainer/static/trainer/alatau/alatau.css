@@ -119,6 +119,15 @@ button{cursor:pointer}
 .mp-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
 .mp-create{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .mp-create select{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px}
+/* a race with protocols for an event (specs/495-virtual-race): its event and, once one is chosen, its settings */
+.mp-race{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.mp-race-opts{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:end}
+.mp-field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0;max-width:100%}
+.mp-field select,.mp-field input{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:10px;min-height:44px;max-width:100%}
+.mp-field input{width:9em}
+.mp-check{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px}
+.mp-check input{width:22px;height:22px;flex:none}
+.mp-race .hint{flex-basis:100%;margin:0}
 .mp-when{display:flex;gap:8px;flex-wrap:wrap}
 .mp-when input{border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:12px;padding:10px;min-height:44px;font:inherit}
 .btn:disabled{opacity:.5;cursor:not-allowed}

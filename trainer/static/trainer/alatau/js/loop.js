@@ -10,6 +10,7 @@ Object.assign(rideHooks, {
   lap: n => toast(t('hud.lapToast', { n }), 2.5),
   sight: l => toast(l.side === 'right' ? t('sight.right', { name: l.name }) : t('sight.left', { name: l.name }), 4.5),
   finish: () => finishRace(),
+  crossing: (point, last, ago) => mpCrossing(point, last, ago),
   planStep: (i, s, shifted) => { if (shifted) updateModeUI(); toast(s.f != null ? t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.stepToastW', { n: i + 1, what: stepWhat(s) }), 5); },
   planSoon: s => toast(s.f != null ? t('plan.soon', { g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.soonW', { what: stepWhat(s) }), 4),
   planCue: text => toast(text, 6),

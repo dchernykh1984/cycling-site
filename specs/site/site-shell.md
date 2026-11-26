@@ -153,7 +153,21 @@ into view, tells a guest to sign in and brings them back to it, and says when th
 has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
-fastest first; deleting one moves the others up. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
+fastest first; deleting one moves the others up. A race with protocols (specs/495-virtual-race) is a group race
+tied to an event: its maker -- the event's organizer, or an admin for any event approved and not over -- picks the
+event under "Riding with friends" and sets the mode (a group race, or an individual time trial in which nobody
+drafts), the gap between the categories' starts or the interval between the riders', and in a group race whether
+riders of different categories draft each other. Only riders registered for the event join it (a rider who is not
+is sent to the event's page), each with a bib: the one the event gave their registration, else the first free one
+in their category's range, kept across leaving and joining; the bib is drawn on every rider's back and named on
+the race's card with the event, the rider's category, laps and own start. A rider rides their category's laps on a
+loop, a route that is not one once; the control points are the start-finish line and the route's turns back
+(`turnPoints`: Granfondo 2026's two, the smooth one by Vostochka on Al-Farabi among them). The page reports each
+crossing with its moment on the site's clock, the ones not taken yet with every call until one is answered --
+from the menu too, so a rider gone back at once still sends their finish -- and the site writes the start list,
+the categories' starts and the crossings into the event's timing streams as the device `virtual-race-<id>`, for
+FinishProtocolGenerator's "Get data from site"; only while the event keeps its upload token, which never reaches a
+rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`). The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu; a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
