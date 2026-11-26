@@ -1481,6 +1481,34 @@ def test_a_cadence_plan_shows_its_first_step_during_the_countdown(page: Page, li
     expect(page.locator("#plItems li.cur")).to_have_count(1)
 
 
+@pytest.mark.django_db(transaction=True)
+def test_a_finished_plan_rides_on_freely_until_the_rider_ends_it(page: Page, live_server):
+    """The plan done, nothing stops the ride, nor saves it or sends it to the services (the maintainer, 2026-11-26):
+    it rides on freely, the trainer let go of the plan's power; End the ride saves the workout, its extra time in."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        "() => { settings.mode = 'plan'; settings.plan.steps = [{ f: 2, r: 6, cad: 90, min: 0.05 }]; startRace(); }"
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    # four seconds of countdown, the plan's three, then three more
+    page.evaluate("() => { for (let i = 0; i < 40; i++) drawFrame(250); }")
+    riding = page.evaluate(
+        """() => ({ phase, plan: Work.active, power: Work.target(), saved: Records.data.history.length,
+                    left: $('#plLeft').textContent, toast: $('#toast').textContent })"""
+    )
+    words = page.evaluate("[TEXT.en['plan.overLeft'], TEXT.en['plan.over']]")
+    assert riding == {"phase": "race", "plan": False, "power": None, "saved": 0, "left": words[0], "toast": words[1]}
+    expect(page.locator("#resM")).to_be_hidden()
+    page.click("#btnPause")
+    page.click("#btnFinish")
+    expect(page.locator("#resM")).to_be_visible()
+    expect(page.locator("#resTitle")).to_have_text(page.evaluate("TEXT.en['res.workoutDone']"))
+    kept = page.evaluate(
+        "() => { const h = Records.data.history; return { saved: h.length, kind: h[0].kind, t: h[0].time }; }"
+    )
+    assert kept["saved"] == 1 and kept["kind"] == "plan" and kept["t"] > 5, kept
+
+
 # The HUD's blocks: none may cover another.
 _OVERLAPS = """() => {
     const boxes = ['#planList', '#hudTop .tbar', '#hudTop .prow', '#hudTR .mapcard']

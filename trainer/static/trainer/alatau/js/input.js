@@ -26,7 +26,7 @@ function updateModeUI() {
   $('#uPower').textContent = mode === 'demo' ? t('u.wDemo') : mode === 'power' ? t('u.w') : t('u.wEst');
   const gt = gearTeeth(gearF, gearR); $('#gearV').textContent = gearLabel(gearF, gearR) + ' · ' + gt[0] + '×' + gt[1];
   // ERG on or off, while a workout with power steps rides on a trainer that holds a power
-  const erg = $('#btnErg'); erg.classList.toggle('hidden', !(inRace && rideMode === 'plan' && Work.steps.some(s => s.w != null) && Trainer.canErg()));
+  const erg = $('#btnErg'); erg.classList.toggle('hidden', !(inRace && rideMode === 'plan' && Work.active && Work.steps.some(s => s.w != null) && Trainer.canErg()));
   erg.setAttribute('aria-pressed', settings.erg !== false ? 'true' : 'false');
   if (phase === 'menu') renderStartSum();
 }

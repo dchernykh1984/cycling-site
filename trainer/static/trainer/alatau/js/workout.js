@@ -79,6 +79,16 @@ function finishFree() {
   $('#resList').innerHTML = '';
   $('#resM').classList.remove('hidden');
 }
+// The plan done, the ride goes on as a free one: nothing is saved, nor sent to the services, until the rider ends it
+// from the pause menu, the time after the plan in it too (the maintainer, 2026-11-26). The trainer is let go of the
+// plan's power: Work.target() gives none once the plan is over.
+function planOver() {
+  $('#target').classList.add('hidden');
+  document.querySelectorAll('#plItems li.cur').forEach(li => li.classList.replace('cur', 'done'));
+  $('#plLeft').textContent = t('plan.overLeft'); $('#plProg').style.width = '100%';
+  $('#pauseHint').textContent = t('pause.planOver');
+  updateModeUI(); toast(t('plan.over'), 8);
+}
 function finishWorkout() {
   phase = 'done';
   const st = me.stats, t = raceT, km = st.dist / 1000, zone = zonePct(Work.ss);
