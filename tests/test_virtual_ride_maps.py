@@ -95,6 +95,32 @@ class MapsTests(SimpleTestCase):
             self.assertEqual(set(mountains), {"south"}, where)
             self.assertGreater(mountains["south"], 0, where)
 
+    def test_a_route_s_own_buildings_barriers_and_trees_have_their_shape(self):
+        # a racetrack's scenery from OpenStreetMap (js/world.js): footprints with a height, a barrier's gap beyond the
+        # road, rows and woods of trees -- every point a place near the route's origin
+        owned = [route for route in _routes() if {"buildings", "barriers", "trees"} & set(route)]
+        self.assertTrue(owned)
+        origins = {
+            route["id"]: route.get("origin", data.get("origin"))
+            for data in trainer_page.maps().values()
+            for route in data.get("routes", [])
+        }
+        for route in owned:
+            for building in route.get("buildings", []):
+                self.assertGreater(building["h"], 0, route["id"])
+            if "barriers" in route:
+                self.assertEqual(set(route["barriers"]), {"gap"}, route["id"])
+                self.assertGreater(route["barriers"]["gap"], 0, route["id"])
+            trees = route.get("trees", {})
+            self.assertLessEqual(set(trees), {"rows", "woods"}, route["id"])
+            lines = [(row, 2) for row in trees.get("rows", [])] + [(wood, 3) for wood in trees.get("woods", [])]
+            lines += [(building["pts"], 3) for building in route.get("buildings", [])]
+            for line, least in lines:
+                self.assertGreaterEqual(len(line), least, route["id"])
+                for point in line:
+                    self.assertEqual(len(point), 2, route["id"])
+                    self.assertLess(_km(origins[route["id"]], point), 50, route["id"])
+
     def test_a_sight_stands_at_a_place(self):
         for folder, data in trainer_page.maps().items():
             for sight in data.get("landmarks", []):
