@@ -169,7 +169,7 @@ any script, by team and by dates of birth, and a form to add one more.{% endcomm
 {% include "_search_words_js.html" %}
 <script>
 (function () {
-  // The filters: a name typed in any script, a team, a span of dates of birth (typed as DD.MM.YYYY, compared as
+  // The filters: a name typed in any script, a team, a span of dates of birth (typed day, month, year, compared as
   // ISO dates, which compare as text)
   var card = document.getElementById('virtual-members');
   var rows = Array.prototype.slice.call(card.querySelectorAll('.virtual-people > li'));
