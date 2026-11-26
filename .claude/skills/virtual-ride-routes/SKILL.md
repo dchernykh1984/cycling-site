@@ -90,8 +90,10 @@ give the same data byte for byte.
 4. **What stands round it** (`surroundings.py route.json osm.json out.json [near]`): buildings within 250 m (tall
    ones to 500 m) with heights from `height`, `building:levels` or the kind, colours where tagged; roads that meet
    the route to 400 m, the others to 150 m, no parking aisles; bridges crossing over it, roads under it, its own
-   bridges and tunnels; power lines, railways, water, trees. About 70 KB for 7 km in the country, 290 KB for 15 km
-   in a city: the map file is the page's, so keep what a rider sees.
+   bridges and tunnels; power lines, railways and rivers as far as they are seen (2.5 km, 1.5 km), lakes, trees; a
+   pond or a wood too small to draw left out. `near` widens a reach where a rider sees further: the Institute of
+   Nuclear Physics in the steppe took `'{"buildings": 400, "trees": 1300, "side": 400}'`. About 60 KB for 7 km in
+   the country, 280 KB for 15 km in a city: the map file is the page's, so keep what a rider sees.
 5. **Into the map** (`finish.py route.json around.json meta.json map.js`, meta the names, description and event in
    three languages): a tunnel gets its real profile, 6.5 m under the ground line between ramps of 100 m -- the
    barometer smooths the dip away -- and the route goes into the map's routes, the other entries' text untouched.

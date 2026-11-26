@@ -223,7 +223,8 @@ its road where they meet it, under it where they cross; footbridges and road bri
 piers beside it; roads under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
 down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
 none inside them; power
-lines on towers or poles, their wires sagging high over the road; railways; rivers, canals and ponds; trees in rows,
+lines on towers or poles, their wires sagging high over the road, and railways and rivers,
+as far as a rider sees them; canals and ponds; trees in rows,
 woods, parks and alone. Between a dual carriageway's two halves lies their median -- a pavement each way where it is
 wide, a concrete barrier down a narrow one -- and one road ridden twice has one height, the barometer's lag up and
 down a slope evened out. Where a route's points carry the rider's line, the rider rides it -- the source track's
