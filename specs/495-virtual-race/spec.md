@@ -89,6 +89,8 @@ phone is told so, and a route is lightened only without losing quality.
   most), or past as many crossings of the point as the rider has laps, is not written; the page reports none after
   the rider's last lap.
 - A rider who goes back to the menu as they finish: the crossings not sent yet go from the menu with their race.
+- A race whose riders start one after another -- categories apart, a time trial's riders -- stays in the lobby until
+  a few minutes after its last rider's own start, so every rider's page is there to start them.
 - A rider who starts late (a page may start up to 30 s after its start): each crossing is the moment it happened
   on the site's clock, as a chronometer takes it, so the time lost is theirs.
 - A race whose event is deleted or loses its approval writes nothing.

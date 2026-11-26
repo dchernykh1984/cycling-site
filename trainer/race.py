@@ -207,11 +207,26 @@ def _replace(row, items: list[str]) -> None:
         row.save(update_fields=["items", "client_revision", "updated_at"])
 
 
+def last_start(race, riders) -> datetime:
+    """The last rider's own start: the race's in a mass start, later by the categories' gaps or the trial's
+    intervals."""
+    if not riders:
+        return race.start_at
+    if race.mode == race.Mode.ITT:
+        return race.start_at + timedelta(seconds=(len(riders) - 1) * race.itt_interval_s)
+    return race.start_at + timedelta(seconds=max(start_offset_s(race, m) for m in riders))
+
+
 def write_start(race) -> None:
-    """The race's start list and its groups' start times, as they stand: called whenever a rider joins or leaves."""
-    if not writing(race):
+    """The race's start list and its groups' start times, as they stand, and when its last rider starts: called
+    whenever a rider joins or leaves."""
+    if race.competition is None:
         return
     riders = _order(race)
+    race.last_start_at = last_start(race, riders)
+    race.save(update_fields=["last_start_at"])
+    if not writing(race):
+        return
     zone = race.competition.timezone
     with transaction.atomic():
         _replace(_stream(StartListUpload, race), [start_line(race, m) for m in riders])

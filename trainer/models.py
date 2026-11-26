@@ -96,6 +96,9 @@ class GroupRide(models.Model):
     loop = models.BooleanField(default=True)
     # the bibs of riders who left, kept for them by their registration: {registration id: bib}
     kept_bibs = models.JSONField(default=dict, blank=True)
+    # the last rider's own start, after the gaps between categories or the intervals of a time trial: the lobby lists
+    # the race until a little after it, so every rider's page is there to start them
+    last_start_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ("start_at",)

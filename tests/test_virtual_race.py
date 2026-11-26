@@ -6,6 +6,7 @@ import re
 import uuid
 from datetime import timedelta
 
+from django.db.models import F
 from django.test import Client, TestCase
 from django.utils import timezone, translation
 
@@ -213,6 +214,22 @@ class TimingTests(RaceTestCase):
         self.assertEqual(delays, ["0:00:00", "0:00:30", "0:01:00"])
         mine = self.client_of(GroupRideMember.objects.get(bib="51").user).get(f"{API}/groups/{group}").json()["me"]
         self.assertEqual(mine["start_offset_s"], 60)
+
+    def test_the_lobby_lists_a_time_trial_until_moments_after_its_last_rider_s_start(self):
+        group = self.make(mode="itt", itt_interval_s=60).json()["id"]
+        riders = [self.rider(f"rider{k}", self.women) for k in range(7)]
+        for user in riders:
+            self.join(user, group)
+        # six minutes on: the race's start is long past, the last of its seven riders starts in a minute
+        moved = timezone.now() - GroupRide.objects.get(pk=group).start_at + timedelta(minutes=6)
+        GroupRide.objects.filter(pk=group).update(
+            start_at=F("start_at") - moved, last_start_at=F("last_start_at") - moved
+        )
+        lobby = self.client_of(riders[-1]).post(
+            f"{API}/presence", {"status": "lobby", "route": "granfondo"}, content_type="application/json"
+        )
+        mine = next(g for g in lobby.json()["groups"] if g["id"] == group)
+        self.assertEqual(mine["me"]["start_offset_s"], 360)
 
     def _ride(self, user, group, crossings):
         return self.client_of(user).post(
