@@ -999,9 +999,11 @@ main .article-body h3 {
     flex: 1 1 auto;
     min-width: 0;
 }
+/* the button as tall as the field beside it, whatever height a skin gives each: the date input over it, no taller */
 .typed-date-pick {
     position: relative;
     flex: none;
+    display: flex;
 }
 .typed-date-pick .btn {
     display: inline-flex;
