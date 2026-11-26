@@ -17,7 +17,11 @@ LOCALES = [Path(root) for root in settings.LOCALE_PATHS]
 CYRILLIC = re.compile(f"[{chr(0x0400)}-{chr(0x04FF)}]")
 LATIN = re.compile("[A-Za-z]")
 # An escape such as \n is not a letter: read as one, "\nword" looks like a Latin n glued to a word.
-NOT_WORDS = re.compile(r"%\(\w+\)[sd]|%[sd]|<[^>]+>|&\w+;|\{\w+\}|https?://\S+|\\.")
+# what is no word to spell: placeholders, tags, entities, links, escapes, and a date's mask (DD.MM.YYYY in its
+# language's letters, the year's letter four times over)
+NOT_WORDS = re.compile(
+    r"%\(\w+\)[sd]|%[sd]|<[^>]+>|&\w+;|\{\w+\}|https?://\S+|\\.|\b([^\W\d_])\1\.([^\W\d_])\2\.([^\W\d_])\3{3}\b"
+)
 PLACEHOLDER = re.compile(r"%\(\w+\)[sd]|%[sd]|\{\w+\}")
 TAG = re.compile(r"</?(\w+)")
 

@@ -58,6 +58,7 @@ FORM_MODULES = (
 FORM_TARGETS = {
     "accounts.views.ContactOwnersForm": None,
     "accounts.views.VirtualMemberForm": VirtualMember,
+    "accounts.views.VirtualFilterForm": None,
     "accounts.views.ProfileEditForm": None,
     "accounts.views.RequestRoleForm": None,
     "calendar_app.forms.AddCompetitionCommentForm": CompetitionComment,
