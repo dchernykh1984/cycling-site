@@ -6,8 +6,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qs
 
+import yaml
+
 from scripts import deploy_if_behind as deploy
 
+ROOT = Path(__file__).resolve().parent.parent
+#: what a Render run may take beyond its two waits: its own requests, and a cron started a minute late
+RENDER_RUN_SLACK = timedelta(minutes=15)
 MAIN, OLD = "a" * 40, "b" * 40
 HOOK = "https://api.render.com/deploy/srv-x?key=secret"
 ENV = {"GITHUB_REPOSITORY": "owner/site", "GITHUB_TOKEN": "t", "SITE_BASE_URL": "https://site.test/"}
@@ -193,19 +198,59 @@ def _hours(field: str) -> list[int]:
     return hours
 
 
-def test_a_scheduled_run_starts_inside_the_window_when_github_starts_it_up_to_7_hours_late():
-    """GitHub started the one night run 4 to 5 hours late on each of the first three nights
-    (2026-11-20 to 22), past the window, and nothing was deployed: a run every hour around the window
-    puts one inside it whether GitHub starts them on time or up to 7 hours late."""
-    workflow = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "deploy.yml").read_text()
+def _daily(cron: str, day: datetime) -> list[datetime]:
+    """The moments of ``day`` a daily cron such as "37 0,22,23 * * *" names."""
+    minute, hour, *every = cron.split()
+    assert every == ["*", "*", "*"], f"{cron} does not run every day"
+    return [day.replace(hour=h, minute=int(minute)) for h in _hours(hour)]
+
+
+def _workflow() -> tuple[str, str]:
+    """The GitHub workflow's schedule and the window its scheduled runs deploy in."""
+    workflow = (ROOT / ".github" / "workflows" / "deploy.yml").read_text()
     (cron,) = re.findall(r'cron: "([^"]+)"', workflow)
-    minute, hour = cron.split()[:2]
     window = re.search(r"DEPLOY_WINDOW_UTC: .*'(\d\d:\d\d-\d\d:\d\d)'", workflow)
     assert window, "the workflow gives its scheduled runs no window"
-    asked = [datetime(2026, 11, 21, h, int(minute), tzinfo=UTC) for h in _hours(hour)]
-    for late in range(0, 7 * 60 + 1, 5):
-        started = [moment + timedelta(minutes=late) for moment in asked]
-        assert any(deploy.in_window(moment, window.group(1)) for moment in started), f"{late} minutes late"
+    return cron, window.group(1)
+
+
+def _render_cron() -> tuple[dict, dict[str, dict]]:
+    """The Render Cron Job render.yaml defines, and its environment by variable."""
+    (cron,) = [s for s in yaml.safe_load((ROOT / "render.yaml").read_text())["services"] if s["type"] == "cron"]
+    return cron, {variable["key"]: variable for variable in cron["envVars"]}
+
+
+def test_render_runs_the_script_every_night_inside_the_window():
+    cron, env = _render_cron()
+    _schedule, window = _workflow()
+    assert env["DEPLOY_WINDOW_UTC"]["value"] == window, "the Render run and the fallback deploy in one window"
+    (night,) = _daily(cron["schedule"], NIGHT)
+    assert deploy.in_window(night, window)
+    script = cron["startCommand"].removeprefix("python ")
+    assert (ROOT / script).is_file(), cron["startCommand"]
+    assert script in cron["buildFilter"]["paths"], "a change to the script would not reach the cron"
+
+
+def test_github_s_fallback_never_starts_while_the_render_run_may_still_deploy():
+    """GitHub starts a cron late, never early: a fallback run asked for after the Render run's longest
+    wait cannot call the deploy hook while that run's deploy goes on, which would queue another
+    deploy and take the site down again. Each one could still deploy, started on time."""
+    cron, _env = _render_cron()
+    (night,) = _daily(cron["schedule"], NIGHT)
+    ended = night + timedelta(seconds=deploy.CHECKS_WAIT_SECONDS + deploy.WAIT_SECONDS) + RENDER_RUN_SLACK
+    schedule, window = _workflow()
+    for asked in _daily(schedule, NIGHT):
+        if asked < night:  # past midnight: the next morning's
+            asked += timedelta(days=1)
+        assert asked >= ended, f"{asked:%H:%M} may meet the Render run, which may run until {ended:%H:%M}"
+        assert deploy.in_window(asked, window), f"{asked:%H:%M} deploys nothing even on time"
+
+
+def test_the_blueprint_leaves_its_secrets_out_of_the_repository():
+    """The repository is public, and the deploy hook's address is the key that deploys the site."""
+    _cron, env = _render_cron()
+    for secret in ("RENDER_DEPLOY_HOOK_URL", "GITHUB_TOKEN"):
+        assert env[secret] == {"key": secret, "sync": False}, f"{secret} must be asked for on Render, not written here"
 
 
 def test_the_window_may_cross_midnight():

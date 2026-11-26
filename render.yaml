@@ -1,0 +1,36 @@
+# The nightly deploy (issue #153) as a Render Cron Job. A Blueprint creates it: Render -> New ->
+# Blueprint, this repository, branch main. Render asks once, on creation, for the two values marked
+# "sync: false" and keeps them; they are never written here. A Blueprint changes only the services
+# it names: the web service is set up in the dashboard and stays so.
+#
+# GitHub started the nightly-deploy workflow's scheduled runs hours late or not at all: on one night
+# of the four from 2026-11-22 one of them started inside the window. Render starts a cron on time.
+# The workflow (.github/workflows/deploy.yml) is kept as the fallback, and to deploy by hand.
+services:
+  - type: cron
+    name: nightly-deploy
+    runtime: python
+    region: frankfurt
+    # 21:07 UTC, 02:07 in Almaty: Render's schedules are in UTC
+    schedule: "7 21 * * *"
+    buildCommand: "true" # the script needs nothing beyond the standard library
+    startCommand: python scripts/deploy_if_behind.py
+    # a push rebuilds the cron only when the script changes
+    buildFilter:
+      paths:
+        - scripts/deploy_if_behind.py
+    envVars:
+      - key: GITHUB_REPOSITORY
+        value: dchernykh1984/cycling-site
+      - key: SITE_BASE_URL
+        value: https://universalbicycle.team
+      - key: DEPLOY_WINDOW_UTC
+        value: "21:00-01:00"
+      # the web service's Settings -> Deploy Hook, as in the GitHub secret of the same name: its
+      # address carries the key that deploys the site
+      - key: RENDER_DEPLOY_HOOK_URL
+        sync: false
+      # a fine-grained token that reads public repositories only: without one GitHub answers 60
+      # requests an hour per address, and Render's outbound addresses are shared
+      - key: GITHUB_TOKEN
+        sync: false
