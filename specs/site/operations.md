@@ -24,13 +24,12 @@ restored, locally or onto production.
 1. **Given** a pull request, **Then** CI runs pre-commit (ruff, mypy, ASCII, requirements export),
    commitizen, the unit tests with coverage of 90% or more, the dependency audit, and the browser
    suite on five browser/device combinations and once per skin.
-2. **Given** a merge to `main`, **Then** it reaches the site at night. The web service's auto-deploy is off.
-   `scripts/deploy_if_behind.py` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
-   Almaty), and only when two things hold: the site names another commit at `/api/v1/version/`,
-   and every check `main`'s push started is green (CI, the Dropbox check, any added later). It
-   waits up to 30 minutes for a check still running, and a red one holds the deploy, by night or by
-   hand. It then waits until the site names the new commit, so a deploy that fails turns the run
-   red.
+2. **Given** a merge to `main`, **Then** it reaches the site at night. The web service's auto-deploy
+   is off. `scripts/deploy_if_behind.py` deploys `main` between 21:00 and 01:00 UTC (02:00-06:00 in
+   Almaty), and only when two things hold: the site names another commit at `/api/v1/version/`, and
+   every check `main`'s push started is green (CI, the Dropbox check, any added later). It waits up
+   to 30 minutes for a check still running, and a red one holds the deploy, by night or by hand. It
+   then waits until the site names the new commit, so a deploy that fails turns the run red.
    - The night run is a Render Cron Job at 21:07 UTC (`render.yaml`). GitHub starts a cron when it
      has capacity: on three nights of the four from 2026-11-22 none of the workflow's hourly runs
      started inside the window. Render e-mails a failed run when the workspace's notifications

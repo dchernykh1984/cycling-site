@@ -79,12 +79,12 @@ deployed at night (issue #153). The web service keeps its media on a persistent 
 disk Render stops the running instance before it starts the new one, so every deploy takes the
 site down for up to a minute.
 
-- **The web service's auto-deploy is off.** `scripts/deploy_if_behind.py` deploys `main` between 21:00
-  and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at
+- **The web service's auto-deploy is off.** `scripts/deploy_if_behind.py` deploys `main` between
+  21:00 and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at
   `/api/v1/version/` and every check `main`'s push started is green: CI, the Dropbox check, any
-  added later. It waits up to 30 minutes for a check still running and deploys nothing while one
-  is red, by night or by hand. It then waits until the site names `main`'s commit: a deploy that
-  fails turns the run red.
+  added later. It waits up to 30 minutes for a check still running and deploys nothing while one is
+  red, by night or by hand. It then waits until the site names `main`'s commit: a deploy that fails
+  turns the run red.
 - **The night run is a Render Cron Job**, `nightly-deploy` in `render.yaml`, at 21:07 UTC (02:07 in
   Almaty). GitHub starts a cron when it has capacity: hours late or not at all, so on three nights
   of the four from 2026-11-22 none of the workflow's hourly runs started inside the window. Render
