@@ -454,6 +454,11 @@ class SealingMigrationTests(TransactionTestCase):
         executor.migrate(target)
         return executor.loader.project_state(target).apps.get_model("trainer", "StravaConnection")
 
+    def migrate_to_latest(self):
+        """Every app at its latest migration again: a later test on this worker meets the whole schema."""
+        executor = MigrationExecutor(db)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
     def keep_a_grant_in_plain_text(self):
         connections = self.migrate(BEFORE_SEALING)
         user = _user("anna")
@@ -473,7 +478,7 @@ class SealingMigrationTests(TransactionTestCase):
             row = self.migrate(BEFORE_SEALING).objects.get()
             self.assertEqual((row.access_token, row.refresh_token), ("access", "refresh"))
         finally:
-            self.migrate(SEALING)
+            self.migrate_to_latest()
 
     def test_without_the_key_the_migration_stops_and_keeps_the_grant(self):
         try:
@@ -483,4 +488,4 @@ class SealingMigrationTests(TransactionTestCase):
             row = self.migrate(BEFORE_SEALING).objects.get()
             self.assertEqual((row.access_token, row.refresh_token), ("access", "refresh"))
         finally:
-            self.migrate(SEALING)
+            self.migrate_to_latest()
