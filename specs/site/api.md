@@ -146,7 +146,7 @@ and protocols with the event's upload token. The API has no language prefix.
 
 1. **Given** anyone, **Then** `GET /version/` names the commit the site runs: `RELEASE_COMMIT`
    when the host sets it, else the commit Render names on every deploy (`RENDER_GIT_COMMIT`), and
-   empty when neither is set. The nightly deploy (`.github/workflows/deploy.yml`, issue #153)
+   empty when neither is set. The nightly deploy (`scripts/deploy_if_behind.py`, issue #153)
    deploys `main` only while the site names another commit, and waits until it names `main`'s.
 
 ### Edge Cases

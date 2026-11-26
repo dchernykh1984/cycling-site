@@ -120,9 +120,10 @@ survives and the history stays linear.
 
 ## After the merge
 
-A merged change reaches the site at night: `.github/workflows/deploy.yml` deploys `main` between 02:00
-and 06:00 in Almaty (21:00-01:00 UTC) when the site names another commit at `/api/v1/version/` and
-`main`'s CI passed (issue #153). GitHub starts a cron hours late, so the workflow asks for a run every
-hour from 17:07 to 00:07 UTC, and the first one that starts inside the window deploys. To see a change
-live sooner, run `gh workflow run deploy.yml` -- on the maintainer's word only, since every deploy takes
-the site down for up to a minute -- and check that `/api/v1/version/` names the merged commit.
+A merged change reaches the site at night: a Render Cron Job (`render.yaml`) runs
+`scripts/deploy_if_behind.py` at 02:07 in Almaty (21:07 UTC), which deploys `main` when the site names
+another commit at `/api/v1/version/` and `main`'s checks passed (issue #153). `.github/workflows/deploy.yml`
+is its fallback: GitHub is asked for a run at 03:37, 04:37 and 05:37, inside the window that closes at
+06:00 (01:00 UTC). To see a change live sooner, run `gh workflow run deploy.yml` -- on the maintainer's
+word only, since every deploy takes the site down for up to a minute, and not from 02:07 to 03:00, while
+the night run may still be deploying -- and check that `/api/v1/version/` names the merged commit.

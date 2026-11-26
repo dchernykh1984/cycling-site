@@ -79,20 +79,30 @@ deployed at night (issue #153). The web service keeps its media on a persistent 
 disk Render stops the running instance before it starts the new one, so every deploy takes the
 site down for up to a minute.
 
-- **Render's auto-deploy is off.** `.github/workflows/deploy.yml` deploys `main` between 21:00
+- **Render's auto-deploy is off.** `scripts/deploy_if_behind.py` deploys `main` between 21:00
   and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at
   `/api/v1/version/` and every check `main`'s push started is green: CI, the Dropbox check, any
   added later. It waits up to 30 minutes for a check still running and deploys nothing while one
   is red, by night or by hand. It then waits until the site names `main`'s commit: a deploy that
   fails turns the run red.
-- **GitHub starts a cron when it has capacity**, on the first three nights 4 to 5 hours late, past
-  the window, so nothing was deployed. The workflow therefore asks for a run every hour from 17:07
-  to 00:07 UTC: the first one that starts inside the window deploys, and the others do nothing.
+- **The night run is a Render Cron Job**, `nightly-deploy` in `render.yaml`, at 21:07 UTC (02:07 in
+  Almaty). GitHub starts a cron when it has capacity: hours late or not at all, so on three nights
+  of the four from 2026-11-22 none of the workflow's hourly runs started inside the window. Render
+  starts a cron on time, and e-mails a failed run when the workspace's notifications include
+  failures (Integrations -> Notifications).
+- **`.github/workflows/deploy.yml` is the fallback** for a night the Render run deployed nothing: it
+  asks for a run at 22:37, 23:37 and 00:37 UTC, after the Render run has ended (it waits at most 50
+  minutes), so the two never deploy at once. A run that finds the site on `main`, or starts after
+  01:00, does nothing.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
-- **Setting it up:** the service's deploy hook (Render: Settings -> Deploy Hook) goes into the
+- **Setting it up:** the web service's deploy hook (Render: Settings -> Deploy Hook) goes into the
   secret `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and Render's Auto-Deploy
-  (Settings -> Build & Deploy) is set to Off.
+  (Settings -> Build & Deploy) is set to Off. The Cron Job comes from the Blueprint: Render -> New ->
+  Blueprint, this repository, branch `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same
+  hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
+  and no other permission: without one GitHub answers 60 requests an hour per address, and Render's
+  outbound addresses are shared.
 - **The secrets of GitHub Actions** live in the repository's `production` environment (Settings ->
   Environments), whose deployment branches are `main` only. A job receives them only when it names
   the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
