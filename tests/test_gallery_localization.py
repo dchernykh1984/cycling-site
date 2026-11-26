@@ -313,4 +313,6 @@ class ExistingGalleryTextMigrationTests(TransactionTestCase):
             self.assertEqual(old_apps.get_model("gallery", "Album").objects.get(pk=album.pk).title, "New EN title")
             self.assertEqual(old_apps.get_model("gallery", "Photo").objects.get(pk=photo.pk).caption, "New EN caption")
         finally:
-            MigrationExecutor(connection).migrate(new_target)
+            # every app at its latest again: a later test on this worker meets the whole schema
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())

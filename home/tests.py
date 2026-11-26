@@ -251,8 +251,10 @@ class SiteContentBodyBackfillTests(TransactionTestCase):
                 self.assertNotIn("<script", value.lower())
             self.assertIn("ru", obj.body_ru)
         finally:
+            # every app at its latest again, not home alone: going back to 0008 took with it what depends on home's
+            # later migrations (calendar_app's, and the trainer's that depend on those)
             executor = MigrationExecutor(connection)
-            executor.migrate(executor.loader.graph.leaf_nodes("home"))
+            executor.migrate(executor.loader.graph.leaf_nodes())
 
 
 class HomeEditViewTests(TestCase):
