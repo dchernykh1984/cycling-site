@@ -10,6 +10,7 @@ safe ``src`` (used by competition descriptions).
 
 from __future__ import annotations
 
+import html
 import re
 
 # What XML 1.0 and iCalendar refuse in text: the C0 controls but tab, line feed and carriage return.
@@ -261,7 +262,13 @@ def sanitize_rich_html(raw: str, *, allow_img: bool = False) -> str:
             # An image has no children, so it is gone the same way: decompose() walks its parent's children from the
             # first to find it, and even at a known index each removal moves all after it, quadratic in their number.
             tag.hidden = True
-    return str(soup).strip()
+    try:
+        return str(soup).strip()
+    except RecursionError:
+        # The serialiser asks Tag.__eq__ whether a tag has closed, and it compares children recursively: tags nested
+        # some hundreds deep exhaust the stack. get_text() walks the elements in a loop; escaped as the serialiser
+        # escapes text, the text alone is safe.
+        return html.escape(soup.get_text(), quote=False).strip()
 
 
 def sanitize_rich_text_columns(instance, fields, *, update_fields=None) -> None:
