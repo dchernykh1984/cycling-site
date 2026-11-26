@@ -227,7 +227,8 @@ def write_start(race) -> None:
 
 def record_crossing(race, member, point: int, at: datetime, last: bool) -> bool:
     """One crossing of point 0 (the start-finish line) or a control point, written once; False when it is not the
-    race's to write -- no token, no bib, a point out of range, or a moment before the rider's start or ahead of now."""
+    race's to write -- no token, no bib, a point out of range, a moment before the rider's start or ahead of now, or
+    more crossings of the point than the rider has laps: a page sends one a lap, so a stream never grows past them."""
     if not writing(race) or not member.bib or not 0 <= point <= MAX_POINTS:
         return False
     start = race.start_at + timedelta(seconds=start_offset_s(race, member))
@@ -238,5 +239,7 @@ def record_crossing(race, member, point: int, at: datetime, last: bool) -> bool:
         row = _stream(FinishTimesUpload, race) if point == 0 else _stream(RemotePointUpload, race, point_number=point)
         if line in row.items:
             return True
+        if sum(item.startswith(f"{member.bib}#") for item in row.items) >= laps_of(member):
+            return False
         _replace(row, [*row.items, line])
     return True

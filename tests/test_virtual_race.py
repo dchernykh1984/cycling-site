@@ -225,6 +225,17 @@ class TimingTests(RaceTestCase):
         self.assertTrue(all(line.startswith("51#") and CLOCK.fullmatch(line.split("#")[1]) for line in finish_lines))
         self.assertEqual(len(self.stream(RemotePointUpload, point_number=1)), 1)
 
+    def test_a_rider_s_crossings_of_a_point_stop_at_their_laps(self):
+        group = self.make().json()["id"]
+        anna = self.rider("anna", self.women)  # two laps
+        self.join(anna, group)
+        self._start_now(group)
+        now = int(timezone.now().timestamp() * 1000)
+        self._ride(anna, group, [{"point": 0, "at_ms": now - k * 60_000} for k in range(1, 6)])
+        self._ride(anna, group, [{"point": 1, "at_ms": now - k * 60_000} for k in range(1, 6)])
+        self.assertEqual(len(self.stream(FinishTimesUpload)), 2)
+        self.assertEqual(len(self.stream(RemotePointUpload, point_number=1)), 2)
+
     def test_a_crossing_before_the_rider_s_start_or_ahead_of_now_is_not_written(self):
         group = self.make().json()["id"]
         anna = self.rider("anna", self.women)
