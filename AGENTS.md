@@ -47,6 +47,7 @@ Django 6 + Wagtail, three locales (ru / kk / en), deployed on Render at universa
 | `specs` | spec-driven development: the constitution, `specs/site/`, a feature from issue to spec, plan and code |
 | `interface` | how a page should look and behave -- phone first, nothing that jumps, qualities and patterns of the look, tap targets, fit, contrast -- and its checks |
 | `virtual-members` | people without accounts a member adds: the member's word, limits, adding hundreds from a list in one request, entering them for races, naming their bibs and handing them over to their own account or to another mentor |
+| `virtual-ride-routes` | building a route for the virtual ride as the real place is: the roads it meets and turns on, widths and lanes, the rider on the right, buildings and their floors, relief and the far view, tunnels, bridges, water and trees, sources and checks |
 
 ## Quick facts
 
