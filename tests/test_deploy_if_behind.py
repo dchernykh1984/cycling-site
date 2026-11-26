@@ -144,10 +144,12 @@ def test_a_check_started_again_counts_by_its_last_run():
     assert still_red.run() == 1
 
 
-def test_without_the_hook_nothing_is_deployed():
+def test_without_the_hook_nothing_is_deployed_and_the_run_names_what_is_missing(capsys):
     site = Site()
     assert site.run({"RENDER_DEPLOY_HOOK_URL": ""}) == 1
     assert site.deployed == []
+    # in words that hold on Render and on GitHub alike
+    assert "RENDER_DEPLOY_HOOK_URL, the web service's deploy hook, is not set" in capsys.readouterr().out
 
 
 def test_a_hook_that_refuses_turns_the_run_red_without_printing_its_address(capsys):

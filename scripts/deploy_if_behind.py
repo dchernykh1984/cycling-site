@@ -150,7 +150,7 @@ def run(
         return 1
     hook = env.get("RENDER_DEPLOY_HOOK_URL", "")
     if not hook:
-        print("::error::The production environment's secret RENDER_DEPLOY_HOOK_URL is not set; nothing deployed.")
+        print("::error::RENDER_DEPLOY_HOOK_URL, the web service's deploy hook, is not set; nothing deployed.")
         return 1
     try:
         deploy(hook, sha)
