@@ -68,12 +68,15 @@ function onResize() {
 }
 
 function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t; }
-function roadTexture(lanes) {
+// a road's surface and markings across its width: edge lines, and between its lanes a two-way road's centre line and
+// dashes; a one-way carriageway's lanes parted by dashes alone
+function roadTexture(lanes, oneway) {
   return canvasTex(256, 256, (g, w, h) => {
     g.fillStyle = '#3a3c3f'; g.fillRect(0, 0, w, h);
     const r = rng(7); for (let i = 0; i < 2600; i++) { const c = 40 + r() * 40 | 0; g.fillStyle = 'rgba(' + c + ',' + c + ',' + (c + 3) + ',.55)'; g.fillRect(r() * w, r() * h, 1 + r() * 2, 1 + r() * 2); }
     g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(w * .18, 0, w * .1, h); g.fillRect(w * .72, 0, w * .1, h);
     g.fillStyle = '#e9e9e2'; g.fillRect(4, 0, 4, h); g.fillRect(w - 8, 0, 4, h);
+    if (oneway) { for (let k = 1; k < lanes; k++) g.fillRect(w * k / lanes - 2, 0, 4, h * .4); return; }
     if (lanes >= 4) { g.fillRect(w / 2 - 5, 0, 3, h); g.fillRect(w / 2 + 2, 0, 3, h); } else if (lanes > 1) { g.fillRect(w / 2 - 2, 0, 4, h * .45); } // one lane, a racetrack's: no centre line
     const per = lanes / 2;
     for (let k = 1; k < per; k++) { const x1 = w / 2 * k / per, x2 = w - x1; g.fillRect(x1 - 2, 0, 4, h * .4); g.fillRect(x2 - 2, 0, 4, h * .4); }

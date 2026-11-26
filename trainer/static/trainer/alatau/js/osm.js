@@ -42,16 +42,16 @@ async function importOSMFile(file) {
 function rebuildMenuWorld() { showLoading(true); setTimeout(() => { world = null; renderMenu(); startMenu(); cam.init = false; cam.cinit = false; showLoading(false); }, 30); }
 
 // Подготовка зданий: метры, центр, радиус и сетка для быстрых проверок
-function prepOSM(arr) {
+function prepOSM(arr, colours) {
   const list = [], g = new Map(), cell = 40;
-  (arr || []).forEach(a => {
+  (arr || []).forEach((a, ai) => {
     if (!Array.isArray(a) || a.length < 8) return;
     const h = a[0] / 10, mh = a[1] / 10; if (mh > .5) return; // части зданий на высоте пропускаем
     const ring = []; for (let i = 2; i + 1 < a.length; i += 2) ring.push([a[i] / 10, a[i + 1] / 10]);
     if (ring.length < 3) return;
     let cx = 0, cz = 0; ring.forEach(p => { cx += p[0]; cz += p[1]; }); cx /= ring.length; cz /= ring.length;
     let r = 0; ring.forEach(p => { r = Math.max(r, Math.hypot(p[0] - cx, p[1] - cz)); });
-    const b = { ring, h: clamp(h, 3, 320), cx, cz, r }; list.push(b);
+    const b = { ring, h: clamp(h, 2.5, 320), cx, cz, r, c: colours && colours[ai] ? parseInt(colours[ai].slice(1), 16) : null }; list.push(b);
     const k = Math.floor(cx / cell) + ',' + Math.floor(cz / cell); (g.get(k) || g.set(k, []).get(k)).push(b);
   });
   return {
@@ -72,10 +72,10 @@ function ringGap(ring, x, z) {
   for (let i = 0; i < ring.length; i++) { const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length], dx = bx - ax, dz = bz - az, f = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1); best = Math.min(best, Math.hypot(x - ax - dx * f, z - az - dz * f)); }
   return best;
 }
-// a route's own buildings -- footprints in latitude and longitude with a height each, a map's data -- packed as
-// prepOSM reads a file's, in the route's metres
+// a route's own buildings -- footprints in latitude and longitude with a height each and a colour where OpenStreetMap
+// gives one, a map's data -- packed as prepOSM reads a file's, in the route's metres
 function routeBuildings(route, T) {
-  return prepOSM(route.buildings.map(b => [b.h * 10, 0].concat(...b.pts.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x * 10, q.z * 10]; }))));
+  return prepOSM(route.buildings.map(b => [b.h * 10, 0].concat(...b.pts.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x * 10, q.z * 10]; }))), route.buildings.map(b => b.c));
 }
 // Все здания маршрута — одна геометрия: стены, крыша, цвет фасада в вершинах
 function addOSMBuildings(grp, T, W, lms, osmB) {
@@ -91,7 +91,7 @@ function addOSMBuildings(grp, T, W, lms, osmB) {
     const base = terrainH(T, b.cx, b.cz) - 1.5, top = base + 1.5 + b.h;
     let area = 0; const R0 = b.ring; for (let i = 0; i < R0.length; i++) { const p = R0[i], q = R0[(i + 1) % R0.length]; area += p[0] * q[1] - q[0] * p[1]; }
     const R = area > 0 ? R0.slice().reverse() : R0; // обход, при котором нормали стен смотрят наружу
-    c.setHex(b.h > 45 ? glass : pal[(bi * 2654435761 >>> 0) % pal.length]);
+    c.setHex(b.c != null ? b.c : b.h > 45 ? glass : pal[(bi * 2654435761 >>> 0) % pal.length]);
     for (let i = 0; i < R.length; i++) {
       const p = R[i], q = R[(i + 1) % R.length], ex = q[0] - p[0], ez = q[1] - p[1], L = Math.hypot(ex, ez) || 1, nx = -ez / L, nz = ex / L;
       push(p[0], base, p[1], nx, 0, nz); push(q[0], base, q[1], nx, 0, nz); push(q[0], top, q[1], nx, 0, nz);
