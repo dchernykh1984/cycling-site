@@ -140,35 +140,60 @@ def test_the_road_onto_a_bridge_over_the_route_climbs_onto_its_deck(page: Page, 
     assert not faults, faults
 
 
-@pytest.mark.django_db(transaction=True)
-def test_a_slip_road_from_a_bridge_s_end_into_the_route_starts_at_the_deck_s_height(page: Page, live_server):
-    # a road north, a road bridge across it, and from the bridge's end, 12 m off the route's middle, a slip road
-    # that runs on 200 m into the route: only its last metres come down to the route, not its start by the deck
+# A made-up route north, 1 km on the flat, with road bridges across it and roads round them, given in metres east
+# and north of its start; what it answers is, for each place asked about, how far the road nearest a bridge's deck
+# stands from the deck's height there.
+_BRIDGES = """({ over, roads, ends }) => {
+  if (!scene) {
+    scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+  }
+  const named = { ru: 'n', kk: 'n', en: 'n' }, lat0 = 43.2, lon0 = 76.9;
+  const at = ([east, north]) => [lat0 + north / 111195, lon0 + east / (111320 * Math.cos(lat0 * Math.PI / 180))];
+  const route = { id: 'bridges-test', name: named, desc: named, loop: false, width: 10, lanes: 2, scenery: 'city',
+    pts: [[...at([0, 0]), 800], [...at([0, 500]), 800], [...at([0, 1000]), 800]],
+    over: over.map(pts => ({ w: 8, pts: pts.map(at) })), roads: roads.map(pts => ({ w: 6, pts: pts.map(at) })) };
+  addMap({ id: 'bridges-test', name: named, origin: { lat: lat0, lon: lon0 }, routes: [route] });
+  const T = buildWorld(ROUTES.find(r => r.id === 'bridges-test')).T;
+  const deck = overDecks(T, route.width, route.over)[0].deck;
+  const p = scenery.children.find(m => m.name === 'roads').geometry.attributes.position;
+  return ends.map(e => {
+    const q = xzOf(T, at(e));
+    let gap = Infinity;
+    for (let i = 0; i < p.count; i++) {
+      if (Math.hypot(p.getX(i) - q.x, p.getZ(i) - q.z) < 5) gap = Math.min(gap, Math.abs(p.getY(i) - deck));
+    }
+    return gap;
+  });
+}"""
+
+
+def _bridges(page: Page, live_server, **made) -> list[float]:
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
     page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildWorld === 'function'")
-    gap = page.evaluate(
-        """() => {
-          if (!scene) {
-            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
-          }
-          const named = { ru: 'n', kk: 'n', en: 'n' }, lat0 = 43.2, lon0 = 76.9;
-          const at = (east, north) => [lat0 + north / 111195, lon0 + east / (111320 * Math.cos(lat0 * Math.PI / 180))];
-          const route = { id: 'slip-test', name: named, desc: named, loop: false, width: 10, lanes: 2, scenery: 'city',
-            pts: [[...at(0, 0), 800], [...at(0, 500), 800], [...at(0, 1000), 800]],
-            over: [{ w: 8, pts: [at(-12, 300), at(12, 300)] }],
-            roads: [{ w: 6, pts: [at(12, 300), at(40, 380), at(6, 500)] }] };
-          addMap({ id: 'slip-test', name: named, origin: { lat: lat0, lon: lon0 }, routes: [route] });
-          const w = buildWorld(ROUTES.find(r => r.id === 'slip-test')), T = w.T, end = xzOf(T, at(12, 300));
-          const deck = overDecks(T, route.width, route.over)[0].deck, p = scenery.children.find(m => m.name === 'roads')
-            .geometry.attributes.position;
-          let best = Infinity;
-          for (let i = 0; i < p.count; i++) {
-            if (Math.hypot(p.getX(i) - end.x, p.getZ(i) - end.z) < 5) best = Math.min(best, Math.abs(p.getY(i) - deck));
-          }
-          return best;
-        }"""
+    return page.evaluate(_BRIDGES, made)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_slip_road_from_a_bridge_s_end_into_the_route_starts_at_the_deck_s_height(page: Page, live_server):
+    # from the bridge's end, 12 m off the route's middle, a slip road runs on 200 m into the route: only its last
+    # metres come down to the route, not its start by the deck
+    gaps = _bridges(
+        page, live_server, over=[[[-12, 300], [12, 300]]], roads=[[[12, 300], [40, 380], [6, 500]]], ends=[[12, 300]]
     )
-    assert gap < 0.3, gap
+    assert gaps[0] < 0.3, gaps
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_road_between_two_bridges_meets_each_at_its_deck(page: Page, live_server):
+    # two bridges 40 m apart and a road between their ends: it takes the ramp of each, not only of the first it met
+    gaps = _bridges(
+        page,
+        live_server,
+        over=[[[-12, 300], [12, 300]], [[-12, 340], [12, 340]]],
+        roads=[[[12, 300], [12, 340]]],
+        ends=[[12, 300], [12, 340]],
+    )
+    assert max(gaps) < 0.3, gaps
 
 
 @pytest.mark.django_db(transaction=True)
