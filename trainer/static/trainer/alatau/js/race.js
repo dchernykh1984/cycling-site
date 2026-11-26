@@ -114,6 +114,7 @@ function startRace() {
     raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
     applyLook('clean'); setView(settings.view, true); Trainer.sent = Trainer.held = null; drawProfileBase(); updateModeUI(); showLoading(false);
+    trainerSaid = null; // each ride says once why its trainer does not ride the route
     last = performance.now(); // the next frame counts from here: the time the course took to build is not the countdown's
     try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (e) {}
   }, 30);
