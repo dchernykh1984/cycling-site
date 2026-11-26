@@ -78,7 +78,7 @@ function renderStartSum() {
   if (heavyRoute(r) && matchMedia('(pointer: coarse)').matches) { const n = document.createElement('small'); n.className = 'heavy'; n.textContent = t('route.heavy'); el.appendChild(n); }
 }
 // A route this full of buildings and streets may draw slowly on a phone, which is told so (specs/495-virtual-race):
-// Granfondo 2026 has some 1400 of them, the next route under 300
+// Granfondo 2026, the Medeu climb and the centre's loop have 1000 to 1400 of them, the others under 700
 const HEAVY_SCENERY = 800, heavyRoute = r => (r.buildings || []).length + (r.roads || []).length > HEAVY_SCENERY;
 // страница 2: заезд
 function startRace() {
