@@ -23,6 +23,7 @@ from pydantic import SecretStr, field_validator
 from accounts import roles
 from accounts.access import needs_email_confirmation
 from api.auth import OptionalApiTokenAuth, member_auth
+from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from calendar_app.visibility import is_public, public_events
 from trainer import intervals, live, race, records, services, strava
@@ -274,7 +275,7 @@ class MemberOut(Schema):
 
 class RaceEventOut(Schema):
     id: int
-    title: str
+    title: LocalizedStr  # in ru, kk and en: the page names it in its own language
     url: str
 
 
@@ -407,7 +408,9 @@ def _member(user, membership: GroupRideMember | None = None) -> MemberOut:
 
 
 def _event_out(competition: Competition) -> RaceEventOut:
-    return RaceEventOut(id=competition.pk, title=competition.title, url=competition.get_absolute_url())
+    return RaceEventOut(
+        id=competition.pk, title=localize_field(competition, "title"), url=competition.get_absolute_url()
+    )
 
 
 def _group_out(group: GroupRide, user) -> GroupOut:

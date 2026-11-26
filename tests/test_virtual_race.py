@@ -71,6 +71,8 @@ class MakingARaceTests(RaceTestCase):
         self.assertEqual(made.status_code, 201, made.content)
         body = made.json()
         self.assertEqual(body["event"]["id"], self.event.pk)
+        # its title in every language, for the page to name it in its own
+        self.assertEqual(set(body["event"]["title"]), {"ru", "kk", "en"})
         self.assertEqual((body["mode"], body["itt_interval_s"], body["draft_between_groups"]), ("itt", 45, False))
         # the organizer is not registered: they host the race without riding it
         self.assertEqual((body["is_host"], body["is_member"], body["members"]), (True, False, []))

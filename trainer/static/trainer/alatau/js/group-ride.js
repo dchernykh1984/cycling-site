@@ -46,7 +46,7 @@ async function mpLoadEvents() {
   try { MP.events = await Site.get('/events'); } catch (e) { MP.events = []; }
   const sel = $('#mpRaceEvent'); if (!sel) return;
   [...sel.options].slice(1).forEach(o => o.remove());
-  MP.events.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.title + ' (' + new Date(ev.date_start + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }) + ')'; sel.appendChild(o); });
+  MP.events.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = L(ev.title) + ' (' + new Date(ev.date_start + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }) + ')'; sel.appendChild(o); });
   $('#mpRaceBox').classList.toggle('hidden', !MP.events.length); renderRaceOpts();
 }
 // the race's settings once an event is chosen: a gap between categories in a group race, an interval in a time trial
@@ -254,9 +254,13 @@ function renderMP() {
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
     if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
     card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
-    // a race with protocols: its event, a time trial said so, and the member's own bib, category, laps and start
-    const race = g.event ? t('mp.raceOf', { title: g.event.title }) + (g.mode === 'itt' ? t('mp.raceItt') : '') + (g.me ? t('mp.raceMe', { bib: g.me.bib, group: g.me.group, laps: g.me.laps }) + (g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : '') : '') : '';
-    card.querySelector('small').textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '') + race;
+    const small = card.querySelector('small');
+    small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
+    if (g.event) { // a race with protocols: its event, linked; a time trial said so; the member's own bib, category, laps and start
+      const [before, after] = t('mp.raceOf', { title: '\u0000' }).split('\u0000'), a = document.createElement('a');
+      a.href = langPath(g.event.url); a.target = '_top'; a.textContent = L(g.event.title);
+      small.append(before, a, after + (g.mode === 'itt' ? t('mp.raceItt') : '') + (g.me ? t('mp.raceMe', { bib: g.me.bib, group: g.me.group, laps: g.me.laps }) + (g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : '') : ''));
+    }
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }

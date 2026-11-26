@@ -93,7 +93,8 @@ _A_RACE = """offset => {
     MP.groups = [{ id: 9, route: 'center', route_name: 'Center', host, is_host: false, is_member: true,
         members: [{ user_id: 1, name: 'Anna', bib: '51' }], cancelled: false, wind_ms: 0, wind_from_deg: 0,
         start_at: new Date(Date.now() + 2000).toISOString(),
-        event: { id: 3, title: 'Winter Cup', url: '/en/calendar/3/' }, mode: 'group', group_gap_s: 0,
+        event: { id: 3, title: { ru: 'Zimnii kubok', kk: 'Qysqy kubok', en: 'Winter Cup' }, url: '/ru/calendar/3/' },
+        mode: 'group', group_gap_s: 0,
         itt_interval_s: 30, draft_between_groups: false, loop: true,
         me: { bib: '51', group: 'Women', laps: 3, start_offset_s: offset } }];
 }"""
@@ -170,7 +171,8 @@ def test_an_organizer_sets_a_race_up_for_their_event(page: Page, live_server):
     page.evaluate(
         """async () => {
             Site.get = async path => path === '/events'
-                ? [{ id: 3, title: 'Winter Cup', url: '/en/calendar/3/', date_start: '2026-12-20' }] : [];
+                ? [{ id: 3, title: { ru: 'Zimnii kubok', kk: 'Qysqy kubok', en: 'Winter Cup' }, url: '/ru/calendar/3/',
+                     date_start: '2026-12-20' }] : [];
             await mpLoadEvents();
         }"""
     )
@@ -212,7 +214,11 @@ def test_a_race_card_names_its_event_and_each_rider_s_bib(page: Page, live_serve
     page.evaluate(_A_RACE, 0)
     page.evaluate("MP.status = 'on'; MP.groups[0].start_at = new Date(Date.now() + 600e3).toISOString(); renderMP()")
     card = page.locator("#mpGroups .mp-group small")
+    # its event in the page's language, linked to the event's page in that language, out of the trainer's frame
     expect(card).to_contain_text("Event: Winter Cup.")
+    link = card.get_by_role("link", name="Winter Cup")
+    expect(link).to_have_attribute("href", "/en/calendar/3/")
+    expect(link).to_have_attribute("target", "_top")
     expect(card).to_contain_text("Anna #51")
     expect(card).to_contain_text("Your bib 51, Women, laps: 3.")
 
