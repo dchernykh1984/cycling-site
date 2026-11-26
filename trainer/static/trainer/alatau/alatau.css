@@ -242,7 +242,8 @@ button{cursor:pointer}
 .sl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:12.5px;margin:8px 0;color:#C9D3DD}
 .sl input{grid-column:1/-1;width:100%;accent-color:var(--apple)}
 /* the whole row takes the tap, 44 px high as every control a finger reaches */
-.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:0;min-height:44px;cursor:pointer}
+/* as wide as its box and words: a row across the page turned the wind on from a click far from its words */
+.chk{display:flex;width:fit-content;max-width:100%;gap:8px;align-items:center;font-size:13px;margin:0;min-height:44px;cursor:pointer}
 #photoUI .btn{width:100%;margin-top:8px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#F3F6F9}
 #photoUI .btn.primary{background:var(--apple);border-color:var(--apple);font-size:15px;padding:12px}
 #stamp{position:fixed;z-index:9;left:calc(env(safe-area-inset-left,0px) + 18px);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
