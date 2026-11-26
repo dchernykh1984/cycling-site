@@ -1,16 +1,17 @@
 """Deploy main to the host when the site runs another commit and main is green (issue #153).
 
-Run by .github/workflows/deploy.yml, at night and by hand. The site names the commit it runs at
-/api/v1/version/; the host's deploy hook takes the commit to deploy as ``ref``. "Green" is every
-workflow main's push of the commit started -- CI, the Dropbox check, any added later -- ending in
-success (or skipped). A check still running is waited for; one that is red, or one that never
-finishes, deploys nothing. A scheduled run that starts outside its window deploys nothing either:
-the schedule asks for one every hour around the window, and the first inside it deploys. The run
-then waits until the site names the new commit, so a deploy that fails or never starts turns the
-workflow red instead of passing unseen.
+Run at night by a Render Cron Job (render.yaml), and by .github/workflows/deploy.yml: its schedule is
+the fallback for a night the cron deployed nothing, and "Run workflow" deploys by hand. The site
+names the commit it runs at /api/v1/version/; the host's deploy hook takes the commit to deploy as
+``ref``. "Green" is every workflow main's push of the commit started -- CI, the Dropbox check, any
+added later -- ending in success (or skipped). A check still running is waited for; one that is
+red, or one that never finishes, deploys nothing. A night run that starts outside its window
+deploys nothing either. The run then waits until the site names the new commit, so a deploy that
+fails or never starts turns the run red instead of passing unseen.
 
-Environment: GITHUB_REPOSITORY, GITHUB_TOKEN, SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for scheduled
-runs DEPLOY_WINDOW_UTC ("21:00-01:00": when a run may still deploy).
+Environment: GITHUB_REPOSITORY, GITHUB_TOKEN (without it GitHub answers 60 requests an hour per
+address), SITE_BASE_URL, RENDER_DEPLOY_HOOK_URL, and for the night runs DEPLOY_WINDOW_UTC
+("21:00-01:00": when a run may still deploy).
 """
 
 import json
