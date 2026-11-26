@@ -858,7 +858,7 @@ def create_group(request, payload: GroupIn):
     summary="Events I may make a race with protocols for",
 )
 def race_events(request):
-    """The member's own approved events that are not over (every such event for an admin), soonest first."""
+    """The member's own public events that are not over (every such event for an admin), soonest first."""
     today = timezone.localdate()
     events = public_events().exclude(date_end__lt=today)
     events = events.filter(date_start__gte=today) | events.filter(date_end__gte=today)
