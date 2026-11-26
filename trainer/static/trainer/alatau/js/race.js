@@ -87,7 +87,7 @@ function startRace() {
     $('#gl').classList.remove('hidden'); onResize();
     if (!world || world.route.id !== route.id) buildWorld(route);
     world.lms.forEach(l => { l.done = false; });
-    me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, Math.min(3.2, route.width / 2 - 1.5)));
+    me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, keepLane(route.width)));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     stravaShow(null, null); intervalsShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';

@@ -63,11 +63,16 @@ class MapsTests(SimpleTestCase):
         self.assertTrue(routes)
         for route in routes:
             self.assertGreaterEqual(len(route["pts"]), 2, route["id"])
+            # a fourth value is the rider's line, metres right of the road's middle: on the road, every point or none
+            lined = {len(point) for point in route["pts"]}
+            self.assertIn(lined, ({3}, {4}), route["id"])
             for point in route["pts"] + route.get("extend", []):
-                self.assertEqual(len(point), 3, route["id"])
-                lat, lon, _ = point
+                lat, lon = point[:2]
                 self.assertTrue(all(isinstance(n, Real) for n in point), route["id"])
                 self.assertTrue(-90 <= lat <= 90 and -180 <= lon <= 180, route["id"])
+                if len(point) == 4:
+                    self.assertLessEqual(abs(point[3]), route["width"] / 2, route["id"])
+            self.assertIsInstance(route.get("oneway", False), bool)
             self.assertIsInstance(route["loop"], bool)
             self.assertIn(route["scenery"], SCENERIES)
             self.assertTrue(route["width"] > 0 and route["lanes"] > 0, route["id"])
@@ -134,7 +139,7 @@ class MapsTests(SimpleTestCase):
             self.assertTrue(all(isinstance(h, int) and -430 <= h <= 8849 for h in heights), folder)
             south, east = north + dlat * (rows - 1), west + dlon * (cols - 1)
             for route in data.get("routes", []):
-                for lat, lon, _ in route["pts"]:
+                for lat, lon, *_ in route["pts"]:
                     self.assertTrue(south + 0.18 < lat < north - 0.18 and west + 0.25 < lon < east - 0.25, route["id"])
 
     def test_a_sight_stands_at_a_place(self):

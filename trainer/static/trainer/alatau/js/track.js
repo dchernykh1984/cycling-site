@@ -29,7 +29,25 @@ function buildTrack(r) {
   }
   const C = { x: Float32Array.from(cx), z: Float32Array.from(cz), y: Float32Array.from(cy), d: Float32Array.from(cd) };
   const L = D[N - 1], { again, over } = ridden(X, Z, D, L, !!r.loop, r.width || 8);
-  return { route: r, origin: O, N, X, Y, Z, D, L, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over };
+  // where each of the route's points lies along it: its bridges and tunnels are stretches between two of them
+  const ptS = new Float64Array(v.length);
+  for (let k = 0, j = 0; k < v.length; k++) {
+    let best = Infinity, bj = j;
+    for (let m = j; m < Math.min(N, j + 600); m++) { const d = (X[m] - v[k].x) ** 2 + (Z[m] - v[k].z) ** 2; if (d < best) { best = d; bj = m; } }
+    ptS[k] = D[bj]; j = bj;
+  }
+  // a point's fourth value is the rider's line: metres right of the road's middle, the source track's way through
+  // a corner it took by the apex (js/maps.js)
+  let line = null;
+  if (!r.osm && src.every(p => p.length > 3)) {
+    line = new Float32Array(N);
+    for (let i = 0, k = 0; i < N; i++) {
+      while (k + 1 < src.length && ptS[k + 1] <= D[i]) k++;
+      const k2 = k + 1 < src.length ? k + 1 : (r.loop ? 0 : k), s1 = k2 > k ? ptS[k2] : L, f = s1 > ptS[k] ? clamp((D[i] - ptS[k]) / (s1 - ptS[k]), 0, 1) : 0;
+      line[i] = src[k][3] + (src[k2][3] - src[k][3]) * f;
+    }
+  }
+  return { route: r, origin: O, N, X, Y, Z, D, L, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
 }
 // Where a route comes back onto road it rode before -- out and back along one road, a loop round a turn: again[i]
 // is 1 where point i lies on the road of a stretch ridden earlier (its own lane apart), over[i] how many earlier
@@ -64,6 +82,7 @@ function sampleAt(T, s, o) {
   o.x = T.X[lo] + (T.X[hi] - T.X[lo]) * f; o.y = T.Y[lo] + (T.Y[hi] - T.Y[lo]) * f; o.z = T.Z[lo] + (T.Z[hi] - T.Z[lo]) * f;
   let tx = T.X[hi] - T.X[lo], tz = T.Z[hi] - T.Z[lo]; const l = Math.hypot(tx, tz) || 1; o.tx = tx / l; o.tz = tz / l;
   o.rx = -o.tz; o.rz = o.tx; // вправо по ходу
+  o.line = T.line ? T.line[lo] + (T.line[hi] - T.line[lo]) * f : null;
   return o;
 }
 const _ga = {}, _gb = {};
@@ -91,8 +110,18 @@ function routeGap(T, x, z) {
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const i of T.grid.get((cx + a) + ',' + (cz + b)) || []) best = Math.min(best, Math.hypot(T.X[i] - x, T.Z[i] - z));
   return best <= ROUTE_CELL ? best : Math.min(best, nearest(T, x, z).d);
 }
+// The lane a rider keeps on a road this wide: the right one, a metre and a half in from the edge
+const keepLane = W => Math.min(3.2, W / 2 - 1.5);
+// how far right of the road's middle a rider rides at the place o (a sample of the track): their lane; on a route
+// that carries its rider's line, that line -- the apex of a corner taken by it -- with a bunch spread round it as round
+// the right lane, all within the road's edges
+function laneOf(R, o) {
+  if (o.line == null) return R.lane;
+  const W = world.T.route.width;
+  return clamp(o.line + R.lane - keepLane(W), -W / 2 + .6, W / 2 - .6);
+}
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
-function riderPos(R, out) { const o = sampleAt(world.T, R.s, out); o.px = o.x + o.rx * R.lane; o.pz = o.z + o.rz * R.lane; return o; }
+function riderPos(R, out) { const o = sampleAt(world.T, R.s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each
