@@ -39,6 +39,9 @@ class BLEDev {
     this.dev = dev; this.name = dev.name || t('dev.unnamed'); this.roles = new Set(); this.status = 'connecting'; this.retries = 0; this.ls = new WeakSet();
     this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
     this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false; this.ergRange = null;
+    // refused: the trainer answered this connection's last grade with a refusal (FTMS: op code not supported, invalid
+    // parameter, operation failed, control not permitted), so its resistance is not the route's
+    this.refused = false;
   }
   role(r) { if (!this.roles.has(r)) { this.roles.add(r); Sensors.changed(); } }
   async svc(server, u) { try { return await server.getPrimaryService(u); } catch (e) { return null; } }
@@ -49,6 +52,7 @@ class BLEDev {
   }
   async connect() {
     this.link = (this.link || 0) + 1; // each connection is told apart, so an answer from the last one is not taken for this one's
+    this.refused = false; // nor a refusal: a trainer connected again has refused nothing yet
     const server = await this.dev.gatt.connect();
     const ftms = await this.svc(server, UUID.ftms), cp = await this.svc(server, UUID.cp), csc = await this.svc(server, UUID.csc), hr = await this.svc(server, UUID.hr);
     if (ftms) {
@@ -276,26 +280,24 @@ const Sensors = {
 // сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG
 // on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it.
 // A change of the rider's wind resistance (a wake ahead, the air higher up) or of the wind against them (the road
-// turning) is sent as a change of the grade is; cw and wind are the last ones sent, in the 0.01 kg/m and 0.5 m/s steps.
-// refused: the trainer answered the last grade with a refusal (FTMS: op code not supported, invalid parameter,
-// operation failed, control not permitted), so its resistance is not the route's
+// turning) is sent as a change of the grade is; cw and wind are the last ones sent, in the 0.01 kg/m and 0.5 m/s steps
 const Trainer = {
-  last: -10, sent: null, held: null, cw: null, wind: null, refused: false,
+  last: -10, sent: null, held: null, cw: null, wind: null,
   update(t, grade, rider, watts) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
     if (t - this.last < 1) return;
     if (watts != null && d.ergRange) {
       if (this.held !== null && Math.abs(watts - this.held) < 1 && t - this.last < 5) return;
-      this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) { this.held = watts; this.refused = false; } }); return;
+      this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) { this.held = watts; d.refused = false; } }); return;
     }
     const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100), wind = Math.round(drag.wind * 2);
     if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && wind === this.wind && t - this.last < 5) return;
-    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.wind = wind; this.held = null; this.refused = false; } else if (d.answer > 1) this.refused = true; });
+    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.wind = wind; this.held = null; d.refused = false; } else if (d.answer > 1) d.refused = true; });
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
   // why a trainer that is connected does not ride the route: 'control' when it gave no control (another app or a
   // bike computer has it), 'refused' when it refuses the grade; null while it rides it, reconnects or is not there
-  trouble() { const d = Sensors.trainer(); if (!d || d.status !== 'online') return null; return !d.ctrl ? 'control' : this.refused ? 'refused' : null; },
+  trouble() { const d = Sensors.trainer(); if (!d || d.status !== 'online') return null; return !d.ctrl ? 'control' : d.refused ? 'refused' : null; },
   canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }
 };
 function isIOS() { return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
