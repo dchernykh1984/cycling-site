@@ -7,11 +7,32 @@ function disposeWorld() {
   scenery.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat || m === osmMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
   scenery = null; world = null;
 }
+// The map's SRTM ground at (x, z) on the route's metres, or null outside its grid: a detail grid where one covers
+// the place, else the map's own (js/maps.js)
+function reliefAt(T, x, z) {
+  const rel = mapOf(T.route).relief;
+  if (!rel) return null;
+  const { lat, lon } = unproj(x, z, T.origin);
+  for (const g of (rel.detail || []).concat([rel])) {
+    const [la0, dla, nr] = g.lat, [lo0, dlo, nc] = g.lon, fi = (lat - la0) / dla, fj = (lon - lo0) / dlo;
+    if (fi < 0 || fj < 0 || fi > nr - 1 || fj > nc - 1) continue;
+    const i = Math.min(nr - 2, Math.floor(fi)), j = Math.min(nc - 2, Math.floor(fj)), u = fi - i, v = fj - j, H = g.h;
+    return H[i * nc + j] * (1 - u) * (1 - v) + H[(i + 1) * nc + j] * u * (1 - v) + H[i * nc + j + 1] * (1 - u) * v + H[(i + 1) * nc + j + 1] * u * v;
+  }
+  return null;
+}
+// A route's land: under the road a little below it, and away from it, over 80 to 580 m, the ground SRTM has there --
+// the hills and slopes round a city's or the steppe's roads (a gorge keeps its own walls)
+const RELIEF_FROM = 80, RELIEF_OVER = 500;
 function terrainH(T, x, z) {
   const n = nearest(T, x, z); let h = n.y - 1.2;
   // beside a tunnel's ramps the land keeps its level: the road goes down into a cutting, the ground does not
   const cut = T.route.tunnels ? cutGround(T, n.s) : null;
   if (cut != null) h += (cut - n.y) * clamp((n.d - T.route.width / 2 - 2) / 26, 0, 1);
+  if (T.route.scenery !== 'gorge') {
+    const far = n.d > T.route.width / 2 + RELIEF_FROM ? reliefAt(T, x, z) : null;
+    if (far != null) { const k = clamp((n.d - T.route.width / 2 - RELIEF_FROM) / RELIEF_OVER, 0, 1); h += (far - 1.2 - h) * k * k * (3 - 2 * k); }
+  }
   if (T.route.scenery === 'gorge') {
     if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
   } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
