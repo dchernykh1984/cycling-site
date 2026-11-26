@@ -168,7 +168,8 @@ from the menu too, so a rider gone back at once still sends their finish -- and 
 the categories' starts and the crossings into the event's timing streams as the device `virtual-race-<id>`, for
 FinishProtocolGenerator's "Get data from site"; only while the event keeps its upload token, which never reaches a
 rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`). On a phone (a coarse pointer)
-the start's summary says a route with many buildings and streets (Granfondo 2026) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
+the start's summary says a route with many buildings and streets (Granfondo 2026, the Medeu climb, the centre's
+loop) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
 height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu; a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
@@ -222,10 +223,9 @@ buildings with their heights and, where known, colours; the roads it meets and p
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it; roads under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
 down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
-none inside them; power
-lines on towers or poles, their wires sagging high over the road, and railways and rivers,
-as far as a rider sees them; canals and ponds; trees in rows,
-woods, parks and alone. Between a dual carriageway's two halves lies their median -- a pavement each way where it is
+none inside them; power lines on towers or poles, their wires sagging high over the road, and railways and rivers,
+as far as a rider sees them; canals and ponds; trees in rows, woods, parks and alone. Every route carries them, the
+ones made before the tools too (`scripts/virtual_ride/`, the `virtual-ride-routes` skill). Between a dual carriageway's two halves lies their median -- a pavement each way where it is
 wide, a concrete barrier down a narrow one -- and one road ridden twice has one height, the barometer's lag up and
 down a slope evened out. Where a route's points carry the rider's line, the rider rides it -- the source track's
 way through a corner it took by the apex, the right lane elsewhere -- with the bunch round it and the camera on it,

@@ -112,7 +112,8 @@ phone is told so, and a route is lightened only without losing quality.
   no slope, and one study finds no effect.
 - **FR-007**: A rider's bib is drawn on their kit; the page shows the race's event and each rider's bib.
 - **FR-008**: On a phone (a coarse pointer) the start's summary says a route with many buildings and streets (more
-  than 800 together: Granfondo 2026 has about 1400, the next route under 300) may run slowly.
+  than 800 together: Granfondo 2026, the Medeu climb and the centre's loop have 1000 to 1400, the others under
+  700) may run slowly.
 - **FR-009**: Every operation is in the API (`/api/v1/virtual-ride/groups`, `/presence`) with its tests.
 
 ## Formats (what FinishProtocolGenerator reads)

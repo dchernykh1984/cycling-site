@@ -101,6 +101,12 @@ give the same data byte for byte.
    then in a browser: its start, every turn, the tunnel, under each footbridge, sideways at each sight, and from above
    round the sights.
 
+A route made before these tools (Almaty's four, Kyrbaltabay -- Tuganbay, the Sokol Racetrack) got what stands round it
+with `surround_existing.py map.js osm.json id [keep,...]`: its own bridges and tunnels found from OSM, points put in
+along them so a stretch begins and ends where they do, `surroundings.py`, a tunnel's profile as `finish.py` lays it,
+and the entry written where it stands. Sokol keeps its buildings and trees (`buildings,trees`), set by hand. Rerun
+from the maps before it on the same extracts, it gives the same files byte for byte.
+
 Sights for a route: a sight that spreads over the land (a cable car, ski jumps) stands each of its parts on the land
 under it and marks them (`userData.stands`); its `reach` keeps it to the routes it stands on drawn land for. A hill a
 sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m apart, through OpenTopoData).

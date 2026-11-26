@@ -233,6 +233,6 @@ def test_a_phone_is_told_a_heavy_route_may_run_slowly(page: Page, live_server):
     )
     page.evaluate("renderStartSum()")
     expect(notice).to_have_text("May run slowly on a phone: many buildings and streets.")
-    # a route of a few streets is not heavy
-    page.evaluate("routeSel = 'center'; renderStartSum()")
+    # a racetrack with a few buildings round it is not heavy
+    page.evaluate("routeSel = 'sokol'; renderStartSum()")
     expect(notice).to_have_count(0)
