@@ -482,9 +482,11 @@ class SanitizeRichHtmlTests(SimpleTestCase):
 
     def test_a_line_of_tags_nested_too_deep_to_write_back_comes_back_as_its_escaped_text(self):
         # Writing tags back asks whether one has closed by comparing tags recursively: 600 nested ran out of stack,
-        # a 500 on a description's save and a failed draw for a protocol header line.
-        out = sanitize_rich_html("<b>" * 600 + "x&lt;y</b>" * 600, allow_img=True)
-        self.assertEqual(out, "x&lt;y" * 600)
+        # a 500 on a description's save and a failed draw for a protocol header line. Escaped as bs4 escapes text,
+        # quotes kept, and stripped, it cleans to itself on the next save.
+        out = sanitize_rich_html(' "a" ' + "<b>" * 600 + "x&lt;y</b>" * 600 + " ", allow_img=True)
+        self.assertEqual(out, '"a" ' + "x&lt;y" * 600)
+        self.assertEqual(sanitize_rich_html(out, allow_img=True), out)
 
     def test_hidden_images_without_a_safe_src_do_not_stop_a_deep_line_from_coming_back(self):
         # A hidden image stays among its parent's children, so that comparison went deeper than with the image
