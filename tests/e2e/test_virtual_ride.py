@@ -1185,26 +1185,34 @@ def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, 
             const named = { ru: 'n', kk: 'n', en: 'n' };
             const flat = { id: 'flat', name: named, desc: named, loop: false, width: 9, lanes: 2, scenery: 'city',
                            pts: [[51.17, 71.43, 350], [51.17, 71.4443, 350]] };
+            const high = Object.assign({}, flat, { id: 'high' });
             addMap({ id: 'steppe', name: named, origin: { lat: 51.16, lon: 71.43 }, routes: [flat] });
+            addMap({ id: 'foothills', name: named, origin: { lat: 51.16, lon: 71.43 }, mountains: { south: 20000 },
+                     routes: [high] });
             const wide = o => o.name === 'range'; // addMountains
             const range = id => {
                 buildWorld(ROUTES.find(r => r.id === id));
                 let n = 0; scenery.traverse(o => { if (wide(o)) n++; }); return n;
             };
-            return { almaty: range('center'), steppe: range('flat') };
+            return { foothills: range('high'), steppe: range('flat') };
         }"""
     )
-    assert ranges == {"almaty": 1, "steppe": 0}
+    assert ranges == {"foothills": 1, "steppe": 0}
 
 
 @pytest.mark.django_db(transaction=True)
 def test_a_range_runs_on_past_where_the_view_reaches(page: Page, live_server):
     """Ridden back towards Kyrbaltabay, the range ended in view on the left: 90 km long, it stopped 45 km east of the
-    origin while the real one goes on. It runs 150 km either way now."""
+    origin while the real one goes on. A map without its relief raises one 150 km either way now."""
     _trainer_in_its_menu(page, live_server)
     reach = page.evaluate(
         """() => {
-            buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay'));
+            const named = { ru: 'n', kk: 'n', en: 'n' };
+            const road = { id: 'road', name: named, desc: named, loop: false, width: 8, lanes: 2, scenery: 'steppe',
+                           pts: [[43.6, 77.4, 550], [43.6, 77.4124, 550]] };
+            addMap({ id: 'plain', name: named, origin: { lat: 43.6, lon: 77.4 }, mountains: { south: 30000 },
+                     routes: [road] });
+            buildWorld(ROUTES.find(r => r.id === 'road'));
             const range = scenery.children.find(o => o.name === 'range');
             range.geometry.computeBoundingBox();
             const box = range.geometry.boundingBox;
@@ -1212,6 +1220,34 @@ def test_a_range_runs_on_past_where_the_view_reaches(page: Page, live_server):
         }"""
     )
     assert reach[0] <= -150 and reach[1] >= 150, reach
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_map_s_relief_stands_where_srtm_has_it_and_sinks_under_the_scenery_s_ground(page: Page, live_server):
+    """The land beyond the scenery is the map's SRTM relief: the snowy range where it really rises, south of
+    Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches; under the scenery's own
+    ground it sinks out of the way, so the near ground and its trees are the scenery's."""
+    _trainer_in_its_menu(page, live_server)
+    seen = page.evaluate(
+        """() => {
+            const T = buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay')).T;
+            const relief = scenery.children.find(o => o.name === 'relief'), a = relief.geometry.attributes.position;
+            let poking = 0, top = { y: -1e9, z: 0 }, minX = 1e9, maxX = -1e9;
+            const x0 = T.minX - 1600, x1 = T.maxX + 1600, z0 = T.minZ - 1600, z1 = T.maxZ + 1600;
+            for (let i = 0; i < a.count; i++) {
+                const x = a.getX(i), y = a.getY(i), z = a.getZ(i);
+                if (x > x0 && x < x1 && z > z0 && z < z1 && y > T.minY - 39) poking++;
+                if (y > top.y) top = { y, z };
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            }
+            const ranges = scenery.children.filter(o => o.name === 'range').length;
+            return { poking, top: Math.round(top.y), south: Math.round(top.z / 1000), west: Math.round(minX / 1000),
+                     east: Math.round(maxX / 1000), ranges };
+        }"""
+    )
+    assert seen["poking"] == 0 and seen["ranges"] == 0, seen
+    assert seen["top"] > 3000 and seen["south"] > 20, seen
+    assert seen["west"] < -100 and seen["east"] > 100, seen
 
 
 @pytest.mark.django_db(transaction=True)
