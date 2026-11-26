@@ -113,6 +113,15 @@ class JoiningTests(RaceTestCase):
         # the range is used up: the next rider is told so
         self.assertEqual(self.join(self.rider("carl", self.elite), group).status_code, 409)
 
+    def test_a_rider_who_leaves_and_joins_again_keeps_their_bib(self):
+        group = self.make().json()["id"]
+        anna, boris = self.rider("anna", self.elite), self.rider("boris", self.elite)
+        self.assertEqual(self.join(anna, group).json()["me"]["bib"], "11")
+        self.client_of(anna).post(f"{API}/groups/{group}/leave")
+        # the bib left behind is not given to the next rider, and comes back with its rider
+        self.assertEqual(self.join(boris, group).json()["me"]["bib"], "12")
+        self.assertEqual(self.join(anna, group).json()["me"]["bib"], "11")
+
     def test_a_rider_without_a_registration_is_sent_to_register_first(self):
         group = self.make().json()["id"]
         refused = self.join(_member("dana"), group)

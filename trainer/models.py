@@ -94,6 +94,8 @@ class GroupRide(models.Model):
     draft_between_groups = models.BooleanField(default=True)
     # a loop: its riders ride their categories' laps; a route out and back or from A to B, once
     loop = models.BooleanField(default=True)
+    # the bibs of riders who left, kept for them by their registration: {registration id: bib}
+    kept_bibs = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ("start_at",)

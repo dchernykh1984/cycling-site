@@ -40,6 +40,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="groupride",
+            name="kept_bibs",
+            field=models.JSONField(blank=True, default=dict),
+        ),
+        migrations.AddField(
+            model_name="groupride",
             name="loop",
             field=models.BooleanField(default=True),
         ),

@@ -66,8 +66,8 @@ def writing(race) -> bool:
 
 
 def _taken(competition: Competition) -> set[str]:
-    """Every bib the event has given: by its start lists and by its virtual races."""
-    from trainer.models import GroupRideMember
+    """Every bib the event has given: by its start lists and by its virtual races, those kept for riders who left."""
+    from trainer.models import GroupRide, GroupRideMember
 
     issued = IssuedBib.objects.filter(competition=competition, state=IssuedBib.State.ACTIVE).values_list(
         "bib", flat=True
@@ -75,12 +75,18 @@ def _taken(competition: Competition) -> set[str]:
     riding = (
         GroupRideMember.objects.filter(group__competition=competition).exclude(bib="").values_list("bib", flat=True)
     )
-    return set(issued) | set(riding)
+    kept = {
+        bib
+        for bibs in GroupRide.objects.filter(competition=competition).values_list("kept_bibs", flat=True)
+        for bib in bibs.values()
+    }
+    return set(issued) | set(riding) | kept
 
 
 def assign_bib(member) -> str:
-    """The member's bib: theirs already, the one the event gave their registration, else the first free one in their
-    category's range (from 1 when it has none). Called with the race's row locked, so two joins never share one."""
+    """The member's bib: theirs already, the one the event gave their registration, the one they had before they left
+    the race, else the first free one in their category's range (from 1 when it has none). Called with the race's row
+    locked, so two joins never share one."""
     if member.bib:
         return member.bib
     registration = member.registration
@@ -94,6 +100,10 @@ def assign_bib(member) -> str:
     )
     if given:
         return given
+    kept = member.group.kept_bibs.get(str(registration.pk))
+    others = IssuedBib.objects.filter(competition=registration.competition, bib=kept, state=IssuedBib.State.ACTIVE)
+    if kept and not others.exclude(registration=registration).exists():
+        return kept
     category = registration.category
     low = category.bib_from if category and category.bib_from else 1
     high = category.bib_to if category and category.bib_to else None
