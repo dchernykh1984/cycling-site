@@ -82,9 +82,9 @@ class MapsTests(SimpleTestCase):
                 self.assertIsNotNone(origin, f"{route['id']} has no origin, nor has its map")
                 points = route["pts"] + route.get("extend", [])
                 self.assertLess(max(_km(origin, point) for point in points), 50, route["id"])
-            # a sight is drawn from the origin of the route it stands by
+            # a sight is drawn from the origin of the route it stands by; a map without routes draws none
             origins = [route.get("origin", data.get("origin")) for route in routes]
-            for sight in data.get("landmarks", []):
+            for sight in data.get("landmarks", []) if origins else []:
                 self.assertLess(min(_km(origin, (sight["lat"], sight["lon"])) for origin in origins), 50, folder)
 
     def test_a_map_s_and_a_route_s_mountains_say_how_far_south_they_rise(self):
