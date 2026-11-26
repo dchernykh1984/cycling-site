@@ -1,12 +1,11 @@
-{% load i18n %}{% comment %}A date typed as DD.MM.YYYY and the browser's calendar beside it (cycling_site/typed_date.py).
+{% load i18n %}{% comment %}A date typed as day, month and year and the browser's calendar beside it (cycling_site/typed_date.py).
 The date input lies over the button, unseen, and takes a tap: a phone opens its own calendar from it. A mouse and
 the keyboard reach the button, and js/cycling_site.js opens the calendar from it -- on the date typed in the field
 -- writes the date picked back into the field, puts the dots in as the digits are typed, and names a date it
 cannot read in the block under the field.{% endcomment %}
 <div class="typed-date d-flex gap-2" data-typed-date
-     data-msg-format="{% trans 'Enter the date as DD.MM.YYYY, for example 05.03.2012.' %}"
-     data-msg-range="{% trans 'Enter a date of birth between 1900 and today.' %}">
-  <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %} placeholder="{% trans 'DD.MM.YYYY' %}"{% for name, value in widget.attrs.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %}>
+     data-msg-format="{{ widget.format_error }}" data-msg-range="{{ widget.range_error }}">
+  <input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %} placeholder="{{ widget.mask }}"{% for name, value in widget.attrs.items %}{% if value is not False %} {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}{% endif %}{% endfor %}>
   <span class="typed-date-pick">
     <button type="button" class="btn btn-outline-primary"{% if widget.attrs.id %} aria-controls="{{ widget.attrs.id }}"{% endif %}>
       <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 0a.5.5 0 0 1 .5.5V1h7V.5a.5.5 0 0 1 1 0V1h1A1.5 1.5 0 0 1 15 2.5v12a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 14.5v-12A1.5 1.5 0 0 1 2.5 1h1V.5A.5.5 0 0 1 4 0zM2 5v9.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V5H2zm2 2h2v2H4V7zm3 0h2v2H7V7zm3 0h2v2h-2V7zm-6 3h2v2H4v-2zm3 0h2v2H7v-2z"/></svg>

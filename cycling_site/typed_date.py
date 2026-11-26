@@ -21,6 +21,7 @@ TYPED_FORMATS = ("%d.%m.%Y", "%Y-%m-%d")
 #: Day, month and a four-digit year, apart by a dot, a slash, a dash, a comma or a space: as typed on any keyboard.
 _DAY_MONTH_YEAR = re.compile(r"^\s*(\d{1,2})\s*[./,\- ]\s*(\d{1,2})\s*[./,\- ]\s*(\d{4})\s*$")
 FORMAT_ERROR = _("Enter the date as DD.MM.YYYY, for example 05.03.2012.")
+MASK = _("DD.MM.YYYY")
 
 
 class TypedDateInput(forms.DateInput):
@@ -41,7 +42,14 @@ class TypedDateInput(forms.DateInput):
         widget = context["widget"]
         if widget["attrs"].get("aria-invalid") == "true":  # the server refused it: drawn as refused
             widget["attrs"]["class"] = (widget["attrs"].get("class", "") + " is-invalid").strip()
-        widget.update(earliest=self.earliest.isoformat(), latest=timezone.localdate().isoformat())
+        # the words come from here, not the template: a template's DD.MM.YYYY reads like a model's choice to the checks
+        widget.update(
+            earliest=self.earliest.isoformat(),
+            latest=timezone.localdate().isoformat(),
+            mask=MASK,
+            format_error=FORMAT_ERROR,
+            range_error=_("Enter a date of birth between 1900 and today."),
+        )
         return context
 
     def render(self, name, value, attrs=None, renderer=None):

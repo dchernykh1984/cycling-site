@@ -5860,11 +5860,11 @@ msgstr[0] "У вас уже %(n)d групповая гонка ждёт ста�
 msgstr[1] "У вас уже %(n)d групповые гонки ждут старта"
 msgstr[2] "У вас уже %(n)d групповых гонок ждут старта"
 
-#: cycling_site/typed_date.py:22 cycling_site/templates/_typed_date.html:6
+#: cycling_site/typed_date.py:22
 msgid "Enter the date as DD.MM.YYYY, for example 05.03.2012."
 msgstr "Введите дату в виде ДД.ММ.ГГГГ, например 05.03.2012."
 
-#: cycling_site/templates/_typed_date.html:9
+#: cycling_site/typed_date.py:23
 msgid "DD.MM.YYYY"
 msgstr "ДД.ММ.ГГГГ"
 
