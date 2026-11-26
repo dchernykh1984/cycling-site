@@ -1100,6 +1100,67 @@ def test_a_smart_trainer_that_never_answers_is_driven_all_the_same(page: Page):
     assert errors == [], errors
 
 
+def test_a_trainer_that_does_not_ride_the_route_says_why(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    troubles = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // a trainer under control that answers the grade with `code`, as FTMS answers: 3 is Invalid Parameter
+            let code = 3;
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer');
+            trainer.write = async bytes => {
+                setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], code]).buffer)), 0);
+            };
+            const settle = () => new Promise(done => setTimeout(done, 50)), troubles = [Trainer.trouble()];
+            Sensors.devs.push(trainer);
+            Trainer.update(10, 4, me); await settle(); troubles.push(Trainer.trouble());
+            code = 1; Trainer.update(11, 4, me); await settle(); troubles.push(Trainer.trouble());
+            trainer.ctrl = false; troubles.push(Trainer.trouble());
+            trainer.status = 'reconnecting'; troubles.push(Trainer.trouble());
+            return troubles;
+        }"""
+    )
+    # none connected; the grade refused; taken; control gone to another app; away for a moment (said as lost)
+    assert troubles == [None, "refused", None, "control", None], troubles
+    assert errors == [], errors
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, live_server, lang: str):
+    """The small "gradient" in place of "trainer 2 %" was all a rider was told, and they pedalled a resistance that
+    was not the route's."""
+    _trainer_in_its_menu(page, live_server, lang)
+    page.evaluate(
+        """() => {
+            // a trainer that sends its power but gave its control to another app
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
+            Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")  # the HUD is drawn every tenth of a second
+    line, said = page.evaluate("[t('hud.trainerIdle'), t('bt.trainerNoCtrl')]")
+    expect(page.locator("#hudTrainer")).to_be_visible()
+    expect(page.locator("#hudTrainer")).to_have_text(line)
+    expect(page.locator("#toast")).to_have_text(said)
+    # within its card, in every language: nothing cut off or spilling over
+    fits = page.evaluate(
+        """() => { const el = document.querySelector('#hudTrainer'), box = el.getBoundingClientRect(),
+            card = el.closest('.mapcard').getBoundingClientRect();
+            return el.scrollWidth <= el.clientWidth && box.right <= card.right; }"""
+    )
+    assert fits
+    # given control again and riding the route, the line goes
+    page.evaluate("() => { Sensors.trainer().ctrl = true; Trainer.sent = 0; drawFrame(200); }")
+    expect(page.locator("#hudTrainer")).to_be_hidden()
+
+
 def test_a_grade_sent_before_the_trainer_reconnected_is_not_counted_as_on_it(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):

@@ -79,7 +79,9 @@ A smart trainer is sent one command at a time, each once it has answered the one
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
 is shown as not under control and left alone; a grade sent before the trainer reconnected is sent
-again. A trainer whose Fitness Machine Feature says it holds a power (Power Target Setting) is set to
+again. A ride on a trainer that does not ride the route -- it gave no control, or it refuses the grade -- says
+so under the grade in words, and once in a message why, rather than only writing "gradient" where "trainer 2 %"
+would stand. A trainer whose Fitness Machine Feature says it holds a power (Power Target Setting) is set to
 a workout step's power instead of the grade, within the range it reports, while the HUD's ERG switch
 is on (FTMS Set Target Power); off, it goes back to the grade and the rider holds the power by feel.
 Back on the setup page a trainer is set to a flat road, not left holding a power. The plan screen
