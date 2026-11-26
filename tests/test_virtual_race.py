@@ -159,6 +159,19 @@ class JoiningTests(RaceTestCase):
         self.assertEqual(self.join(anna, group).json()["me"]["laps"], 1)
         self.assertEqual(self.stream(StartListUpload)[0].split("#")[3], "1")
 
+    def test_a_race_with_protocols_stays_its_maker_s_when_they_leave_it(self):
+        make_registration(self.event, user=self.organizer, category=self.women)
+        group = self.make().json()["id"]
+        boris = self.rider("boris", self.elite)
+        self.join(boris, group)
+        left = self.client_of(self.organizer).post(f"{API}/groups/{group}/leave").json()
+        # neither cancelled nor handed to the rider who joined next: the event's race is its organizer's
+        self.assertEqual((left["cancelled"], left["is_host"], left["is_member"]), (False, True, False))
+        alone = GroupRide.objects.get(pk=group)
+        alone.memberships.all().delete()
+        self.client_of(self.organizer).post(f"{API}/groups/{group}/leave")
+        self.assertFalse(GroupRide.objects.get(pk=group).cancelled)
+
     def test_a_registered_organizer_rides_the_race_they_made(self):
         make_registration(self.event, user=self.organizer, category=self.women)
         body = self.make().json()
