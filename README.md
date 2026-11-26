@@ -89,7 +89,8 @@ site down for up to a minute.
   Almaty). GitHub starts a cron when it has capacity: hours late or not at all, so on three nights
   of the four from 2026-11-22 none of the workflow's hourly runs started inside the window. Render
   starts a cron on time, and e-mails a failed run when the workspace's notifications include
-  failures (Integrations -> Notifications).
+  failures (Integrations -> Notifications). It costs Render's minimum for a cron job, $1 a month: a
+  run takes seconds, or under an hour when it deploys, at $0.00016 a minute.
 - **`.github/workflows/deploy.yml` is the fallback** for a night the Render run deployed nothing: it
   asks for a run at 22:37, 23:37 and 00:37 UTC, after the Render run has ended (it waits at most 50
   minutes), so the two never deploy at once. A run that finds the site on `main`, or starts after
