@@ -107,12 +107,15 @@ function addRoads(G, T, W, roads, ground, decks = []) {
   const atDeck = p => deckEnds.some(e => Math.hypot(e.x - p.x, e.z - p.z) < TOUCH_M);
   roads.forEach((r, k) => {
     const lift = .02 + (k % 5) * .015, q = along(r.pts.map(p => xzOf(T, p)), 5), up = ramps[k]; // two roads that meet never flicker
-    // a slip road that runs into the route's own road comes down to it over its last 22 m, from a ramp too; a road
-    // onto a bridge that only passes the route, its deck's end beside the route's edge, keeps its ramp's height
-    const joins = [q[0], q[q.length - 1]].some(p => routeNearest(T, p.x, p.z).d < W / 2 + 3 && !atDeck(p));
+    // a slip road that runs into the route's own road comes down to it over its last 30 m, from a ramp too; a ramp
+    // elsewhere keeps its height, beside the route's edge as well -- a deck's end may stand a metre off it
+    const joins = [q[0], q[q.length - 1]].map(p => routeNearest(T, p.x, p.z).d < W / 2 + 3 && !atDeck(p));
+    const cum = [0];
+    for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
+    const toJoin = i => Math.min(joins[0] ? cum[i] : Infinity, joins[1] ? cum[cum.length - 1] - cum[i] : Infinity);
     const height = (p, i) => {
       const n = routeNearest(T, p.x, p.z), g = Math.max(ground(p.x, p.z) + lift, up ? up[i] : -Infinity);
-      if (n.d > W / 2 + 22 || (up && up[i] > -Infinity && !joins)) return g;
+      if (n.d > W / 2 + 22 || (up && up[i] > -Infinity && toJoin(i) > 30)) return g;
       // over a tunnel the street keeps the ground line; under the route's own road a hand's breadth below it, so the
       // two never flicker; off its edge rising to it over 22 m
       const top = overTunnel(T, n.s);
