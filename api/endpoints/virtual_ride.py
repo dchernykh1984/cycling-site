@@ -6,7 +6,7 @@ their session; API clients use the personal Bearer token like everywhere else in
 
 import contextlib
 import json
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from http import HTTPStatus
 from typing import Any
 
@@ -23,7 +23,8 @@ from pydantic import SecretStr, field_validator
 from accounts import roles
 from accounts.access import needs_email_confirmation
 from api.auth import OptionalApiTokenAuth, member_auth
-from trainer import intervals, live, records, services, strava
+from calendar_app.models import Competition
+from trainer import intervals, live, race, records, services, strava
 from trainer.models import (
     GroupRide,
     GroupRideMember,
@@ -265,6 +266,24 @@ class RecordsOut(Schema):
 class MemberOut(Schema):
     user_id: int
     name: str
+    # in a race with protocols: the bib the rider rides with and their group (category)
+    bib: str = ""
+    group: str = ""
+
+
+class RaceEventOut(Schema):
+    id: int
+    title: str
+    url: str
+
+
+class RaceMeOut(Schema):
+    """What the asking member rides in a race with protocols: their bib, group, laps and own start."""
+
+    bib: str
+    group: str
+    laps: int
+    start_offset_s: int
 
 
 class GroupOut(Schema):
@@ -279,6 +298,13 @@ class GroupOut(Schema):
     cancelled: bool = False
     wind_ms: float = 0
     wind_from_deg: int = 0
+    # a race with protocols (specs/495-virtual-race): its event, how it starts and who drafts whom
+    event: RaceEventOut | None = None
+    mode: GroupRide.Mode = GroupRide.Mode.GROUP
+    group_gap_s: int = 0
+    itt_interval_s: int = 30
+    draft_between_groups: bool = True
+    me: RaceMeOut | None = None
 
 
 class GroupIn(Schema):
@@ -289,6 +315,24 @@ class GroupIn(Schema):
     start_at: datetime | None = None
     wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
     wind_from_deg: int = Field(0, ge=0, le=359)
+    # a race with protocols: one of the maker's own events (any for an admin), its registration's riders with bibs
+    competition_id: int | None = None
+    mode: GroupRide.Mode = GroupRide.Mode.GROUP
+    group_gap_s: int = Field(0, ge=0, le=3600)
+    itt_interval_s: int = Field(30, ge=5, le=600)
+    draft_between_groups: bool = True
+
+
+class RaceEventChoiceOut(RaceEventOut):
+    date_start: date
+
+
+class CrossingIn(Schema):
+    """A crossing of the start-finish line (point 0) or a control point (1..N), as the rider's page saw it."""
+
+    point: int = Field(..., ge=0, le=race.MAX_POINTS)
+    at_ms: int = Field(..., ge=0)  # the moment, Unix milliseconds
+    last: bool = False  # the finish: point 0 after the rider's last lap
 
 
 class GroupResultOut(Schema):
@@ -314,6 +358,8 @@ class PresenceIn(Schema):
     power_w: int = Field(0, ge=0, le=3000)
     lane_m: float = Field(2, ge=0, le=15)
     finished_s: float | None = Field(None, ge=0, le=24 * 3600)
+    cda: float = Field(0.32, ge=0.1, le=1.2)  # the rider's drag area, m2: the wake they leave depends on it
+    crossings: list[CrossingIn] = Field(default_factory=list, max_length=50)
 
 
 class OnlineOut(Schema):
@@ -333,6 +379,9 @@ class RiderOut(OnlineOut):
     lane_m: float
     finished_s: float | None
     age_s: float
+    cda: float = 0.32
+    bib: str = ""
+    group: str = ""
 
 
 class PresenceOut(Schema):
@@ -345,29 +394,52 @@ class PresenceOut(Schema):
 # -- Helpers ---------------------------------------------------------------
 
 
-def _member(user) -> MemberOut:
-    return MemberOut(user_id=user.pk, name=user.public_display_name)
+def _member(user, membership: GroupRideMember | None = None) -> MemberOut:
+    if membership is None or not membership.bib:
+        return MemberOut(user_id=user.pk, name=user.public_display_name)
+    return MemberOut(
+        user_id=user.pk, name=user.public_display_name, bib=membership.bib, group=race.group_of(membership)
+    )
+
+
+def _event_out(competition: Competition) -> RaceEventOut:
+    return RaceEventOut(id=competition.pk, title=competition.title, url=competition.get_absolute_url())
 
 
 def _group_out(group: GroupRide, user) -> GroupOut:
-    members = [m.user for m in group.memberships.all()]
+    memberships = list(group.memberships.select_related("user", "registration", "registration__category"))
+    mine = next((m for m in memberships if m.user_id == user.pk), None)
+    me = None
+    if group.competition_id and mine and mine.bib:
+        me = RaceMeOut(
+            bib=mine.bib,
+            group=race.group_of(mine),
+            laps=race.laps_of(mine),
+            start_offset_s=race.start_offset_s(group, mine),
+        )
     return GroupOut(
         id=group.pk,
         route=group.route,
         route_name=group.route_name,
         start_at=group.start_at,
         host=_member(group.host),
-        members=[_member(u) for u in members],
-        is_member=any(u.pk == user.pk for u in members),
+        members=[_member(m.user, m) for m in memberships],
+        is_member=mine is not None,
         is_host=group.host_id == user.pk,
         cancelled=group.cancelled,
         wind_ms=group.wind_ms,
         wind_from_deg=group.wind_from_deg,
+        event=_event_out(group.competition) if group.competition else None,
+        mode=GroupRide.Mode(group.mode),
+        group_gap_s=group.group_gap_s,
+        itt_interval_s=group.itt_interval_s,
+        draft_between_groups=group.draft_between_groups,
+        me=me,
     )
 
 
 def _open_group(group_id: int) -> GroupRide:
-    group = get_object_or_404(GroupRide.objects.select_related("host"), pk=group_id)
+    group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
     if group.cancelled:
         raise HttpError(HTTPStatus.CONFLICT, "This group ride was cancelled")
     return group
@@ -741,6 +813,11 @@ def create_group(request, payload: GroupIn):
         raise HttpError(HTTPStatus.CONFLICT, many % {"n": live.MAX_WAITING})
     if mine.filter(start_at__gt=start - live.RACE_GAP, start_at__lt=start + live.RACE_GAP).exists():
         raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race starting within an hour of that time"))
+    event = None
+    if payload.competition_id is not None:
+        event = Competition.objects.filter(pk=payload.competition_id).first()
+        if event is None or not race.can_tie(request.auth, event):
+            raise HttpError(HTTPStatus.FORBIDDEN, _("Only the event's organizer can make a race for it"))
     with transaction.atomic():
         group = GroupRide.objects.create(
             route=payload.route,
@@ -749,9 +826,62 @@ def create_group(request, payload: GroupIn):
             start_at=start,
             wind_ms=payload.wind_ms,
             wind_from_deg=payload.wind_from_deg,
+            competition=event,
+            mode=payload.mode,
+            group_gap_s=payload.group_gap_s,
+            itt_interval_s=payload.itt_interval_s,
+            draft_between_groups=payload.draft_between_groups,
         )
-        GroupRideMember.objects.create(group=group, user=request.auth)
+        # a race with protocols takes its host as a rider only when they are registered for the event
+        if event is None:
+            GroupRideMember.objects.create(group=group, user=request.auth)
+        else:
+            _enter(group, request.auth, quiet=True)
     return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
+
+
+@router.get(
+    "/events",
+    response=list[RaceEventChoiceOut],
+    auth=member_auth,
+    summary="Events I may make a race with protocols for",
+)
+def race_events(request):
+    """The member's own approved events that are not over (every such event for an admin), soonest first."""
+    today = timezone.localdate()
+    events = Competition.objects.filter(status=Competition.Status.APPROVED, is_deleted=False).exclude(
+        date_end__lt=today
+    )
+    events = events.filter(date_start__gte=today) | events.filter(date_end__gte=today)
+    if not roles.at_least(request.auth, roles.MANAGE_ALL_EVENTS):
+        events = events.filter(submitted_by=request.auth)
+    chosen = [e for e in events.distinct().order_by("date_start", "pk")[:100] if race.can_tie(request.auth, e)]
+    return [RaceEventChoiceOut(**_event_out(e).dict(), date_start=e.date_start) for e in chosen]
+
+
+def _enter(group: GroupRide, user, quiet: bool = False) -> None:
+    """A rider into a race; in a race with protocols only with a registration for its event, given a bib, the
+    race's start list rewritten. ``quiet`` leaves out a rider without one instead of refusing them."""
+    event = group.competition
+    if event is None:
+        GroupRideMember.objects.get_or_create(group=group, user=user)
+        return
+    registration = race.registration_of(user, event)
+    if registration is None:
+        if quiet:
+            return
+        link = event.get_absolute_url()
+        raise HttpError(HTTPStatus.FORBIDDEN, _("Register for the event first: %(link)s") % {"link": link})
+    with transaction.atomic():
+        GroupRide.objects.select_for_update().get(pk=group.pk)  # one bib at a time
+        member, _created = GroupRideMember.objects.get_or_create(group=group, user=user)
+        member.registration = registration
+        try:
+            member.bib = race.assign_bib(member)
+        except race.NoBibError:
+            raise HttpError(HTTPStatus.CONFLICT, _("Your category has no free bib left")) from None
+        member.save(update_fields=["registration", "bib"])
+    race.write_start(group)
 
 
 @router.get("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="One group race, as a link names it")
@@ -766,7 +896,7 @@ def join_group(request, group_id: int):
     group = _open_group(group_id)
     if group.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
-    GroupRideMember.objects.get_or_create(group=group, user=request.auth)
+    _enter(group, request.auth)
     return _group_out(group, request.auth)
 
 
@@ -779,12 +909,14 @@ def leave_group(request, group_id: int):
         GroupRideMember.objects.filter(group=group, user=request.auth).delete()
         if group.host_id == request.auth.pk:
             heir = group.memberships.order_by("joined_at", "pk").first()
-            if heir is None:
+            if heir is None and group.competition_id is None:
                 group.cancelled = True
-            else:
+            elif heir is not None and group.competition_id is None:
                 group.host_id = heir.user_id
             group.save(update_fields=["cancelled", "host"])
-    return _group_out(GroupRide.objects.select_related("host").get(pk=group_id), request.auth)
+    left = GroupRide.objects.select_related("host", "competition").get(pk=group_id)
+    race.write_start(left)
+    return _group_out(left, request.auth)
 
 
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")
@@ -818,12 +950,26 @@ def presence(request, payload: PresenceIn):
     now = timezone.now()
     data = payload.dict()
     group_id = data.pop("group_id")
+    crossings = data.pop("crossings")
     group = None
     if group_id is not None:
-        group = GroupRide.objects.filter(pk=group_id, cancelled=False, memberships__user=request.auth).first()
+        group = (
+            GroupRide.objects.select_related("competition")
+            .filter(pk=group_id, cancelled=False, memberships__user=request.auth)
+            .first()
+        )
     me_row, _created = LiveRider.objects.update_or_create(
         user=request.auth, defaults={**data, "group": group, "updated_at": now}
     )
+    if group is not None and group.competition_id and crossings:
+        member = group.memberships.select_related("registration", "registration__category").get(user=request.auth)
+        for c in crossings:
+            at = datetime.fromtimestamp(c["at_ms"] / 1000, tz=UTC)
+            race.record_crossing(group, member, c["point"], at, c["last"])
+    bibs = {}
+    if group is not None and group.competition_id:
+        for m in group.memberships.select_related("registration", "registration__category"):
+            bibs[m.user_id] = (m.bib, race.group_of(m) if m.bib else "")
     riders = [
         RiderOut(
             **_online_out(row),
@@ -834,6 +980,9 @@ def presence(request, payload: PresenceIn):
             lane_m=row.lane_m,
             finished_s=row.finished_s,
             age_s=max(0.0, (now - row.updated_at).total_seconds()),
+            cda=row.cda,
+            bib=bibs.get(row.user_id, ("", ""))[0],
+            group=bibs.get(row.user_id, ("", ""))[1],
         )
         for row in live.riders_beside(me_row, now).select_related("user")
     ]

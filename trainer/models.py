@@ -9,6 +9,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from event_photos.models import BIB_MAX_LENGTH
+
 
 class VirtualRide(models.Model):
     """One finished ride, saved to the member's profile. Personal records are derived from these."""
@@ -60,7 +62,15 @@ class VirtualRide(models.Model):
 
 
 class GroupRide(models.Model):
-    """A race that several members start together: one host, a route and a start time."""
+    """A race that several members start together: one host, a route and a start time.
+
+    A race may belong to an event (specs/495-virtual-race): its registered riders join with bibs, ride their
+    category's laps, and the site writes the race's timing into the event's timing streams (``trainer.race``).
+    """
+
+    class Mode(models.TextChoices):
+        GROUP = "group", _("Group race")
+        ITT = "itt", _("Individual time trial")
 
     route = models.CharField(max_length=40)
     route_name = models.CharField(max_length=120, blank=True, default="")
@@ -74,6 +84,14 @@ class GroupRide(models.Model):
     members: models.ManyToManyField = models.ManyToManyField(
         settings.AUTH_USER_MODEL, through="GroupRideMember", related_name="group_rides"
     )
+    # A race with protocols: its event, how it starts, and whether categories draft each other
+    competition = models.ForeignKey(
+        "calendar_app.Competition", null=True, blank=True, on_delete=models.SET_NULL, related_name="virtual_races"
+    )
+    mode = models.CharField(max_length=5, choices=Mode.choices, default=Mode.GROUP)
+    group_gap_s = models.PositiveIntegerField(default=0)  # between the categories' starts in a group race
+    itt_interval_s = models.PositiveIntegerField(default=30)  # between the riders' starts in a time trial
+    draft_between_groups = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("start_at",)
@@ -86,6 +104,15 @@ class GroupRideMember(models.Model):
     group = models.ForeignKey(GroupRide, on_delete=models.CASCADE, related_name="memberships")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="group_ride_memberships")
     joined_at = models.DateTimeField(auto_now_add=True)
+    # in a race with protocols: the rider's registration for its event and the bib they ride with
+    registration = models.ForeignKey(
+        "registrations.CompetitionRegistration",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="virtual_race_members",
+    )
+    bib = models.CharField(max_length=BIB_MAX_LENGTH, blank=True, default="")
 
     class Meta:
         constraints = (models.UniqueConstraint(fields=("group", "user"), name="unique_group_ride_member"),)
@@ -116,6 +143,8 @@ class LiveRider(models.Model):
     power_w = models.PositiveIntegerField(default=0)
     lane_m = models.FloatField(default=2)
     finished_s = models.FloatField(null=True, blank=True)
+    # the rider's drag area, m2, as their page reckons it: the wake they leave others depends on it
+    cda = models.FloatField(default=0.32)
     updated_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     def __str__(self) -> str:
