@@ -378,5 +378,6 @@ const TEXT_EN = {
     "mp.raceItt": " Individual time trial.",
     "mp.raceMe": " Your bib {bib}, {group}, laps: {laps}.",
     "mp.raceStart": " Your start {t} after the race's.",
-    "toast.race": "A race with protocols: bib {bib}"
+    "toast.race": "A race with protocols: bib {bib}",
+    "route.heavy": "May run slowly on a phone: many buildings and streets."
 };

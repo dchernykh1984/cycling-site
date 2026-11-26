@@ -135,6 +135,7 @@ button{cursor:pointer}
   padding:12px max(18px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(18px,env(safe-area-inset-left,0px))}
 .startbar .sum{flex:1;min-width:0;font-size:14px;color:var(--muted);line-height:1.4}
 .startbar .sum b{display:block;color:var(--ink);font-size:15px}
+.startbar .sum .heavy{display:block;color:var(--ink);font-size:13px}
 .startbar .btn.primary{width:auto;min-width:220px;margin:0}
 @media (max-width:820px){
   .grid,.cols{grid-template-columns:1fr}

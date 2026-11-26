@@ -43,6 +43,6 @@ and drafts by the race's rules.
    category; a time trial's own start; the ride (`js/ride.js`) finds the crossings and tells the page through
    `rideHooks`, which queues each with its race at its moment on the site's clock and sends it until the site
    answers, from the menu too; `wakeOf` by mode, category and drag areas; a bib plate on each rider's back; the
-   phone notice for a heavy route.
+   phone notice for a heavy route in the start's summary.
 4. Tests: `tests/test_virtual_race.py` (making, joining, bibs, streams, token, retries);
    `tests/e2e/test_virtual_race.py` (control points, laps, drafting rules, the bib on the kit, the phone notice).
