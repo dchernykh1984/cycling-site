@@ -37,8 +37,8 @@ def open_groups(now=None):
     now = now or timezone.now()
     return (
         GroupRide.objects.filter(cancelled=False, start_at__gte=now - GROUP_LISTED_AFTER_START)
-        .select_related("host")
-        .prefetch_related("memberships__user")
+        .select_related("host", "competition")
+        .prefetch_related("memberships__user", "memberships__registration__category")
         .order_by("start_at")
     )
 
