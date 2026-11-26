@@ -1552,6 +1552,31 @@ def test_the_wind_is_kept_with_the_settings_and_named_before_the_start(page: Pag
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_box_is_ticked_from_its_box_and_words_not_from_the_empty_row_beside_them(page: Page, live_server):
+    """The wind's row stretched across the setup page: a click far from the word "Wind" turned it on, and a rider rode
+    in a 5 m/s wind they never chose."""
+    page.set_viewport_size({"width": 1512, "height": 945})  # a laptop's, where the row was 1082 px for 66 px of words
+    _trainer_in_its_menu(page, live_server)
+    # every box on the setup page ends where its words do
+    overhang = page.evaluate(
+        """() => [...document.querySelectorAll('#menu label.chk')].filter(l => l.offsetParent)
+            .map(l => l.getBoundingClientRect().right - l.querySelector('span').getBoundingClientRect().right)"""
+    )
+    assert overhang and max(overhang) <= 1, overhang
+    page.locator("#windOn").scroll_into_view_if_needed()
+    beside, words = page.evaluate(
+        """() => { const s = document.querySelector('#windOn + span').getBoundingClientRect(),
+            row = document.querySelector('#windOn').closest('label').parentElement.getBoundingClientRect(),
+            y = s.top + s.height / 2;
+            return [[s.right + Math.min(200, (row.right - s.right) / 2), y], [s.left + s.width / 2, y]]; }"""
+    )
+    page.mouse.click(*beside)
+    expect(page.locator("#windOn")).not_to_be_checked()
+    page.mouse.click(*words)
+    expect(page.locator("#windOn")).to_be_checked()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
     page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
     _trainer_in_its_menu(page, live_server)
