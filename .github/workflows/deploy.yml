@@ -2,7 +2,8 @@ name: nightly-deploy
 
 # Merged changes go live at night, when few people read the site (issue #153). The web service keeps
 # its media on a persistent disk, and with a disk Render stops the running instance before it starts
-# the new one, so every deploy takes the site down for up to a minute. Render's auto-deploy is off.
+# the new one, so every deploy takes the site down for up to a minute. The web service's
+# auto-deploy is off.
 #
 # scripts/deploy_if_behind.py deploys main only when the site names another commit at
 # /api/v1/version/ and every check main's push started is green (CI, the Dropbox check, any later

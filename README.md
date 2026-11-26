@@ -79,7 +79,7 @@ deployed at night (issue #153). The web service keeps its media on a persistent 
 disk Render stops the running instance before it starts the new one, so every deploy takes the
 site down for up to a minute.
 
-- **Render's auto-deploy is off.** `scripts/deploy_if_behind.py` deploys `main` between 21:00
+- **The web service's auto-deploy is off.** `scripts/deploy_if_behind.py` deploys `main` between 21:00
   and 01:00 UTC (02:00-06:00 in Almaty) when the site names another commit at
   `/api/v1/version/` and every check `main`'s push started is green: CI, the Dropbox check, any
   added later. It waits up to 30 minutes for a check still running and deploys nothing while one
@@ -97,7 +97,7 @@ site down for up to a minute.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
 - **Setting it up:** the web service's deploy hook (Render: Settings -> Deploy Hook) goes into the
-  secret `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and Render's Auto-Deploy
+  secret `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and the web service's Auto-Deploy
   (Settings -> Build & Deploy) is set to Off. The Cron Job comes from the Blueprint: Render -> New ->
   Blueprint, this repository, branch `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same
   hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
