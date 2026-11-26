@@ -1130,6 +1130,34 @@ def test_a_trainer_that_does_not_ride_the_route_says_why(page: Page):
     assert errors == [], errors
 
 
+def test_a_trainer_that_holds_a_workout_s_power_is_not_said_to_be_off_the_route(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    troubles = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // a trainer that holds a power (FTMS Set Target Power) and refuses the grade (Invalid Parameter)
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer'); trainer.ergRange = [0, 2000];
+            trainer.write = async bytes => {
+                const code = bytes[0] === 0x05 ? 1 : 3;
+                setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], code]).buffer)), 0);
+            };
+            Sensors.devs.push(trainer);
+            const settle = () => new Promise(done => setTimeout(done, 50)), troubles = [];
+            Trainer.update(10, 4, me, null); await settle(); troubles.push(Trainer.trouble());
+            Trainer.update(11, 4, me, 200); await settle(); troubles.push(Trainer.trouble());
+            Trainer.update(12, 4, me, null); await settle(); troubles.push(Trainer.trouble());
+            return troubles;
+        }"""
+    )
+    # the grade refused; a workout step's 200 W held, as the rider asked; the grade refused again
+    assert troubles == ["refused", None, "refused"], troubles
+    assert errors == [], errors
+
+
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize("lang", ["ru", "kk", "en"])
 def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, live_server, lang: str):

@@ -286,7 +286,7 @@ const Trainer = {
     if (t - this.last < 1) return;
     if (watts != null && d.ergRange) {
       if (this.held !== null && Math.abs(watts - this.held) < 1 && t - this.last < 5) return;
-      this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) this.held = watts; }); return;
+      this.last = t; this.sent = null; d.setPower(watts).then(ok => { if (ok) { this.held = watts; this.refused = false; } }); return;
     }
     const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100), wind = Math.round(drag.wind * 2);
     if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && wind === this.wind && t - this.last < 5) return;
