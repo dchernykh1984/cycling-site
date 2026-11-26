@@ -128,6 +128,12 @@ class JoiningTests(RaceTestCase):
         IssuedBib.objects.create(competition=self.event, registration=registration, bib="77", device_id="spm")
         self.assertEqual(self.join(anna, group).json()["me"]["bib"], "77")
 
+    def test_a_route_that_is_not_a_loop_is_ridden_once_whatever_the_category_s_laps(self):
+        group = self.make(route="kyrbaltabay-tuganbay", loop=False).json()["id"]
+        anna = self.rider("anna", self.elite)
+        self.assertEqual(self.join(anna, group).json()["me"]["laps"], 1)
+        self.assertEqual(self.stream(StartListUpload)[0].split("#")[3], "1")
+
     def test_a_registered_organizer_rides_the_race_they_made(self):
         make_registration(self.event, user=self.organizer, category=self.women)
         body = self.make().json()

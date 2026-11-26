@@ -117,6 +117,9 @@ def group_of(member) -> str:
 
 
 def laps_of(member) -> int:
+    """The category's laps on a loop (one when it has none); a route that is not a loop is ridden once."""
+    if not member.group.loop:
+        return 1
     category = member.registration.category if member.registration else None
     return category.laps if category and category.laps else 1
 

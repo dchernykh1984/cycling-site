@@ -92,6 +92,8 @@ class GroupRide(models.Model):
     group_gap_s = models.PositiveIntegerField(default=0)  # between the categories' starts in a group race
     itt_interval_s = models.PositiveIntegerField(default=30)  # between the riders' starts in a time trial
     draft_between_groups = models.BooleanField(default=True)
+    # a loop: its riders ride their categories' laps; a route out and back or from A to B, once
+    loop = models.BooleanField(default=True)
 
     class Meta:
         ordering = ("start_at",)

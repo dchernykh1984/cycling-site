@@ -304,6 +304,7 @@ class GroupOut(Schema):
     group_gap_s: int = 0
     itt_interval_s: int = 30
     draft_between_groups: bool = True
+    loop: bool = True
     me: RaceMeOut | None = None
 
 
@@ -321,6 +322,8 @@ class GroupIn(Schema):
     group_gap_s: int = Field(0, ge=0, le=3600)
     itt_interval_s: int = Field(30, ge=5, le=600)
     draft_between_groups: bool = True
+    # the route is a loop, its riders riding their categories' laps; else each rides it once
+    loop: bool = True
 
 
 class RaceEventChoiceOut(RaceEventOut):
@@ -434,6 +437,7 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         group_gap_s=group.group_gap_s,
         itt_interval_s=group.itt_interval_s,
         draft_between_groups=group.draft_between_groups,
+        loop=group.loop,
         me=me,
     )
 
@@ -831,6 +835,7 @@ def create_group(request, payload: GroupIn):
             group_gap_s=payload.group_gap_s,
             itt_interval_s=payload.itt_interval_s,
             draft_between_groups=payload.draft_between_groups,
+            loop=payload.loop,
         )
         # a race with protocols takes its host as a rider only when they are registered for the event
         if event is None:
