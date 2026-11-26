@@ -276,9 +276,11 @@ const Sensors = {
 // сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG
 // on) goes instead of the grade on a trainer that holds it: sent (the grade) and held (the power) say which is on it.
 // A change of the rider's wind resistance (a wake ahead, the air higher up) or of the wind against them (the road
-// turning) is sent as a change of the grade is; cw and wind are the last ones sent, in the 0.01 kg/m and 0.5 m/s steps
+// turning) is sent as a change of the grade is; cw and wind are the last ones sent, in the 0.01 kg/m and 0.5 m/s steps.
+// refused: the trainer answered the last grade with a refusal (FTMS: op code not supported, invalid parameter,
+// operation failed, control not permitted), so its resistance is not the route's
 const Trainer = {
-  last: -10, sent: null, held: null, cw: null, wind: null,
+  last: -10, sent: null, held: null, cw: null, wind: null, refused: false,
   update(t, grade, rider, watts) {
     const d = Sensors.trainer(); if (!d || !d.ctrl) return;
     if (t - this.last < 1) return;
@@ -288,9 +290,12 @@ const Trainer = {
     }
     const target = trainerGrade(grade, settings.difficulty), drag = trainerDrag(rider), cw = Math.round(drag.cw * 100), wind = Math.round(drag.wind * 2);
     if (this.held === null && this.sent !== null && Math.abs(target - this.sent) < .2 && cw === this.cw && wind === this.wind && t - this.last < 5) return;
-    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.wind = wind; this.held = null; } });
+    this.last = t; d.setGrade(target, drag).then(ok => { if (ok) { this.sent = target; this.cw = cw; this.wind = wind; this.held = null; this.refused = false; } else if (d.answer > 1) this.refused = true; });
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
+  // why a trainer that is connected does not ride the route: 'control' when it gave no control (another app or a
+  // bike computer has it), 'refused' when it refuses the grade; null while it rides it, reconnects or is not there
+  trouble() { const d = Sensors.trainer(); if (!d || d.status !== 'online') return null; return !d.ctrl ? 'control' : this.refused ? 'refused' : null; },
   canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }
 };
 function isIOS() { return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }

@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- HUD ---------------- */
-let hudAcc = 0, toastT = 0;
+let hudAcc = 0, toastT = 0, trainerSaid = null; // trainerSaid: the trainer's trouble the ride already said out loud
 function toast(t, dur) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); toastT = dur || 2.5; }
 // the countdown over the scene: the seconds left, then "go", gone 0.8 s after the start
 function showCount() {
@@ -68,6 +68,11 @@ function updateHUD(inp, grade) {
   const hw = $('#hudWind'), tail = me.tail || 0; hw.classList.toggle('hidden', !rideWind);
   if (rideWind) hw.textContent = tail > .5 ? t('wind.tail', { v: fmt1(tail) }) : tail < -.5 ? t('wind.head', { v: fmt1(-tail) }) : t('wind.cross');
   const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');
+  // a trainer that does not ride the route -- another app or computer has it, or it refuses the grade -- says so in
+  // words, and once out loud why: the small "gradient" alone left a rider pedalling a resistance that was not the route's
+  const trouble = Trainer.trouble(); $('#hudTrainer').classList.toggle('hidden', !trouble);
+  if (trouble && trouble !== trainerSaid) toast(trouble === 'control' ? t('bt.trainerNoCtrl') : t('dev.refusedGrade'), 8);
+  trainerSaid = trouble;
   $('#grade').style.background = gradeColor(grade);
   // under the power: the step's average cadence in a plan, the ride's average power otherwise
   let avg = '';

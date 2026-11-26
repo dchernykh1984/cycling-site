@@ -299,6 +299,8 @@ button{cursor:pointer}
 #grade b{font-family:var(--display);font-weight:700;font-size:22px;line-height:1}
 #grade span{font-size:11px;opacity:.9;white-space:nowrap;margin:0;overflow:hidden;text-overflow:ellipsis}
 #hudWind{font-size:11px;line-height:1.25;padding:3px 10px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* a trainer that does not ride the route: in words, in the warning colour, on two lines where a language needs them */
+#hudTrainer{font-size:11px;line-height:1.25;padding:0 10px 5px;color:var(--amber);font-weight:600}
 .mapcard #mini{width:100%;height:auto;aspect-ratio:1;border-radius:0;background:none;display:block}
 @media (max-height:520px){ .mapcard{width:112px} #grade{padding:5px 8px 4px} #grade b{font-size:17px} #grade span{font-size:10px} }
 @media (max-width:640px){ .mapcard{width:104px} }
