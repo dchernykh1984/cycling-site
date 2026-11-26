@@ -39,6 +39,9 @@ class BLEDev {
     this.dev = dev; this.name = dev.name || t('dev.unnamed'); this.roles = new Set(); this.status = 'connecting'; this.retries = 0; this.ls = new WeakSet();
     this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
     this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false; this.ergRange = null;
+    // cpt: the FTMS control point, once a connection found one; a bike that only sends its data never has one, its
+    // resistance set by hand (one found and missed on a later connection is still a trainer that can be driven)
+    this.cpt = null;
     // refused: the trainer answered this connection's last grade with a refusal (FTMS: op code not supported, invalid
     // parameter, operation failed, control not permitted), so its resistance is not the route's
     this.refused = false;
@@ -60,7 +63,6 @@ class BLEDev {
       try { await this.sub(ftms, UUID.ibd, dv => this.onIBD(dv)); this.roles.add('trainer'); this.roles.add('power'); } catch (e) {}
       await this.readTargets(ftms);
       try {
-        this.cpt = null; // a bike that only sends its data has no control point: its resistance is set by hand
         this.cpt = await ftms.getCharacteristic(UUID.ftmsCP);
         if (!this.ls.has(this.cpt)) { this.ls.add(this.cpt); this.cpt.addEventListener('characteristicvaluechanged', e => this.onCtrl(e.target.value)); }
         await this.cpt.startNotifications();

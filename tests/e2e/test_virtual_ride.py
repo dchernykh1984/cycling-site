@@ -1155,6 +1155,41 @@ def test_a_bike_that_only_sends_its_data_is_not_said_to_be_off_the_route(page: P
     assert errors == [], errors
 
 
+def test_a_trainer_whose_control_point_is_missed_on_a_reconnect_is_still_warned(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    troubles = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // a trainer whose control point answers every command, until a connection misses it
+            let found = true;
+            const point = { listeners: [], addEventListener(name, fn) { this.listeners.push(fn); },
+                async startNotifications() {},
+                async writeValueWithResponse(data) {
+                    const value = new DataView(new Uint8Array([0x80, data[0], 1]).buffer);
+                    setTimeout(() => this.listeners.forEach(fn => fn({ target: { value } })), 0);
+                } };
+            const bikeData = { addEventListener() {}, async startNotifications() {} };
+            const ftms = { async getCharacteristic(uuid) {
+                if (uuid === 0x2AD9 && found) return point;
+                if (uuid === 0x2AD2) return bikeData; throw new Error('-'); } };
+            const server = {
+                async getPrimaryService(uuid) { if (uuid === 0x1826) return ftms; throw new Error('-'); } };
+            const gatt = { async connect() { return server; } };
+            const trainer = new BLEDev({ name: 'trainer', addEventListener() {}, gatt });
+            Sensors.devs.push(trainer); await trainer.connect();
+            const troubles = [Trainer.trouble()];
+            found = false; await trainer.connect(); troubles.push(Trainer.trouble());
+            return troubles;
+        }"""
+    )
+    # under control; then connected again without its control point: not driven, and said so
+    assert troubles == [None, "control"], troubles
+    assert errors == [], errors
+
+
 def test_a_refusal_is_the_connection_s_that_made_it(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
