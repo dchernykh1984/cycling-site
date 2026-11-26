@@ -103,7 +103,7 @@ function stepRide(dt, inp, t) {
         if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; rideEvent('backToStart'); }
         const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
-        if (rideMode === 'plan' && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
+        if (rideMode === 'plan' && Work.active && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
       } else if (me.s >= world.FIN) { me.finishT = raceT; rideEvent('finish'); }
       world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; rideEvent('sight', l); } });
     } else { me.s += stepRider(me, 60, grade, dt); }

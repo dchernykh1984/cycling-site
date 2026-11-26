@@ -13,7 +13,7 @@ Object.assign(rideHooks, {
   planStep: (i, s, shifted) => { if (shifted) updateModeUI(); toast(s.f != null ? t('plan.stepToast', { n: i + 1, g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.stepToastW', { n: i + 1, what: stepWhat(s) }), 5); },
   planSoon: s => toast(s.f != null ? t('plan.soon', { g: gearLabel(s.f, s.r), c: s.cad }) : t('plan.soonW', { what: stepWhat(s) }), 4),
   planCue: text => toast(text, 6),
-  planDone: () => finishWorkout()
+  planDone: () => planOver()
 });
 function frame(now) {
   requestAnimationFrame(frame);
