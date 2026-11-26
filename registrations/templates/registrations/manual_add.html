@@ -25,7 +25,7 @@
 <div class="mb-3{% if relay_enabled and field.name in 'first_name,last_name,birth_year,birth_date,city' %} d-none{% endif %}">
   <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
   {{ field }}
-  {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  {% for e in field.errors %}<div class="text-danger small" data-error-for="{{ field.html_name }}">{{ e }}</div>{% endfor %}
 </div>
 {% endfor %}
 {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
