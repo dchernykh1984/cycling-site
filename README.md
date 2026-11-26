@@ -96,17 +96,21 @@ site down for up to a minute.
   01:00, does nothing.
 - **An urgent change** goes out with the workflow's "Run workflow" (`gh workflow run deploy.yml`)
   or with Render's Manual Deploy. Both take the site down for up to a minute.
-- **Setting it up:** the web service's deploy hook (Render: Settings -> Deploy Hook) goes into the
-  secret `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and the web service's Auto-Deploy
-  (Settings -> Build & Deploy) is set to Off. The Cron Job comes from the Blueprint: Render -> New ->
-  Blueprint, this repository, branch `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same
-  hook, and for `GITHUB_TOKEN`, a fine-grained token with read-only access to public repositories
-  and no other permission: without one GitHub answers 60 requests an hour per address, and Render's
-  outbound addresses are shared. GitHub refuses an expired token even for public data, so each night
-  run then fails, and Render e-mails it, until a new token replaces it. The hook now lives in both places: a regenerated one goes into the
-  GitHub secret and into the Cron Job's variable. The Cron Job's Trigger Run in the daytime shows
-  that it builds and starts: the run says it is outside the window and deploys nothing, before it
-  reads GitHub or calls the hook, so the token and the hook are first used at night.
+- **Setting it up:**
+  - The web service's deploy hook (Render: Settings -> Deploy Hook) goes into the secret
+    `RENDER_DEPLOY_HOOK_URL` of the `production` environment (below), and the web service's
+    Auto-Deploy (Settings -> Build & Deploy) is set to Off.
+  - The Cron Job comes from the Blueprint: Render -> New -> Blueprint, this repository, branch
+    `main`. Render asks once for `RENDER_DEPLOY_HOOK_URL`, the same hook, and for `GITHUB_TOKEN`.
+  - `GITHUB_TOKEN` is a fine-grained token with read-only access to public repositories and no
+    other permission: without one GitHub answers 60 requests an hour per address, and Render's
+    outbound addresses are shared. GitHub refuses an expired token even for public data, so each
+    night run then fails, and Render e-mails it, until a new token replaces it.
+  - The hook lives in both places: a regenerated one goes into the GitHub secret and into the Cron
+    Job's variable.
+  - The Cron Job's Trigger Run in the daytime shows that it builds and starts: the run says it is
+    outside the window and deploys nothing, before it reads GitHub or calls the hook, so the token
+    and the hook are first used at night.
 - **The secrets of GitHub Actions** live in the repository's `production` environment (Settings ->
   Environments), whose deployment branches are `main` only. A job receives them only when it names
   the environment and runs from `main`: a workflow pushed on any other branch, a collaborator's or a
