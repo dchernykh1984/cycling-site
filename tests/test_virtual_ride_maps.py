@@ -129,6 +129,39 @@ class MapsTests(SimpleTestCase):
                     self.assertEqual(len(point), 2, route["id"])
                     self.assertLess(_km(origins[route["id"]], point), 50, route["id"])
 
+    def test_what_stands_round_a_route_has_its_shape(self):
+        # roads round it, bridges over it and roads under it, power lines and railways, water (js/surroundings.js):
+        # lines of places near the route's origin, each as wide as a road or a river is; its own bridges and tunnels
+        # stretches between two of its points, a tunnel's between the ends of its ramps
+        routes = [route for route in _routes() if {"roads", "over", "under", "lines", "water"} & set(route)]
+        self.assertTrue(routes)
+        origins = {
+            route["id"]: route.get("origin", data.get("origin"))
+            for data in trainer_page.maps().values()
+            for route in data.get("routes", [])
+        }
+        for route in routes:
+            near = origins[route["id"]]
+            lines = [(item["pts"], item["w"]) for key in ("roads", "over", "under") for item in route.get(key, [])]
+            lines += [(item["pts"], item["w"]) for item in route.get("water", []) if "pts" in item]
+            lines += [(item["pts"], 1) for item in route.get("lines", [])]
+            for line, wide in lines:
+                self.assertGreaterEqual(len(line), 2, route["id"])
+                self.assertTrue(0 < wide <= 60, route["id"])
+                for point in line:
+                    self.assertEqual(len(point), 2, route["id"])
+                    self.assertLess(_km(near, point), 50, route["id"])
+            self.assertLessEqual(
+                {item["k"] for item in route.get("lines", [])}, {"power", "minor", "rail"}, route["id"]
+            )
+            for lake in [item["area"] for item in route.get("water", []) if "area" in item]:
+                self.assertGreaterEqual(len(lake), 3, route["id"])
+            last = len(route["pts"]) - 1
+            for i0, i1 in route.get("bridges", []):
+                self.assertTrue(0 <= i0 <= i1 <= last, route["id"])
+            for r0, i0, i1, r1 in route.get("tunnels", []):
+                self.assertTrue(0 <= r0 < i0 <= i1 < r1 <= last, route["id"])
+
     def test_a_map_s_relief_is_a_whole_grid_of_heights_round_its_routes(self):
         # SRTM heights by latitude and longitude (js/maps.js): rows from the north, every one there, each a height a
         # place on land can have, and the grid wide enough to hold every route of the map with 20 km to spare
