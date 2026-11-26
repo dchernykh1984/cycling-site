@@ -414,7 +414,8 @@ def _event_out(competition: Competition) -> RaceEventOut:
 
 
 def _group_out(group: GroupRide, user) -> GroupOut:
-    memberships = list(group.memberships.select_related("user", "registration", "registration__category"))
+    # the lobby's races come with their members, their registrations and categories (live.open_groups)
+    memberships = list(group.memberships.all())
     mine = next((m for m in memberships if m.user_id == user.pk), None)
     me = None
     if group.competition_id and mine and mine.bib:

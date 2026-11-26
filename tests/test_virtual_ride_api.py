@@ -6,8 +6,9 @@ import uuid
 from datetime import timedelta
 from unittest import mock
 
-from django.db import connections
+from django.db import connection, connections
 from django.test import Client, TestCase, TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext, ngettext
@@ -462,6 +463,18 @@ class RidingTogetherTests(MemberClientMixin, TestCase):
         self.assertEqual([o["user_id"] for o in body["online"]], [self.boris.pk])
         self.assertEqual(len(body["groups"]), 1)
         self.assertEqual(body["riders"], [])
+
+    def test_the_lobby_asks_the_database_as_often_for_many_races_as_for_one(self):
+        def asked(hosts):
+            for host in hosts:
+                self.post(self.member(host), "/groups", {"route": "center"})
+            with CaptureQueriesContext(connection) as queries:
+                self.post(self.client_a, "/presence", {"status": "lobby", "route": "center"})
+            return len(queries)
+
+        asked([])  # the rider's own row made, as every later call finds it
+        one = asked([_user("host0")])
+        self.assertEqual(asked([_user(f"host{k}") for k in range(1, 5)]), one)
 
     def test_the_lobby_lists_the_others_in_a_steady_order(self):
         client_c = self.member(carl := _user("carl"))
