@@ -1,6 +1,6 @@
 :root{
   --bg:#E9EDF1; --panel:#FBFCFD; --ink:#15202B; --muted:#56657A; --line:#D3DAE2; --soft:#EEF2F6;
-  --apple:#C3323B; --apple-ink:#FFFFFF; --amber:#E5A23A; --poplar:#4C7C55; --glacier:#3D7BB6;
+  --apple:#C3323B; --apple-ink:#FFFFFF; --amber:#E5A23A; --amber-ink:#1B1406; --poplar:#4C7C55; --glacier:#3D7BB6;
   --hud:rgba(11,17,24,.58); --hud-ink:#F3F6F9; --hud-dim:#A9B6C4;
   --display:'Unbounded','Golos Text',system-ui,sans-serif;
   --body:'Golos Text',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
@@ -300,8 +300,9 @@ button{cursor:pointer}
 #grade b{font-family:var(--display);font-weight:700;font-size:22px;line-height:1}
 #grade span{font-size:11px;opacity:.9;white-space:nowrap;margin:0;overflow:hidden;text-overflow:ellipsis}
 #hudWind{font-size:11px;line-height:1.25;padding:3px 10px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* a trainer that does not ride the route: in words, in the warning colour, on two lines where a language needs them */
-#hudTrainer{font-size:11px;line-height:1.25;padding:0 10px 5px;color:var(--amber);font-weight:600}
+/* a trainer that does not ride the route: in words, on the warning colour -- dark ink on it, as amber letters on the
+   see-through card over a light sky read at 2.3:1 -- on two lines where a language needs them */
+#hudTrainer{font-size:11px;line-height:1.25;padding:3px 10px 4px;background:var(--amber);color:var(--amber-ink);font-weight:600}
 .mapcard #mini{width:100%;height:auto;aspect-ratio:1;border-radius:0;background:none;display:block}
 @media (max-height:520px){ .mapcard{width:112px} #grade{padding:5px 8px 4px} #grade b{font-size:17px} #grade span{font-size:10px} }
 @media (max-width:640px){ .mapcard{width:104px} }

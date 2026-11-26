@@ -11,6 +11,7 @@ from accounts.models import User
 from api.endpoints.virtual_ride import PresenceIn
 from calendar_app.models import Discipline, DisciplineCategory, EventType
 from tests import trainer_page
+from tests.e2e import contrast
 from tests.e2e.conftest import inject_session
 from tests.e2e.test_interface_rules import _REACH
 from trainer.models import GroupRide
@@ -1156,6 +1157,10 @@ def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, l
             return el.scrollWidth <= el.clientWidth && box.right <= card.right; }"""
     )
     assert fits
+    # readable over the lightest sky: the scene is drawn on a canvas no contrast reading sees, so a white page stands
+    # under the see-through card for it (amber letters on the card read at 2:1 there; dark ink on amber at 8:1)
+    page.evaluate("() => { document.documentElement.style.background = document.body.style.background = '#fff'; }")
+    assert contrast.legibility(page.locator("#hudTrainer")) >= 4.5
     # given control again and riding the route, the line goes
     page.evaluate("() => { Sensors.trainer().ctrl = true; Trainer.sent = 0; drawFrame(200); }")
     expect(page.locator("#hudTrainer")).to_be_hidden()
