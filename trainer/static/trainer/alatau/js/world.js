@@ -167,10 +167,11 @@ function buildWorld(route) {
   return world;
 }
 // a route's own trees, as OpenStreetMap maps them: rows along the fields' edges, a tree about every 7 m, and woods,
-// one tree to about 90 square metres; none nearer the road than the steppe's trees out in the grass
+// one tree to about 90 square metres; none nearer the road than the steppe's trees out in the grass, and none past
+// 1.5 km from it -- the ground is drawn 1.6 km beyond the route, and a tree further out would hang over the plain
 function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
   const at = p => proj(p[0], p[1], T.origin);
-  const add = (x, z) => { if (!tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
+  const add = (x, z) => { if (routeGap(T, x, z) < 1500 && !tooClose(x, z, W / 2 + 30)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
   (own.rows || []).forEach(row => {
     const q = row.map(at);
     for (let i = 0; i + 1 < q.length; i++) {

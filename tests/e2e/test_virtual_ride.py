@@ -1280,7 +1280,7 @@ def test_a_racetrack_s_barriers_break_at_its_buildings_and_its_trees_grow_where_
                          [43.6 + 20 * n, e + 12.5 * m]];
             const route = { id: 'lap', name: named, desc: named, loop: true, width: 12, lanes: 1, scenery: 'racetrack',
                             pts: ring, barriers: { gap: 6 }, buildings: [{ h: 8, pts: box }],
-                            trees: { rows: [[[43.615, 76.49], [43.615, 76.51]]] } };
+                            trees: { rows: [[[43.615, 76.49], [43.615, 76.56]]] } }; // on 4 km past the drawn ground
             addMap({ id: 'circuit', name: named, origin: { lat: 43.6, lon: 76.5 }, routes: [route] });
             const T = buildWorld(ROUTES.find(r => r.id === 'lap')).T;
             const verts = name => {
@@ -1293,20 +1293,21 @@ def test_a_racetrack_s_barriers_break_at_its_buildings_and_its_trees_grow_where_
             const barrier = verts('rail').concat(verts('fence'));
             const trunks = scenery.children.find(o => o.isInstancedMesh && o.geometry.type === 'CylinderGeometry');
             const mx = new THREE.Matrix4(), p = new THREE.Vector3(), row = proj(43.615, 76.5, T.origin).z;
-            let offRow = 0;
+            let offRow = 0, farthest = 0;
             for (let i = 0; i < trunks.count; i++) {
                 trunks.getMatrixAt(i, mx); p.setFromMatrixPosition(mx); if (Math.abs(p.z - row) > 1) offRow++;
+                farthest = Math.max(farthest, routeGap(T, p.x, p.z));
             }
             return {
                 nearest: Math.min(...verts('rail').map(([x, z]) => routeGap(T, x, z))),
                 atBuilding: barrier.filter(([x, z]) => insideRing(foot, x, z) || ringGap(foot, x, z) < 1.9).length,
-                drawn: world_osmKept, trees: trunks.count, offRow,
+                drawn: world_osmKept, trees: trunks.count, offRow, farthest: Math.round(farthest),
             };
         }"""
     )
     assert seen["nearest"] > 12 - 1.01, seen
     assert seen["atBuilding"] == 0 and seen["drawn"] == 1, seen
-    assert seen["trees"] > 100 and seen["offRow"] == 0, seen
+    assert seen["trees"] > 100 and seen["offRow"] == 0 and seen["farthest"] <= 1500, seen
 
 
 @pytest.mark.django_db(transaction=True)
