@@ -88,11 +88,16 @@ function addRoads(G, T, W, roads, ground) {
 function addOverpasses(G, T, W, list, ground) {
   const P = [], I = [], piers = [], conc = new THREE.MeshLambertMaterial({ color: 0xb9b6ae, side: THREE.DoubleSide });
   list.forEach(b => {
-    const q = along(b.pts.map(p => xzOf(T, p)), 2);
+    const q = along(b.pts.map(p => xzOf(T, p)), 2), h = b.w / 2;
+    // the deck clears the highest of the road under it, across its whole width: a wide one crossing a road that
+    // climbs spans a stretch of it
     let top = -Infinity;
-    q.forEach(p => { const n = routeNearest(T, p.x, p.z); if (n.d < W / 2 + 1.5) top = Math.max(top, n.y); });
+    q.forEach((p, i) => {
+      const a = q[Math.max(0, i - 1)], c = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(c.x - a.x, c.z - a.z) || 1;
+      for (const k of [-1, 0, 1]) { const n = routeNearest(T, p.x - (c.z - a.z) / L * h * k, p.z + (c.x - a.x) / L * h * k); if (n.d < W / 2 + 1.5) top = Math.max(top, n.y); }
+    });
     if (!Number.isFinite(top)) return;
-    const deck = top + (b.foot ? 5.4 : 6), th = b.foot ? .6 : 1.2, h = b.w / 2;
+    const deck = top + (b.foot ? 5.4 : 6), th = b.foot ? .6 : 1.2;
     // the deck, its underside and its two parapets
     band(P, I, q, h, () => deck); band(P, I, q, h, () => deck - th);
     for (const k of [-1, 1]) {
