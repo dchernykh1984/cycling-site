@@ -1225,6 +1225,44 @@ def test_a_route_far_from_its_map_s_others_is_drawn_from_its_own_origin_and_rang
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_racetrack_keeps_its_edges_clear_and_its_one_lane_has_no_centre_line(page: Page, live_server):
+    """A racetrack lies in the steppe, its edges run-off and barriers: its trees stand out in the grass only, and a road
+    of one lane, as a racetrack is, has no line down its middle."""
+    _trainer_in_its_menu(page, live_server)
+    seen = page.evaluate(
+        """() => {
+            const named = { ru: 'n', kk: 'n', en: 'n' }, ring = [];
+            for (let i = 0; i < 40; i++) {
+                const a = i / 40 * 2 * Math.PI;
+                ring.push([43.6 + 0.006 * Math.sin(a), 76.5 + 0.008 * Math.cos(a), 650]);
+            }
+            const lap = (id, scenery) => ({ id, name: named, desc: named, loop: true, width: 12, lanes: 1, scenery,
+                                           pts: ring });
+            addMap({ id: 'circuit', name: named, origin: { lat: 43.6, lon: 76.5 },
+                     routes: [lap('track', 'racetrack'), lap('road', 'steppe')] });
+            const m = new THREE.Matrix4(), p = new THREE.Vector3();
+            const nearestTree = id => {
+                const T = buildWorld(ROUTES.find(r => r.id === id)).T;
+                const trunks = scenery.children.find(o => o.isInstancedMesh && o.geometry.type === 'CylinderGeometry');
+                let gap = Infinity;
+                for (let i = 0; i < trunks.count; i++) {
+                    trunks.getMatrixAt(i, m); p.setFromMatrixPosition(m);
+                    for (let j = 0; j < T.N; j++) gap = Math.min(gap, Math.hypot(T.X[j] - p.x, T.Z[j] - p.z));
+                }
+                return Math.round(gap);
+            };
+            const middle = lanes => { // the texture's colour in the middle of the road, near its top
+                const pixel = roadTexture(lanes).image.getContext('2d').getImageData(128, 10, 1, 1).data;
+                return [...pixel].slice(0, 3);
+            };
+            return { track: nearestTree('track'), road: nearestTree('road'), one: middle(1), two: middle(2) };
+        }"""
+    )
+    assert seen["track"] > 30 > seen["road"], seen
+    assert max(seen["one"]) < 150 < min(seen["two"]), seen
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

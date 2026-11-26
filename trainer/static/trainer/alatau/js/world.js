@@ -33,7 +33,8 @@ let world_osmKept = 0;
 function buildWorld(route) {
   disposeWorld();
   const course = buildCourse(route), { T, S0, FIN, lms } = course, grp = new THREE.Group(), r = rng(route.id.length * 977 + 13);
-  const W = route.width, gorge = route.scenery === 'gorge', steppe = route.scenery === 'steppe';
+  // a racetrack lies in the steppe, its edges run-off and barriers: no tree stands along it
+  const W = route.width, gorge = route.scenery === 'gorge', track = route.scenery === 'racetrack', steppe = track || route.scenery === 'steppe';
   // road ridden earlier, at a distance along the route: drawn once, and passed by the trees already planted on it
   const againAt = s => T.again[clamp(Math.round(s / T.L * (T.N - 1)), 0, T.N - 1)];
   // --- рельеф ---
@@ -132,7 +133,7 @@ function buildWorld(route) {
   const trees = [];
   if (steppe) {
     // along the road a tree now and then, in ones, twos and threes, beyond the shoulder; and a few alone in the grass
-    for (const side of [-1, 1]) {
+    if (!track) for (const side of [-1, 1]) {
       let s = r() * 40;
       while (s < T.L) {
         const n = r() < .55 ? 1 + Math.floor(r() * 3) : 0;

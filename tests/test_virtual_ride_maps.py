@@ -14,7 +14,7 @@ from trainer.models import VirtualRide
 # The members' saved rides and group races keep the key of the route they were ridden on
 RIDDEN = {"center", "medeu", "oldtown", "farabi"}
 # What world.js draws along a route
-SCENERIES = {"city", "gorge", "steppe"}
+SCENERIES = {"city", "gorge", "steppe", "racetrack"}
 OBJECTS = trainer_page.PAGE.parent / "alatau" / "objects"
 
 
