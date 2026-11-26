@@ -258,14 +258,15 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
               const g = at(x, z);
               if (g != null && base > g + 1e-3) out.push(r.id + ': ' + what + ' ' + (base - g).toFixed(2) + ' m up');
             };
-            const each = (type, n, f) => {
-              const mesh = kids.find(o => o.isInstancedMesh && o.geometry.type === type);
+            // by name: a power line's towers and arms are cylinders and boxes too
+            const each = (name, n, f) => {
+              const mesh = kids.find(o => o.isInstancedMesh && o.name === name);
               if (!mesh) return;
               const step = Math.max(1, Math.floor(mesh.count / n));
               for (let i = 0; i < mesh.count; i += step) { mesh.getMatrixAt(i, m); m.decompose(p, q, k); f(); }
             };
-            each('CylinderGeometry', 40, () => high('a tree', p.y, p.x, p.z));
-            each('BoxGeometry', 30, () => {
+            each('trunks', 40, () => high('a tree', p.y, p.x, p.z));
+            each('houses', 30, () => {
               for (const [a, b] of [[-.5, -.5], [-.5, .5], [.5, -.5], [.5, .5]]) {
                 const c = new THREE.Vector3(a * k.x, 0, b * k.z).applyQuaternion(q).add(p);
                 high('a house', p.y, c.x, c.z);
