@@ -354,8 +354,11 @@ def test_marker_popup_edit_link_navigates(page: Page, live_server, map_page, adm
     marker.press("Enter")
     edit_link = page.locator(f".leaflet-popup a[href^='/ru/locations/{location_with_coords.pk}/edit/']")
     expect(edit_link).to_be_visible()
+    # The popup pans the map to fit the screen, and on a phone it moves for a while: a click aimed between two of
+    # its steps presses on the link and lets go beside it, and nothing navigates (WebKit, iPhone 15, CI). Enter
+    # follows the link as a tap does.
     with page.expect_navigation():
-        edit_link.click()
+        edit_link.press("Enter")
     assert f"/ru/locations/{location_with_coords.pk}/edit/" in page.url
     expect(page.locator("#id_name_ru")).to_have_value("Velodrome")
     with page.expect_navigation():
