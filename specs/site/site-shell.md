@@ -169,8 +169,8 @@ the categories' starts and the crossings into the event's timing streams as the 
 FinishProtocolGenerator's "Get data from site"; only while the event keeps its upload token, which never reaches a
 rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`). On a phone (a coarse pointer)
 the start's summary says a route with many buildings and streets (Granfondo 2026, the Medeu climb, the centre's
-loop) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It includes rider
-height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
+loop) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It
+includes rider height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
 default. Free rides can be finished from the pause menu; a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
 it too. During a ride the HUD shows, in one row on top, the speed,
@@ -225,12 +225,13 @@ piers beside it; roads under it down a cutting between walls; parapets along its
 down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
 none inside them; power lines on towers or poles, their wires sagging high over the road, and railways and rivers,
 as far as a rider sees them; canals and ponds; trees in rows, woods, parks and alone. Every route carries them, the
-ones made before the tools too (`scripts/virtual_ride/`, the `virtual-ride-routes` skill). Between a dual carriageway's two halves lies their median -- a pavement each way where it is
-wide, a concrete barrier down a narrow one -- and one road ridden twice has one height, the barometer's lag up and
-down a slope evened out. Where a route's points carry the rider's line, the rider rides it -- the source track's
-way through a corner it took by the apex, the right lane elsewhere -- with the bunch round it and the camera on it,
-always on the road. A sight shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km.
-Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_ride_surroundings.py`.
+ones made before the tools too (`scripts/virtual_ride/`, the `virtual-ride-routes` skill). Between a dual
+carriageway's two halves lies their median -- a pavement each way where it is wide, a concrete barrier down a
+narrow one -- and one road ridden twice has one height, the barometer's lag up and down a slope evened out. Where
+a route's points carry the rider's line, the rider rides it -- the source track's way through a corner it took by
+the apex, the right lane elsewhere -- with the bunch round it and the camera on it, always on the road. A sight
+shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km. Tests:
+`tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_ride_surroundings.py`.
 
 ## User Scenarios
 
@@ -377,8 +378,8 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
 - The virtual ride page carries its own maps (`trainer/static/trainer/alatau/maps/`, a folder per
   city or region; Almaty and the Almaty Region have routes so far) and the UBT kit its rider wears
   (`data/`). A new map comes with a new revision of the page -- its folder and a line in it; the site
-  stores only the route key and name the page sends. Three of the page's words still name Almaty: its title and its loading line
-  ("title", "loading" in `text/<lang>.js`) and the site page's description (`trainer/views.py`);
+  stores only the route key and name the page sends. Three of the page's words still name Almaty: its title and its
+  loading line ("title", "loading" in `text/<lang>.js`) and the site page's description (`trainer/views.py`);
   NEEDS CLARIFICATION: their wording once a second map has routes.
 - The fallback page description names countries and sports ("cycling, running, cross-country skiing
   -- in Kazakhstan, Kyrgyzstan, Russia and beyond", `base.html`), and the navbar falls back to

@@ -33,9 +33,10 @@ phone is told so, and a route is lightened only without losing quality.
 ### User Story 1 - An organizer makes a race for their event (Priority: P1)
 
 1. **Given** an organizer on the virtual ride page, **When** they gather a group race, **Then** they may tie it to
-   one of their own events that is public (approved, neither hidden nor invite-only) and not over, and set: the mode (a group race or an individual time
-   trial), the gap between the groups' starts in a group race (0: one mass start), the interval between riders in a
-   time trial, whether riders of different categories draft each other in a group race, and the wind.
+   one of their own events that is public (approved, neither hidden nor invite-only) and not over, and set: the
+   mode (a group race or an individual time trial), the gap between the groups' starts in a group race (0: one mass
+   start), the interval between riders in a time trial, whether riders of different categories draft each other in
+   a group race, and the wind.
 2. **Given** a race tied to an event, **Then** its card names the event and links to it; the API carries the same.
 3. **Given** someone who is neither the event's organizer nor an admin, **Then** they cannot tie a race to it.
 
