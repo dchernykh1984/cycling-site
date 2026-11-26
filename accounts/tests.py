@@ -1162,17 +1162,16 @@ class ProfileEditViewTests(TestCase):
         response = self.client.get(reverse("account_profile"))
         self.assertContains(response, "https://www.strava.com/athletes/99")
 
-    def test_birth_date_prefilled_as_iso_under_ru_locale(self):
-        # Regression: ru-locale L10N rendered the date in a localized form, which an
-        # <input type=date> rejects, leaving it blank. It must be pre-filled as ISO YYYY-MM-DD.
-        import re
-
+    def test_birth_date_prefilled_as_typed_in_every_language(self):
+        # the field is typed as DD.MM.YYYY whatever the page's language: a localized form, or ISO for a browser's
+        # date input, would be a date the reader did not type
         self.user.birth_date = datetime.date(1990, 6, 21)
         self.user.save()
         self.client.force_login(self.user)
-        resp = self.client.get(in_language(reverse("account_profile_edit"), "ru"), HTTP_ACCEPT_LANGUAGE="ru")
-        m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
-        self.assertEqual(m.group(1), "1990-06-21")
+        for lang in ("ru", "kk", "en"):
+            resp = self.client.get(in_language(reverse("account_profile_edit"), lang))
+            m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
+            self.assertEqual(m.group(1), "21.06.1990", lang)
 
     def test_post_redirects_to_profile(self):
         self.client.force_login(self.user)

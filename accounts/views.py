@@ -31,6 +31,7 @@ from accounts.access import (
 from accounts.forms import PrivacyConsentForm
 from accounts.models import User, VirtualMember
 from cycling_site.skins import registry
+from cycling_site.typed_date import TypedDateField, TypedDateInput
 
 # One minute. Long enough to stop a double click and a button that fires twice, short enough
 # that a reader waiting on a confirmation -- which locks them out of the site until it
@@ -94,6 +95,7 @@ _MESSAGE_MAX_LENGTH = 5000
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
+        field_classes: ClassVar[dict] = {"birth_date": TypedDateField}
         fields: ClassVar[list[str]] = [
             "first_name",
             "last_name",
@@ -113,7 +115,7 @@ class ProfileEditForm(forms.ModelForm):
             "autosave_filters",
         ]
         widgets: ClassVar[dict] = {
-            "birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "birth_date": TypedDateInput(attrs={"autocomplete": "bday"}),  # the member's own: autofill may offer it
             "gender": forms.RadioSelect,
             "preferred_directions": forms.MultipleHiddenInput,
             "preferred_disciplines": forms.MultipleHiddenInput,
@@ -182,7 +184,7 @@ class VirtualMemberForm(forms.ModelForm):
             "sports_achievements": gettext_lazy("Sports achievements"),
         }
         help_texts: ClassVar[dict] = {"sports_achievements": gettext_lazy("A sports rank or category, or the like")}
-        widgets: ClassVar[dict] = {"birth_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")}
+        field_classes: ClassVar[dict] = {"birth_date": TypedDateField}
 
     def __init__(self, *args, owner, **kwargs):
         super().__init__(*args, **kwargs)
@@ -200,6 +202,18 @@ class VirtualMemberForm(forms.ModelForm):
     def save(self, commit=True):
         self.instance.owner = self.owner
         return super().save(commit)
+
+
+class VirtualFilterForm(forms.Form):
+    """The card's span of dates of birth, typed as every date of the profile is; the page filters by it, the
+    server never takes it."""
+
+    born_from = TypedDateField(
+        required=False, label=gettext_lazy("Born from"), widget=TypedDateInput(attrs={"id": "vm-born-from"})
+    )
+    born_to = TypedDateField(
+        required=False, label=gettext_lazy("Born to"), widget=TypedDateInput(attrs={"id": "vm-born-to"})
+    )
 
 
 def _virtual_context(request, form=None):
@@ -226,6 +240,7 @@ def _virtual_context(request, form=None):
         "limit": roles.virtual_members_limit(user),
         "room": virtual_members.room(user),
         "form": form or VirtualMemberForm(owner=user),
+        "filters": VirtualFilterForm(),
         # The two ways to hand a person over, one button each, the person staying without an account first
         "transfer_kinds": [
             (transfers.To.MENTOR, gettext("Hand over to a mentor")),

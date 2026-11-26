@@ -39,9 +39,8 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="id_birth_date">{% trans "Date of birth" %}</label>
-                {{ form.birth_date.errors }}
-                <input type="date" name="birth_date" id="id_birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
-                       class="form-control{% if form.birth_date.errors %} is-invalid{% endif %}">
+                {{ form.birth_date }}
+                {% for error in form.birth_date.errors %}<div class="text-danger small" data-error-for="birth_date">{{ error }}</div>{% endfor %}
             </div>
             <div class="mb-3">
                 <label class="form-label" for="id_team">{% trans "Team" %}</label>
