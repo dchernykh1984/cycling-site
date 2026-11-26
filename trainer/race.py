@@ -20,6 +20,7 @@ from event_photos.bindings import recompute as recompute_bindings
 from event_photos.models import IssuedBib
 from protocols.models import FinishTimesUpload, GroupTimesUpload, RemotePointUpload, StartListUpload
 from registrations.models import CompetitionRegistration, RegistrationCategory
+from trainer.models import GroupRide, GroupRideMember
 
 #: A route's control points beyond the start-finish line (point 0): its turns back, a few at most
 MAX_POINTS = 20
@@ -69,8 +70,6 @@ def writing(race) -> bool:
 
 def _taken(competition: Competition) -> set[str]:
     """Every bib the event has given: by its start lists and by its virtual races, those kept for riders who left."""
-    from trainer.models import GroupRide, GroupRideMember
-
     issued = IssuedBib.objects.filter(competition=competition, state=IssuedBib.State.ACTIVE).values_list(
         "bib", flat=True
     )
@@ -227,8 +226,6 @@ def write_start(race) -> None:
     whenever a rider joins or leaves."""
     if race.competition is None:
         return
-    from trainer.models import GroupRide
-
     zone = race.competition.timezone
     with transaction.atomic():
         # one writer at a time, the riders read once it is this one's turn: two riders joining at once each write
