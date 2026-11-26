@@ -1232,6 +1232,30 @@ def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, l
     expect(page.locator("#hudTrainer")).to_be_hidden()
 
 
+@pytest.mark.django_db(transaction=True)
+def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            const trainer = new BLEDev({ name: 'trainer' });
+            trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
+            Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    said = page.evaluate("t('bt.trainerNoCtrl')")
+    page.evaluate("drawFrame(200)")
+    expect(page.locator("#toast")).to_have_text(said)
+    # once: the frames after it leave another message in its place
+    page.evaluate("() => { toast('another', 3); drawFrame(200); }")
+    expect(page.locator("#toast")).to_have_text("another")
+    # the next ride says it again
+    page.evaluate("() => { startMenu(); startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("drawFrame(200)")
+    expect(page.locator("#toast")).to_have_text(said)
+
+
 def test_a_grade_sent_before_the_trainer_reconnected_is_not_counted_as_on_it(page: Page):
     errors = _ride_alone(page)
     for name in ("js/i18n.js", "js/bluetooth.js"):
