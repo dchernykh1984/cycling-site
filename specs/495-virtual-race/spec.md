@@ -84,8 +84,9 @@ phone is told so, and a route is lightened only without losing quality.
 
 - A category's range used up: the rider gets no bib and joining is refused with the reason.
 - A rider whose registration moves to another category after joining keeps the bib; their laps follow the category.
-- A crossing before the rider's start or ahead of the site's clock, or of a point beyond the route's few (20 at
-  most), is not written; the page reports none after the rider's last lap.
+- A crossing before the rider's start or ahead of the site's clock, of a point beyond the route's few (20 at
+  most), or past as many crossings of the point as the rider has laps, is not written; the page reports none after
+  the rider's last lap.
 - A rider who goes back to the menu as they finish: the crossings not sent yet go from the menu with their race.
 - A rider who starts late (a page may start up to 30 s after its start): each crossing is the moment it happened
   on the site's clock, as a chronometer takes it, so the time lost is theirs.
