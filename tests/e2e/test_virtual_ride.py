@@ -1385,7 +1385,7 @@ def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page
     expect(routes).to_have_text(["east", "west"])
     assert page.evaluate("routeSel") == "east"
     almaty.click()
-    expect(routes).to_have_text(["Central loop", "Climb to Medeu", "Old centre", "Al-Farabi sprint"])
+    expect(routes).to_have_text(["Central loop", "Climb to Medeu", "Old centre", "Al-Farabi sprint", "Granfondo 2026"])
     assert page.evaluate("routeSel") == "center"
 
 
