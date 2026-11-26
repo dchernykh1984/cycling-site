@@ -67,6 +67,9 @@ EVENTS_API = {
     "another's protocol sections":  "401     404   404       404       200     200     200",
     # read by its managers and the people it lets in, as its protocol pages are
     "invite-only protocols":        "404     404   404       404       200     200     200",
+    # a race with protocols in the virtual ride (specs/495-virtual-race): its event's organizer, or an admin for any
+    "race for own event":           "401     403   403       201       201     201     201",
+    "race for another's event":     "401     403   403       403       201     201     201",
 }
 
 NEWS_AND_KNOWLEDGE = {
@@ -257,6 +260,17 @@ def api_create(site, v):
         return str(answer.status_code)
     made = Competition.objects.get(pk=answer.json()["id"])
     return "201:appr" if made.status == Competition.Status.APPROVED else "201:pend"
+
+
+def api_race_for(whose):
+    def probe(site, v):
+        event = v.own_event(site) if whose == "own" and v.user.is_authenticated else site.public
+        # a day apart: one host's races start an hour apart at least
+        start = timezone.now() + datetime.timedelta(days=1 if whose == "own" else 2)
+        body = {"route": "center", "start_at": start.isoformat(), "competition_id": event.pk}
+        return str(v.post_json("/api/v1/virtual-ride/groups", body).status_code)
+
+    return probe
 
 
 def api_own_event(field):
@@ -571,6 +585,8 @@ class RoleMatrixTests(TestCase):
                 "another's pending event": api_pending_event,
                 "another's protocol sections": api_others_protocol_sections,
                 "invite-only protocols": api_invite_only_protocols,
+                "race for own event": api_race_for("own"),
+                "race for another's event": api_race_for("another's"),
             },
             EVENTS_API,
         )
