@@ -55,8 +55,10 @@ Standard Atmosphere's at the height of the road under each rider. A rider close 
 rider and the bots alike, rides in the best wake ahead: the share of the air drag saved follows
 on-site measurements of riders pedalling (Spoelstra et al. 2020: 45 % in line 0.7 m behind the
 wheel, 1.3 points more for each 10 cm closer, 3.9 points less for each 10 cm aside), and the same
-slopes further out, so it is gone 4.2 m back or 1.2-1.4 m aside; a smart trainer is told a change
-of that drag within the second. A cadence sensor alone rides by the physics, from the trainer's
+slopes further out, so it is gone 4.2 m back or 1.2-1.4 m aside, scaled by whom the rider hides behind -- the
+square root of the drag areas ahead and behind, within 0.8 to 1.2: a model, the measurements saying only that a
+bigger rider ahead shelters more (37 % behind a small rider on a TT bike, 53 % behind a big one on an MTB); a smart
+trainer is told a change of that drag within the second. A cadence sensor alone rides by the physics, from the trainer's
 power curve, unless the rider chose the gear's speed; a step of the own plan by gears rides at its
 gear's speed whatever the choice.
 A signed-in member's settings on the page -- body, bike, trainer, mode, plan -- are kept with their account

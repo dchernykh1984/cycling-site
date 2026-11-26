@@ -19,6 +19,13 @@ function airDensity(h) { return 1.225 * Math.pow(1 - .0065 * clamp(h || 0, -500,
 // 1.2-1.4 m aside by the gap.
 const DRAFT = { share: .45, at: .7, back: .13, side: .39 };
 function draftShare(gap, side) { return gap < 0 ? 0 : clamp(DRAFT.share - DRAFT.back * (gap - DRAFT.at) - DRAFT.side * Math.abs(side), 0, 1); }
+// Whom a rider hides behind: a bigger drag area ahead shelters more. The same measurements found the trailing rider's
+// saving grows with the leading rider's drag area but give no slope, and a velodrome study found no effect of the
+// riders' relative size (Gardner et al. 2009): the saving is scaled by the square root of the drag areas ahead and
+// behind, within 0.8 to 1.2 -- a model, not a measurement. A small rider on a TT bike (0.22 m2) saves the rider of
+// 0.32 m2 behind them 37 % instead of 45; a big one on an MTB (0.45 m2) 53 %.
+const DRAFT_SIZE = { lo: .8, hi: 1.2 };
+function draftScale(ahead, behind) { return clamp(Math.sqrt((ahead || PHYS.CdA) / (behind || PHYS.CdA)), DRAFT_SIZE.lo, DRAFT_SIZE.hi); }
 // The wind, { ms, from }: its speed and the bearing it blows from, degrees (0 north, 90 east). What a rider feels of
 // it is its share along their way (tx, tz: east and south on the scene), m/s, + behind them; the side wind is left out
 function tailwind(wind, tx, tz) { if (!wind || !wind.ms) return 0; const a = wind.from * Math.PI / 180; return wind.ms * (Math.cos(a) * tz - Math.sin(a) * tx); }

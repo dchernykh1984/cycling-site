@@ -844,7 +844,8 @@ def test_a_rider_close_behind_another_rides_in_its_wake(page: Page):
     shares = page.evaluate(
         f"""() => {{
             globalThis.mpStepRemote = () => {{}};
-            const other = newRider('other', 0, 75, 0, 2); other.remote = true; bots = [other];
+            // riders of one size, as the measurements had them (another size: the test after the bot's below)
+            const other = newRider('other', 0, 75, 0, 2); other.remote = true; other.CdA = me.CdA; bots = [other];
             // the bikes are 1.71 m long: their points 1.71 m apart leave no gap between the wheels
             const share = (gap, side) => {{
                 other.s = me.s + 1.71 + gap; other.lane = me.lane + side;
@@ -864,7 +865,8 @@ def test_in_a_wake_the_same_power_rides_faster(page: Page):
         """() => {
             // a live rider who keeps 0.7 m ahead of the wheel, in line: 45 % of the air drag saved
             globalThis.mpStepRemote = b => { b.s = me.s + 1.71 + .7; };
-            const ahead = newRider('ahead', 0, 75, me.s + 2.41, me.lane); ahead.remote = true; bots = [ahead];
+            const ahead = newRider('ahead', 0, 75, me.s + 2.41, me.lane); ahead.remote = true; ahead.CdA = me.CdA;
+            bots = [ahead];
             const inp = { P: 200, cad: 85, mode: 'power', direct: false };
             for (let i = 1; i <= 240 * 60; i++) stepRide(1 / 60, inp, i / 60);
             return [me.v, me.rho, PHYS.g];
@@ -880,11 +882,29 @@ def test_a_bot_behind_the_rider_rides_in_the_riders_wake(page: Page):
     share = page.evaluate(
         f"""() => {{
             const bot = newRider('bot', 0, 70, me.s - 1.71 - .7, me.lane);
-            Object.assign(bot, {{ ch: {{ style: 'rouleur' }}, wkg: 3, seed: 1 }}); bots = [bot];
+            Object.assign(bot, {{ ch: {{ style: 'rouleur' }}, wkg: 3, seed: 1, CdA: me.CdA }}); bots = [bot];
             stepRide(1 / 60, {_STILL}, 0); return bot.draft;
         }}"""
     )
     assert share == pytest.approx(0.45, abs=1e-3)
+    assert errors == [], errors
+
+
+def test_whom_a_rider_hides_behind_changes_the_wake(page: Page):
+    """45 % of the drag saved 0.7 m behind a rider of one's own size; more behind a bigger one, less behind a
+    smaller one, by the square root of their drag areas and within 0.8 to 1.2 of it."""
+    errors = _ride_alone(page)
+    shares = page.evaluate(
+        f"""() => {{
+            globalThis.mpStepRemote = () => {{}};
+            me.CdA = .32;
+            const ahead = newRider('ahead', 0, 75, me.s + 1.71 + .7, me.lane); ahead.remote = true; bots = [ahead];
+            const behind = cda => {{ ahead.CdA = cda; stepRide(1 / 60, {_STILL}, 0); return me.draft; }};
+            // one's own size; a small rider on a TT bike; a big one on an MTB; a tiny one and a huge one
+            return [behind(.32), behind(.22), behind(.45), behind(.1), behind(1)];
+        }}"""
+    )
+    assert shares == pytest.approx([0.45, 0.373, 0.534, 0.36, 0.54], abs=1e-3)
     assert errors == [], errors
 
 
@@ -930,7 +950,7 @@ def test_a_smart_trainer_is_told_the_lighter_drag_of_a_wake_at_once(page: Page):
         f"""async () => {{
             globalThis.mpStepRemote = () => {{}};
             const ahead = newRider('ahead', 0, 75, me.s + 1.71 + .7, me.lane); ahead.remote = true; bots = [ahead];
-            Object.assign(me, {{ CdA: .35, Crr: .0058 }});
+            Object.assign(me, {{ CdA: .35, Crr: .0058 }}); ahead.CdA = me.CdA;
             const at = async t => {{
                 stepRide(1 / 60, {_STILL}, 0); Trainer.update(t, 6, me);
                 await new Promise(done => setTimeout(done, 50));
