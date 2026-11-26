@@ -257,6 +257,19 @@ class TimingTests(RaceTestCase):
         self.assertTrue(all(line.startswith("51#") and CLOCK.fullmatch(line.split("#")[1]) for line in finish_lines))
         self.assertEqual(len(self.stream(RemotePointUpload, point_number=1)), 1)
 
+    def test_a_rider_whose_registration_is_gone_leaves_the_start_list_and_the_race_goes_on(self):
+        group = self.make().json()["id"]
+        anna, boris = self.rider("anna", self.elite), self.rider("boris", self.women)
+        self.join(anna, group)
+        race.registration_of(anna, self.event).delete()
+        self.assertEqual(self.join(boris, group).status_code, 200)
+        self.assertEqual([line.split("#")[0] for line in self.stream(StartListUpload)], ["51"])
+        # nor are their crossings written, which FinishProtocolGenerator could not match with anyone
+        self._start_now(group)
+        now = int(timezone.now().timestamp() * 1000)
+        self._ride(anna, group, [{"point": 0, "at_ms": now - 1000}])
+        self.assertEqual(self.stream(FinishTimesUpload), [])
+
     def test_a_rider_s_crossings_of_a_point_stop_at_their_laps(self):
         group = self.make().json()["id"]
         anna = self.rider("anna", self.women)  # two laps
