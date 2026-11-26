@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from django.db.models import Count, Max, Min, Sum
 
-from . import services, strava
+from . import race, services, strava
 from .models import StravaConnection, VirtualRide
 
 PEAK_FIELDS = ("peak_5s_w", "peak_1m_w", "peak_5m_w", "peak_20m_w")
@@ -116,11 +116,27 @@ def rank_group(group) -> None:
     a page that lost sight of the others for a moment would otherwise call itself the winner.
     """
     finishers = group_results(group)
-    field = max(group.memberships.count(), len(finishers))
-    for place, ride in enumerate(finishers, start=1):
+    if not group.competition_id:
+        _place(finishers, max(group.memberships.count(), len(finishers)))
+        return
+    # a race with protocols: places within each category, whose riders ride its laps and start at its time
+    groups = categories_of(group)
+    for name in {*groups.values(), *(groups.get(r.user_id, "") for r in finishers)}:
+        rides = [r for r in finishers if groups.get(r.user_id, "") == name]
+        _place(rides, max(sum(1 for g in groups.values() if g == name), len(rides)))
+
+
+def _place(rides, field) -> None:
+    for place, ride in enumerate(rides, start=1):
         if (ride.place, ride.field_size) != (place, field):
             ride.place, ride.field_size = place, field
             ride.save(update_fields=["place", "field_size"])
+
+
+def categories_of(group) -> dict[int, str]:
+    """Each rider of a race with protocols and their category (race.group_of), by user."""
+    members = group.memberships.exclude(bib="").select_related("registration__category")
+    return {m.user_id: race.group_of(m) for m in members}
 
 
 def group_results(group) -> list[VirtualRide]:

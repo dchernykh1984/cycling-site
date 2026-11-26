@@ -345,6 +345,7 @@ class GroupResultOut(Schema):
     name: str
     duration_s: float
     finished_at: datetime
+    group: str = ""  # in a race with protocols the rider's category: a place is among its riders
 
 
 class GroupResultsOut(Schema):
@@ -946,10 +947,15 @@ def cancel_group(request, group_id: int):
 
 @router.get("/groups/{group_id}/results", response=GroupResultsOut, auth=member_auth, summary="Group race results")
 def group_results(request, group_id: int):
-    group = get_object_or_404(GroupRide.objects.select_related("host"), pk=group_id)
+    group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
+    groups = records.categories_of(group) if group.competition_id else {}
     finished = [
         GroupResultOut(
-            user_id=r.user_id, name=r.user.public_display_name, duration_s=r.duration_s, finished_at=r.finished_at
+            user_id=r.user_id,
+            name=r.user.public_display_name,
+            duration_s=r.duration_s,
+            finished_at=r.finished_at,
+            group=groups.get(r.user_id, ""),
         )
         for r in records.group_results(group)
     ]
