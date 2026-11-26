@@ -946,6 +946,25 @@ def test_a_smart_trainer_is_set_to_the_riders_own_drag(page: Page):
     assert errors == [], errors
 
 
+def test_the_trainer_s_difficulty_leaves_the_speed_to_the_route_s_own_grade(page: Page):
+    """The difficulty scales what a smart trainer puts in the legs (the test above: 6 % at half of it is 3 %); the
+    speed on the screen comes from the route's own grade and the power, whatever it is set to."""
+    errors = _ride_alone(page)
+    ridden = page.evaluate(
+        """() => [0, 50, 100].map(difficulty => {
+            globalThis.settings = { difficulty };
+            // a 6 % climb, a minute at 250 W from a standstill
+            world.T.Y = [800, 800 + .06 * world.T.L]; me.v = 0; me.s = world.S0;
+            const inp = { P: 250, cad: 85, mode: 'power', direct: false };
+            for (let i = 1; i <= 60 * 60; i++) stepRide(1 / 60, inp, i / 60);
+            return [me.v, me.s - world.S0];
+        })"""
+    )
+    assert ridden[0] == ridden[1] == ridden[2], ridden
+    assert ridden[0][0] > 1, ridden  # carried up the climb, not stood still
+    assert errors == [], errors
+
+
 def test_a_smart_trainer_is_told_the_lighter_drag_of_a_wake_at_once(page: Page):
     errors = _ride_alone(page)
     _trainer_answering(page)
@@ -1762,6 +1781,19 @@ def test_a_box_is_ticked_from_its_box_and_words_not_from_the_empty_row_beside_th
     expect(page.locator("#windOn")).not_to_be_checked()
     page.mouse.click(*words)
     expect(page.locator("#windOn")).to_be_checked()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_trainer_s_difficulty_says_the_legs_feel_it_and_the_speed_does_not(page: Page, live_server):
+    """A rider new to virtual rides could not tell what the difficulty changes."""
+    _trainer_in_its_menu(page, live_server)
+    hint = page.locator("#difficultyHint")
+    expect(hint).to_be_visible()
+    expect(hint).to_have_text(page.evaluate("t('trainer.difficultyHint')"))
+    # right under its control, and read with it by a screen reader
+    expect(page.locator("#difficulty")).to_have_attribute("aria-describedby", "difficultyHint")
+    after = page.evaluate("document.querySelector('#difficulty').closest('.field').nextElementSibling.id")
+    assert after == "difficultyHint", after
 
 
 @pytest.mark.django_db(transaction=True)

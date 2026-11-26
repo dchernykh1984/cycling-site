@@ -110,6 +110,7 @@ const TEXT_EN = {
     "bt.failed": "The device was found but would not connect. Wake it up (turn the pedals, put on the heart rate monitor) and try again.",
     "bt.twoSprockets": "Enter at least two sprockets, for example 11-12-13-14-15-17-19-21-24-28.",
     "trainer.difficulty": "Smart trainer difficulty",
+    "trainer.difficultyHint": "How hard the climbs feel: at 100% as on the road, at 50% half as hard (6% feels like 3%). The speed on the screen does not depend on it: it comes from your power and the route's real gradient.",
     "diff.0": "0%, no climbs",
     "diff.100": "100%, as on the road",
     "trainer.label": "Trainer",
