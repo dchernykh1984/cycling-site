@@ -30,7 +30,9 @@ The data format is in `trainer/static/trainer/alatau/js/maps.js`; the scene is d
    - Where it turns back, it turns on the road itself, and the road goes on past the turn as in life.
    - Widths and lanes as the road has them: OpenStreetMap's `lanes`, `width` and `oneway`, a dual
      carriageway as its two ways, else measured on satellite imagery. The markings follow the lanes.
-   - The rider keeps to the right side of the road, out and back alike.
+   - The rider keeps to the right side of the road, out and back alike -- but where the source track
+     takes a corner by its apex while the road runs otherwise, the road is laid as it really runs and
+     the rider follows the track's line through the apex.
 
 ## Proposed on top -- keep these too
 
