@@ -60,6 +60,7 @@ class BLEDev {
       try { await this.sub(ftms, UUID.ibd, dv => this.onIBD(dv)); this.roles.add('trainer'); this.roles.add('power'); } catch (e) {}
       await this.readTargets(ftms);
       try {
+        this.cpt = null; // a bike that only sends its data has no control point: its resistance is set by hand
         this.cpt = await ftms.getCharacteristic(UUID.ftmsCP);
         if (!this.ls.has(this.cpt)) { this.ls.add(this.cpt); this.cpt.addEventListener('characteristicvaluechanged', e => this.onCtrl(e.target.value)); }
         await this.cpt.startNotifications();
@@ -296,8 +297,9 @@ const Trainer = {
   },
   info() { const d = Sensors.trainer(); return d && d.ctrl && this.sent != null ? this.sent : null; },
   // why a trainer that is connected does not ride the route: 'control' when it gave no control (another app or a
-  // bike computer has it), 'refused' when it refuses the grade; null while it rides it, reconnects or is not there
-  trouble() { const d = Sensors.trainer(); if (!d || d.status !== 'online') return null; return !d.ctrl ? 'control' : d.refused ? 'refused' : null; },
+  // bike computer has it), 'refused' when it refuses the grade; null while it rides it, reconnects, is not there, or
+  // has no control point to give (a bike that only sends its data, its resistance set by hand)
+  trouble() { const d = Sensors.trainer(); if (!d || d.status !== 'online' || !d.cpt) return null; return !d.ctrl ? 'control' : d.refused ? 'refused' : null; },
   canErg() { const d = Sensors.trainer(); return !!(d && d.ctrl && d.ergRange); }
 };
 function isIOS() { return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
