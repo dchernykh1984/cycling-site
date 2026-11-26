@@ -164,18 +164,20 @@ who asked for less motion (issue #434). Record labels keep the date and demo mar
 `tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/test_static_storage.py`,
 `tests/e2e/test_virtual_ride.py`.
 
-**Maps.** A map is a city, in a folder of its own: `maps/<id>/map.js`, one `addMap({...})` with the
+**Maps.** A map is a city or a region, in a folder of its own: `maps/<id>/map.js`, one `addMap({...})` with the
 map's data, in JSON, and nothing else (`js/maps.js`) -- its id, the folder's name; its name; its origin, a point
 among its routes the scene is laid out from in metres east and south, so a map anywhere keeps its
 distances and a rider's track its coordinates; its mountains, when it has a range rising to the south
-(how far south of the origin its foot lies at the nearest; a map without them gets none); its routes,
+(how far south of the origin its foot lies at the nearest; a map without them gets none) -- a route far from
+its map's others, as a region's lie tens of kilometres apart, carries its own origin and mountains; its routes,
 each a key, a name and a description, the points (latitude, longitude, height in metres), whether it
-is a loop, the road's width and lanes, the scenery drawn along it (`city`, `gorge` or `steppe`) and the event
+is a loop, the road's width and lanes (one lane, a racetrack's, has no centre line), the scenery drawn along it
+(`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges) and the event
 announcing a group race on it (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
 line each, in the order the menu shows the cities, so a new map is its folder and that line; a map
-without routes is shown as coming soon. A city's button lists its routes and picks the first of them;
+without routes is shown as coming soon. A map's button lists its routes and picks the first of them;
 a first visit, or a remembered route no map has any more, starts on the first map's first route. A
 route's key is its own across every map and stays as it is: the members' saved rides and group races
 keep it. The objects the sights are built from are shared by every map, a file each in `objects/`,
@@ -183,7 +185,7 @@ named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`)
 page too; a new kind of sight is its object's file and that line.
 A route may come back onto road it rode -- out to a turn and back along one road, round a loop of a turn: that
 road is drawn once, each way in its own lane, and a route that ends where it starts finishes on its start's line,
-under one arch for both. A range farther than 9.5 km from the map's origin rises to its foot from the plain and
+under one arch for both. A range farther than 9.5 km from the route's origin rises to its foot from the plain and
 shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses and sights
 stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
 their tops where they were. Tests: `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`.
