@@ -7,6 +7,7 @@ cache: the rows live in the database and go stale on their own.
 
 from datetime import timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import GroupRide, LiveRider, VirtualRide
@@ -33,10 +34,12 @@ def online(now=None):
 
 
 def open_groups(now=None):
-    """Group races that have not started yet, or started only moments ago."""
+    """Group races that have not started yet, or started only moments ago -- a race whose riders start one after
+    another (race.last_start), until moments after its last rider's own start."""
     now = now or timezone.now()
+    since = now - GROUP_LISTED_AFTER_START
     return (
-        GroupRide.objects.filter(cancelled=False, start_at__gte=now - GROUP_LISTED_AFTER_START)
+        GroupRide.objects.filter(Q(start_at__gte=since) | Q(last_start_at__gte=since), cancelled=False)
         .select_related("host", "competition")
         .prefetch_related("memberships__user", "memberships__registration__category")
         .order_by("start_at")

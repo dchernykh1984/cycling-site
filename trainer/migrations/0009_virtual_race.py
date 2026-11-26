@@ -45,6 +45,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="groupride",
+            name="last_start_at",
+            field=models.DateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name="groupride",
             name="loop",
             field=models.BooleanField(default=True),
         ),
