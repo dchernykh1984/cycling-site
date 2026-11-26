@@ -9,6 +9,9 @@
 services:
   - type: cron
     name: nightly-deploy
+    # main's script runs, whichever branch the Blueprint was created from: it can be made from a branch before this
+    # file reaches main
+    branch: main
     runtime: python
     region: frankfurt
     # 21:07 UTC, 02:07 in Almaty: Render's schedules are in UTC

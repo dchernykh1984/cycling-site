@@ -231,6 +231,7 @@ def test_render_runs_the_script_every_night_inside_the_window():
     script = cron["startCommand"].removeprefix("python ")
     assert (ROOT / script).is_file(), cron["startCommand"]
     assert script in cron["buildFilter"]["paths"], "a change to the script would not reach the cron"
+    assert cron["branch"] == "main", "the cron would run the script of the branch its Blueprint was made from"
 
 
 def test_github_s_fallback_never_starts_while_the_render_run_may_still_deploy():
