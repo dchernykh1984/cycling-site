@@ -6,7 +6,7 @@ function proj(lat, lon, O) { const R = 6371000; return { x: (lon - O.lon) * Math
 
 function buildTrack(r) {
   const src = r.osm ? r.osm.path : r.pts; // если загружен файл OSM — точная ось настоящих улиц
-  const O = mapOf(r).origin; // the route's metres are its map's, so its sights and riders share them
+  const O = r.origin || mapOf(r).origin; // the route's metres: its own origin's, else its map's; its sights and riders share them
   const v = src.map(p => { const q = proj(p[0], p[1], O); return new THREE.Vector3(q.x, p[2], q.z); });
   const curve = new THREE.CatmullRomCurve3(v, !!r.loop, 'centripetal', .5);
   const n = Math.max(80, Math.round(curve.getLength() / 4));

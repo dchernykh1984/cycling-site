@@ -152,8 +152,8 @@ function buildWorld(route) {
   }
   addTrees(grp, trees);
 
-  // --- a mountain range to the south, on a map that has one ---
-  const range = mapOf(route).mountains; if (range) addMountains(grp, T, range.south, plain);
+  // --- a mountain range to the south, on a route or a map that has one ---
+  const range = route.mountains || mapOf(route).mountains; if (range) addMountains(grp, T, range.south, plain);
   // --- ориентиры ---
   lms.forEach(lm => addLandmark(grp, lm, T, ground));
   // --- старт и финиш ---

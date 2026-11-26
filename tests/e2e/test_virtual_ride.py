@@ -1199,6 +1199,32 @@ def test_only_a_map_with_mountains_raises_a_range_beyond_its_routes(page: Page, 
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_route_far_from_its_map_s_others_is_drawn_from_its_own_origin_and_range(page: Page, live_server):
+    """A region's routes lie tens of kilometres apart: one far from the map's origin carries its own, and its own
+    mountains, so its road starts near the scene's middle and its range rises south of it, not of the map's."""
+    _trainer_in_its_menu(page, live_server)
+    drawn = page.evaluate(
+        """() => {
+            const named = { ru: 'n', kk: 'n', en: 'n' };
+            const road = (id, lon, extra) => Object.assign({ id, name: named, desc: named, loop: false, width: 9,
+                lanes: 2, scenery: 'steppe', pts: [[43.6, lon, 600], [43.6, lon + 0.0124, 600]] }, extra);
+            const far = { origin: { lat: 43.6, lon: 76.5 }, mountains: { south: 30000 } };
+            addMap({ id: 'region', name: named, origin: { lat: 43.6, lon: 77.4 },
+                     routes: [road('near', 77.4), road('far', 76.5, far)] });
+            const wide = o => o.geometry && o.geometry.parameters && o.geometry.parameters.width === 90000;
+            const drawnOn = id => {
+                const T = buildWorld(ROUTES.find(r => r.id === id)).T;
+                let ranges = 0; scenery.traverse(o => { if (wide(o)) ranges++; });
+                return { origin: T.origin, start: Math.round(Math.hypot(T.X[0], T.Z[0])), ranges };
+            };
+            return { near: drawnOn('near'), far: drawnOn('far') };
+        }"""
+    )
+    assert drawn["near"] == {"origin": {"lat": 43.6, "lon": 77.4}, "start": 0, "ranges": 0}
+    assert drawn["far"] == {"origin": {"lat": 43.6, "lon": 76.5}, "start": 0, "ranges": 1}
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_city_s_button_lists_its_routes_and_picks_the_first_of_them(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
