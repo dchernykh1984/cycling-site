@@ -1,12 +1,13 @@
 'use strict';
-/* Kyrbaltabay: the road to Tuganbay across the steppe, ridden out and back -- a map, read by addMap (js/maps.js).
+/* Almaty Region: the region's routes -- a map, read by addMap (js/maps.js).
+   Kyrbaltabay - Tuganbay: the road to Tuganbay across the steppe, ridden out and back.
    The route is the UBT time trial's own track (UBT TT 2026: Strava, along OpenStreetMap's road), out to the turn
    and back along the same road, each way in its own lane, round a loop of 8 m radius at the turn; heights from
    SRTM 30 m (OpenTopoData), smoothed over 150 m -- the track's own step 7 m down between two points where SRTM's do not.
    The mountains to the south are where SRTM 30 m (OpenTopoData) has them: the range's foot, about 1100 m, near 43.35 N. */
 addMap({
-  "id": "kyrbaltabay",
-  "name": {"ru": "Кырбалтабай", "kk": "Қырбалтабай", "en": "Kyrbaltabay"},
+  "id": "almaty-region",
+  "name": {"ru": "Алматинская область", "kk": "Алматы облысы", "en": "Almaty Region"},
   "origin": {"lat": 43.6451, "lon": 77.4375},
   "mountains": {"south": 32800},
   "routes": [
