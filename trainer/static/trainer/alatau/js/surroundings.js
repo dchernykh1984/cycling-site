@@ -64,6 +64,41 @@ function overTunnel(T, s) {
   return null;
 }
 
+// The land is drawn in cells 40 m across: over a tunnel and its cutting it would span the road like a lid, and a cell
+// sloping down to the road would cut through the tunnel. So inside their walls, below a little over the ground line,
+// the land's shader leaves it out: the zone as boxes along the route, 50 m long at most, wide enough for the bend.
+function holesOf(T, W) {
+  const out = [], a = {}, b = {}, m = {};
+  tunnelZones(T).forEach(z => {
+    const n = Math.max(1, Math.ceil((z.s1 - z.s0) / 50));
+    for (let k = 0; k < n; k++) {
+      const sa = z.s0 + (z.s1 - z.s0) * k / n, sb = z.s0 + (z.s1 - z.s0) * (k + 1) / n;
+      sampleAt(T, sa, a); sampleAt(T, sb, b);
+      const L = Math.hypot(b.x - a.x, b.z - a.z) || 1, ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+      let bend = 0;
+      for (let s = sa; s <= sb; s += 5) { sampleAt(T, s, m); bend = Math.max(bend, Math.abs((m.z - a.z) * ux - (m.x - a.x) * uz)); }
+      out.push([new THREE.Vector4((a.x + b.x) / 2, (a.z + b.z) / 2, ux, uz), new THREE.Vector4(L / 2 + .5, W / 2 + .35 + bend, cutGround(T, sa), cutGround(T, sb))]);
+    }
+  });
+  return out;
+}
+function landMaterial(T, W) {
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true }), holes = holesOf(T, W), n = holes.length;
+  if (!n) return mat;
+  mat.customProgramCacheKey = () => 'land-holes-' + n; // the shader's arrays are as long as the route's boxes
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.holeA = { value: holes.map(h => h[0]) }; sh.uniforms.holeB = { value: holes.map(h => h[1]) };
+    sh.vertexShader = 'varying vec3 vHoleW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHoleW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform vec4 holeA[' + n + '];\nuniform vec4 holeB[' + n + '];\nvarying vec3 vHoleW;\n' + sh.fragmentShader.replace('void main() {', `void main() {
+  for (int i = 0; i < ${n}; i++) {
+    vec2 d = vHoleW.xz - holeA[i].xy;
+    float u = dot(d, holeA[i].zw), v = dot(d, vec2(-holeA[i].w, holeA[i].z));
+    if (abs(u) < holeB[i].x && abs(v) < holeB[i].y && vHoleW.y < mix(holeB[i].z, holeB[i].w, clamp(u / (2.0 * holeB[i].x) + 0.5, 0.0, 1.0)) + 1.5) discard;
+  }`);
+  };
+  return mat;
+}
+
 // --- the roads round the route: on the ground, rising onto the route's own road where they meet it
 function addRoads(G, T, W, roads, ground) {
   const P = [], I = [];

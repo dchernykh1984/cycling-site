@@ -221,7 +221,8 @@ finer grids of their own (a gorge keeps its walls). What a route carries from Op
 buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it; roads under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
-down a ramp between walls under a roof the crossing street runs over, the land beside it at the ground line; power
+down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
+none inside them; power
 lines on towers or poles, their wires sagging high over the road; railways; rivers, canals and ponds; trees in rows,
 woods, parks and alone. Between a dual carriageway's two halves lies their median -- a pavement each way where it is
 wide, a concrete barrier down a narrow one -- and one road ridden twice has one height, the barometer's lag up and
