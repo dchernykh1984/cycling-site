@@ -1112,7 +1112,7 @@ def test_a_trainer_that_does_not_ride_the_route_says_why(page: Page):
             // a trainer under control that answers the grade with `code`, as FTMS answers: 3 is Invalid Parameter
             let code = 3;
             const trainer = new BLEDev({ name: 'trainer' });
-            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer');
+            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer'); trainer.cpt = {};
             trainer.write = async bytes => {
                 setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], code]).buffer)), 0);
             };
@@ -1127,6 +1127,31 @@ def test_a_trainer_that_does_not_ride_the_route_says_why(page: Page):
     )
     # none connected; the grade refused; taken; control gone to another app; away for a moment (said as lost)
     assert troubles == [None, "refused", None, "control", None], troubles
+    assert errors == [], errors
+
+
+def test_a_bike_that_only_sends_its_data_is_not_said_to_be_off_the_route(page: Page):
+    errors = _ride_alone(page)
+    for name in ("js/i18n.js", "js/bluetooth.js"):
+        page.add_script_tag(path=trainer_page.PAGE.parent / "alatau" / name)
+    state = page.evaluate(
+        """async () => {
+            globalThis.settings = { difficulty: 100 };
+            globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
+            // FTMS bike data and no control point: a spin bike whose resistance is a knob
+            const bikeData = { addEventListener() {}, async startNotifications() {} };
+            const ftms = {
+                async getCharacteristic(uuid) { if (uuid === 0x2AD2) return bikeData; throw new Error('-'); } };
+            const server = {
+                async getPrimaryService(uuid) { if (uuid === 0x1826) return ftms; throw new Error('-'); } };
+            const gatt = { async connect() { return server; } };
+            const bike = new BLEDev({ name: 'bike', addEventListener() {}, gatt });
+            Sensors.devs.push(bike); await bike.connect();
+            return { trainer: bike.roles.has('trainer'), ctrl: bike.ctrl, trouble: Trainer.trouble() };
+        }"""
+    )
+    # ridden by its power, not driven, and nothing to put right: no warning
+    assert state == {"trainer": True, "ctrl": False, "trouble": None}, state
     assert errors == [], errors
 
 
@@ -1178,7 +1203,8 @@ def test_a_trainer_that_holds_a_workout_s_power_is_not_said_to_be_off_the_route(
             globalThis.toast = () => {}; globalThis.renderDevs = () => {}; globalThis.updateModeUI = () => {};
             // a trainer that holds a power (FTMS Set Target Power) and refuses the grade (Invalid Parameter)
             const trainer = new BLEDev({ name: 'trainer' });
-            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer'); trainer.ergRange = [0, 2000];
+            trainer.ctrl = true; trainer.status = 'online'; trainer.roles.add('trainer'); trainer.cpt = {};
+            trainer.ergRange = [0, 2000];
             trainer.write = async bytes => {
                 const code = bytes[0] === 0x05 ? 1 : 3;
                 setTimeout(() => trainer.onCtrl(new DataView(new Uint8Array([0x80, bytes[0], code]).buffer)), 0);
@@ -1207,7 +1233,7 @@ def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, l
             // a trainer that sends its power but gave its control to another app; a race alone, which has no
             // message of its own at the start (a free ride says how to end it 4.5 s in)
             const trainer = new BLEDev({ name: 'trainer' });
-            trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
+            trainer.status = 'online'; trainer.cpt = {}; trainer.roles.add('trainer'); trainer.roles.add('power');
             Sensors.devs.push(trainer); settings.mode = 'race'; $('#bots').value = '0'; startRace();
         }"""
     )
@@ -1240,7 +1266,7 @@ def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_s
         """() => {
             // a race alone: no message of its own at the start to stand in for the one looked for
             const trainer = new BLEDev({ name: 'trainer' });
-            trainer.status = 'online'; trainer.roles.add('trainer'); trainer.roles.add('power');
+            trainer.status = 'online'; trainer.cpt = {}; trainer.roles.add('trainer'); trainer.roles.add('power');
             Sensors.devs.push(trainer); settings.mode = 'race'; $('#bots').value = '0'; startRace();
         }"""
     )
@@ -1266,7 +1292,8 @@ def test_a_trainer_whose_refusals_come_and_go_is_said_once_a_ride(page: Page, li
     page.evaluate(
         """() => {
             const trainer = new BLEDev({ name: 'trainer' });
-            trainer.status = 'online'; trainer.ctrl = true; trainer.roles.add('trainer'); trainer.roles.add('power');
+            trainer.status = 'online'; trainer.ctrl = true; trainer.cpt = {};
+            trainer.roles.add('trainer'); trainer.roles.add('power');
             Sensors.devs.push(trainer); settings.mode = 'free'; startRace();
         }"""
     )
