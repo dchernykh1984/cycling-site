@@ -275,9 +275,9 @@ class RegisterForCompetitionViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
-    def test_birth_date_prefilled_as_iso_under_ru_locale(self):
-        # Regression: a date-mode competition pre-fills the user's birth_date; ru-locale L10N
-        # rendered it localized, which <input type=date> rejects. It must be ISO YYYY-MM-DD.
+    def test_birth_date_prefilled_as_typed_under_ru_locale(self):
+        # A date-mode competition pre-fills the user's birth_date as the field takes it typed: DD.MM.YYYY in every
+        # language (cycling_site/typed_date.py), the calendar beside it opening on it.
         import re
 
         comp = make_open_competition(birth_date_mode="date")
@@ -286,7 +286,7 @@ class RegisterForCompetitionViewTests(TestCase):
             in_language(reverse("registrations:register", args=[comp.pk]), "ru"), HTTP_ACCEPT_LANGUAGE="ru"
         )
         m = re.search(r'name="birth_date"[^>]*value="([^"]*)"', resp.content.decode())
-        self.assertEqual(m.group(1), "1990-01-01")
+        self.assertEqual(m.group(1), "01.01.1990")
 
     def test_team_and_city_prefilled_from_profile(self):
         import re

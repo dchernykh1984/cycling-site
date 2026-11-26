@@ -197,7 +197,7 @@ seen, and where it lives or will live here.
 | **Subscribe and add to calendar** | Subscription to the filtered calendar and "add to my calendar" near the top, not in the footer. | Orgeo | #333 |
 | **Article contents** | Where an article or a news item holds `[toc]`: a box of links to its sections, h3 under h2, after the lead; a 44px row each on a phone, and a section linked to stops below the sticky menu. | Wikipedia | `cycling_site/contents.py` |
 | **Map cluster** | Pins that crowd gather into a disc with their count, 44 px, which opens into them with a tap; a pin answers across a 44 px square and is named by its place. | 2GIS, Yandex Maps | `_map_markers.html` |
-| **Typed date** | A date typed as DD.MM.YYYY on a numeric keyboard, the dots put in as the digits come; a "Calendar" button beside it opens the browser's calendar on the date typed; a date that cannot be read is named under the field before the form goes. Not the browser's bare date field: typing into it failed for many, and its calendar opened decades from a date of birth (coaches, 2026-11-26). | Material Design's date input | `_typed_date.html` |
+| **Typed date** | A date typed as DD.MM.YYYY on a numeric keyboard, the dots put in as the digits come; a "Calendar" button beside it opens the browser's calendar on the date typed; a date that cannot be read is named under the field before the form goes. Not the browser's bare date field: typing into it failed for many, and its calendar opened decades from a date of birth (coaches, 2026-11-26). | Material Design's date input | `_typed_date.html`; the profile, people without accounts, registration |
 
 A pattern not in this table gets a name, a row here and a partial of its own before it appears on a
 second page.

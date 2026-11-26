@@ -27,7 +27,9 @@ an event that lets anyone be registered, and the city and the team are suggested
       if (birthYearInput && birthYearInput.value) {
         birthDate = new Date(parseInt(birthYearInput.value), 0, 1);
       } else if (birthDateInput && birthDateInput.value) {
-        birthDate = parseLocalDate(birthDateInput.value);
+        // typed as day, month and year: the site's script reads it (js/cycling_site.js), none until it is whole
+        const iso = window.typedDateIso ? window.typedDateIso(birthDateInput) : '';
+        if (iso) birthDate = parseLocalDate(iso);
       }
     }
 
@@ -54,7 +56,8 @@ an event that lets anyone be registered, and the city and the team are suggested
     });
   }
 
-  cards.forEach(card => {
+  // once the page is whole: the site's script, which reads a typed date, comes after this one
+  const follow = () => cards.forEach(card => {
     card.querySelectorAll('.js-gender').forEach(el => el.addEventListener('change', () => updateCategories(card)));
     if (!relayEnabled) {
       const byInput = card.querySelector('.js-birth-year') || card.querySelector('.js-birth-date');
@@ -62,6 +65,7 @@ an event that lets anyone be registered, and the city and the team are suggested
     }
     updateCategories(card);
   });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', follow); else follow();
 {% endif %}
 
   // City and team suggestions: each field gets a list of its own

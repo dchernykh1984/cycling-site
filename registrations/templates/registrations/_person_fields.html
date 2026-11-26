@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n registration_fields %}
 {% comment %}One person's fields on the registration page: the page for one person shows them once, the
 page for several (issue #315) once a person, each set under its form's prefix. ``p`` starts each id
 ("" when alone, so the page for one keeps its ids); ``required`` asks the browser to see the fields filled
@@ -62,10 +62,8 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 {% if "birth_date" in form.fields %}
 <div class="mb-3">
   <label class="form-label" for="{{ p }}birth_date">{% trans "Date of birth" %} *</label>
-  <input type="date" name="{{ form.birth_date.html_name }}" id="{{ p }}birth_date" value="{{ form.birth_date.value|date:'Y-m-d'|default:form.birth_date.value|default:'' }}"
-         class="form-control js-birth-date{% if form.birth_date.errors %} is-invalid{% endif %}"
-         {% if form.fields.birth_date.widget.attrs.readonly %}readonly{% endif %}{% if required %} required{% endif %}>
-  {% for e in form.birth_date.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+  {% typed_date form.birth_date p|add:"birth_date" css="js-birth-date" required=required %}
+  {% for e in form.birth_date.errors %}<div class="text-danger small" data-error-for="{{ form.birth_date.html_name }}">{{ e }}</div>{% endfor %}
 </div>
 {% endif %}
 
@@ -106,11 +104,15 @@ in -- left out where a person's set may sit hidden and unticked, which would sto
 {% endif %}
 <div class="mb-3">
   <label class="form-label" for="{{ p }}additional_info">{{ form.additional_info.label }}{% if form.additional_info.field.required %} *{% endif %}</label>
-  <input type="{% if competition.additional_info_is_strava %}url{% elif competition.additional_info_is_birth_date %}date{% else %}text{% endif %}" name="{{ form.additional_info.html_name }}" id="{{ p }}additional_info"
+  {% if competition.additional_info_is_birth_date %}
+  {% if required and form.additional_info.field.required %}{% typed_date form.additional_info p|add:"additional_info" required=True %}{% else %}{% typed_date form.additional_info p|add:"additional_info" %}{% endif %}
+  {% else %}
+  <input type="{% if competition.additional_info_is_strava %}url{% else %}text{% endif %}" name="{{ form.additional_info.html_name }}" id="{{ p }}additional_info"
          value="{{ form.additional_info.value|default:'' }}" class="form-control" maxlength="100"
          {% if form.fields.additional_info.widget.attrs.readonly %}readonly{% endif %}
          {% if required and form.additional_info.field.required %}required{% endif %}
          {% if competition.additional_info_is_strava %}placeholder="https://www.strava.com/athletes/..."{% endif %}>
-  {% for e in form.additional_info.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  {% endif %}
+  {% for e in form.additional_info.errors %}<div class="text-danger small" data-error-for="{{ form.additional_info.html_name }}">{{ e }}</div>{% endfor %}
 </div>
 {% endif %}
