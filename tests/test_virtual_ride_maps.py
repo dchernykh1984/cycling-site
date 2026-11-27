@@ -1,6 +1,7 @@
 """The virtual ride's maps -- a city each, in a folder of the trainer's maps/, nothing but data -- and the objects
 their sights are built from, a file each in objects/, shared by every map. The page lists them all."""
 
+import itertools
 import math
 import re
 from numbers import Real
@@ -223,6 +224,29 @@ class MapsTests(SimpleTestCase):
             # a race says how it starts and, on a loop, whose laps
             self.assertIn("{how}", texts[lang]["ev.raceText"], lang)
             self.assertIn("{laps}", texts[lang]["ev.raceText"], lang)
+
+    def test_the_institute_s_figure_eight_never_crosses_itself(self):
+        # its loops meet on the Alatau road's two carriageways, each ridden one way on its left one, as the ride it is
+        # built from went: no crossroads -- matched to the carriageways by traffic's way, it crossed itself twice
+        route = next(r for r in _routes() if r["id"] == "institute")
+        kx = 111320 * math.cos(math.radians(route["pts"][0][0]))
+        line = [(p[1] * kx, p[0] * 111195) for p in route["pts"]]
+        segments = list(itertools.pairwise([*line, line[0]]))
+
+        def side(p, q, r):
+            return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+        def cross(a, b):
+            return (side(*a, b[0]) > 0) != (side(*a, b[1]) > 0) and (side(*b, a[0]) > 0) != (side(*b, a[1]) > 0)
+
+        last = len(segments) - 1
+        crossings = [
+            (i, j)
+            for i in range(len(segments))
+            for j in range(i + 2, len(segments))
+            if (i, j) != (0, last) and cross(segments[i], segments[j])
+        ]
+        self.assertEqual(crossings, [])
 
     def test_a_route_s_name_fits_the_site_in_every_language(self):
         # the page sends the name it shows with a saved ride and a group race, as it is
