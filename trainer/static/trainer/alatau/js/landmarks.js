@@ -35,9 +35,14 @@ function addLandmark(grp, lm, T, ground, land) {
     return G;
   };
   let G = build(0);
-  if (ground) { // built once to find its floor plan, then again as deep as the ground under it asks
-    const box = new THREE.Box3().setFromObject(G), need = box.min.y - lowestUnder(ground, box) + ROOT_M;
-    if (need > 0) G = build(need);
+  if (ground) { // built once to find its floor plan, then again as deep as the ground under it asks -- and again
+    // under the new one where going deeper widens it (a dam's foot keeps to its faces' slopes down a gorge)
+    let sink = 0;
+    for (let k = 0; k < 4; k++) {
+      const box = new THREE.Box3().setFromObject(G), need = box.min.y - lowestUnder(ground, box) + ROOT_M;
+      if (need <= 1e-3) break;
+      sink += need; G = build(sink);
+    }
   }
   grp.add(G);
 }
