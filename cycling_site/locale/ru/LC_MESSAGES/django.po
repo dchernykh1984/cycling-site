@@ -5986,3 +5986,7 @@ msgstr "Чтобы выбрать категорию, нужны пол и да�
 #, python-format
 msgid "The categories for this gender and year of birth are full: %(names)s."
 msgstr "Категории для этого пола и года рождения заполнены: %(names)s."
+
+#: api/endpoints/virtual_ride.py
+msgid "Only the host can change this group race's wind"
+msgstr "Изменить ветер групповой гонки может только организатор"

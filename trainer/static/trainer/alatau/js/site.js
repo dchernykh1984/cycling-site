@@ -17,6 +17,7 @@ const Site = {
   },
   get(p) { return this.req('GET', p); },
   post(p, b) { return this.req('POST', p, b || {}); },
+  patch(p, b) { return this.req('PATCH', p, b || {}); },
   loginHref() { return (Records.loginUrl || '/accounts/login/') + '?next=' + encodeURIComponent(topPath()); }
 };
 // The settings with the member's account, so every device they sign in on shows the same. The account stamps each

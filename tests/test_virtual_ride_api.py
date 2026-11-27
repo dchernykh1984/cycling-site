@@ -368,6 +368,28 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         alone = self.post(self.client_g, f"/groups/{group_id}/leave").json()
         self.assertTrue(alone["cancelled"])
 
+    def patch(self, client, path, data):
+        return client.patch(f"{API}{path}", data=json.dumps(data), content_type="application/json")
+
+    def test_the_host_changes_the_race_s_wind_until_its_start_and_nobody_else_does(self):
+        """Made in the host's wind of the moment, a race kept it: its host -- or an admin -- now changes it before
+        the start; the trainer's 30 m/s at most, as it is made with."""
+        group_id = self.create(start_in_s=60, wind_ms=6, wind_from_deg=270).json()["id"]
+        self.post(self.client_g, f"/groups/{group_id}/join")
+        change = {"wind_ms": 12, "wind_from_deg": 90}
+        self.assertEqual(self.patch(self.client_g, f"/groups/{group_id}", change).status_code, 403)
+        changed = self.patch(self.client_h, f"/groups/{group_id}", change).json()
+        self.assertEqual((changed["wind_ms"], changed["wind_from_deg"]), (12, 90))
+        listed = self.client_g.get(f"{API}/groups").json()[0]
+        self.assertEqual((listed["wind_ms"], listed["wind_from_deg"]), (12, 90))
+        too_strong = self.patch(self.client_h, f"/groups/{group_id}", {"wind_ms": 31, "wind_from_deg": 0})
+        self.assertEqual(too_strong.status_code, 422)
+        admin = self.member(_user("vera", role=User.Role.ADMIN))
+        self.assertEqual(self.patch(admin, f"/groups/{group_id}", {"wind_ms": 0, "wind_from_deg": 0}).status_code, 200)
+        # once it has started, its riders keep the wind they started in
+        GroupRide.objects.filter(pk=group_id).update(start_at=timezone.now() - timedelta(seconds=1))
+        self.assertEqual(self.patch(self.client_h, f"/groups/{group_id}", change).status_code, 409)
+
     def test_only_the_host_cancels_and_a_cancelled_race_disappears(self):
         group_id = self.create().json()["id"]
         self.post(self.client_g, f"/groups/{group_id}/join")
@@ -482,6 +504,17 @@ class RidingTogetherTests(MemberClientMixin, TestCase):
     def ride(self, client, **state):
         body = {"status": "ride", "route": "center", "mode": "free", "distance_m": 100, "speed_ms": 8, **state}
         return self.post(client, "/presence", body).json()
+
+    def test_a_rider_on_a_race_s_line_is_told_of_its_wind_until_the_start(self):
+        group_id = self.post(self.client_b, "/groups", {"route": "center", "start_in_s": 60}).json()["id"]
+        self.post(self.client_a, f"/groups/{group_id}/join")
+        change = json.dumps({"wind_ms": 9, "wind_from_deg": 180})
+        self.client_b.patch(f"{API}/groups/{group_id}", data=change, content_type="application/json")
+        seen = self.ride(self.client_a, group_id=group_id, mode="race")["groups"]
+        self.assertEqual([(g["id"], g["wind_ms"], g["wind_from_deg"]) for g in seen], [(group_id, 9, 180)])
+        # under way, the lobby's races stay away from a rider
+        GroupRide.objects.filter(pk=group_id).update(start_at=timezone.now() - timedelta(seconds=1))
+        self.assertEqual(self.ride(self.client_a, group_id=group_id, mode="race")["groups"], [])
 
     def test_the_lobby_lists_who_is_here_and_the_open_races(self):
         self.post(self.client_b, "/presence", {"status": "lobby", "route": "center"})

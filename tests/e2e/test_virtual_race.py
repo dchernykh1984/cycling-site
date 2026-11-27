@@ -420,6 +420,46 @@ def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_host_changes_the_race_s_wind_on_its_card_and_a_rider_on_its_line_takes_it(page: Page, live_server):
+    """A race kept the wind its host had when they made it: its card now lets the host change it until the start,
+    and a page already on its line rides in the new one."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            MP.status = 'on'; MP.offset = 0; mpSchedule = () => {}; // the site is not asked: these are the races
+            const host = { user_id: 1, name: 'Me' }, start_at = new Date(Date.now() + 2 * 3600e3).toISOString();
+            const race = (id, is_host) => ({ id, route: 'center', route_name: 'Center', host, is_host, is_member: true,
+                members: [host], cancelled: false, wind_ms: 6, wind_from_deg: 270, kind: 'race', start_at,
+                mode: 'group', group_gap_s: 0, itt_interval_s: 30, draft_between_groups: true, loop: true, me: null,
+                event: null });
+            MP.groups = [race(4, true), race(5, false)];
+            window.sent = [];
+            Site.patch = async (path, body) => { window.sent.push([path, body]); return null; };
+            renderMP();
+        }"""
+    )
+    mine, theirs = page.locator('#mpGroups .mp-group[data-gid="4"]'), page.locator('#mpGroups .mp-group[data-gid="5"]')
+    expect(theirs.locator(".mp-wind")).to_be_hidden()
+    expect(mine.locator(".mp-wind .ms")).to_have_value("6")
+    expect(mine.locator(".mp-wind .from")).to_have_value("270")
+    mine.locator(".mp-wind .ms").fill("12")
+    mine.locator(".mp-wind .from").select_option("90")
+    assert page.evaluate("window.sent.at(-1)") == ["/groups/4", {"wind_ms": 12, "wind_from_deg": 90}]
+    # on its line, the page takes the wind the site gives the race with its next call
+    page.evaluate("() => { MP.groups.pop(); mpEnter(MP.groups[0]); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate(
+        """async () => {
+            const changed = Object.assign({}, MP.groups[0], { wind_ms: 12, wind_from_deg: 90 });
+            const now = new Date().toISOString();
+            Site.post = async () => ({ server_now: now, online: [], riders: [], groups: [changed] });
+            MP.busy = false; MP.status = 'on'; await mpPoll();
+        }"""
+    )
+    assert page.evaluate("[rideWind.ms, rideWind.from]") == [12, 90]
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_race_card_names_its_event_and_each_rider_s_bib(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(_A_RACE, 0)
