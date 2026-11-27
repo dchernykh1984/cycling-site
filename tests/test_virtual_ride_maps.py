@@ -213,6 +213,13 @@ class MapsTests(SimpleTestCase):
                 self.assertLessEqual(set(re.findall(r"\{(\w+)\}", text)), {"km", "climb"}, (route["id"], text))
             self.assertFalse(any("{" in text for text in event["finish"].values()), route["id"])
 
+    def test_the_lead_names_the_buttons_that_start_a_ride_alone_and_one_together(self):
+        # it said only "Start", while a ride together or a race is ridden from its card's "Go to the start"
+        texts = trainer_page.texts()
+        for lang in ("ru", "kk", "en"):
+            for button in ("start", "mp.toStart"):
+                self.assertIn(texts[lang][button], texts[lang]["lead"], (lang, button))
+
     def test_a_ride_s_and_a_race_s_event_carry_the_link_the_time_and_the_route(self):
         texts = trainer_page.texts()
         for lang in ("ru", "kk", "en"):
