@@ -136,7 +136,10 @@ def laps_of(member) -> int:
 
 
 def _order(race) -> list:
-    """The race's riders with bibs in start order: by category, then bib."""
+    """The race's riders in start order: in a race with protocols those with bibs, by category, then bib; in one
+    without, in the order they joined."""
+    if race.competition_id is None:
+        return list(race.memberships.select_related("user").order_by("joined_at", "pk"))
     index = {c.pk: i for i, c in enumerate(categories(race.competition))}
 
     def key(m):
@@ -154,13 +157,13 @@ def _order(race) -> list:
 
 
 def start_offset_s(race, member) -> int:
-    """Seconds after the race's start the rider starts: their category's place times the gap in a group race, their
-    own place in the start order times the interval in a time trial."""
-    if not race.competition or not member.bib:
-        return 0
+    """Seconds after the race's start the rider starts: their own place in the start order times the interval in a
+    time trial, their category's place times the gap in a group race with protocols."""
     if race.mode == race.Mode.ITT:
         order = [m.pk for m in _order(race)]
         return order.index(member.pk) * race.itt_interval_s if member.pk in order else 0
+    if not race.competition or not member.bib:
+        return 0
     index = {c.pk: i for i, c in enumerate(categories(race.competition))}
     category_id = member.registration.category_id if member.registration else None
     return index.get(category_id, 0) * race.group_gap_s if category_id is not None else 0
@@ -222,11 +225,8 @@ def last_start(race, riders) -> datetime:
 
 
 def write_start(race) -> None:
-    """The race's start list and its groups' start times, as they stand, and when its last rider starts: called
-    whenever a rider joins or leaves."""
-    if race.competition is None:
-        return
-    zone = race.competition.timezone
+    """When the race's last rider starts, for the lobby to list it until then, and in a race with protocols its start
+    list and its groups' start times, as they stand: called whenever a rider joins or leaves."""
     with transaction.atomic():
         # one writer at a time, the riders read once it is this one's turn: two riders joining at once each write
         # the list with both of them, whichever writes last
@@ -234,8 +234,9 @@ def write_start(race) -> None:
         riders = _order(race)
         race.last_start_at = last_start(race, riders)
         race.save(update_fields=["last_start_at"])
-        if not writing(race):
+        if race.competition is None or not writing(race):
             return
+        zone = race.competition.timezone
         _replace(_stream(StartListUpload, race), [start_line(race, m) for m in riders])
         starts: dict[str, datetime] = {}
         for m in riders:

@@ -5884,3 +5884,19 @@ msgstr "В вашей категории не осталось свободны�
 #: api/endpoints/virtual_ride.py
 msgid "Only the event's organizer can make a race for it"
 msgstr "Гонку для мероприятия может создать только его организатор"
+
+#: api/endpoints/virtual_ride.py
+msgid "A ride together starts everyone at once and has no event: gather a race"
+msgstr "Совместный заезд стартует сразу для всех и без мероприятия: соберите гонку"
+
+#: trainer/models.py
+msgid "Ride together"
+msgstr "Совместный заезд"
+
+#: trainer/models.py
+msgid "Group race"
+msgstr "Групповая гонка"
+
+#: trainer/models.py
+msgid "Individual time trial"
+msgstr "Раздельный старт"

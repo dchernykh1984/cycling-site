@@ -5875,3 +5875,19 @@ msgstr "Санатыңызда бос нөмір қалмады"
 #: api/endpoints/virtual_ride.py
 msgid "Only the event's organizer can make a race for it"
 msgstr "Іс-шара үшін жарысты тек оның ұйымдастырушысы құра алады"
+
+#: api/endpoints/virtual_ride.py
+msgid "A ride together starts everyone at once and has no event: gather a race"
+msgstr "Бірге заезд бәріне бірден басталады және іс-шарасыз өтеді: жарыс жинаңыз"
+
+#: trainer/models.py
+msgid "Ride together"
+msgstr "Бірге заезд"
+
+#: trainer/models.py
+msgid "Group race"
+msgstr "Топтық жарыс"
+
+#: trainer/models.py
+msgid "Individual time trial"
+msgstr "Бөлек старт"

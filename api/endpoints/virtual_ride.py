@@ -280,7 +280,7 @@ class RaceEventOut(Schema):
 
 
 class RaceMeOut(Schema):
-    """What the asking member rides in a race with protocols: their bib, group, laps and own start."""
+    """What the asking member rides in a race with protocols or a time trial: their bib, group, laps and own start."""
 
     bib: str
     group: str
@@ -300,6 +300,7 @@ class GroupOut(Schema):
     cancelled: bool = False
     wind_ms: float = 0
     wind_from_deg: int = 0
+    kind: GroupRide.Kind = GroupRide.Kind.RACE
     # a race with protocols (specs/495-virtual-race): its event, how it starts and who drafts whom
     event: RaceEventOut | None = None
     mode: GroupRide.Mode = GroupRide.Mode.GROUP
@@ -318,6 +319,9 @@ class GroupIn(Schema):
     start_at: datetime | None = None
     wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
     wind_from_deg: int = Field(0, ge=0, le=359)
+    # a ride together starts everyone at once and has no event; a race may be a time trial, its riders starting in
+    # the order they joined, or an event's
+    kind: GroupRide.Kind = GroupRide.Kind.RACE
     # a race with protocols: one of the maker's own events (any for an admin), its registration's riders with bibs
     competition_id: int | None = None
     mode: GroupRide.Mode = GroupRide.Mode.GROUP
@@ -419,10 +423,11 @@ def _group_out(group: GroupRide, user) -> GroupOut:
     memberships = list(group.memberships.all())
     mine = next((m for m in memberships if m.user_id == user.pk), None)
     me = None
-    if group.competition_id and mine and mine.bib:
+    # a rider of a race with protocols once given their bib, of a time trial without one as they joined
+    if mine and (mine.bib if group.competition_id else group.mode == GroupRide.Mode.ITT):
         me = RaceMeOut(
             bib=mine.bib,
-            group=race.group_of(mine),
+            group=race.group_of(mine) if group.competition_id else "",
             laps=race.laps_of(mine),
             start_offset_s=race.start_offset_s(group, mine),
         )
@@ -438,6 +443,7 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         cancelled=group.cancelled,
         wind_ms=group.wind_ms,
         wind_from_deg=group.wind_from_deg,
+        kind=GroupRide.Kind(group.kind),
         # every member's lobby lists the race: its event named only while the event is public
         event=_event_out(group.competition) if group.competition and is_public(group.competition) else None,
         mode=GroupRide.Mode(group.mode),
@@ -801,10 +807,19 @@ def list_groups(request):
     return [_group_out(g, request.auth) for g in live.open_groups()]
 
 
-@router.post("/groups", response={HTTPStatus.CREATED: GroupOut}, auth=member_auth, summary="Gather a group race")
+@router.post(
+    "/groups", response={HTTPStatus.CREATED: GroupOut}, auth=member_auth, summary="Gather a ride or a race together"
+)
 def create_group(request, payload: GroupIn):
-    """A race on a route: starting in so many seconds, or at a date and time up to a year ahead. A host's races start
-    an hour apart at least, as a rider rides one at a time."""
+    """A ride or a race on a route: starting in so many seconds, or at a date and time up to a year ahead. A host's
+    rides and races start an hour apart at least, as a rider rides one at a time."""
+    if payload.kind == GroupRide.Kind.RIDE and (
+        payload.competition_id is not None or payload.mode != GroupRide.Mode.GROUP
+    ):
+        raise HttpError(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            _("A ride together starts everyone at once and has no event: gather a race"),
+        )
     now = timezone.now()
     start = payload.start_at or now + timedelta(seconds=payload.start_in_s)
     if timezone.is_naive(start):
@@ -833,6 +848,7 @@ def create_group(request, payload: GroupIn):
         group = GroupRide.objects.create(
             route=payload.route,
             route_name=payload.route_name,
+            kind=payload.kind,
             host=request.auth,
             start_at=start,
             wind_ms=payload.wind_ms,
@@ -845,10 +861,7 @@ def create_group(request, payload: GroupIn):
             loop=payload.loop,
         )
         # a race with protocols takes its host as a rider only when they are registered for the event
-        if event is None:
-            GroupRideMember.objects.create(group=group, user=request.auth)
-        else:
-            _enter(group, request.auth, quiet=True)
+        _enter(group, request.auth, quiet=True)
     return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
 
 
@@ -875,6 +888,7 @@ def _enter(group: GroupRide, user, quiet: bool = False) -> None:
     event = group.competition
     if event is None:
         GroupRideMember.objects.get_or_create(group=group, user=user)
+        race.write_start(group)  # a time trial's riders start in the order they joined: its last start moves on
         return
     registration = race.registration_of(user, event)
     if registration is None:
