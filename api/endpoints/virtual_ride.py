@@ -951,7 +951,16 @@ def _enter(group: GroupRide, user, quiet: bool = False) -> None:
     race's start list rewritten. ``quiet`` leaves out a rider without one instead of refusing them."""
     event = group.competition
     if event is None:
-        GroupRideMember.objects.get_or_create(group=group, user=user)
+        # read again under the race's lock: an event taking it meanwhile holds that lock till it commits, and a rider
+        # let in between had stayed in a race with protocols with no registration and no bib
+        with transaction.atomic():
+            locked = GroupRide.objects.select_for_update().filter(pk=group.pk)
+            event_now = locked.values_list("competition_id", flat=True).first()
+            if event_now is None:
+                GroupRideMember.objects.get_or_create(group=group, user=user)
+        if event_now is not None:
+            _enter(GroupRide.objects.select_related("competition").get(pk=group.pk), user, quiet)
+            return
         race.write_start(group)  # a time trial's riders start in the order they joined: its last start moves on
         return
     registration = race.registration_of(user, event)

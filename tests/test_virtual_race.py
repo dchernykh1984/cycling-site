@@ -13,6 +13,7 @@ from django.db.models import F
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone, translation
+from ninja.errors import HttpError
 
 from accounts.models import User
 from event_photos.bindings import parse_line
@@ -122,6 +123,21 @@ class MakingARaceTests(RaceTestCase):
             content_type="application/json",
         )
         self.assertEqual(made.status_code, 201)
+
+    def test_a_rider_joining_as_the_event_takes_the_race_needs_its_registration(self):
+        # read before the event held it, the race let them in with no registration and no bib
+        from api.endpoints.virtual_ride import _enter
+
+        start = timezone.now() + timedelta(minutes=30)
+        loose = GroupRide.objects.create(
+            route="granfondo", kind=GroupRide.Kind.RACE, host=self.organizer, start_at=start
+        )
+        stale = GroupRide.objects.get(pk=loose.pk)
+        GroupRide.objects.filter(pk=loose.pk).update(competition=self.event)
+        stranger = _member("stranger")
+        with self.assertRaises(HttpError):
+            _enter(stale, stranger)
+        self.assertFalse(GroupRideMember.objects.filter(group=loose, user=stranger).exists())
 
     def test_an_event_without_registration_on_the_site_takes_no_race(self):
         # nobody could join it: its riders join by their registration, as the event's page refuses it too
