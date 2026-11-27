@@ -71,7 +71,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    nearest public city, public for an organizer, awaiting review for anyone else), registration on with the categories in the editor, a
    line saying the track is attached -- nothing an event until submitted; submitting drops the draft. A form
    opened from the draft sends its key back, and only then does the event made from it take the track (unless the
-   member chose a file of their own), is ridden in the ride or race -- its page opens it as "Open the ride", its
+   member chose a file of their own), is ridden in the ride or race -- its page opens it as "Go to the virtual ride", its
    forms show the link, nobody types it, the API names it as `virtual_ride_url` -- and, an organizer's, holds a race; what is not a drawable track, someone
    else's race or a ride is taken by none (`calendar_app/draft.py`). "Virtual ride" is a type of event of its own
    (`tests/test_event_draft.py`).

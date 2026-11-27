@@ -258,8 +258,12 @@ class VirtualRaceDraftTests(TestCase):
         self.submit(page.context["draft_key"])
         event = Competition.objects.get(title_ru="Virtual race")
         self.assertEqual(event.virtual_ride, ride.pk)
-        # the event's page opens it, in the reader's language; a ride is held by no event's protocol
-        self.assertContains(self.client.get(event.get_absolute_url()), f'href="{link}"')
+        # the event's page goes to it, in the reader's language -- not "open the ride", which reads as starting it;
+        # a ride is held by no event's protocol
+        shown = self.client.get(event.get_absolute_url())
+        self.assertContains(shown, f'href="{link}"')
+        with translation.override("ru"):
+            self.assertContains(shown, gettext("Go to the virtual ride"))
         ride.refresh_from_db()
         self.assertIsNone(ride.competition)
         # its edit page shows it and keeps it, whatever a form sends
