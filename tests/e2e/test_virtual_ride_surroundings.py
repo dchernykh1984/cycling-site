@@ -391,6 +391,25 @@ def test_a_road_ridden_out_and_back_keeps_its_shoulders(page: Page, live_server)
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_guardrail_stands_on_a_post_every_4_m(page: Page, live_server):
+    # posts were put where the metre the rail began at counted even: one beginning on an odd metre stood on none --
+    # 400 m of rail over a drop on each side, begun a metre apart
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof addRails === 'function'")
+    counts = page.evaluate(
+        """() => { const r = ROUTES.find(x => x.rails), T = buildTrack(r), o = {};
+          const at = s => { sampleAt(T, s, o); const p = unproj(o.x, o.z, T.origin); return [p.lat, p.lon]; };
+          return [10000, 10001].map(s => {
+            const grp = new THREE.Group();
+            addRails(grp, T, r.width, { from: at(s), to: at(s + 400) }, () => -1e9, () => false);
+            const posts = grp.children.find(c => c.name === 'railPosts');
+            return posts ? posts.count : 0;
+          }); }"""
+    )
+    assert all(n >= 2 * 400 / 4 * 0.9 for n in counts), counts
+
+
+@pytest.mark.django_db(transaction=True)
 def test_power_lines_stand_off_the_road_and_hang_high_over_it(page: Page, live_server):
     faults = _faults(
         page,

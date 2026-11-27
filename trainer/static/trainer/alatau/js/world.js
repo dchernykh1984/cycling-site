@@ -276,7 +276,7 @@ function buildWorld(route) {
   addTrees(grp, trees);
   if (route.barriers) addBarriers(grp, T, W, route.barriers.gap, ground, (x, z) => !!osmB && osmB.near(x, z, 2));
   if (route.signals) addSignals(grp, T, W, route.signals, ground);
-  if (route.rails) addRails(grp, T, W, route.rails, ground);
+  if (route.rails) addRails(grp, T, W, route.rails, ground, (x, z) => onRoad(x, z, 0));
 
   // --- the land beyond the scenery: the map's relief as it is, else a range to the south where a route or map has one ---
   const range = route.mountains || mapOf(route).mountains;
@@ -383,7 +383,7 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
 // shoulder; and at a turn tighter than RAIL_TURN_DEG in 40 m, red and white chevrons on its outside, one to the riders
 // coming each way -- the road from Big Almaty Lake up to the Cosmostation, as the maintainer's photograph has it
 const RAIL_DROP_M = 2.5, RAIL_LOOK_M = 6, RAIL_OFF_M = .7, RAIL_POST_M = 4, RAIL_TURN_DEG = 100;
-function addRails(grp, T, W, rails, ground) {
+function addRails(grp, T, W, rails, ground, onRoad) {
   const firstPass = p => { const q = proj(p[0], p[1], T.origin); return T.D[firstPassAt(T, q.x, q.z)]; };
   const s0 = firstPass(rails.from), s1 = firstPass(rails.to), o = {};
   const stripes = canvasTex(256, 32, (c, w, h) => { c.fillStyle = '#f2f2ee'; c.fillRect(0, 0, w, h); c.fillStyle = '#1d1f22'; c.fillRect(w / 2, 0, w / 2, h); });
@@ -391,10 +391,11 @@ function addRails(grp, T, W, rails, ground) {
   const P = [], UV = [], I = [], posts = [];
   for (const side of [-1, 1]) {
     let prev = null;
-    for (let s = s0; s <= s1; s += 2) {
+    for (let s = s0, k = 0; s <= s1; s += 2, k++) {
       sampleAt(T, s, o);
       const at = d => ({ x: o.x + o.rx * d * side, z: o.z + o.rz * d * side }), q = at(W / 2 + RAIL_LOOK_M), e = at(W / 2 + RAIL_OFF_M);
-      const steep = ground(q.x, q.z) < o.y - RAIL_DROP_M;
+      // none across a road meeting the route there: the Panorama's car park was railed off
+      const steep = ground(q.x, q.z) < o.y - RAIL_DROP_M && !onRoad(e.x, e.z) && !onRoad(q.x, q.z);
       if (!steep) { prev = null; continue; }
       const cur = [e.x, o.y, e.z, s];
       if (prev) {
@@ -403,7 +404,7 @@ function addRails(grp, T, W, rails, ground) {
         UV.push(prev[3] / 2, 0, prev[3] / 2, 1, s / 2, 0, s / 2, 1);
         I.push(b, b + 2, b + 1, b + 1, b + 2, b + 3);
       }
-      if (Math.round(s) % RAIL_POST_M === 0) posts.push({ x: e.x, y: o.y, z: e.z });
+      if (k % (RAIL_POST_M / 2) === 0) posts.push({ x: e.x, y: o.y, z: e.z }); // a post every RAIL_POST_M: by the step's count -- by the metre, a start on an odd one had none
       prev = cur;
     }
   }
