@@ -1,7 +1,8 @@
 'use strict';
 /* A sign by the road: lm.text as the place writes it, lm.ink on a board of lm.c, lm.w metres wide (from the text when
-   not given), on two posts with its lower edge lm.up metres over the ground (2.2 unless given) -- its face turned to
-   the riders coming up to it on the route's way there, SIGN_FACE_M before it. */
+   not given), on two posts with its lower edge lm.up metres over the ground (2.2 unless given) -- its face turned by
+   lm.rot, else to the route SIGN_FACE_M before its nearest point: on a road ridden out and back that point may be on
+   the way back, so a sign the riders read on their way up gives its turn. */
 const SIGN_FACE_M = 30, SIGN_BOARD_H = 1.3;
 addObject('sign', (G, lm, T, { lam, box, cyl }) => {
   const text = lm.text, up = lm.up != null ? lm.up : 2.2, w = lm.w || Math.max(3, text.length * .62), h = lm.board || SIGN_BOARD_H;
@@ -18,6 +19,7 @@ addObject('sign', (G, lm, T, { lam, box, cyl }) => {
   board.position.y = up + h / 2; G.add(board);
   [-1, 1].forEach(k => cyl(.07, .07, up + h, 0x8d9296, k * (w / 2 - .25), 0, -.1, 8));
   // turned to the riders coming to it: its face towards the route SIGN_FACE_M back along the way there
+  if (lm.rot != null) return;
   const o = sampleAt(T, Math.max(0, lm.s - SIGN_FACE_M), {});
   G.rotation.y = Math.atan2(o.x - lm.x, o.z - lm.z);
 });
