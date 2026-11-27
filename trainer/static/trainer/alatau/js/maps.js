@@ -12,8 +12,9 @@
 // "oneway": true, its lanes parted by dashes alone.
 // A route may also carry its own buildings ({ h: metres, pts: [[latitude, longitude], ...], c: "#rrggbb" where the
 // colour is known }, drawn as OpenStreetMap's are), barriers ({ gap: metres }: a guardrail and a catch fence that far
-// beyond each edge, broken at the buildings), trees ({ rows: [lines], woods: [rings], pts: [places] }) in place of
-// the scattered ones, and what stands round it (js/surroundings.js) -- each where OpenStreetMap maps it:
+// beyond each edge, broken at the buildings), trees ({ rows: [lines], woods: [rings], pts: [places] }, and woods by
+// their leaves where OpenStreetMap gives them: firs, broad, mixed) in place of the scattered ones -- a gorge's only
+// with firs --, and what stands round it (js/surroundings.js) -- each where OpenStreetMap maps it:
 //   roads   [{ w: metres, pts, lanes }]   the roads it meets and passes, on the ground, rising onto its own
 //   over    [{ w, pts, foot }]            bridges over it, a footbridge's (foot) or a road's: the deck's line
 //   under   [{ w, pts }]                  roads that go under it, down a cutting

@@ -240,7 +240,9 @@ function buildWorld(route) {
   // --- деревья: тополя в городе, тянь-шаньские ели в ущелье, редкие карагачи в степи ---
   // each stands on the ground as drawn, its trunk a little way into it
   const trees = [];
-  if (route.trees && !gorge) plantOwnTrees(T, route.trees, r, tooClose, ground, W, trees); // where OpenStreetMap maps them
+  // where OpenStreetMap maps them -- a gorge's too once its woods carry their leaves (the Cosmostation's); Medeu's,
+  // without, has its Tian Shan spruces at random
+  if (route.trees && (!gorge || route.trees.firs)) plantOwnTrees(T, route.trees, r, tooClose, ground, W, trees);
   else if (steppe) {
     // along the road a tree now and then, in ones, twos and threes, beyond the shoulder; and a few alone in the grass
     if (!track) for (const side of [-1, 1]) {
@@ -281,10 +283,18 @@ function buildWorld(route) {
 // a route's own trees, as OpenStreetMap maps them: rows along the fields' edges, a tree about every 7 m, woods, one
 // tree to about 90 square metres, and trees alone; none on the road's shoulder (a racetrack's: none on its run-off,
 // 30 m) and none past 1.5 km from it -- the ground is drawn 1.6 km beyond the route, and a tree further out would
-// hang over the plain
+// hang over the plain. A wood's leaves say its trees: firs spruces, broad and the rest broadleaved, mixed half and
+// half -- in a gorge one whose leaves OpenStreetMap does not give has spruces in the spruce belt, FIRS_FROM_M to
+// TREES_TO_M, broadleaved under it and none over it. Its woods hold OWN_TREES at most between them, thinned evenly.
+const FIRS_FROM_M = 1500, TREES_TO_M = 2700, OWN_TREES = 25000;
 function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
-  const at = p => proj(p[0], p[1], T.origin), clear = T.route.scenery === 'racetrack' ? 30 : 4;
-  const add = (x, z) => { if (routeGap(T, x, z) < 1500 && !tooClose(x, z, W / 2 + clear)) trees.push({ x, z, y: ground(x, z) - ROOT_M, k: r() < .75 ? 'd' : 'p', s: .7 + r() * .5 }); };
+  const at = p => proj(p[0], p[1], T.origin), clear = T.route.scenery === 'racetrack' ? 30 : 4, gorge = T.route.scenery === 'gorge';
+  const broad = () => r() < .75 ? 'd' : 'p';
+  const add = (x, z, kind = broad) => {
+    if (routeGap(T, x, z) >= 1500 || tooClose(x, z, W / 2 + clear)) return;
+    const y = ground(x, z), k = kind(y);
+    if (k) trees.push({ x, z, y: y - ROOT_M, k, s: .7 + r() * .5 });
+  };
   (own.pts || []).forEach(p => { const q = at(p); add(q.x, q.z); });
   (own.rows || []).forEach(row => {
     const q = row.map(at);
@@ -293,14 +303,22 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
       for (let s = r() * 4; s < L; s += 5 + r() * 4) add(a.x + (b.x - a.x) * s / L, a.z + (b.z - a.z) * s / L);
     }
   });
-  (own.woods || []).forEach(wood => {
-    const ring = wood.map(at).map(p => [p.x, p.z]), xs = ring.map(p => p[0]), zs = ring.map(p => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
+  const kinds = {
+    woods: gorge ? y => y > TREES_TO_M ? null : y > FIRS_FROM_M ? 's' : broad() : broad,
+    firs: () => 's', broad, mixed: () => r() < .5 ? 's' : broad()
+  };
+  const woods = Object.keys(kinds).flatMap(key => (own[key] || []).map(wood => {
+    const ring = wood.map(at).map(p => [p.x, p.z]);
     let area = 0; ring.forEach((p, i) => { const n = ring[(i + 1) % ring.length]; area += p[0] * n[1] - n[0] * p[1]; });
-    const want = Math.min(1500, Math.round(Math.abs(area) / 2 / 90));
+    return { ring, kind: kinds[key], want: Math.min(1500, Math.round(Math.abs(area) / 2 / 90)) };
+  }));
+  const thin = Math.min(1, OWN_TREES / Math.max(1, woods.reduce((a, w) => a + w.want, 0)));
+  woods.forEach(({ ring, kind, want }) => {
+    const xs = ring.map(p => p[0]), zs = ring.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
+    want = Math.round(want * thin);
     for (let k = 0, put = 0; put < want && k < want * 6; k++) {
       const x = x0 + r() * (x1 - x0), z = z0 + r() * (z1 - z0);
-      if (insideRing(ring, x, z)) { add(x, z); put++; }
+      if (insideRing(ring, x, z)) { add(x, z, kind); put++; }
     }
   });
 }

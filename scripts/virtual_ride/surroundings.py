@@ -10,7 +10,8 @@ Adds to the route (lat/lon rounded to ~0.1 m):
                                   the road runs level through it, the dam a sight standing over it
   lines      [{k, pts}]           power lines (k "power"), minor ones ("minor") and railways ("rail")
   water      [{w, pts}|{area}]    rivers, canals and streams; lakes and ponds
-  trees      {rows, woods, pts}   tree rows, woods, orchards and parks, single trees
+  trees      {rows, woods, pts}   tree rows, woods, orchards and parks, single trees; a wood OSM gives its leaf_type
+                                  goes to firs (needleleaved), broad (broadleaved) or mixed instead of woods
 
 The fourth argument, JSON, sets the distances above and "own_rest": 1 -- the route's own ways drawn where it does not
 ride them, a dual carriageway's other half beside a stretch ridden one way (the Institute of Nuclear Physics' Alatau
@@ -28,6 +29,7 @@ from typing import Any
 route_path, osm_path, out_path = sys.argv[1:4]
 route = json.loads(Path(route_path).read_text(encoding="utf-8"))
 osm = json.loads(Path(osm_path).read_text(encoding="utf-8"))
+LEAF = {"needleleaved": "firs", "broadleaved": "broad", "mixed": "mixed"}  # a wood by its leaves, else woods
 NEAR = {"buildings": 250, "roads": 400, "side": 150, "lines": 2500, "water": 1500, "trees": 500}
 if len(sys.argv) > 4:
     NEAR.update(json.loads(sys.argv[4]))
@@ -523,7 +525,8 @@ for e in ways:
     ):
         outline = [ll(p) for p in simplify(pts, 2)[:-1]]
         if len(outline) >= 3:
-            out["trees"]["woods"].append(outline)
+            leaf = LEAF.get(t.get("leaf_type", ""), "woods")
+            out["trees"].setdefault(leaf, []).append(outline)
 for e in osm:
     if e["t"] == "n" and e["tags"].get("natural") == "tree" and gap(xy(*e["ll"])) < NEAR["trees"]:
         out["trees"]["pts"].append(ll(xy(*e["ll"])))
