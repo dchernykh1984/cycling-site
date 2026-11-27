@@ -2095,9 +2095,9 @@ _SOUNDING = "() => { const m = document.querySelector('#music'); return !m.pause
 def test_the_menu_s_music_starts_silent_plays_once_raised_and_waits_out_a_ride(
     page: Page, live_server, browser_name: str
 ):
-    """Silent at every start of the page; raised on its slider -- a key or a tap, the touch a browser waits for
-    before a page may sound -- it plays at that volume, stops for a ride and plays again back in the menu. Chromium
-    is seen to play the MP3; another browser here only to be asked."""
+    """Silent for a new member; raised on its slider -- a key or a tap, the touch a browser waits for before a page
+    may sound -- it plays at that volume, stops for a ride and plays again back in the menu. Chromium is seen to play
+    the MP3; another browser here only to be asked."""
     page.add_init_script(_PLAYS)
     _trainer_in_its_menu(page, live_server)
     volume, music = page.locator("#musicVol"), page.locator("#music")
@@ -2121,6 +2121,19 @@ def test_the_menu_s_music_starts_silent_plays_once_raised_and_waits_out_a_ride(
     assert page.evaluate("plays") > asked
     if browser_name == "chromium":
         page.wait_for_function(_SOUNDING, polling=100)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_music_s_volume_is_kept_with_the_member_s_settings(page: Page, live_server):
+    # as their height is: it came back at 0 on every visit, the member raising it each time
+    _trainer_in_its_menu(page, live_server)
+    volume = page.locator("#musicVol")
+    for _ in range(3):
+        volume.press("ArrowRight")
+    expect(volume).to_have_value("15")
+    assert page.evaluate("settings.musicVol") == 15
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#musicVol")).to_have_value("15")
 
 
 @pytest.mark.django_db(transaction=True)
