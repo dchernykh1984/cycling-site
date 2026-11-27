@@ -1993,23 +1993,23 @@ def test_the_trainer_s_type_says_it_counts_the_power_only_when_nothing_sends_it(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_the_demo_power_goes_to_a_kilowatt_and_a_half_finer_where_riders_ride(page: Page, live_server):
-    """Asked for up to 1.5 kW, a low power chosen more finely than a high one."""
+def test_the_demo_power_goes_to_five_kilowatts_finer_where_riders_ride(page: Page, live_server):
+    """Asked for up to 5 kW, a low power chosen more finely than a high one."""
     _trainer_in_its_menu(page, live_server)
     got = page.evaluate(
         """() => {
             const at = pos => { setDemo(pos); return demoP; };
             const ends = [at(0), at(1000)];
-            const step = w => { const p = demoPos(w); return at(p + 50) - at(p); };
+            const step = w => { const p = demoPos(w); return at(p + 20) - at(p); };
             const low = step(150), high = step(1200);
             setDemo(demoPos(150));
             const said = $('#demoP').getAttribute('aria-valuetext');
             return { ends, low, high, said, shown: $('#demoV').textContent };
         }"""
     )
-    assert got["ends"] == [0, 1500], got
-    # a tenth of the slider: some 30 W at 150 W, 200 at 1.2 kW
-    assert 0 < got["low"] <= 50 and got["high"] >= 4 * got["low"], got
+    assert got["ends"] == [0, 5000], got
+    # a fiftieth of the slider: some 20 W at 150 W, 130 at 1.2 kW
+    assert 0 < got["low"] <= 25 and got["high"] >= 4 * got["low"], got
     # the power in watts, to the eye and to a screen reader, not the slider's place
     assert got["said"] == got["shown"] == page.evaluate("'150 ' + t('u.w')"), got
     page.keyboard.press("ArrowUp")
