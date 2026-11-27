@@ -5933,3 +5933,47 @@ msgstr "Картинка заезда"
 #: calendar_app/views.py
 msgid "The race is not held by this event: only an event with registration on the site holds a race, before it starts."
 msgstr "Гонка не привязана к этому мероприятию: гонку держит только мероприятие с регистрацией на сайте, пока гонка не началась."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "To pick your category, the site needs your gender and date of birth. Missing: %(missing)s."
+msgstr "Чтобы подобрать вам категорию, нужны пол и дата рождения. Не указано: %(missing)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Fill them in your profile"
+msgstr "Заполнить в личном кабинете"
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "None of this event's categories takes your gender and year of birth."
+msgstr "Ни одна категория этого мероприятия не подходит вам по полу и году рождения."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "None of this event's categories takes their gender and year of birth."
+msgstr "Ни одна категория этого мероприятия не подходит участнику по полу и году рождения."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "The categories for you are full: %(names)s."
+msgstr "Подходящие вам категории заполнены: %(names)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "The categories for them are full: %(names)s."
+msgstr "Подходящие участнику категории заполнены: %(names)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "Registration is closed: all places are taken (%(n)s)."
+msgstr "Регистрация закрыта: все места заняты (%(n)s)."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "To pick a category, the site needs each person's gender and date of birth. Missing:"
+msgstr "Чтобы подобрать категорию, нужны пол и дата рождения каждого участника. Не указано:"
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Add yours and those of the people you added without an account in your profile; ask the members you manage to complete their own profiles."
+msgstr "Свои данные и данные добавленных вами людей без аккаунта заполните в личном кабинете; подопечных с аккаунтом попросите заполнить свой профиль."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Open your profile"
+msgstr "Открыть личный кабинет"

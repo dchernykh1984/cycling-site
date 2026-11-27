@@ -17,16 +17,24 @@
 <h1 class="mb-4">{% trans "Registration" %}: {{ competition.title }}</h1>
 
 {% if registration_closed %}
-<div class="alert alert-warning">{% trans "Registration is closed." %}</div>
+<div class="alert alert-warning">{{ closed_reason|default:_("Registration is closed.") }}</div>
 {% else %}
 
-{% if profile_incomplete %}
+{% if missing %}
+<div class="alert alert-info" id="register-missing">
+  {% blocktrans %}To pick your category, the site needs your gender and date of birth. Missing: {{ missing }}.{% endblocktrans %}
+  <a href="{% url 'account_profile_edit' %}" class="alert-link">{% trans "Fill them in your profile" %}</a>
+</div>
+{% elif profile_incomplete %}
 <div class="alert alert-info">
   {% trans "Please complete your profile to register:" %}
   {% if not request.user.gender %}{% trans "gender" %}{% endif %}
   {% if not request.user.birth_date %}{% trans "date of birth" %}{% endif %}.
   <a href="{% url 'account_profile_edit' %}" class="alert-link">{% trans "Edit profile" %}</a>
 </div>
+{% endif %}
+{% if category_refusal %}
+<div class="alert alert-warning" id="register-refusal">{{ category_refusal }}</div>
 {% endif %}
 
 <form method="post" id="registration-form" class="register-person">

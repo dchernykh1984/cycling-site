@@ -34,6 +34,12 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    date in their profile, and their identity fields (names, birth, gender) are locked to the
    profile; **given** free mode, **Then** any person can
    be entered by name and birth year/date.
+2a. **Given** a person who cannot pick a category, **Then** the page says why, never an empty menu alone
+   (`registrations/registering.py`, `tests/test_managing_register_many.py::WhyNoCategoryTests`): their profile
+   lacks a gender or a date of birth, which an event with categories needs to choose one -- named, with a link
+   to fill them in the profile (on the page for several, a list of each person and what they lack, with whom
+   to ask); none of the categories takes their gender and year of birth; the ones that do are full, named; or,
+   with registration closed for it, every place of the event is taken (how many).
 3. **Given** the same rider (self-only: the same account; free: the same name, case-insensitive, and
    birth year) is entered twice, **Then** the second entry is refused, unless the event allows
    several registrations (free mode only).

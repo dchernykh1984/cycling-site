@@ -30,6 +30,10 @@ SENT_THERE = [
     "A bib for a person without an account you added: their photos will be here and in your profile.",
     "Connect Strava in your profile first",
     "Connect intervals.icu in your profile first",
+    "Fill them in your profile",
+    "Open your profile",
+    "Add yours and those of the people you added without an account in your profile; ask the members you manage "
+    "to complete their own profiles.",
     "Connect the service in your profile first",
     "We keep your data while your account exists. You can edit or clear most of it yourself in your profile "
     "at any time, and you can disconnect a linked Google, GitHub or Strava account from that service's "
