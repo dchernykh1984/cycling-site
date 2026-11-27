@@ -197,6 +197,37 @@ def test_a_road_between_two_bridges_meets_each_at_its_deck(page: Page, live_serv
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_ground_keeps_under_the_road_and_its_sides(page: Page, live_server):
+    # between the ground's vertices, tens of metres apart, the drawn ground is a plane: one leaning on Medeu's gorge
+    # wall rose over its road by up to 4 m. Outside a tunnel's cutting, it lies 10 cm under the road and a gorge's
+    # gravel beside it, every 2 m along the route and every metre across
+    faults = _faults(
+        page,
+        live_server,
+        """
+        const land = kids.find(m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors);
+        const g = land.geometry; g.computeBoundingBox();
+        const b = g.boundingBox, drawn = groundOf(g.attributes.position, b.min.x, b.min.z, b.max.x, b.max.z,
+          g.parameters.widthSegments, g.parameters.heightSegments), o = {}, wide = W + (r.scenery === 'gorge' ? 5 : 0);
+        if (r.scenery === 'gorge') out.push('seen:' + r.id);
+        for (let s = 0; s < T.L; s += 2) {
+          if (r.tunnels && cutGround(T, s) != null) continue;
+          sampleAt(T, s, o);
+          for (let off = -wide / 2; off <= wide / 2; off += 1) {
+            const over = drawn(o.x + o.rx * off, o.z + o.rz * off) - o.y;
+            if (over > -.09) {
+              const cm = Math.round(Math.abs(over) * 100), where = over > 0 ? ' cm over' : ' cm under';
+              out.push(r.id + ': the ground ' + cm + where + ' the road at ' + Math.round(s) + ' m');
+              return;
+            }
+          }
+        }
+        """,
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_tunnel_s_roof_clears_the_road_under_it_and_the_land_keeps_its_level_beside_it(page: Page, live_server):
     faults = _faults(
         page,
