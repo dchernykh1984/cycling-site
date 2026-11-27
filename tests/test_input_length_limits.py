@@ -116,6 +116,8 @@ SCHEMA_TARGETS = {
     "api.endpoints.virtual_ride.GroupIn": GroupRide,
     "api.endpoints.virtual_ride.PresenceIn": LiveRider,
     "api.endpoints.virtual_ride.RideIn": VirtualRide,
+    # A race's wind is a speed and a bearing, bounded numbers: no text column.
+    "api.endpoints.virtual_ride.GroupWindIn": None,
     # The trainer page's settings go into one JSON column, bounded at 64 KB of JSON by keep_settings.
     "api.endpoints.virtual_ride.TrainerSettingsIn": None,
     # A box on or off is a flag; nothing lands in a text column (issue #471).
