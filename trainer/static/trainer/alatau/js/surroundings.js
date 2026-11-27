@@ -159,6 +159,49 @@ function addRoads(G, T, W, roads, ground, decks = []) {
   meshOf(G, WP, WI, new THREE.MeshLambertMaterial({ color: 0xb9b6ae, side: THREE.DoubleSide }), 'ramps');
   return meshOf(G, P, I, new THREE.MeshLambertMaterial({ color: 0x55575b, side: THREE.DoubleSide }), 'roads');
 }
+// The route's own road going on past where the route turns back on it -- a road marked "onward", on from where the turn
+// begins: as wide as the route's road and marked as it is (the shoulders the route's road has where it is ridden one
+// way only, it has none: ridden there and back, its road is all it takes); level with the route where it leaves it,
+// then on the land as the route's road lies over it, the ground drawn ROAD_OVER_LAND_M under it (terrainH)
+// it begins ONWARD_LEAD_M before the turn, a centimetre under the route's own road, which gives way to it from there
+// (scripts/virtual_ride/turn_on_road.py): the route's road ends where its points do, up to 4 m apart, and left a gap
+const ROAD_OVER_LAND_M = 1.2, ONWARD_BLEND_M = 60, ONWARD_LEAD_M = 6;
+function addOnwardRoads(G, T, W, roads, ground, roadMat) {
+  const P = [], U = [], I = [];
+  roads.forEach(r => {
+    const q = along(r.pts.map(p => xzOf(T, p)), 4), from = routeNearest(T, q[0].x, q[0].z).y, cum = [0];
+    for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
+    const ys = q.map((p, i) => { const k = clamp(cum[i] / ONWARD_BLEND_M, 0, 1); return from + (ground(p.x, p.z) + ROAD_OVER_LAND_M - from) * k * k * (3 - 2 * k); });
+    const base = P.length / 3;
+    q.forEach((p, i) => {
+      const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1, rx = -(b.z - a.z) / L, rz = (b.x - a.x) / L;
+      P.push(p.x - rx * r.w / 2, ys[i] + .05, p.z - rz * r.w / 2, p.x + rx * r.w / 2, ys[i] + .05, p.z + rz * r.w / 2);
+      U.push(0, cum[i] / 9, 1, cum[i] / 9); // the route's road's markings, 9 m a repeat (js/world.js ribbon)
+      if (i) { const v = base + i * 2; I.push(v - 2, v - 1, v, v - 1, v + 1, v); }
+    });
+  });
+  if (!I.length) return;
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+  g.setIndex(I); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, roadMat); m.name = 'onward'; G.add(m);
+}
+// Which of the route's points lie on a road going on past its turn: where the route's own line leaves the road's middle
+// for the rider's lane round the turn, the road is that one, not the route's (1 a point on it, else 0)
+function onwardCover(T, roads, W) {
+  const out = new Uint8Array(T.N);
+  roads.forEach(r => {
+    const q = r.pts.map(p => xzOf(T, p));
+    for (let i = 0; i < T.N; i++) {
+      for (let j = 0, cum = 0; j + 1 < q.length; j++) {
+        const a = q[j], b = q[j + 1], dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1, f = ((T.X[i] - a.x) * dx + (T.Z[i] - a.z) * dz) / (L * L);
+        const on = f >= 0 && f <= 1 && cum + f * L >= ONWARD_LEAD_M; // short of that, the route's own road
+        cum += L;
+        if (on && Math.hypot(T.X[i] - a.x - dx * f, T.Z[i] - a.z - dz * f) < W / 2) { out[i] = 1; break; }
+      }
+    }
+  });
+  return out;
+}
 // The roads that climb onto a bridge over the route. OpenStreetMap draws a bridge apart from the roads that lead to
 // it, so the road touching an end of a road bridge's deck goes down from the deck at RAMP_GRADE to the ground, and on
 // into the next road where the ramp runs on past a junction. Per road, the ramp's height at each of its points (as
