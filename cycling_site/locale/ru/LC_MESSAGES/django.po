@@ -5990,3 +5990,11 @@ msgstr "Категории для этого пола и года рождени
 #: api/endpoints/virtual_ride.py
 msgid "Only the host can change this group race's wind"
 msgstr "Изменить ветер групповой гонки может только организатор"
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: it awaits review, and only a published event holds a race."
+msgstr "Гонка не привязана к этому мероприятию: оно ждёт проверки, а гонку держит только опубликованное мероприятие."
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: only a public event, neither hidden nor by invitation, holds a race."
+msgstr "Гонка не привязана к этому мероприятию: гонку держит только открытое мероприятие — не скрытое и не по приглашениям."

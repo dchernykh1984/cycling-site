@@ -406,6 +406,37 @@ class VirtualRaceDraftTests(TestCase):
         )
         self.assertNotIn("event_draft", self.client.session)
 
+    def test_the_warning_names_why_the_event_does_not_hold_the_race(self):
+        # it said "only an event with registration" to an organizer whose event was invite-only, or awaited review
+        told = {}
+        cases = (("invite-only", {"invite_only": "on"}), ("on a place under review", {"under_review": True}))
+        for case, extra in cases:
+            race = self.race()
+            self.draft(virtual_ride=str(race.pk), registration="1")
+            key = self.form_page().context["draft_key"]
+            if extra.pop("under_review", False):  # the city above the place awaits review: so does the event
+                LocationProposal.objects.create(location=self.city, submitted_by=self.organizer)
+            payload = {"title_ru": case, "date_start": "2026-12-02", "location": str(self.start.pk), "draft_key": key}
+            answer = self.client.post(reverse("calendar_submit"), {**payload, "registration_enabled": "on", **extra})
+            told[case] = [str(m) for m in get_messages(answer.wsgi_request)]
+            race.delete()
+        self.assertEqual(
+            told,
+            {
+                "invite-only": [
+                    gettext(
+                        "The race is not held by this event: only a public event, neither hidden nor by invitation, "
+                        "holds a race."
+                    )
+                ],
+                "on a place under review": [
+                    gettext(
+                        "The race is not held by this event: it awaits review, and only a published event holds a race."
+                    )
+                ],
+            },
+        )
+
     def test_an_event_that_registers_nobody_or_is_over_holds_no_race(self):
         # a race held by them could be joined by no one: joining asks for a registration
         for title, registers, day in (("No registration", False, "2026-12-02"), ("Over", True, "2020-01-02")):

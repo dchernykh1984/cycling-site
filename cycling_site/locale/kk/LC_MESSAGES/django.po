@@ -5981,3 +5981,11 @@ msgstr "Осы жыныс пен туған жылға арналған сана
 #: api/endpoints/virtual_ride.py
 msgid "Only the host can change this group race's wind"
 msgstr "Топтық жарыстың желін тек ұйымдастырушы өзгерте алады"
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: it awaits review, and only a published event holds a race."
+msgstr "Жарыс бұл іс-шараға байланбады: ол тексеруді күтуде, ал жарысты тек жарияланған іс-шара ғана ұстайды."
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: only a public event, neither hidden nor by invitation, holds a race."
+msgstr "Жарыс бұл іс-шараға байланбады: жарысты тек ашық іс-шара ғана ұстайды — жасырын емес және шақыру бойынша емес."
