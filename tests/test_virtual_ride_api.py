@@ -15,6 +15,7 @@ from django.utils.translation import gettext, ngettext
 from django.utils.translation import override as translation_override
 
 from accounts.models import User
+from calendar_app.models import Competition
 from trainer import records
 from trainer.live import ONLINE_SECONDS
 from trainer.models import GroupRide, GroupRideMember, LiveRider, TrainerSettings, VirtualRide
@@ -389,6 +390,19 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         # once it has started, its riders keep the wind they started in
         GroupRide.objects.filter(pk=group_id).update(start_at=timezone.now() - timedelta(seconds=1))
         self.assertEqual(self.patch(self.client_h, f"/groups/{group_id}", change).status_code, 409)
+
+    def test_a_ride_an_event_announces_stays_its_host_s_when_they_leave_it(self):
+        """Its host warming up alone an hour before left it, and alone in it cancelled the ride the event announced."""
+        group_id = self.create(start_in_s=600, kind="ride").json()["id"]
+        Competition.objects.create(title="Coffee ride", date_start=timezone.localdate(), virtual_ride=group_id)
+        self.post(self.client_h, f"/groups/{group_id}/leave")
+        group = GroupRide.objects.get(pk=group_id)
+        self.assertEqual((group.cancelled, group.host_id), (False, self.host.pk))
+        # with another rider in it, nor is it handed to them
+        self.post(self.client_g, f"/groups/{group_id}/join")
+        self.post(self.client_h, f"/groups/{group_id}/leave")
+        group.refresh_from_db()
+        self.assertEqual((group.cancelled, group.host_id), (False, self.host.pk))
 
     def test_only_the_host_cancels_and_a_cancelled_race_disappears(self):
         group_id = self.create().json()["id"]
