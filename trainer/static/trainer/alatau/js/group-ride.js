@@ -351,7 +351,8 @@ function renderMP() {
     const who = g.is_host ? (ride ? t('mp.yoursRide') : t('mp.yours')) : ride ? t('mp.hostGathersRide', { name: g.host.name }) : t('mp.hostGathers', { name: g.host.name });
     card.querySelector('b').textContent = who + ': ' + routeTitle(g);
     // a ride or race the member is in: the time left to its start, ticking each second, from the day they joined
-    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || g.is_host || mpRegistered(g)) && left > 0;
+    // its riders count down: its members -- a host of a race no event holds always one -- and an event's registered riders
+    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || mpRegistered(g)) && left > 0;
     count.classList.toggle('hidden', !counting); if (counting) count.textContent = t('mp.countdown', { t: fmtCountdown(left) });
     const small = card.querySelector('small');
     small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + (g.members.length ? t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) : '.') + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
@@ -373,8 +374,10 @@ function renderMP() {
       if (document.activeElement !== from) from.value = String(WIND_STEP_DEG * (Math.round((g.wind_from_deg || 0) / WIND_STEP_DEG) % (360 / WIND_STEP_DEG)));
       ms.onchange = from.onchange = () => mpSetWind(g, clamp(Math.round(+ms.value || 0), 0, +ms.max), +from.value || 0);
     }
-    const go = card.querySelector('.go'); go.classList.toggle('hidden', !counting); go.textContent = t('mp.toStart');
-    go.onclick = () => { if (!MP.started.has(g.id)) { MP.refused.delete(g.id); mpEnter(g); } };
+    // the host of a race their event holds rides it only once registered: until then its first button registers them
+    const go = card.querySelector('.go'), unregistered = g.is_host && !g.is_member && !!(g.event && !g.event.registered) && left > 0;
+    go.classList.toggle('hidden', !counting && !unregistered); go.textContent = unregistered ? t('mp.register') : t('mp.toStart');
+    go.onclick = unregistered ? () => window.open(langPath(g.event.register_url), '_top') : () => { if (!MP.started.has(g.id)) { MP.refused.delete(g.id); mpEnter(g); } };
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     const ev = g.event;
