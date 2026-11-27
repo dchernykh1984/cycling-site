@@ -217,7 +217,9 @@ the distance, the metres climbed and the time over a bar of the route (or the pl
 power, large, with the heart rate (the zone's colour on its heart, the figure white) and the cadence, and the ride's
 average power; in a cadence plan, from the countdown on, the step's target beside the power, the cadence coloured by
 how far it is from it, the step's average cadence and the list of steps on the left; on the right the grade over the
-minimap and, when there are other riders, those nearby with the gaps in seconds; hints read as a large line over
+minimap and under it the street ridden, named from OpenStreetMap in the page's language (a racetrack or a road
+between two villages that no street runs along by the route's own name; nothing where the map names none) and,
+when there are other riders, those nearby with the gaps in seconds; hints read as a large line over
 the road. A phone held upright gets one column, a tablet keeps the blocks apart, and nothing animates for a reader
 who asked for less motion (issue #434). Record labels keep the date and demo marker distinct. Tests:
 `tests/test_virtual_ride.py`, `tests/test_virtual_ride_api.py`, `tests/test_static_storage.py`,

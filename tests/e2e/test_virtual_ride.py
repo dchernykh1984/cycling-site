@@ -1377,6 +1377,29 @@ def test_a_ride_on_a_trainer_that_gave_no_control_says_so_in_words(page: Page, l
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("lang", ["ru", "kk", "en"])
+def test_the_street_ridden_is_named_under_the_map(page: Page, live_server, lang: str):
+    """The street a rider is on, under the map in the page's language: the Central loop starts on Seifullin Avenue
+    and turns onto Abay, Dostyk, Al-Farabi and Seifullin again; where the map names no street, nothing is said."""
+    _trainer_in_its_menu(page, live_server, lang)
+    page.evaluate("() => { pickRoute('center'); settings.mode = 'race'; $('#bots').value = '0'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    shown = page.evaluate(
+        """() => world.T.streets.map((st, k, all) => {
+            phase = 'race'; me.s = (st.s + (k + 1 < all.length ? all[k + 1].s : world.T.L)) / 2; drawFrame(200);
+            const el = document.querySelector('#hudStreet'), box = el.getBoundingClientRect();
+            const card = el.closest('.mapcard').getBoundingClientRect();
+            return [st.n[LANG], el.textContent, box.right <= card.right && box.bottom <= card.bottom];
+        })"""
+    )
+    assert len(shown) == 5 and all(name and name == text and inside for name, text, inside in shown), shown
+    hidden = page.evaluate(
+        "() => { world.T.streets = [{ s: 0, n: null }]; drawFrame(200); return $('#hudStreet').matches('.hidden'); }"
+    )
+    assert hidden
+
+
+@pytest.mark.django_db(transaction=True)
 def test_each_ride_on_a_trainer_without_control_says_why_once(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

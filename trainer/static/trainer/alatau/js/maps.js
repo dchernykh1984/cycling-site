@@ -21,6 +21,8 @@
 //   tunnels [[r0, i0, i1, r1]]            a stretch in a tunnel between i0 and i1, its ramps from r0 and to r1
 //   lines   [{ k, pts }]                  power lines (k "power" on towers, "minor" on poles) and railways ("rail")
 //   water   [{ w, pts } | { area }]       rivers and canals; lakes and ponds as their shore's ring
+//   streets [[i, names | null]]           the streets it rides, each from its point i on, named under the map (null:
+//                                         no name there); scripts/virtual_ride/streets.py
 // A map may carry its relief ({ lat: [north, step, rows], lon: [west, step, columns], h: [metres, row by row from the
 // north] }): the land round its routes from SRTM, drawn in place of a range beyond the scenery's own ground, which
 // rises to it away from the road; relief.detail, grids of the same shape on a finer step, carry a hill the map's own
