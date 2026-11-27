@@ -73,9 +73,12 @@ function holesOf(T, W) {
   (T.route.roads || []).filter(r => r.onward).forEach(r => {
     const { q, floor } = onwardUnder(T, W, r);
     let k0 = -1;
+    // up to its walls, as a tunnel's: wider, the land beside the walls was left out too, a slit along each
     const box = (i0, i1) => {
-      const p0 = q[i0], p1 = q[i1], L = Math.hypot(p1.x - p0.x, p1.z - p0.z) || 1;
-      out.push([new THREE.Vector4((p0.x + p1.x) / 2, (p0.z + p1.z) / 2, (p1.x - p0.x) / L, (p1.z - p0.z) / L), new THREE.Vector4(L / 2 + .5, r.w / 2 + .35 + 1, terrainH(T, p0.x, p0.z), terrainH(T, p1.x, p1.z))]);
+      const p0 = q[i0], p1 = q[i1], L = Math.hypot(p1.x - p0.x, p1.z - p0.z) || 1, ux = (p1.x - p0.x) / L, uz = (p1.z - p0.z) / L;
+      let bend = 0;
+      for (let i = i0; i <= i1; i++) bend = Math.max(bend, Math.abs((q[i].z - p0.z) * ux - (q[i].x - p0.x) * uz));
+      out.push([new THREE.Vector4((p0.x + p1.x) / 2, (p0.z + p1.z) / 2, ux, uz), new THREE.Vector4(L / 2 + .5, r.w / 2 + .35 + bend, terrainH(T, p0.x, p0.z), terrainH(T, p1.x, p1.z))]);
     };
     q.forEach((p, i) => {
       const deep = floor[i] < terrainH(T, p.x, p.z) - .3;
