@@ -176,7 +176,8 @@ that route at that minute) and sends the whole window to the event form filled f
 -- "Virtual world: start of the route ...", so that nobody comes there to meet -- the one so named within 100 m of it,
 else one proposed then under the nearest public city (public for an organizer, awaiting review for anyone else); the
 ride or race itself, which the event's page opens as "Go to the virtual ride" and its forms show as its link, set by the site
-and never typed (`Competition.virtual_ride`; `virtual_ride_url` in the API), the words "on the ride's page" linking to it
+and never typed (`Competition.virtual_ride`; `virtual_ride_url` in the API), the words "on the virtual ride page" -- never the event's own, where they are read -- linking to it, a race's
+telling its registered riders to press "Go to the start" there or keep the page open,
 in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
 file of their own; the ride's picture for a chat's card, 1200 by 630 -- the route's view in the virtual world
 (`maps/<map>/views/<route>.jpg`, rendered from its scene) under the logo of the skin `RIDE_PICTURE_SKIN` names, the
