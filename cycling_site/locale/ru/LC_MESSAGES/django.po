@@ -5929,3 +5929,7 @@ msgstr "Картинка заезда ниже приложится при со�
 #: calendar_app/templates/calendar_app/submit.html
 msgid "The ride's picture"
 msgstr "Картинка заезда"
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: only an event with registration on the site holds a race, before it starts."
+msgstr "Гонка не привязана к этому мероприятию: гонку держит только мероприятие с регистрацией на сайте, пока гонка не началась."

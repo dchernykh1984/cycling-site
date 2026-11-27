@@ -5920,3 +5920,7 @@ msgstr "Төмендегі заезд суреті іс-шара сақталғ�
 #: calendar_app/templates/calendar_app/submit.html
 msgid "The ride's picture"
 msgstr "Заезд суреті"
+
+#: calendar_app/views.py
+msgid "The race is not held by this event: only an event with registration on the site holds a race, before it starts."
+msgstr "Жарыс бұл іс-шараға байланбады: жарысты басталғанға дейін тек сайтта тіркеуі бар іс-шара ғана ұстайды."
