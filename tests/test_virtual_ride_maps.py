@@ -120,8 +120,10 @@ class MapsTests(SimpleTestCase):
                 if "c" in building:
                     self.assertRegex(building["c"], r"^#[0-9a-f]{6}$", route["id"])
             trees = route.get("trees", {})
-            self.assertLessEqual(set(trees), {"rows", "woods", "pts"}, route["id"])
-            lines = [(row, 2) for row in trees.get("rows", [])] + [(wood, 3) for wood in trees.get("woods", [])]
+            woods = ("woods", "firs", "broad", "mixed")  # woods by their leaves where OpenStreetMap gives them
+            self.assertLessEqual(set(trees), {"rows", "pts", *woods}, route["id"])
+            lines = [(row, 2) for row in trees.get("rows", [])]
+            lines += [(wood, 3) for key in woods for wood in trees.get(key, [])]
             lines += [([tree], 1) for tree in trees.get("pts", [])]
             lines += [(building["pts"], 3) for building in route.get("buildings", [])]
             for line, least in lines:
