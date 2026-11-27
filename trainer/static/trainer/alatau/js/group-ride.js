@@ -58,7 +58,9 @@ function mpInit() {
 // hints, and a race's settings -- a gap between categories in a group race, an interval in a time trial
 function renderRaceOpts() {
   const kind = mpKind(), ride = kind === 'ride', itt = $('#mpRaceMode').value === 'itt';
-  $('#mpPlanNote').classList.toggle('hidden', kind !== null); $('#mpBody').classList.toggle('hidden', kind === null);
+  // a workout gathers nothing, but its rider still sees the rides they are in, a link's word and how things stand
+  $('#mpPlanNote').classList.toggle('hidden', kind !== null); $('.mp-create').classList.toggle('hidden', kind === null);
+  $('#mpHint').classList.toggle('hidden', kind === null);
   $('#mpCreate').textContent = ride ? t('mp.createRide') : t('mp.create');
   $('#mpHint').textContent = ride ? t('mp.hintRide') : t('mp.hint');
   $('#mpEventHint').textContent = ride ? t('mp.eventHintRide') : t('mp.eventHint');
