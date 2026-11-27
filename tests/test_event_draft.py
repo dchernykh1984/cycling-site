@@ -1,4 +1,4 @@
-"""A draft another page hands the event form: the virtual ride's "Add event" fills the form, nothing more.
+"""A draft another page hands the event form: the virtual ride's calendar box fills the form, nothing more.
 
 The page posts the event's words in each language, its date and its types and disciplines named in English; the
 form opens filled with them for the member to check and submit. Nothing is an event until they do.
@@ -117,7 +117,7 @@ PICTURE = {
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class VirtualRaceDraftTests(TestCase):
-    """The virtual ride's "Add event" also brings the venue at its route's start, a race's registration with its
+    """The virtual ride's calendar box also brings the venue at its route's start, a race's registration with its
     categories, the route's track and the race the event is to hold -- taken only by the form its draft opened."""
 
     @classmethod

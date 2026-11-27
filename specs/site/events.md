@@ -59,18 +59,18 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 5. **Given** someone who may edit an event, **Then** "copy" opens the form filled from it --
    registration settings, categories and the link preview text included, dates and last year's
    results not.
-6. **Given** another page hands the form a draft (the virtual ride's "Add event": a POST to
+6. **Given** another page hands the form a draft (the virtual ride's calendar box, "Add it to the calendar as an
+   event", ticked when a ride or race is gathered: a POST to
    `/<lang>/calendar/submit/draft/` with the titles, link preview lines and descriptions in each language,
    the start date, and event types and disciplines named in English, as every database's lists name them;
    besides, a route's start and names, registration with its categories, a route's track and the member's own
-   virtual ride or race
-   of the member's own),
+   virtual ride or race),
    **Then** it is kept for the member's session and the form opens filled with it
    (`/calendar/submit/?draft=1`) -- the descriptions cleaned as an event's are, a name no list has left out, the
    route's start as a venue of the virtual world (the one so named within 100 m, else one proposed then under the
    nearest public city, public for an organizer, awaiting review for anyone else), registration on with the categories in the editor, a
-   line saying the track is attached -- nothing an event until submitted; submitting drops the draft. A form
-   opened from the draft sends its key back, and only then does the event made from it take the track (unless the
+   line saying the track is attached -- nothing an event until submitted; submitting the form the draft opened drops it, one sent from another tab
+   leaves it for its own form. A form opened from the draft sends its key back, and only then does the event made from it take the track (unless the
    member chose a file of their own), is ridden in the ride or race -- its page opens it as "Go to the virtual ride", its
    forms show the link, nobody types it, the API names it as `virtual_ride_url` -- and, an organizer's, holds a race; what is not a drawable track, someone
    else's race or a ride is taken by none (`calendar_app/draft.py`). "Virtual ride" is a type of event of its own
