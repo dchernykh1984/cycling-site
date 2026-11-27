@@ -154,8 +154,10 @@ function mpMaybeStart() {
 // a refusal stays in the status line a while: the lobby, drawn again at once, wiped it before anyone read it
 const MP_FAILED_MS = 10000;
 function mpFailed(e) { MP.failed = { msg: t('mp.failed', { msg: e.message }), until: Date.now() + MP_FAILED_MS }; renderMP(); }
-// the host's new wind for their race, as the card's wind row sets it
+// the host's new wind for their race, as the card's wind row sets it -- kept on the card at once: a redraw before the
+// answer set the field left back to the old wind, and the next field's change sent that old one
 async function mpSetWind(g, ms, from) {
+  g.wind_ms = ms; g.wind_from_deg = from;
   try { await Site.patch('/groups/' + g.id, { wind_ms: ms, wind_from_deg: from }); MP.failed = null; } catch (e) { mpFailed(e); }
   mpSchedule(50);
 }
