@@ -99,6 +99,8 @@ async function mpPoll() {
 // a page waits for is its member's first to start within the hour; one further ahead waits on its own, and a
 // member joins any race that keeps the hour from theirs.
 const MP_HOUR = 3600e3;
+// how long until a start, in days, hours, minutes and seconds: the larger ones only once there are any
+const fmtCountdown = sec => { const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), p2 = n => String(n).padStart(2, '0'); return (d ? t('cd.days', { d }) + ' ' : '') + (d || h ? t('cd.hours', { h }) + ' ' : '') + (d || h || m ? t('cd.minutes', { m: d || h ? p2(m) : m }) + ' ' : '') + t('cd.seconds', { s: d || h || m ? p2(sec % 60) : sec % 60 }); };
 function mpMyGroup() { return MP.groups.find(g => g.is_member && mpStartLocal(g) - Date.now() < MP_HOUR); }
 const mpClash = g => MP.groups.some(o => o.is_member && o.id !== g.id && Math.abs(Date.parse(o.start_at) - Date.parse(g.start_at)) < MP_HOUR);
 // the start the menu asks for: { start_in_s }, or { start_at, at } at a date and time on the member's own clock, or
@@ -312,7 +314,7 @@ function renderMP() {
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
       card = document.createElement('div'); card.dataset.gid = g.id;
-      card.innerHTML = '<div><b></b><small></small></div><div class="mp-acts"><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
+      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-acts"><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
       box.appendChild(card);
     }
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
@@ -320,6 +322,9 @@ function renderMP() {
     const ride = (g.kind || 'race') === 'ride';
     const who = g.is_host ? (ride ? t('mp.yoursRide') : t('mp.yours')) : ride ? t('mp.hostGathersRide', { name: g.host.name }) : t('mp.hostGathers', { name: g.host.name });
     card.querySelector('b').textContent = who + ': ' + routeTitle(g);
+    // a ride or race the member is in: the time left to its start, ticking each second, from the day they joined
+    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || g.is_host) && left > 0;
+    count.classList.toggle('hidden', !counting); if (counting) count.textContent = t('mp.countdown', { t: fmtCountdown(left) });
     const small = card.querySelector('small');
     small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     if (g.event) { // a race with protocols: its event, linked; a time trial said so; the member's own bib, category, laps and start
