@@ -1,0 +1,13 @@
+{% load i18n %}
+{% comment %}
+The virtual ride or race the event is ridden in (Competition.virtual_ride): set by the virtual ride's page, shown and
+never typed. `ride` is its id.
+{% endcomment %}
+{% if ride %}
+{% url "virtual_ride" as ride_page %}
+<div class="mb-3" id="virtual-ride-field">
+  <span class="form-label fw-semibold d-block">{% trans "Link to the ride" %}</span>
+  <a href="{{ ride_page }}?group={{ ride }}" target="_blank" rel="noopener">{{ request.scheme }}://{{ request.get_host }}{{ ride_page }}?group={{ ride }}</a>
+  <div class="form-text">{% trans "The virtual ride page sets it, and it cannot be changed." %}</div>
+</div>
+{% endif %}

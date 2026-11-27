@@ -121,6 +121,7 @@
         <h2 class="mb-0 h5">{% trans "Documents" %}</h2>
         <p class="form-text mt-1 mb-0 file-drop-hint">{% trans "A file can also be dragged onto its field." %}</p>
       </hgroup>
+      {% include "calendar_app/_virtual_ride_link.html" with ride=draft_ride %}
 
       <div class="mb-3">
         <label class="form-label fw-semibold">{% trans "Announcement" %}</label>

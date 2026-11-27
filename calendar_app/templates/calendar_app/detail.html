@@ -142,6 +142,13 @@
     </div>
     {% endif %}
 
+    {% if competition.virtual_ride %}
+    <div class="mb-4">
+      <a href="{% url "virtual_ride" %}?group={{ competition.virtual_ride }}" class="btn btn-primary"
+         id="virtual-ride-link">{% trans "Open the ride" %}</a>
+    </div>
+    {% endif %}
+
     {% if competition.url_registration %}
     <div class="mb-4">
       <a href="{{ competition.url_registration }}" target="_blank" rel="noopener"

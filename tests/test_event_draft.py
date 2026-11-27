@@ -227,12 +227,36 @@ class VirtualRaceDraftTests(TestCase):
         self.assertNotIn("additional_info_mode", initial)
         self.assertNotIn("max_participants", initial)
 
-    def test_the_ride_s_page_is_its_announcement_and_no_other_kind_of_address_is(self):
-        link = "https://example.com/en/virtual-ride/?group=7"
-        self.draft(url_announcement=link)
-        self.assertEqual(self.form_page().context["form"]["url_announcement"].value(), link)
-        self.draft(url_announcement="javascript:alert(1)")
-        self.assertFalse(self.form_page().context["form"]["url_announcement"].value())
+    def test_the_event_opens_the_ride_it_is_ridden_in_and_nobody_types_it(self):
+        ride = self.race(kind=GroupRide.Kind.RIDE)
+        self.draft(virtual_ride=str(ride.pk))
+        page = self.form_page()
+        link = f"{reverse('virtual_ride')}?group={ride.pk}"
+        # the form shows it, as a link, not as a field to type into
+        self.assertContains(page, 'id="virtual-ride-field"')
+        self.assertContains(page, f'href="{link}"')
+        self.assertNotContains(page, 'name="virtual_ride"')
+        self.submit(page.context["draft_key"])
+        event = Competition.objects.get(title_ru="Virtual race")
+        self.assertEqual(event.virtual_ride, ride.pk)
+        # the event's page opens it, in the reader's language; a ride is held by no event's protocol
+        self.assertContains(self.client.get(event.get_absolute_url()), f'href="{link}"')
+        ride.refresh_from_db()
+        self.assertIsNone(ride.competition)
+        # its edit page shows it and keeps it, whatever a form sends
+        edit = self.client.get(reverse("competition_edit", args=[event.pk]))
+        self.assertContains(edit, 'id="virtual-ride-field"')
+        self.assertEqual(Competition._meta.get_field("virtual_ride").editable, False)
+
+    def test_the_api_names_the_ride_an_event_is_ridden_in(self):
+        ride = self.race()
+        self.draft(virtual_ride=str(ride.pk), registration="1")
+        self.submit(self.form_page().context["draft_key"])
+        event = Competition.objects.get(title_ru="Virtual race")
+        answer = self.client.get(f"/api/v1/competitions/{event.pk}").json()
+        self.assertTrue(
+            answer["virtual_ride_url"].endswith(f"/virtual-ride/?group={ride.pk}"), answer["virtual_ride_url"]
+        )
 
     def test_the_route_s_track_is_attached_unless_the_member_chose_a_file(self):
         self.draft(track_name="oldtown", track_gpx=GPX)
@@ -249,25 +273,30 @@ class VirtualRaceDraftTests(TestCase):
 
     def test_the_race_is_held_by_the_event_made_from_its_draft(self):
         race = self.race()
-        self.draft(virtual_race=str(race.pk), registration="1")
+        self.draft(virtual_ride=str(race.pk), registration="1")
         self.submit(self.form_page().context["draft_key"])
         race.refresh_from_db()
         self.assertEqual(race.competition, Competition.objects.get(title_ru="Virtual race"))
 
     def test_a_form_opened_otherwise_takes_nothing_of_a_draft_left_over(self):
         race = self.race()
-        self.draft(virtual_race=str(race.pk), track_name="oldtown", track_gpx=GPX)
+        self.draft(virtual_ride=str(race.pk), track_name="oldtown", track_gpx=GPX)
         self.submit("")  # the form opened by hand later sends no key
         race.refresh_from_db()
         self.assertIsNone(race.competition)
-        self.assertFalse(Competition.objects.get(title_ru="Virtual race").file_route)
+        event = Competition.objects.get(title_ru="Virtual race")
+        self.assertFalse(event.file_route)
+        self.assertIsNone(event.virtual_ride)
 
-    def test_someone_else_s_race_or_a_ride_is_held_by_no_event(self):
+    def test_someone_else_s_race_is_neither_held_nor_linked_and_a_ride_is_only_linked(self):
         other = User.objects.create_user(
             username="other", email="other@example.com", password="Pass1234!", role=User.Role.ORGANIZER
         )
-        for race in (self.race(host=other), self.race(kind=GroupRide.Kind.RIDE)):
-            self.draft(virtual_race=str(race.pk))
+        theirs, ride = self.race(host=other), self.race(kind=GroupRide.Kind.RIDE)
+        for race in (theirs, ride):
+            self.draft(virtual_ride=str(race.pk))
             self.submit(self.form_page().context["draft_key"], title=f"Virtual race {race.pk}")
             race.refresh_from_db()
             self.assertIsNone(race.competition)
+        self.assertIsNone(Competition.objects.get(title_ru=f"Virtual race {theirs.pk}").virtual_ride)
+        self.assertEqual(Competition.objects.get(title_ru=f"Virtual race {ride.pk}").virtual_ride, ride.pk)

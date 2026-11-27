@@ -4,6 +4,7 @@ from http import HTTPStatus
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import translation
 from django.utils.cache import patch_cache_control
 from ninja import Query, Router, Schema, Status
@@ -98,9 +99,15 @@ class CompetitionOut(Schema):
     url_registration: str
     url_regulations: str
     url_results: str
+    # the virtual ride or race the event is ridden in, its page in the caller's language; empty for any other event
+    virtual_ride_url: str = ""
     is_hidden: bool
     is_deleted: bool
     is_top: bool
+
+    @staticmethod
+    def resolve_virtual_ride_url(obj: Competition) -> str:
+        return f"{reverse('virtual_ride')}?group={obj.virtual_ride}" if obj.virtual_ride else ""
 
     @staticmethod
     def resolve_location_city_id(obj: Competition) -> int | None:
