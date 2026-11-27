@@ -1388,7 +1388,7 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         )
         if location:
             draft["location"] = location
-        if request.POST.get("registration") == "1":
+        if request.POST.get("registration") == drafts.REGISTERS:
             draft["registration"] = drafts.registration(request.POST)
             draft["categories"] = drafts.categories(request.POST.get("categories", ""))
         track = drafts.track(request.POST.get("track_name", ""), request.POST.get("track_gpx", ""))
