@@ -201,15 +201,25 @@ function firstPassAt(T, x, z) {
   let i = 0; while (Math.sqrt(d2(i)) > Math.sqrt(best) + FIRST_PASS_M) i++;
   return i;
 }
+const SIGHT_ACROSS = .7; // a road within 45 degrees of running across the mountains' way
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each
     const q = proj(lm.lat, lm.lon, T.origin); let best = 1e18, bi = 0;
     for (let i = 0; i < T.N; i += 2) { const dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = dx * dx + dz * dz; if (d < best) { best = d; bi = i; } }
+    // on a road ridden there and back, the first pass: the Cosmostation's Flow Park, on the left on the way up, was
+    // told on the right at the end of the lap
+    for (let i = 0; i < bi; i++) if (Math.hypot(T.X[i] - q.x, T.Z[i] - q.z) <= Math.sqrt(best) + FIRST_PASS_M) { bi = i; break; }
     // a sight is shown within its reach of the route: its own, else 14 km for one seen from afar, else 1.3 km
     const dist = Math.sqrt(best); if (dist > (lm.reach || (lm.far ? 14000 : 1300))) return;
-    const o = sampleAt(T, T.D[bi], {}), side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
-    out.push(Object.assign({}, lm, { x: q.x, z: q.z, s: T.D[bi], side, dist }));
+    const o = sampleAt(T, T.D[bi], {});
+    const side = ((q.x - o.x) * o.rx + (q.z - o.z) * o.rz) > 0 ? 'right' : 'left';
+    // one told as on the mountains' side ("told": "mountains"), where the road runs across their way and it stands
+    // toward them: on Granfondo's out-and-back past Flow Park, left one way and right the other, the side it was
+    // told on was not the side the rider saw it on
+    const range = lm.told === 'mountains' && (T.route.mountains || mapOf(T.route).mountains);
+    const said = range && range.south != null && Math.abs(o.tz) < SIGHT_ACROSS && q.z > o.z ? 'mountains' : side;
+    out.push(Object.assign({}, lm, { x: q.x, z: q.z, s: T.D[bi], side, said, dist }));
   });
   return out;
 }

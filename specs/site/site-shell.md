@@ -324,7 +324,8 @@ narrow one -- and one road ridden twice has one height, the barometer's lag up a
 a route's points carry the rider's line, the rider rides it -- the source track's way through a corner it took by
 the apex, the right lane elsewhere -- with the bunch round it and the camera on it, always on the road. A sight
 shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km, and a rider is told of it
-220 m before its nearest point, earlier the further it stands off, and before a tunnel's cutting that would hide
+220 m before its nearest point -- on a road ridden both ways, its first pass; one marked as on the mountains' side
+("told": "mountains") told so where the road runs across their way, as Granfondo's Flow Park --, earlier the further it stands off, and before a tunnel's cutting that would hide
 it; a Ferris wheel's rim is as thick as a rider sees it from the route, thicker the further it stands off (Kok-Tobe's
 from Granfondo); a building OpenStreetMap
 outlines may be one, drawn to its outline and height with its name lit on its roof (the Royal Tulip hotel by

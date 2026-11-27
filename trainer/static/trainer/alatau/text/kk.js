@@ -183,6 +183,7 @@ const TEXT_KK = {
     "map.north": "С",
     "sight.right": "Оң жақта: {name}",
     "sight.left": "Сол жақта: {name}",
+    "sight.mountains": "Тау жақта: {name}",
     "arch.both": "СТАРТ / МӘРЕ",
     "arch.start": "СТАРТ",
     "arch.finish": "МӘРЕ",

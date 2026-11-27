@@ -183,6 +183,7 @@ const TEXT_RU = {
     "map.north": "С",
     "sight.right": "Справа: {name}",
     "sight.left": "Слева: {name}",
+    "sight.mountains": "Со стороны гор: {name}",
     "arch.both": "СТАРТ / ФИНИШ",
     "arch.start": "СТАРТ",
     "arch.finish": "ФИНИШ",
