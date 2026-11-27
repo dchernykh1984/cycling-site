@@ -117,6 +117,7 @@ const TEXT_RU = {
     "trainer.fluid": "Жидкостный",
     "trainer.mag": "Магнитный",
     "trainer.rollers": "Роллеры",
+    "trainer.smart": "Умный (смарт)",
     "bike.type": "Тип велосипеда",
     "bike.kg": "Вес велосипеда, кг",
     "bike.wheel": "Колесо",
