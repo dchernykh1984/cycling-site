@@ -270,6 +270,19 @@ class MapsTests(SimpleTestCase):
         far = [math.hypot((q[1] - lon) * kx, (q[0] - lat) * 111195) for q in onward[0]["pts"]]
         self.assertGreater(min(far), 1000)
 
+    def test_granfondo_s_al_farabi_goes_on_ahead_past_its_turns(self):
+        # past its far turn, across the median, the avenue went on as pieces of grey road: the turn read as a loop
+        route = next(r for r in _routes() if r["id"] == "granfondo")
+        ahead = [r for r in route["roads"] if r.get("ahead")]
+        self.assertGreaterEqual(len(ahead), 2)
+        kx = 111320 * math.cos(math.radians(route["pts"][0][0]))
+        for road in ahead:
+            length = sum(
+                math.hypot((b[1] - a[1]) * kx, (b[0] - a[0]) * 111195) for a, b in itertools.pairwise(road["pts"])
+            )
+            self.assertEqual((road["onward"], road["w"], road["lanes"]), (True, route["width"], route["lanes"]))
+            self.assertGreater(length, 300)  # on to where OpenStreetMap's way with its name ends
+
     def test_medeu_s_road_goes_on_past_its_finish_as_the_route_s_own(self):
         # the serpentine on up to Shymbulak was pieces of a grey side road, cut off at the arch
         route = next(r for r in _routes() if r["id"] == "medeu")
