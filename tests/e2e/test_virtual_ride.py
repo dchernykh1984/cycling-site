@@ -1654,37 +1654,27 @@ def test_the_far_relief_is_left_out_over_the_scenery_s_own_ground(page: Page, li
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_map_s_relief_stands_where_srtm_has_it_and_keeps_under_the_scenery_s_ground(page: Page, live_server):
+def test_a_map_s_relief_stands_where_srtm_has_it(page: Page, live_server):
     """The land beyond the scenery is the map's SRTM relief: the snowy range where it really rises, south of
-    Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches; under the scenery's own
-    ground it keeps 30 m below it, so the near ground and its trees are the scenery's."""
+    Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches (over the scenery's own ground
+    it is not drawn: test_the_far_relief_is_left_out_over_the_scenery_s_own_ground)."""
     _trainer_in_its_menu(page, live_server)
     seen = page.evaluate(
         """() => {
-            const T = buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay')).T;
+            buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay'));
             const relief = scenery.children.find(o => o.name === 'relief'), a = relief.geometry.attributes.position;
-            const land = scenery.children.find(
-                m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors
-            );
-            const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
-            let poking = 0, under = 0, top = { y: -1e9, z: 0 }, minX = 1e9, maxX = -1e9;
-            const x0 = T.minX - 1600, x1 = T.maxX + 1600, z0 = T.minZ - 1600, z1 = T.maxZ + 1600;
+            let top = { y: -1e9, z: 0 }, minX = 1e9, maxX = -1e9;
             for (let i = 0; i < a.count; i++) {
                 const x = a.getX(i), y = a.getY(i), z = a.getZ(i);
-                if (x > x0 && x < x1 && z > z0 && z < z1) {
-                    ray.set(new THREE.Vector3(x, 9000, z), down);
-                    const hit = ray.intersectObject(land)[0];
-                    if (hit) { under++; if (y > hit.point.y - 29) poking++; }
-                }
                 if (y > top.y) top = { y, z };
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x);
             }
             const ranges = scenery.children.filter(o => o.name === 'range').length;
-            return { poking, under, top: Math.round(top.y), south: Math.round(top.z / 1000),
+            return { top: Math.round(top.y), south: Math.round(top.z / 1000),
                      west: Math.round(minX / 1000), east: Math.round(maxX / 1000), ranges };
         }"""
     )
-    assert seen["poking"] == 0 and seen["under"] > 0 and seen["ranges"] == 0, seen
+    assert seen["ranges"] == 0, seen
     assert seen["top"] > 3000 and seen["south"] > 20, seen
     assert seen["west"] < -100 and seen["east"] > 100, seen
 
@@ -1722,7 +1712,8 @@ def test_the_far_relief_meets_the_scenery_s_ground_at_its_edge_without_a_wall(pa
             return out;
         }"""
     )
-    assert steps and max(steps.values()) < 100, steps
+    # the ground comes to the relief's own surface, on the triangles it is drawn as: within a metre all round
+    assert steps and max(steps.values()) < 1, steps
 
 
 @pytest.mark.django_db(transaction=True)
