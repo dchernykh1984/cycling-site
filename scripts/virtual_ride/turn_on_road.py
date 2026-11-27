@@ -33,6 +33,7 @@ ONWARD_M = 1500.0  # the road drawn on past a turn: to the horizon on the steppe
 ONWARD_LEAD_M = 6.0  # it begins so far before the turn, under the route's own road there (js/surroundings.js)
 SAME_POINT_M = 0.5
 REACH_M = 2.0  # with no loop round to say how far its riders went: the turn begins so far past its last point
+STRAIGHT_M = 12.0  # a way out alone runs straight so far on to its far turn
 
 src = Path(map_path).read_text(encoding="utf-8")
 data = json.loads(src[src.index("addMap(") + 7 : src.rindex(")")])
@@ -128,6 +129,17 @@ if loops:
 else:  # out to its farthest point and back -- a way out alone to its end --: the way back is the way there reversed
     top = max(range(len(pts)), key=lambda i: math.dist(xy(pts[i]), xy(pts[0]))) if homes else len(pts) - 1
     there = cut_before(top, TURN_M + REACH_M)
+    if not homes:  # a way out alone: its last STRAIGHT_M runs straight on to the turn, laid along it, a point every
+        # STEP_M as the turn's own -- a car park's bend there (the Cosmostation's) had the rider swing 13 degrees in
+        # half a metre onto the turn's line, points 13 m and then 2 m apart
+        left, k = STRAIGHT_M, len(there) - 1
+        while k > 0 and left > 0:
+            left -= math.dist(xy(there[k - 1]), xy(there[k]))
+            k -= 1
+        (ax, ay), (bx, by), last = xy(there[k]), xy(there[-1]), there[-1]
+        n = max(1, round(math.hypot(bx - ax, by - ay) / STEP_M))
+        on = [[*ll(ax + (bx - ax) * j / n, ay + (by - ay) * j / n), last[2]] for j in range(1, n)]
+        there = [*there[: k + 1], *on, last]
     pts = [*there, *there[::-1][1:]]
     k1 = k2 = len(there) - 1
 
