@@ -140,6 +140,12 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
         """The page as first shown and as shown again after a refusal: one context for both, so a
         refused entry keeps the category filter working and the relay team as it was typed."""
         user = request.user
+        # what choosing a category asks that the profile lacks, and why none is open to the reader: only where the
+        # profile is what picks it -- an event that takes one's own data alone; a relay's is the team's, and an event
+        # open to anyone takes the person as the form gives them
+        by_profile = (
+            competition.registration_mode == competition.RegistrationMode.SELF_ONLY and not competition.relay_enabled
+        )
         return render(
             request,
             self.template_name,
@@ -147,11 +153,10 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "form": form,
                 "profile_incomplete": not user.gender or not user.birth_date,
-                # what choosing a category asks that the profile lacks, and why none is open to the reader
                 "missing": ", ".join(registering.missing_details(user))
-                if registering.has_categories(competition)
+                if by_profile and registering.has_categories(competition)
                 else "",
-                "category_refusal": registering.category_refusal(competition, user),
+                "category_refusal": registering.category_refusal(competition, user) if by_profile else "",
                 "is_free": competition.registration_mode == competition.RegistrationMode.FREE,
                 "relay_enabled": competition.relay_enabled,
                 "relay_max_members": competition.relay_max_members,

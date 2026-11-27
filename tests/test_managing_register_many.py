@@ -390,6 +390,18 @@ class WhyNoCategoryTests(TestCase):
         make_registration(self.comp, category=men)
         self.assertContains(self.page(man), "The categories for you are full: Men.")
 
+    def test_an_event_open_to_anyone_or_a_relay_says_nothing_of_the_reader_s_own_profile(self):
+        # a mother entering her son into a boys' race was told no category takes her gender and year of birth
+        woman = make_user("mother", gender="F", birth_date=datetime.date(1985, 5, 5))
+        free = make_open_competition(registration_mode="free")
+        make_category(free, "Boys", female=False)
+        relay = make_open_competition(registration_mode="self_only", relay_enabled=True)
+        make_category(relay, "Men", female=False)
+        for comp in (free, relay):
+            page = self.page(woman, comp)
+            self.assertNotContains(page, 'id="register-refusal"')
+            self.assertNotContains(page, 'id="register-missing"')
+
     def test_an_event_with_every_place_taken_says_so(self):
         full = make_open_competition(registration_mode="self_only", max_participants=1)
         make_registration(full)

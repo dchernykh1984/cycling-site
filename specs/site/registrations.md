@@ -34,7 +34,9 @@ list groups riders by category with start numbers; the timing apps fetch the sam
    date in their profile, and their identity fields (names, birth, gender) are locked to the
    profile; **given** free mode, **Then** any person can
    be entered by name and birth year/date.
-2a. **Given** a person who cannot pick a category, **Then** the page says why, never an empty menu alone
+2a. **Given** a person who cannot pick a category where their profile picks it -- an event that takes one's own
+    data, not a relay (a relay's category is its team's; an event open to anyone takes the person as the form gives
+    them) --, **Then** the page says why, never an empty menu alone
    (`registrations/registering.py`, `tests/test_managing_register_many.py::WhyNoCategoryTests`): their profile
    lacks a gender or a date of birth, which an event with categories needs to choose one -- named, with a link
    to fill them in the profile (on the page for several, a list of each person and what they lack, with whom
