@@ -272,7 +272,8 @@ route's key is its own across every map and stays as it is: the members' saved r
 keep it. The objects the sights are built from are shared by every map, a file each in `objects/`,
 named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the
 page too; a new kind of sight is its object's file and that line. A gorge's road lies on a shelf: where the land
-beside it falls away it stands on a fill of earth down to the land, coloured as the land at its height; a road ridden
+beside it falls away it stands on a slope down to the land -- or, toward another stretch of a serpentine, down to that
+one's slope or its edge, never ending in the air --, grass as the slopes round it, earthier at the road's edge; a road ridden
 out and back keeps its shoulders. A gorge's land is grass, stone from 2600 to 2800 m and snow from 3000 m, white from
 3200 m.
 A route may come back onto road it rode -- out to a turn and back along one road, round a loop of a turn: that

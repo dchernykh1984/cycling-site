@@ -375,17 +375,19 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
     }
   });
 }
-// A gorge's road on its slope: where the land beside it lies under its shoulder, a fill of earth falls from the
-// shoulder's edge at FILL_SLOPE to one down to the land -- the land's cells, 40 m across, cannot follow a road's shelf,
-// and its road hung over the slope by up to 30 m on the Cosmostation. No fill on a bridge or at a road meeting it; none
-// past the middle to another stretch of road, nor over FILL_MAX_M.
-const FILL_SLOPE = 1.5, FILL_MAX_M = 40, FILL_FROM_M = .4;
+// A gorge's road on its slope: where the land beside it lies under its shoulder, a slope falls from the shoulder's edge
+// at FILL_SLOPE to one down to the land -- the land's cells, 40 m across, cannot follow a road's shelf, and its road
+// hung over the slope by up to 30 m on the Cosmostation. Toward another stretch of road it comes down to that one's
+// slope, or to its edge at its height: ended half way, a serpentine's fill hung over the stretch below like a roof.
+// One that meets nothing within FILL_MAX_M ends on the land there. Grass as the slopes round it, earth at the road's
+// edge -- a fill of earth, as big as the land's own slopes, stood out as a wall. None on a bridge or at a road meeting it.
+const FILL_SLOPE = 1.5, FILL_MAX_M = 80, FILL_FROM_M = .4;
 function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
   const P = [], I = [], C = [], o = {}, bridges = (T.route.bridges || []).map(([a, b]) => [T.ptS[a] - 8, T.ptS[b] + 8]);
-  // earth, as the land round it turns stony and snowy with the height: in the snow a grey fill stood out
-  const earth = new THREE.Color(0x7d7a5c), rock = new THREE.Color(0x837a6c), snow = new THREE.Color(0xeef2f5), c = new THREE.Color();
-  const fillColour = y => {
-    c.copy(earth).lerp(rock, clamp((y - ROCK_FROM_M) / (ROCK_WHOLE_M - ROCK_FROM_M), 0, 1)).lerp(snow, clamp((y - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1));
+  // the land's slope near a road, earthier at the road's edge, stony and snowy with the height as the land round it
+  const slope = new THREE.Color(0x3c5536).lerp(new THREE.Color(0x7c8a58), .6), earth = new THREE.Color(0x7d7a5c), rock = new THREE.Color(0x837a6c), snow = new THREE.Color(0xeef2f5), c = new THREE.Color();
+  const fillColour = (y, edge) => {
+    c.copy(slope).lerp(earth, edge ? .45 : 0).lerp(rock, clamp((y - ROCK_FROM_M) / (ROCK_WHOLE_M - ROCK_FROM_M), 0, 1)).lerp(snow, clamp((y - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1));
     return [c.r, c.g, c.b];
   };
   for (const k of [0, 1]) {
@@ -400,19 +402,23 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
       if (!onOnward(i) && !onRoad(a.x, a.z) && !bridges.some(([p, q]) => s >= p && s <= q)) {
         // where the land 2 m out lies under the fill's slope: right at the edge it may still be up to the road
         if (ground(first.x, first.z) < top - 2 / FILL_SLOPE - FILL_FROM_M) {
-          let end = null, last = { x: a.x, y: top, z: a.z };
-          // out to the land, or to the middle between this stretch and another -- a road ridden out and back is
-          // its own neighbour, which roomBeside counts: not here
-          for (let d = from + 1; d <= from + FILL_MAX_M; d += 1) {
-            const q = at(d), y = top - (d - from) / FILL_SLOPE, g = ground(q.x, q.z);
-            if (g >= y) { end = { x: q.x, y: g, z: q.z }; break; }
-            if (routeGap(T, q.x, q.z) < d / 2) { end = last; break; }
-            last = { x: q.x, y, z: q.z };
+          let end = null;
+          // out to the land; past the middle to another stretch, to its slope, or to its edge at its height -- a road
+          // ridden out and back is its own neighbour, which roomBeside counts: not here
+          for (let d = from + 1; d <= from + FILL_MAX_M && !end; d += 1) {
+            const q = at(d), y = top - (d - from) / FILL_SLOPE, g = ground(q.x, q.z), gap = routeGap(T, q.x, q.z);
+            if (g >= y) end = { x: q.x, y: g, z: q.z };
+            else if (gap < d - 1) {
+              const n = routeNearest(T, q.x, q.z), theirs = n.y - .05 - Math.max(0, gap - W / 2) / FILL_SLOPE;
+              if (gap <= W / 2) end = { x: q.x, y: Math.min(y, n.y - .05), z: q.z };
+              else if (theirs >= y) end = { x: q.x, y, z: q.z };
+            }
+            if (!end && d + 1 > from + FILL_MAX_M) end = { x: q.x, y: g, z: q.z };
           }
-          fill = [a.x, top, a.z, ...(end ? [end.x, end.y, end.z] : [last.x, last.y, last.z])];
+          fill = [a.x, top, a.z, end.x, end.y, end.z];
         }
       }
-      if (fill && prev) { const b = P.length / 3; P.push(...prev, ...fill); I.push(b, b + 1, b + 3, b, b + 3, b + 2); [prev[1], prev[4], fill[1], fill[4]].forEach(y => C.push(...fillColour(y))); }
+      if (fill && prev) { const b = P.length / 3; P.push(...prev, ...fill); I.push(b, b + 1, b + 3, b, b + 3, b + 2); [[prev[1], 1], [prev[4], 0], [fill[1], 1], [fill[4], 0]].forEach(([y, edge]) => C.push(...fillColour(y, edge))); }
       prev = fill;
     }
   }
