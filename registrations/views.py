@@ -79,13 +79,14 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "rows": rows,
                 "nobody": nobody,
-                # who among them lacks what choosing a category asks: their gender, their date of birth
+                # who among them lacks what choosing a category asks: their gender, their date of birth -- unless the
+                # event takes anyone's data typed in, where each row's form asks it
                 "missing_people": [
                     (row.label, ", ".join(registering.missing_details(row.profile)))
                     for row in rows
                     if row.profile is not None and registering.missing_details(row.profile)
                 ]
-                if registering.has_categories(competition)
+                if registering.has_categories(competition) and not registering.is_free(competition)
                 else [],
                 "is_free": registering.is_free(competition),
                 "relay_enabled": False,
