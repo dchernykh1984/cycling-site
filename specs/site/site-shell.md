@@ -196,8 +196,9 @@ event join it (a rider who is not
 is sent to the event's page), each with a bib: the one the event gave their registration, else the first free one
 in their category's range, kept across leaving and joining; the bib is drawn on every rider's back and named on
 the race's card with the event, the rider's category, laps and own start. A rider rides their category's laps on a
-loop, a route that is not one once; the control points are the start-finish line and the route's turns back
-(`turnPoints`: Granfondo 2026's two, the smooth one by Vostochka on Al-Farabi among them). The page reports each
+loop, a route that is not one once; the control points are the start-finish line and the route's turns back, each
+at its middle, where the way there and the way back come closest (`turnPoints`: Granfondo 2026's two, the smooth
+one by Vostochka on Al-Farabi among them). The page reports each
 crossing with its moment on the site's clock, the ones not taken yet with every call until one is answered --
 from the menu too, so a rider gone back at once still sends their finish -- and the site writes the start list,
 the categories' starts and the crossings into the event's timing streams as the device `virtual-race-<id>`, for
