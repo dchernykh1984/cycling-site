@@ -13,6 +13,7 @@ BOXES = {  # name: (south, west, north, east)
     "institute": (43.322, 77.115, 43.362, 77.175),
     "kyrbaltabay": (43.585, 77.365, 43.705, 77.505),
     "sokol": (43.565, 76.545, 43.600, 76.592),
+    "kosmos": (43.025, 76.86, 43.205, 77.005),  # the Big Almaty gorge, from Al-Farabi up to the Cosmostation
 }
 KEYS = (
     "highway",
