@@ -4,6 +4,7 @@ The page posts the event's words in each language, its date and its types and di
 form opens filled with them for the member to check and submit. Nothing is an event until they do.
 """
 
+import datetime
 import io
 import json
 import tempfile
@@ -156,6 +157,21 @@ class VirtualRaceDraftTests(TestCase):
         start = {"start_lat": "43.2381", "start_lng": "76.9452"}
         self.draft(**start, route_name_ru="Staryi tsentr", route_name_en="Old centre", **extra)
         return self.form_page().context["form"]["location"].value()
+
+    def test_the_event_s_day_is_its_race_s_where_its_venue_is_not_the_browser_s(self):
+        # a member at UTC+1 gathering for 01:30 in Almaty sent their browser's day, the one before: the event was dated
+        # then, a day before its race
+        day = timezone.now().date() + timedelta(days=5)
+        start = datetime.datetime.combine(day, datetime.time(20, 30), tzinfo=datetime.UTC)  # 01:30 next day, UTC+5
+        race = GroupRide.objects.create(route="oldtown", host=self.organizer, kind=GroupRide.Kind.RACE, start_at=start)
+        self.draft(
+            start_lat="43.2381",
+            start_lng="76.9452",
+            route_name_ru="Staryi tsentr",
+            virtual_ride=str(race.pk),
+            date_start=day.isoformat(),
+        )
+        self.assertEqual(self.form_page().context["form"].initial["date_start"], (day + timedelta(days=1)).isoformat())
 
     def test_a_route_s_start_becomes_its_venue_in_the_virtual_world_once(self):
         venue = Location.objects.get(pk=self.chosen())

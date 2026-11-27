@@ -1397,6 +1397,15 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         ride = drafts.ride_of(request.user, request.POST.get("virtual_ride"))
         if ride:
             draft["virtual_ride"] = ride
+            # its day where its venue is, not the member's browser's: gathered at UTC+1 for 01:00 in Almaty, the
+            # event was dated the day before
+            from locations.models import Location, timezone_of
+            from trainer.models import GroupRide
+
+            venue = Location.objects.filter(pk=draft.get("location") or 0).first()
+            start = GroupRide.objects.filter(pk=ride).values_list("start_at", flat=True).first()
+            if start is not None:
+                draft["date_start"] = timezone.localtime(start, timezone_of(venue)).date().isoformat()
         picture = drafts.picture(request.POST)
         if picture:
             draft["picture"] = picture
