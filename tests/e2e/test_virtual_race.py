@@ -406,6 +406,24 @@ def test_a_registered_member_s_race_card_counts_down_lists_the_registered_and_it
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_host_of_a_race_their_event_holds_registers_before_they_go_to_its_start(page: Page, live_server):
+    """Not registered for their own event, its host was offered "Go to the start" and rode outside the race: nobody
+    saw them, and the site refused their ride. Their card registers them first; registered, they ride it."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_AN_EVENT_S_RACE, False)
+    page.evaluate("() => { Object.assign(MP.groups[0], { is_host: true, host: { user_id: 1 } }); renderMP(); }")
+    card = page.locator('#mpGroups .mp-group[data-gid="9"]')
+    expect(card.locator(".mp-countdown")).to_be_hidden()
+    expect(card.locator(".act")).to_have_text(page.evaluate("t('mp.cancel')"))
+    expect(card.locator(".go")).to_have_text(page.evaluate("t('mp.register')"))
+    card.locator(".go").click()
+    assert page.evaluate("window.opened") == ["/en/competitions/3/register/", "_top"]
+    page.evaluate("() => { MP.groups[0].event.registered = true; renderMP(); }")
+    expect(card.locator(".mp-countdown")).to_be_visible()
+    expect(card.locator(".go")).to_have_text(page.evaluate("t('mp.toStart')"))
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
