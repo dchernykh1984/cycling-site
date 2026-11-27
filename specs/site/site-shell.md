@@ -150,10 +150,10 @@ their way (the side wind is left out), a smart trainer is told the wind against 
 ahead, behind or beside them and the minimap, north up, shows it as an arrow the way it blows with its speed, and the start's
 summary names it. A ride with wind is saved with it and marked so; it counts for peak power, the rider's own, but
 sets no route record or top speed. In a group race every member rides in its host's wind, kept with the race and
-named on its card; its host -- or an admin -- changes it on the card until the start (`PATCH
+named on its card; its host changes it on the card until the start, an admin through the API too (`PATCH
 /api/v1/virtual-ride/groups/<id>`, 30 m/s at most), and a page already on its line rides in the new one; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,
 `tests/test_virtual_ride_api.py`). Members ride together as the mode says: a free ride gathers a ride together
-(everyone starting at once; no event, no time trial), a race a race with its settings at hand -- a group race or
+(everyone starting at once; never a time trial nor held by an event, though one may announce it), a race a race with its settings at hand -- a group race or
 an individual time trial, the gap between the categories' starts or the interval between the riders', whether
 categories draft each other -- and a workout nothing: each rides their own plan, and block 3 says so and where to
 go instead; a link to a ride or a race opened in a workout turns the page once to the mode that rides it. The
@@ -165,7 +165,11 @@ others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
 and a card further ahead names its day and time; on the card of a ride or race the member is in, the time to its
 start counts down each second in days, hours, minutes and seconds, and "Go to the start" takes them onto its
-start line whenever they like, counting down there by the clock to its start -- the time left alone, the last ten seconds large; back
+start line whenever they like, counting down there by the clock to its start -- the time left alone, the last ten seconds large; a time trial's
+card and line count to the rider's own start, the line taking it again from the site as others come (its order
+is by category, then bib), and a race cancelled meanwhile sends them back to the menu, saying so; one who leaves
+the line in its last seven seconds is not put straight back on it, and a second press on a card before the
+first is answered asks the site nothing; back
 in the menu before it, they may come again, and the ride takes them there by itself seven seconds before it. A time trial without an event starts its riders an interval
 apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
 its last rider's. At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the

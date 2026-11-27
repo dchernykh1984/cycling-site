@@ -22,8 +22,10 @@ phone is told so, and a route is lightened only without losing quality.
 - **Only riders registered for the event** (a registration not rejected) ride it, and registering is joining: the
   race's card shows a registered member its countdown, its start line -- which takes them in, giving their bib -- and
   the list of the event's registered riders; anyone else is sent to the event's registration (2026-11-27).
-- **The race is made in the virtual ride**, where a group race is gathered: its maker picks one of their own events
-  (an organizer's own, any for an admin). Its groups, laps and bib ranges come from the event's registration.
+- **The race is made in the virtual ride**, where a group race is gathered: with the box "Add it to the calendar
+  as an event" ticked, the page opens the event form filled from the race, and the event made from it holds the
+  race (an organizer's; specs/site/site-shell.md); through the API, `competition_id` ties a new race to one of their
+  own events (any for an admin). Its groups, laps and bib ranges come from the event's registration.
 - **The timing is written by the site itself** into the event's timing streams -- the token never reaches a
   rider's browser -- and only while the event has its upload token: a regenerated token changes nothing for the
   race (FinishProtocolGenerator reads with the new one), a deleted one stops the writing, and the race never makes
@@ -33,8 +35,9 @@ phone is told so, and a route is lightened only without losing quality.
 
 ### User Story 1 - An organizer makes a race for their event (Priority: P1)
 
-1. **Given** an organizer on the virtual ride page, **When** they gather a group race, **Then** they may tie it to
-   one of their own events that is public (approved, neither hidden nor invite-only) and not over, and set: the
+1. **Given** an organizer on the virtual ride page, **When** they gather a group race with the calendar box
+   ticked, **Then** the event made from it holds it once published, public (approved, neither hidden nor
+   invite-only) and not over -- through the API, a race is tied to one of their own such events --, and they set: the
    mode (a group race or an individual time trial), the gap between the groups' starts in a group race (0: one mass
    start), the interval between riders in a time trial, whether riders of different categories draft each other in
    a group race, and the wind.

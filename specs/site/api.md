@@ -58,15 +58,24 @@ and protocols with the event's upload token. The API has no language prefix.
    opens one group race by its id as a shared link names it (cancelled ones say so), reads a race's
    results, and reports their live position to get the riders beside them ([site shell](site-shell.md)).
    A group race starts `start_in_s` from now (20 s to 1 h) or `start_at`, a moment with its time zone up to a
-   year ahead (422 otherwise); one host's races start an hour apart at least, ten waiting at most (409). `/me` names the event
-   form's draft address (`event_draft_url`), where the page's "Add event" sends a race's event.
+   year ahead (422 otherwise); one host's races start an hour apart at least, ten waiting at most (409). It is a
+   `kind`: a `race`, or a `ride` together -- everyone at once, never a time trial nor held by an event (422). Its host,
+   or an admin, changes its wind until the start (`PATCH /groups/{id}` with `wind_ms`, at most 30, and
+   `wind_from_deg`: 403 for anyone else, 409 once started, 422 beyond), and a rider on its line before the start
+   gets the race back from `/presence` -- its wind, their own start. A time trial without an event starts its riders
+   in the order they joined; one under way keeps it (409 on leaving). A ride or race an event's page opens stays its
+   host's when they leave it. `/me` names the event form's draft address (`event_draft_url`), where the page's
+   calendar box sends a ride's or race's event, and whether the member may tie a race to an event (`organizes`).
    A group race may be a race with protocols for an event (specs/495-virtual-race): `GET /events` lists the
    asking member's own events to come that a race may be made for (any for an admin); a race made with
    `competition_id` (403 for anyone else's event, or one that is not public) carries `mode` (`group` or `itt`),
    `group_gap_s`, `itt_interval_s`, `draft_between_groups` and `loop`, names its `event` (its title in ru, kk and
-   en) and, for a member riding it, `me` -- their bib, category, laps and own start. Joining one needs a
-   registration for the event that is not rejected (403 with the event's link) and a free bib in the category's
-   range (409). `/presence` takes the rider's drag area (`cda`) and up to 50 `crossings` (a point, its moment
+   en), whether the asking member is registered for it, where to register and where its registered riders are
+   listed (`registered`, `register_url`, `participants_url`), and, for a member riding it, `me` -- their bib,
+   category, laps and own start; made through the API, it becomes the race its event's page opens when it opens
+   none yet (`virtual_ride_url` on the event). Joining one needs a registration for the event that is not rejected
+   (403 with the event's link) and a free bib in the category's range (409); a race whose event the member may not
+   open is no business of theirs -- not listed, 404 by its id and on joining. `/presence` takes the rider's drag area (`cda`) and up to 50 `crossings` (a point, its moment
    `at_ms`, `last` for the finish), each written once into the event's timing streams while the event has its
    upload token, and gives each rider beside them with their bib, category and drag area; a race's results name
    each finisher's category, places counted within it (`tests/test_virtual_race.py`).
