@@ -13,6 +13,8 @@ config (JSON):
                             way back and its turns) -- by place along the lap they took the way back's for the way
                             out's, hundreds of metres apart on a mountain road; a detour off the road and back on
                             the way (for water, a stop) is cut out
+  end                       optional [lat, lon], with out_and_back: the way out ends where it first comes there --
+                            where the asphalt ends, the ride going on from there on foot -- not at its furthest point
   against_oneway            optional true: the course rides one-way carriageways against their direction (the
                             one closed to it -- the Institute of Nuclear Physics' does the Alatau road's both
                             ways), so a lap is matched to the carriageway it was ridden on, whichever way it runs
@@ -514,6 +516,7 @@ print(
 )
 
 loop = True
+END_M = 15.0  # how near the way out comes to its end
 SPUR_M, DETOUR_M = 4.0, 600.0  # a detour off the road comes back within SPUR_M of where it left, after at most DETOUR_M
 RADIUS_MIN = 6.0  # metres: the road's middle round a hairpin, its rider 2 m inside it
 GRADE_TURN = 1.0  # points of grade in 10 m: the trainer's resistance turns smoothly, the tests take 1.5
@@ -524,6 +527,14 @@ if cfg.get("out_and_back"):
     far = max(range(len(line)), key=lambda i: dist(line[i], line[0]))
     k = max(i for i in range(far) if cum[i] <= begin)
     up = laps[0][: max(range(len(laps[0])), key=lambda i: dist(xy(laps[0][i]["lat"], laps[0][i]["lon"]), line[0]))]
+    if cfg.get("end"):  # where it first comes to the end, then the nearest of its next points
+        end_at = xy(*cfg["end"])
+        first = next((i for i in range(k + 1, len(line)) if dist(line[i], end_at) < END_M), None)
+        if first is None:
+            raise SystemExit(f"the way out never comes within {END_M:.0f} m of its end {cfg['end']}")
+        far = min(range(first, min(len(line), first + 10)), key=lambda i: dist(line[i], end_at))
+        rides = [i for i, r in enumerate(laps[0]) if r["lat"] is not None]
+        up = laps[0][: next(i for i in rides if dist(xy(laps[0][i]["lat"], laps[0][i]["lon"]), end_at) < END_M) + 1]
     f = (begin - cum[k]) / (cum[k + 1] - cum[k])
     there = [(line[k][0] + (line[k + 1][0] - line[k][0]) * f, line[k][1] + (line[k + 1][1] - line[k][1]) * f)]
     there += line[k + 1 : far + 1]
