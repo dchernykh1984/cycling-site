@@ -3,7 +3,7 @@
 (function boot() {
   if (!window.THREE) { $('#loading').textContent = t('boot.noThree'); return; }
   try {
-    $('#demoV').textContent = demoP + ' ' + t('u.w');
+    setDemo(demoPos(demoP));
     Records.load(); initGL(); makeMaterials(); fillSettings(); renderMenu(); initPreview(); renderChars(); setPreview(settings.char); renderPlanEditor();
     if (!Sensors.supported()) btHint(isIOS() ? t('bt.iosBoot') : t('bt.noneBoot'), true);
     Sensors.restore(); renderDevs(); Sensors.autoConnect();
