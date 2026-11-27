@@ -199,7 +199,7 @@ the event holds once saved. The form takes its draft's extras only with the key 
 over never lands on an event made by hand (`calendar_app/draft.py`, `tests/test_event_draft.py`). The page fills
 the start's time with its UTC offset, its day, the link on the site's page in each language, the route's name,
 length and climb, the wind and the word on the button that joins it, and for a race how it starts and, on a loop,
-whose laps; the date goes into the event's date. "Start" while waiting rides alone and
+whose laps; the date -- the race's day where its venue is, not the member's browser's -- goes into the event's date. "Start" while waiting rides alone and
 leaves the race to the others: a host who leaves hands it to the
 rider who joined next, and only a host alone in it cancels it that way ("Cancel" cancels it for all). Each
 race card has "Share": the phone's share sheet, or the link copied, to `/<lang>/virtual-ride/?group=<id>`;
