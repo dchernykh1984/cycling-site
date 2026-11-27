@@ -99,6 +99,7 @@ function landMaterial(T, W) {
   return mat;
 }
 
+const ROAD_CREASE_M = 2.5, ROAD_JOIN_M = 1;
 // --- the roads round the route: on the ground, rising onto the route's own road where they meet it
 function addRoads(G, T, W, roads, ground, decks = []) {
   const P = [], I = [], WP = [], WI = [], ramps = rampsOf(T, roads, decks, ground);
@@ -113,15 +114,25 @@ function addRoads(G, T, W, roads, ground, decks = []) {
     const cum = [0];
     for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
     const toJoin = i => Math.min(joins[0] ? cum[i] : Infinity, joins[1] ? cum[cum.length - 1] - cum[i] : Infinity);
+    // the land under a point of the road and ROAD_CREASE_M either way along it: a stretch between two points crossing
+    // a fold of the land drawn -- its planes tens of metres wide -- went under it, by up to 6 m on Medeu's slopes
+    const onLand = (p, i) => {
+      const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+      const dx = (b.x - a.x) / L * ROAD_CREASE_M, dz = (b.z - a.z) / L * ROAD_CREASE_M;
+      return Math.max(...[-1, -.5, 0, .5, 1].map(k => ground(p.x + dx * k, p.z + dz * k)));
+    };
     const height = (p, i) => {
-      const n = routeNearest(T, p.x, p.z), g = Math.max(ground(p.x, p.z) + lift, up ? up[i] : -Infinity);
-      if (n.d > W / 2 + 22 || (up && up[i] > -Infinity && toJoin(i) > 30)) return g;
+      const n = routeNearest(T, p.x, p.z), land = onLand(p, i) + lift, g = Math.max(land, up ? up[i] : -Infinity);
+      // what it meets is the route itself: not the valley drawn on past its finish, nor its road down a tunnel's ramp
+      // between walls, which a street beside keeps the ground over
+      const ramp = T.route.tunnels && cutGround(T, n.s) != null && overTunnel(T, n.s) == null;
+      if (n.d > W / 2 + 22 || n.s > T.L || ramp || (up && up[i] > -Infinity && toJoin(i) > 30)) return g;
       // over a tunnel the street keeps the ground line; under the route's own road a hand's breadth below it, so the
-      // two never flicker; off its edge rising to it over 22 m
+      // two never flicker; off its edge rising to it over 22 m, and never under the land beside it
       const top = overTunnel(T, n.s);
       if (top != null) return top + .05;
       if (n.d < W / 2 + .3) return n.y - .05;
-      return n.y + (g - n.y) * clamp((n.d - W / 2) / 22, 0, 1);
+      return Math.max(n.y + (g - n.y) * clamp((n.d - W / 2) / 22, 0, 1), n.d > W / 2 + ROAD_JOIN_M ? land : -Infinity);
     };
     band(P, I, q, r.w / 2, height);
     if (!up) return;
