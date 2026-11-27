@@ -2118,6 +2118,8 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     # read on the race's own page, the link names the virtual ride's, and the button there that takes a rider in
     assert "on the virtual ride page" in description and "the race's page" not in description, description
     assert "press \u201cGo to the start\u201d" in description, description
+    # before its start: from then on the race takes no one, and a rider told to come at its time missed it
+    assert "before its start sign in" in description and "at its time" not in description, description
     chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
     assert chosen == [lists["Road Race"].pk], chosen
     venue = Location.objects.get(name_en='Virtual world: start of the route "Central loop"')
