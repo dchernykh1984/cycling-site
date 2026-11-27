@@ -47,14 +47,15 @@ function drawMini() {
 }
 function updateHUD(inp, grade) {
   const spd = me.v * 3.6, st = me.stats, span = world.FIN - world.S0, done = clamp(me.s - world.S0, 0, span);
+  const once = rideMode === 'race' || (rideMode === 'free' && !world.T.loop); // a race, or a ride from place to place
   // the ride in one row: speed, distance, climbing, time; the bar under it is the route (or the plan) done
   $('#vSpeed').textContent = Math.round(spd);
   $('#uSpeed').textContent = inp.direct ? t('u.kmh') + ', ' + gearLabel(gearF, gearR) : t('u.kmh');
-  if (rideMode === 'race') { $('#vDist').textContent = fmt1(done / 1000); $('#uDist').textContent = t('hud.ofKm', { total: fmt1(span / 1000) }); }
+  if (once) { $('#vDist').textContent = fmt1(done / 1000); $('#uDist').textContent = t('hud.ofKm', { total: fmt1(span / 1000) }); }
   else { $('#vDist').textContent = fmt1(st.dist / 1000); $('#uDist').textContent = t('hud.lapKm', { lap: me.lap + 1 }); }
   $('#vGain').textContent = Math.round(st.gain || 0);
   $('#vTime').textContent = fmtTime(raceT);
-  const prog = rideMode === 'plan' && Work.total() ? Work.t / Work.total() : rideMode === 'race' ? done / span : (st.dist % span) / span;
+  const prog = rideMode === 'plan' && Work.total() ? Work.t / Work.total() : once ? done / span : (st.dist % span) / span;
   $('#vProg').style.width = clamp(prog * 100, 0, 100).toFixed(1) + '%';
   // the power, big, with the heart rate and the cadence beside it
   $('#vPower').textContent = Math.round(inp.P);

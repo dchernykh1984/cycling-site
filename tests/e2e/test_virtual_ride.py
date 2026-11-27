@@ -295,6 +295,29 @@ def test_a_rider_turns_through_every_corner_smoothly(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_free_ride_from_one_place_to_another_ends_at_its_finish_and_a_loop_laps(page: Page, live_server):
+    """Laps are a loop's: a free ride on Al-Farabi, from one place to another, is over at its finish and saved, as
+    when its rider ends it, where it went back to its start; Kyrbaltabay-Tuganbay, out and back, turns round at its
+    start as at Tuganbay and is ridden lap after lap."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate("() => { pickRoute('farabi'); settings.mode = 'free'; $('#bots').value = '0'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    ended = page.evaluate(
+        """() => { phase = 'race'; raceT = 600; me.s = world.FIN - .5; me.v = 10; drawFrame(200);
+            return [phase, Records.data.history[0] && Records.data.history[0].route]; }"""
+    )
+    assert ended == ["done", "farabi"], ended
+    expect(page.locator("#resM")).to_be_visible()
+    turned = page.evaluate(
+        """() => { const T = buildCourse(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay')).T, a = {}, b = {};
+            sampleAt(T, T.L - 120, a); sampleAt(T, 60, b);
+            return [T.loop, Math.round(Math.acos(a.tx * b.tx + a.tz * b.tz) * 180 / Math.PI)]; }"""
+    )
+    # back into its start one way, out of it the other
+    assert turned[0] and turned[1] > 170, turned
+
+
+@pytest.mark.django_db(transaction=True)
 def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server):
     # the ground as drawn is flat between the terrain's vertices, tens of metres apart: set on the shape those vertices
     # sample rather than on the ground itself, a tree or a house hangs in the air where the ground dips under it
