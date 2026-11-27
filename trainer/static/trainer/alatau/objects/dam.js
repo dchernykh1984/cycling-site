@@ -1,8 +1,9 @@
 'use strict';
 /* An earth dam across a gorge, along its crest as OpenStreetMap draws it (lm.crest, [[latitude, longitude], ...]),
-   lm.h metres over the ground at its place: a crest DAM_CREST metres wide, its faces falling at two to one to the
-   gorge's floor and running into its walls -- drawn only where it stands over the land -- a road along the crest
-   between parapets, and a stair up the middle of the face towards the route, in flights between landings. */
+   lm.h metres over the ground at its place: a crest lm.wide metres wide (DAM_CREST unless given), its faces falling
+   at two to one to the gorge's floor and running lm.into metres into its walls (DAM_INTO_WALLS unless given) --
+   drawn only where it stands over the land -- a road along the crest between parapets, and a stair up the middle of the face towards the route, in flights between
+   landings, unless lm.stair is false (Medeu's has one, Big Almaty Lake's none). */
 const DAM_SLOPE = 2, DAM_CREST = 50, DAM_STEP = 8, DAM_INTO_WALLS = 160;
 addObject('dam', (G, lm, T, { lam, box, land }) => {
   G.userData.spread = true; // it lies on the land it crosses, its surface a metre under it wherever it is not over it
@@ -10,16 +11,16 @@ addObject('dam', (G, lm, T, { lam, box, land }) => {
   let ux = ends[1][0] - ends[0][0], uz = ends[1][1] - ends[0][1]; const len = Math.hypot(ux, uz) || 1; ux /= len; uz /= len;
   // the face towards the route's end, where the stair climbs
   const o = sampleAt(T, T.L, {}), nx0 = -uz, nz0 = ux, toward = (o.x - lm.x) * nx0 + (o.z - lm.z) * nz0 > 0 ? 1 : -1, nx = nx0 * toward, nz = nz0 * toward;
-  const mx = (ends[0][0] + ends[1][0]) / 2, mz = (ends[0][1] + ends[1][1]) / 2, H = lm.h || 150, y0 = G.position.y;
+  const mx = (ends[0][0] + ends[1][0]) / 2, mz = (ends[0][1] + ends[1][1]) / 2, H = lm.h || 150, y0 = G.position.y, CREST = lm.wide || DAM_CREST;
   const put = (a, b) => [mx + ux * a + nx * b, mz + uz * a + nz * b]; // a along the crest, b out towards the route
   const ground = (a, b) => { const [x, z] = put(a, b); return land(lm.x + x, lm.z + z) - y0; };
-  const face = b => H - Math.max(0, Math.abs(b) - DAM_CREST / 2) / DAM_SLOPE;
+  const face = b => H - Math.max(0, Math.abs(b) - CREST / 2) / DAM_SLOPE;
   // the dam as a surface over the land: its height where it stands over the ground, a metre under the ground elsewhere
-  const half = len / 2 + DAM_INTO_WALLS, wide = DAM_CREST / 2 + DAM_SLOPE * H + 40, na = Math.ceil(2 * half / DAM_STEP), nb = Math.ceil(2 * wide / DAM_STEP);
+  const half = len / 2 + (lm.into != null ? lm.into : DAM_INTO_WALLS), wide = CREST / 2 + DAM_SLOPE * H + 40, na = Math.ceil(2 * half / DAM_STEP), nb = Math.ceil(2 * wide / DAM_STEP);
   const pos = [], col = [], idx = [], c = new THREE.Color(), earth = new THREE.Color(0x7d8456), top = new THREE.Color(0xa9a48a);
   for (let i = 0; i <= na; i++) for (let j = 0; j <= nb; j++) {
     const a = -half + 2 * half * i / na, b = -wide + 2 * wide * j / nb, g = ground(a, b), y = face(b), [x, z] = put(a, b);
-    pos.push(x, y > g ? y : g - 1, z); c.copy(Math.abs(b) <= DAM_CREST / 2 ? top : earth); col.push(c.r, c.g, c.b);
+    pos.push(x, y > g ? y : g - 1, z); c.copy(Math.abs(b) <= CREST / 2 ? top : earth); col.push(c.r, c.g, c.b);
   }
   for (let i = 0; i < na; i++) for (let j = 0; j < nb; j++) { const p = i * (nb + 1) + j, q = p + nb + 1; idx.push(p, p + 1, q, q, p + 1, q + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -29,9 +30,10 @@ addObject('dam', (G, lm, T, { lam, box, land }) => {
   [[0, 14, 1, 0x8f8c84], [-7.5, 1, 1.2, 0xe6e3dc], [7.5, 1, 1.2, 0xe6e3dc]].forEach(([b, w, h, cl]) => {
     const [x, z] = put(0, b), m = box(w, h, len, cl, x, crestY, z); m.rotation.y = along;
   });
+  if (lm.stair === false) return;
   // the stair: flights up the face from where it leaves the ground to the crest, a landing between each two
-  let from = DAM_CREST / 2 + DAM_SLOPE * H; while (from > DAM_CREST / 2 && face(from) < ground(0, from)) from -= 2;
-  const FLIGHTS = 12, run = (from - DAM_CREST / 2) / FLIGHTS, white = lam(0xe6e3dc), green = lam(0x5f6b3c), turn = Math.atan2(nx, nz);
+  let from = CREST / 2 + DAM_SLOPE * H; while (from > CREST / 2 && face(from) < ground(0, from)) from -= 2;
+  const FLIGHTS = 12, run = (from - CREST / 2) / FLIGHTS, white = lam(0xe6e3dc), green = lam(0x5f6b3c), turn = Math.atan2(nx, nz);
   for (let k = 0; k < FLIGHTS && run > 8; k++) {
     const b0 = from - k * run, b1 = b0 - run + 6, ya = face(b0), yb = face(b1), span = Math.hypot(b0 - b1, yb - ya);
     [[0, 8, white, .8], [-6, 2.5, green, 1], [6, 2.5, green, 1]].forEach(([side, w, mat, lift]) => {
