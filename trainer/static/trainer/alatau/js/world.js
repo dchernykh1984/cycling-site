@@ -114,6 +114,41 @@ function sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad) {
     if (pos.getY(i) > pad.y && (inside(x, z) || edge(x, z) <= m)) pos.setY(i, pad.y);
   }
 }
+// A gorge's rivers run down: each along its OpenStreetMap way, which runs with the stream (turned round where it starts
+// lower than it ends), never rising -- on the land it climbed onto the road's shelf and down again --, and the land
+// under it and RIVER_BANK_M beside it cut down to RIVER_BED_M under it. The road's own triangles keep their land: cut,
+// they left the road over a hollow its fills then filled. Its profile goes to addWater (T.rivers).
+const RIVER_BED_M = .3, RIVER_BANK_M = 1;
+function carveRivers(T, water, pos, x0, z0, x1, z1, nx, nz, wide) {
+  const w1 = nx + 1, drawn = groundOf(pos, x0, z0, x1, z1, nx, nz), o = {}, keep = new Set();
+  const corners = (x, z) => {
+    const fx = clamp((x - x0) / (x1 - x0) * nx, 0, nx - 1e-6), fz = clamp((z - z0) / (z1 - z0) * nz, 0, nz - 1e-6);
+    const ix = Math.floor(fx), iz = Math.floor(fz), first = fx - ix + fz - iz <= 1;
+    return (first ? [[ix, iz], [ix, iz + 1], [ix + 1, iz]] : [[ix + 1, iz + 1], [ix, iz + 1], [ix + 1, iz]]).map(([a, b]) => a + w1 * b);
+  };
+  for (let s = 0; s <= T.L; s += 2) {
+    sampleAt(T, s, o);
+    for (let off = -wide / 2; off <= wide / 2 + 1e-6; off += 1) corners(o.x + o.rx * off, o.z + o.rz * off).forEach(i => keep.add(i));
+  }
+  T.rivers = new Map();
+  water.forEach(w => {
+    if (w.area || !w.pts) return;
+    let pts = along(w.pts.map(p => xzOf(T, p)), 6).filter(p => routeGap(T, p.x, p.z) < LINE_REACH);
+    if (pts.length < 2) return;
+    if (drawn(pts[0].x, pts[0].z) < drawn(pts[pts.length - 1].x, pts[pts.length - 1].z)) pts = pts.reverse();
+    let y = Infinity;
+    const profile = pts.map(p => { y = Math.min(y, drawn(p.x, p.z)); return { x: p.x, z: p.z, y }; });
+    profile.forEach((p, i) => {
+      const q = profile[Math.min(i + 1, profile.length - 1)], r = profile[Math.max(i - 1, 0)], dx = q.x - r.x, dz = q.z - r.z, l = Math.hypot(dx, dz) || 1;
+      for (let off = -w.w / 2 - RIVER_BANK_M; off <= w.w / 2 + RIVER_BANK_M + 1e-6; off += 1) {
+        corners(p.x - dz / l * off, p.z + dx / l * off).forEach(k => { if (!keep.has(k) && pos.getY(k) > p.y - RIVER_BED_M) pos.setY(k, p.y - RIVER_BED_M); });
+      }
+    });
+    T.rivers.set(w, profile);
+  });
+  // a vertex cut for a stretch further down lies lower than this one's bed: the river follows the cut land down
+  T.rivers.forEach(profile => { let y = Infinity; profile.forEach(p => { y = Math.min(y, p.y, drawn(p.x, p.z) + RIVER_BED_M); p.y = y; }); });
+}
 // how deep a trunk goes into the ground: a slope under it leaves no gap at its foot
 const ROOT_M = .3, LAND_POINTS = 200000;
 let world_osmKept = 0;
@@ -150,6 +185,7 @@ function buildWorld(route) {
   }
   sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, W + 2 * (gorge || steppe ? 2.5 : 5));
   lms.forEach(lm => { const pad = PADS[lm.type] && PADS[lm.type](lm, T); if (pad) sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad); });
+  if (gorge && route.water) carveRivers(T, route.water, pos, x0, z0, x1, z1, nx, nz, W + 2 * 2.5);
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   grp.add(new THREE.Mesh(tg, landMaterial(T, W)));
   const ground = groundOf(pos, x0, z0, x1, z1, nx, nz);
