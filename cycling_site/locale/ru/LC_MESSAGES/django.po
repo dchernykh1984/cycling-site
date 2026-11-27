@@ -5977,3 +5977,12 @@ msgstr "Свои данные и данные добавленных вами л
 #: registrations/registering.py registrations/templates/registrations/register.html
 msgid "Open your profile"
 msgstr "Открыть личный кабинет"
+
+#: registrations/registering.py
+msgid "Choosing a category needs a gender and a date of birth."
+msgstr "Чтобы выбрать категорию, нужны пол и дата рождения."
+
+#: registrations/registering.py
+#, python-format
+msgid "The categories for this gender and year of birth are full: %(names)s."
+msgstr "Категории для этого пола и года рождения заполнены: %(names)s."

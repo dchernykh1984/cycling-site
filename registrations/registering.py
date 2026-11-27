@@ -196,6 +196,17 @@ def _category_refusal(competition, form, category, gender, birth_date, relay_ena
             return ""
         if relay_enabled or available_categories(competition, gender, birth_date):
             return str(form.fields["category"].error_messages["required"])
+        if not (gender and birth_date):
+            return gettext("Choosing a category needs a gender and a date of birth.")
+        fitting = [
+            c.name
+            for c in competition.registration_categories.filter(is_deleted=False)
+            if c.matches(gender, birth_date)
+        ]
+        if fitting:  # the ones that take them are full
+            return gettext("The categories for this gender and year of birth are full: %(names)s.") % {
+                "names": ", ".join(fitting)
+            }
         return gettext("No open category of this event takes this gender and year of birth.")
     fits = category.matches_gender(gender) if relay_enabled else category.matches(gender, birth_date)
     return "" if category.is_open() and fits else gettext("This category is not available.")

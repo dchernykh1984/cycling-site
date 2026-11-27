@@ -5968,3 +5968,12 @@ msgstr "Өз деректеріңізді және сіз қосқан тірк�
 #: registrations/registering.py registrations/templates/registrations/register.html
 msgid "Open your profile"
 msgstr "Жеке кабинетті ашу"
+
+#: registrations/registering.py
+msgid "Choosing a category needs a gender and a date of birth."
+msgstr "Санат таңдау үшін жынысы мен туған күні керек."
+
+#: registrations/registering.py
+#, python-format
+msgid "The categories for this gender and year of birth are full: %(names)s."
+msgstr "Осы жыныс пен туған жылға арналған санаттар толды: %(names)s."
