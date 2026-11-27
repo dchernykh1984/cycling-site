@@ -198,6 +198,19 @@ Each was found by the maintainer riding a route; the engine or a tool now avoids
 - **A pipe broken at the road.** The BAO pipe stopped at each side of the road: it runs on under a bridge (the
   road's edges over it, from below the tube to the parapets), down under the deck only within 4 m of the road: a
   pipe on the slope beside a hairpin stays on its supports.
+- **A fill ending in the air.** A serpentine's fill stopped half way to the stretch below, high over it: from that
+  stretch its underside hung overhead like a roof. It comes down to the other stretch's slope or edge now, ends on the
+  land past 80 m, and is grass as the slopes are; it falls from the shoulder's edge, or the shoulder and its guardrail
+  hang in the air. Look up at the stretch above from the saddle on every serpentine.
+- **A turn on a road too narrow for it.** At the Cosmostation's top the road ends: a turn from edge to edge of its 7 m
+  broke its road into triangles. Where the road ends, `turn_on_road.py ... circle` turns round a circle of asphalt.
+- **What goes on past a turn.** A dual carriageway turned back on across its median, or left for its frontage road
+  (Granfondo), read as a loop with grey pieces of road ahead: `roads_ahead.py` draws each half on ahead as the route's
+  own, down a cutting where it goes under the route; a stretch on a narrower road gets its width and lanes
+  (`narrow.py`). Ask how the riders really turn there: the GPS shows where they went, not which roads go on.
+- **A sight passed twice.** Told at its nearest point, Flow Park came on the wrong side: on a road ridden both ways
+  it is told at its first pass, and a sight beside a road ridden out and back on two carriageways can be told as on
+  the mountains' side (`"told": "mountains"`).
 
 ## Checks before calling a route done
 
