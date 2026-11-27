@@ -324,6 +324,42 @@ class VirtualRaceDraftTests(TestCase):
         self.client.force_login(someone)  # a session without that draft
         self.assertEqual(self.client.get(address).status_code, 404)
 
+    def test_a_track_file_of_the_member_s_own_is_the_event_s(self):
+        self.draft(track_name="oldtown", track_gpx=GPX)
+        payload = {
+            "title_ru": "Own track",
+            "date_start": "2026-12-02",
+            "location": str(self.start.pk),
+            "draft_key": self.form_page().context["draft_key"],
+            "file_route": SimpleUploadedFile("mine.gpx", GPX.encode(), content_type="application/gpx+xml"),
+        }
+        self.client.post(reverse("calendar_submit"), payload)
+        self.assertTrue(Competition.objects.get(title_ru="Own track").file_route.name.endswith("mine.gpx"))
+
+    def test_a_participant_s_race_and_a_race_started_or_cancelled_meanwhile_are_not_held(self):
+        rider = User.objects.create_user(
+            username="rider2", email="rider2@example.com", password="Pass1234!", role=User.Role.PARTICIPANT
+        )
+        self.client.force_login(rider)
+        theirs = self.race(host=rider)
+        self.draft(virtual_ride=str(theirs.pk), registration="1")
+        self.submit(self.form_page().context["draft_key"], title="A participant's")
+        theirs.refresh_from_db()
+        self.assertIsNone(theirs.competition)  # only an organizer's form registers riders
+        self.client.force_login(self.organizer)
+        started, cancelled = self.race(), self.race()
+        for race, title in ((started, "Started"), (cancelled, "Cancelled")):
+            self.draft(virtual_ride=str(race.pk), registration="1")
+            key = self.form_page().context["draft_key"]
+            if race is started:
+                GroupRide.objects.filter(pk=race.pk).update(start_at=timezone.now() - timedelta(minutes=1))
+            else:
+                GroupRide.objects.filter(pk=race.pk).update(cancelled=True)
+            self.submit(key, title=title, registers=True)
+            race.refresh_from_db()
+            self.assertIsNone(race.competition, title)
+        self.assertIsNone(Competition.objects.get(title_ru="Cancelled").virtual_ride)  # nor linked
+
     def test_what_holds_no_track_is_not_attached(self):
         self.draft(track_name="oldtown", track_gpx="<gpx>nothing to draw</gpx>")
         self.assertFalse(self.form_page().context["draft_track"])
