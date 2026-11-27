@@ -232,6 +232,25 @@ class MapsTests(SimpleTestCase):
             self.assertIn("{how}", texts[lang]["ev.raceText"], lang)
             self.assertIn("{laps}", texts[lang]["ev.raceText"], lang)
 
+    def test_kyrbaltabay_turns_round_on_its_road_and_the_road_goes_on_past_each_turn(self):
+        # it turned round a loop twice the road's width, drawn as a ring where the road goes straight on
+        route = next(r for r in _routes() if r["id"] == "kyrbaltabay-tuganbay")
+        lane = min(3.2, route["width"] / 2 - 1.5)
+        lines = [p[3] for p in route["pts"]]
+        self.assertEqual(len(lines), len(route["pts"]))
+        # the rider's line is their lane but round its two turns, where it comes to the route's own line and back
+        turning = [i for i, v in enumerate(lines) if v < lane]
+        runs = sum(1 for i in turning if i - 1 not in turning)
+        self.assertEqual((min(lines), max(lines), runs), (0, lane, 2))
+        onward = [r for r in route["roads"] if r.get("onward")]
+        self.assertEqual([(r["w"], r["lanes"]) for r in onward], [(route["width"], route["lanes"])] * 2)
+        kx = 111320 * math.cos(math.radians(route["pts"][0][0]))
+        for road in onward:
+            length = sum(
+                math.hypot((b[1] - a[1]) * kx, (b[0] - a[0]) * 111195) for a, b in itertools.pairwise(road["pts"])
+            )
+            self.assertGreater(length, 1000)
+
     def test_the_institute_s_figure_eight_never_crosses_itself(self):
         # its loops meet on the Alatau road's two carriageways, each ridden one way on its left one, as the ride it is
         # built from went: no crossroads -- matched to the carriageways by traffic's way, it crossed itself twice

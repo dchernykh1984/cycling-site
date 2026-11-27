@@ -231,7 +231,8 @@ def test_a_link_to_a_group_race_reaches_the_framed_trainer(page: Page, live_serv
 @pytest.mark.django_db(transaction=True)
 def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_server):
     # a route's points come from a map's streets: a spur ridden out and back, or two points on top of each other,
-    # would make the rider turn round or twitch where the street goes straight on
+    # would make the rider turn round or twitch where the street goes straight on -- but where a route turns back on
+    # its road (its points carry the rider's own line there, short of their lane), from edge to edge
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
     page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildTrack === 'function'")
     faults = page.evaluate(
@@ -242,6 +243,7 @@ def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_s
             const a = Math.atan2(T.Z[i - 1] - T.Z[i - 2], T.X[i - 1] - T.X[i - 2]);
             const b = Math.atan2(T.Z[i] - T.Z[i - 1], T.X[i] - T.X[i - 1]);
             const turn = Math.abs(((b - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * 180 / Math.PI;
+            if (T.line && T.line[i - 1] < keepLane(r.width) - .01) continue;
             if (turn > 60) {
               out.push(r.id + ': turns ' + Math.round(turn) + ' degrees at ' + Math.round(T.D[i]) + ' m');
               break;

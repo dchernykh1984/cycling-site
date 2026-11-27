@@ -116,8 +116,10 @@ Two more passes over a map entry, each writing it where it stands:
 - `streets.py map.js osm.json id [--whole]`: the streets the route rides, named under the mini-map in three
   languages from OSM's names (the ones OSM lacks in its NAMES); `--whole` names a route no named street runs along
   by its own name (the Sokol Racetrack, Kyrbaltabay -- Tuganbay).
-- `turn_at_start.py map.js id`: an out-and-back route made a loop, its far turnaround repeated at its start
-  (Kyrbaltabay -- Tuganbay); laps are a loop's, a route from one place to another ends at its finish.
+- `turn_on_road.py map.js osm.json id`: an out-and-back route turned round on its road at its far end and at its
+  start -- a loop -- from edge to edge, the road going on past each turn as OpenStreetMap has it (`"onward"` roads,
+  drawn as the route's own) (Kyrbaltabay -- Tuganbay); laps are a loop's, a route from one place to another ends at
+  its finish, and a loop turned at its start finishes a race on its way back past its line.
 
 A route's picture for an event's link card is its view in the virtual world, `maps/<map>/views/<id>.jpg`, 1200 by
 630: rendered from its scene (headless Chromium draws it with SwiftShader), a rider in front of what the route is
