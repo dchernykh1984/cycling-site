@@ -78,6 +78,18 @@ function sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, wide) {
     }
   }
 }
+// The ground under a sight that lies flat on it (PADS, js/landmarks.js): inside its ring and within its margin, no
+// higher than its level -- a rink in a valley's bowl, where the land had covered its ice by up to 22 m.
+function sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad) {
+  const xs = pad.ring.map(p => p[0]), zs = pad.ring.map(p => p[1]), m = pad.margin, n = pad.ring.length;
+  const inside = (x, z) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const [xi, zi] = pad.ring[i], [xj, zj] = pad.ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  const edge = (x, z) => { let d = Infinity; for (let i = 0, j = n - 1; i < n; j = i++) d = Math.min(d, segDist(x, z, pad.ring[j][0], pad.ring[j][1], pad.ring[i][0], pad.ring[i][1])); return d; };
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    if (x < Math.min(...xs) - m || x > Math.max(...xs) + m || z < Math.min(...zs) - m || z > Math.max(...zs) + m) continue;
+    if (pos.getY(i) > pad.y && (inside(x, z) || edge(x, z) <= m)) pos.setY(i, pad.y);
+  }
+}
 // how deep a trunk goes into the ground: a slope under it leaves no gap at its foot
 const ROOT_M = .3;
 let world_osmKept = 0;
@@ -106,6 +118,7 @@ function buildWorld(route) {
     cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
   }
   sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, W + 2 * (gorge || steppe ? 2.5 : 5));
+  lms.forEach(lm => { const pad = PADS[lm.type] && PADS[lm.type](lm, T); if (pad) sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad); });
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   grp.add(new THREE.Mesh(tg, landMaterial(T, W)));
   const ground = groundOf(pos, x0, z0, x1, z1, nx, nz);
