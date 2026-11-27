@@ -8,7 +8,7 @@
    five hairpins up its face) keeps its surface under the route's road and shoulders -- the road on benches cut in
    it -- and has no road of its own on the crest: the route is that road. One with lm.taper falls at its slope past
    its crest's ends too, onto a valley SRTM has from before it was built, not to a wall hanging over it. */
-const DAM_SLOPE = 2, DAM_CREST = 50, DAM_STEP = 8, DAM_INTO_WALLS = 160;
+const DAM_SLOPE = 2, DAM_CREST = 50, DAM_STEP = 8, DAM_INTO_WALLS = 160, DAM_BANK_M = 10;
 addObject('dam', (G, lm, T, { lam, box, land }) => {
   G.userData.spread = true; // it lies on the land it crosses, its surface a metre under it wherever it is not over it
   const ends = [lm.crest[0], lm.crest[lm.crest.length - 1]].map(p => { const q = proj(p[0], p[1], T.origin); return [q.x - lm.x, q.z - lm.z]; });
@@ -26,7 +26,10 @@ addObject('dam', (G, lm, T, { lam, box, land }) => {
   for (let i = 0; i <= na; i++) for (let j = 0; j <= nb; j++) {
     const a = -half + 2 * half * i / na, b = -wide + 2 * wide * j / nb, g = ground(a, b), y = face(b, a), [x, z] = put(a, b);
     let at = y > g ? y : g - 1;
-    if (lm.road) { const n = routeNearest(T, lm.x + x, lm.z + z); if (n.d < W / 2 + 2.5) at = Math.min(at, n.y - 1.3 - y0); }
+    if (lm.road) { // the road's bench: under it, and a bank up to the face over DAM_BANK_M beyond its shoulder
+      const n = routeNearest(T, lm.x + x, lm.z + z), bench = n.y - 1.3 - y0, k = clamp((n.d - W / 2 - 2.5) / DAM_BANK_M, 0, 1);
+      if (at > bench) at = bench + (at - bench) * k * k * (3 - 2 * k);
+    }
     pos.push(x, at, z); c.copy(Math.abs(b) <= CREST / 2 ? top : earth); col.push(c.r, c.g, c.b);
   }
   // wound to face up whichever face is towards the route: turned the other way, Ayusai's lay dark, lit from beneath
