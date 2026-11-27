@@ -265,6 +265,8 @@ def api_create(site, v):
 def api_race_for(whose):
     def probe(site, v):
         event = v.own_event(site) if whose == "own" and v.user.is_authenticated else site.public
+        # an event holds a race only when it registers its riders on the site (race.can_tie): the matrix asks who
+        type(event).objects.filter(pk=event.pk).update(registration_enabled=True)
         # a day apart: one host's races start an hour apart at least
         start = timezone.now() + datetime.timedelta(days=1 if whose == "own" else 2)
         body = {"route": "center", "start_at": start.isoformat(), "competition_id": event.pk}
