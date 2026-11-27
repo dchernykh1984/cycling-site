@@ -1858,6 +1858,15 @@ def test_a_ferris_wheel_s_rim_is_as_thick_as_a_rider_sees_it_from_the_route(page
 
 
 @pytest.mark.django_db(transaction=True)
+def test_kok_tobe_s_wheel_stands_on_the_hill_s_top_where_srtm_has_it(page: Page, live_server):
+    """Between the coarser grid's points, about 150 m apart, the wheel stood in a dip 24 m under the hill's top, its
+    lower two thirds behind the brow; the top's own grid, 30 m apart, puts it where SRTM 30 m has it: 1104 to 1108 m."""
+    _trainer_in_its_menu(page, live_server)
+    wheel = next(w for w in page.evaluate(_WHEELS_ROUND_GRANFONDO) if w["name"] == "Kok-Tobe Ferris wheel")
+    assert 1102 < wheel["base"] < 1110, wheel
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_route_far_from_its_map_s_others_is_drawn_from_its_own_origin_and_range(page: Page, live_server):
     """A region's routes lie tens of kilometres apart: one far from the map's origin carries its own, and its own
     mountains, so its road starts near the scene's middle and its range rises south of it, not of the map's."""
