@@ -128,6 +128,7 @@ _PLAN_SCREEN = """
 <style>.hidden{display:none}</style>
 <div id="plIcu" class="hidden"><p id="plIcuHint"></p><div id="plIcuList"></div><p id="plIcuInfo"></p></div>
 <div id="plOwn"><p>the own plan by gears and cadence</p></div>
+<figure id="plChart" class="hidden"><svg id="plChartSvg"></svg><figcaption id="plChartCap"></figcaption></figure>
 """
 _LIST = [
     {"id": 8, "date": "2026-11-20", "name": "Openers", "duration_s": None},
