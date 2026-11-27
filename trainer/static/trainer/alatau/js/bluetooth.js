@@ -273,7 +273,7 @@ const Sensors = {
     // A browser that has not searched since it started cannot reach a device yet (Chrome on a Mac hears no device until
     // its chooser searches, and a page cannot search without it): the chooser's search finds them, and they connect
     if (opened.length) setTimeout(() => {
-      if (this.devs.some(d => opened.includes(d.dev.id) && d.status !== 'online')) btHint(t('bt.autoSearch'), true);
+      if (this.devs.some(d => opened.includes(d.dev.id) && d.status !== 'online')) { btHint(t('bt.autoSearch'), true); this.searchHint = opened; }
     }, AUTO_SEARCH_HINT_MS);
   },
   remove(d) { d.disconnect(); this.devs = this.devs.filter(x => x !== d); this.changed(); },
@@ -286,7 +286,14 @@ const Sensors = {
   crank() { const l = this.live('cadence'); if (!l.length) return null; const fresh = l.find(d => d.crankRpm > 0); return (fresh || l[0]).crankRpm; },
   hr() { const d = this.live('hr').find(d => d.hrV > 0); return d ? d.hrV : null; },
   mode() { if (this.power() != null) return 'power'; if (this.wheel() != null) return 'speed'; if (this.crank() != null) return 'cadence'; return 'demo'; },
-  changed() { renderDevs(); updateModeUI(); }
+  changed() {
+    // the hint to search gives way to the usual one once the devices it was about are all in, unless another said more
+    if (this.searchHint && !this.devs.some(d => this.searchHint.includes(d.dev.id) && d.status !== 'online')) {
+      if ($('#btHint').textContent === t('bt.autoSearch')) btHint(t('bt.default'), false);
+      this.searchHint = null;
+    }
+    renderDevs(); updateModeUI();
+  }
 };
 // Управление сопротивлением: шлём уклон маршрута не чаще раза в секунду и только при изменении (и раз в 5 с без него);
 // сопротивление самого гонщика уходит вместе с каждым уклоном. Power to hold (watts, a workout's step with ERG

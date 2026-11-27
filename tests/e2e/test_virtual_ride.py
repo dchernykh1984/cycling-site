@@ -2405,9 +2405,10 @@ def test_remembered_devices_the_browser_has_not_found_yet_come_in_once_its_choos
     page.clock.run_for(9000)
     expect(page.locator("#btHint")).to_have_text(page.evaluate("t('bt.autoSearch')"))
     expect(page.locator("#devList li small")).to_have_text("reconnecting")
-    # the chooser searches, the rider closes it, and the page connects the monitor by itself
+    # the chooser searches, the rider closes it, and the page connects the monitor by itself; the hint has done its job
     page.click("#btnConnect")
     page.clock.run_for(6000)
+    expect(page.locator("#btHint")).to_have_text(page.evaluate("t('bt.default')"))
     expect(page.locator("#devList li small")).to_have_text("connected")
 
 
