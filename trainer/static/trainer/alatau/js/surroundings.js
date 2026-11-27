@@ -237,6 +237,13 @@ function addRouteStructures(G, T, W, ground) {
     for (let s = z.p0; s <= z.p1 + 1e-6; s += 2) { sampleAt(T, s, o); roof.push({ x: o.x, z: o.z }); }
     band(P, I, roof, W / 2 + .7, p => cutGround(T, routeNearest(T, p.x, p.z).s) - 1);
     band(P, I, roof, W / 2 + .7, p => cutGround(T, routeNearest(T, p.x, p.z).s) - .05);
+    // at each portal the roof's face over the road and the crossing street's parapet on it: a rider riding under it
+    // sees a bridge, not two sheets with the street beyond showing between them
+    for (const s of [z.p0, z.p1]) {
+      sampleAt(T, s, o);
+      const c = cutGround(T, s), h = W / 2 + .7;
+      wallOf(P, I, [-1, 1].map(k => ({ x: o.x + o.rx * h * k, z: o.z + o.rz * h * k, y0: c - 1, y1: c + 1.05 })), .35);
+    }
   });
   meshOf(G, P, I, new THREE.MeshLambertMaterial({ color: 0xc2beb4, side: THREE.DoubleSide }), 'structures');
 }

@@ -227,6 +227,32 @@ def test_a_tunnel_s_roof_clears_the_road_under_it_and_the_land_keeps_its_level_b
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_rider_riding_up_to_a_tunnel_sees_its_portal_not_the_street_through_its_roof(page: Page, live_server):
+    # the roof was two sheets a metre apart: riding up to it, a bridge drawn as two thin lines with the street beyond
+    # showing between them (Granfondo 2026's first, under Al-Farabi)
+    faults = _faults(
+        page,
+        live_server,
+        """
+        const zones = tunnelZones(T), o = {}, ray = new THREE.Raycaster();
+        if (!zones.length) return;
+        out.push('seen:' + r.id);
+        const roof = kids.find(m => m.name === 'structures');
+        for (const z of zones) {
+          // from the road's line 15 m before the portal, level with the middle of the roof's thickness
+          sampleAt(T, z.p0, o);
+          const face = new THREE.Vector3(o.x, cutGround(T, z.p0) - .5, o.z);
+          sampleAt(T, z.p0 - 15, o);
+          const eye = new THREE.Vector3(o.x, face.y, o.z), d = face.clone().sub(eye);
+          ray.set(eye, d.clone().normalize()); ray.far = d.length() + 1;
+          if (!ray.intersectObject(roof).length) out.push(r.id + ': a roof at ' + Math.round(z.p0) + ' m, see-through');
+        }
+        """,
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_land_is_left_out_of_a_tunnel_and_its_cutting_from_wall_to_wall(page: Page, live_server):
     # the land is drawn in cells 40 m across: over a tunnel and its cutting it would span the road like a lid and cut
     # through the tunnel (Granfondo 2026's, the centre's under Al-Farabi), so its shader leaves it out in boxes along
