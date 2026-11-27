@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Совместная езда: лобби, групповые гонки и соперники онлайн ---------------- */
-const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [], events: null };
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [] };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
 // the address of a group race: the site's page that frames the trainer, which also hands a newcomer
@@ -15,9 +15,16 @@ function mpNote(text) { const el = $('#mpNote'); el.textContent = text; el.class
 async function mpShare(g) {
   const url = groupLink(g.id);
   try {
-    if (navigator.share) { await navigator.share({ title: t('mp.shareTitle', { route: routeTitle(g) }), url }); return; }
+    const title = (g.kind || 'race') === 'ride' ? t('mp.shareTitleRide', { route: routeTitle(g) }) : t('mp.shareTitle', { route: routeTitle(g) });
+    if (navigator.share) { await navigator.share({ title, url }); return; }
     await navigator.clipboard.writeText(url); mpNote(t('mp.copied', { url }));
   } catch (e) { if (e.name !== 'AbortError') mpNote(t('mp.copyFailed', { url })); }
+}
+// A link names a ride or a race: a page set to a workout, which gathers neither, turns once to the mode that rides it
+function mpFollowLink() {
+  const g = LINKED && !MP.linkFollowed && settings.mode === 'plan' && MP.groups.find(x => x.id === LINKED);
+  if (!g) return;
+  MP.linkFollowed = true; settings.mode = (g.kind || 'race') === 'ride' ? 'free' : 'race'; saveSettings(); renderPlanEditor();
 }
 // a linked race that is not open any more says why, once
 async function mpCheckLink() {
@@ -27,9 +34,13 @@ async function mpCheckLink() {
   catch (e) { if (e.status === 404) mpNote(t('mp.linkMissing')); }
 }
 let groupRide = null;   // { gid, startAt, wind, race } во время групповой гонки; wind, { ms, from }, is its host's
-// A race with protocols (specs/495-virtual-race): its event, mode and drafting rule, and what the member rides in it --
-// bib, group, laps and own start
-const groupRules = g => g.event ? { event: g.event, mode: g.mode, draftBetween: g.draft_between_groups !== false, me: g.me || null } : null;
+// A race with protocols (specs/495-virtual-race) or a time trial: its event, mode and drafting rule, and what the member
+// rides in it -- bib, group, laps and own start
+const groupRules = g => g.event || g.mode === 'itt' ? { event: g.event || null, mode: g.mode, draftBetween: g.draft_between_groups !== false, me: g.me || null } : null;
+// what block 3 gathers: the mode's -- a free ride's ride together, a race -- and nothing in a workout, ridden alone
+const mpKind = () => settings.mode === 'race' ? 'race' : settings.mode === 'free' ? 'ride' : null;
+// who may make a race an event with its registration: an organizer, as the event form lets them register riders
+const mpOrganizes = () => !!(Records.me && Records.me.organizes);
 // a crossing the ride reports (js/ride.js), `ago` seconds ago: queued with its race for the site, at the moment it
 // happened on the site's clock, as a chronometer would take it -- a rider who started late carries the time they lost
 function mpCrossing(point, last, ago) { MP.crossings.push({ gid: groupRide.gid, point, last, at_ms: Math.round(Date.now() + MP.offset - ago * 1000) }); }
@@ -39,20 +50,17 @@ const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
 const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
 function mpInit() {
   if (!Records.synced) { MP.status = Records.me ? 'guest' : 'off'; renderMP(); return; }
-  MP.status = 'on'; mpPoll(); mpLoadEvents();
+  MP.status = 'on'; mpPoll();
 }
-// the member's own events a race with protocols can be made for: none, and the choice stays hidden
-async function mpLoadEvents() {
-  try { MP.events = await Site.get('/events'); } catch (e) { MP.events = []; }
-  const sel = $('#mpRaceEvent'); if (!sel) return;
-  [...sel.options].slice(1).forEach(o => o.remove());
-  MP.events.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = L(ev.title) + ' (' + new Date(ev.date_start + 'T00:00').toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }) + ')'; sel.appendChild(o); });
-  $('#mpRaceBox').classList.toggle('hidden', !MP.events.length); renderRaceOpts();
-}
-// the race's settings once an event is chosen: a gap between categories in a group race, an interval in a time trial
+// Block 3 by the mode: in a workout only why there is nothing to gather; else the button for the mode's kind, its
+// hints, and a race's settings -- a gap between categories in a group race, an interval in a time trial
 function renderRaceOpts() {
-  const on = !!$('#mpRaceEvent').value, itt = $('#mpRaceMode').value === 'itt';
-  $('#mpRaceOpts').classList.toggle('hidden', !on);
+  const kind = mpKind(), ride = kind === 'ride', itt = $('#mpRaceMode').value === 'itt';
+  $('#mpPlanNote').classList.toggle('hidden', kind !== null); $('#mpBody').classList.toggle('hidden', kind === null);
+  $('#mpCreate').textContent = ride ? t('mp.createRide') : t('mp.create');
+  $('#mpHint').textContent = ride ? t('mp.hintRide') : t('mp.hint');
+  $('#mpEventHint').textContent = ride ? t('mp.eventHintRide') : t('mp.eventHint');
+  $('#mpRaceOpts').classList.toggle('hidden', kind !== 'race');
   $('#mpRaceGapL').classList.toggle('hidden', itt); $('#mpRaceDraftL').classList.toggle('hidden', itt);
   $('#mpRaceIntervalL').classList.toggle('hidden', !itt); renderWhen();
 }
@@ -76,7 +84,7 @@ async function mpPoll() {
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
     MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
     if (!riding) MP.groups = res.groups || [];
-    if (phase === 'menu') { mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
+    if (phase === 'menu') { mpFollowLink(); mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
   } catch (e) {
     if (e.status === 401 || e.status === 403) { MP.status = 'guest'; renderMP(); MP.busy = false; return; }
   }
@@ -99,9 +107,9 @@ function mpWhen() {
 // a date and time to start from: the next whole hour but one, today or tomorrow
 function renderWhen() {
   const at = $('#mpDelay').value === 'at', pad = n => String(n).padStart(2, '0'), day = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  // a race tied to an event already has its event: no new one is made for it
-  const tied = !!$('#mpRaceEvent').value;
-  $('#mpWhen').classList.toggle('hidden', !at); ['#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !at || tied));
+  // an event for a ride, by anyone; for a race, with its registration, by an organizer
+  const offered = at && (mpKind() === 'ride' || (mpKind() === 'race' && mpOrganizes()));
+  $('#mpWhen').classList.toggle('hidden', !at); ['#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !offered));
   if (at && !$('#mpDate').value) { const d = new Date(Date.now() + 2 * MP_HOUR); $('#mpDate').value = day(d); $('#mpTime').value = pad(d.getHours()) + ':00'; }
   $('#mpDate').min = day(new Date()); $('#mpDate').max = day(new Date(Date.now() + 365 * 864e5));
 }
@@ -109,21 +117,21 @@ function mpMaybeStart() {
   const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
   // in a time trial the rider's own start, their place in the start order after the race's
   const at = mpStartLocal(g) + ((g.me && g.me.start_offset_s) || 0) * 1000, now = Date.now();
-  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g), race: groupRules(g) }; routeSel = g.route; renderMenu(); startRace(); }
+  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' }; routeSel = g.route; renderMenu(); startRace(); }
 }
 async function mpAction(path, body) {
   try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
   mpSchedule(50);
 }
-// a race on the chosen route, in the host's wind, which is the race's
+// a ride or a race, as the mode gathers, on the chosen route in the host's wind, which is its riders'
 function mpRace(when) {
-  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind(), ev = $('#mpRaceEvent') && $('#mpRaceEvent').value;
-  // for an event: its riders, bibs and laps from its registration, and the maker's mode, gaps and drafting rule
-  const race = ev ? { competition_id: +ev, loop: !!r.loop, mode: $('#mpRaceMode').value, group_gap_s: clamp(+$('#mpRaceGap').value || 0, 0, 3600), itt_interval_s: clamp(+$('#mpRaceInterval').value || 30, 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
-  return Object.assign({ route: r.id, route_name: r.name, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind(), kind = mpKind();
+  // a race's mode, and the gaps and the drafting rule an event's registration gives categories to
+  const race = kind === 'race' ? { mode: $('#mpRaceMode').value, group_gap_s: clamp(+$('#mpRaceGap').value || 0, 0, 3600), itt_interval_s: clamp(+$('#mpRaceInterval').value || 30, 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
+  return Object.assign({ route: r.id, route_name: r.name, kind, loop: !!r.loop, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
 }
 function mpCreateGroup() {
-  if (MP.status !== 'on') return;
+  if (MP.status !== 'on' || !mpKind()) return;
   const when = mpWhen(); if (!when) { mpNote(t('mp.badTime')); return; }
   mpAction('/groups', mpRace(when));
 }
@@ -131,47 +139,79 @@ function mpCreateGroup() {
 // the event form, filled from the route's template, for the member to check and submit
 async function mpAddEvent() {
   const when = mpWhen(); if (!when || !when.start_at) { mpNote(t('mp.badTime')); return; }
-  if (MP.status !== 'on' || MP.eventBusy) return;
+  if (MP.status !== 'on' || MP.eventBusy || !mpKind()) return;
   MP.eventBusy = true; $('#mpEvent').disabled = true; // one race and one form for one press
   try {
     const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-    const g = MP.groups.find(x => x.is_host && x.route === r.id && Math.abs(Date.parse(x.start_at) - when.at) < 60e3) || await Site.post('/groups', mpRace(when));
+    const kind = mpKind(), same = x => x.is_host && x.route === r.id && (x.kind || 'race') === kind && Math.abs(Date.parse(x.start_at) - when.at) < 60e3;
+    const g = MP.groups.find(same) || await Site.post('/groups', mpRace(when));
     sendEventDraft(r, g, new Date(Date.parse(g.start_at)));
   } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
   MP.eventBusy = false; mpSchedule(50);
 }
 const LOCALES = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-GB' };
-// the race's words in one language for its route's template: its time on the member's clock with the clock's offset
-// from UTC, the day, the link to it on the site's page in that language, the route's length and climb, its wind and
-// the word on the button that joins it
+// The event's type and discipline by the English names every database has them under (calendar's draft): a virtual
+// ride either way, a ride a coffee ride, a race a road race or a time trial by its mode
+const EVENT_TYPES = ['Virtual Ride'];
+const EVENT_DISCIPLINE = { ride: 'Coffee Ride', group: 'Road Race', itt: 'Individual Time Trial' };
+// a race's registration as its event starts with it: men and women, a loop's laps
+const RACE_LAPS = 3;
+// the ride's or race's words in one language: its time on the member's clock with the clock's offset from UTC, the
+// day, the link to it on the site's page in that language, the route -- its name, way with its length and climb, and
+// finish -- its wind, the word on the button that joins it; a race's start and, on a loop, its laps
 function eventWords(lang, r, g, at) {
   const loc = LOCALES[lang], T = buildTrack(r), off = -at.getTimezoneOffset(), abs = Math.abs(off);
   const zone = 'UTC' + (off ? (off > 0 ? '+' : '-') + Math.floor(abs / 60) + (abs % 60 ? ':' + String(abs % 60).padStart(2, '0') : '') : '');
   const page = Records.me.page_url.replace(/^\/(ru|kk|en)\//, '/' + lang + '/');
-  return {
+  const v = {
     time: at.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) + ' (' + zone + ')',
     date: at.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', month: 'long' }),
     link: location.origin + page + '?group=' + g.id,
     km: (T.L / 1000).toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
     climb: String(Math.round(T.gain)),
     wind: g.wind_ms > 0 ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg, lang) }, lang) : '',
-    join: t('mp.join', null, lang)
+    join: t('mp.join', null, lang),
+    name: (r.names && r.names[lang]) || r.name
   };
+  v.way = fillIn(r.event.way[lang], v); v.finish = r.event.finish[lang];
+  if ((g.kind || 'race') === 'race') {
+    v.how = g.mode === 'itt' ? t('ev.raceItt', { interval: g.itt_interval_s }, lang)
+      : g.group_gap_s > 0 ? t('ev.raceGroupGap', { gap: g.group_gap_s }, lang) : t('ev.raceGroup', null, lang);
+    v.laps = r.loop ? t('ev.raceLaps', null, lang) : '';
+  }
+  return v;
 }
-// The form the site keeps a draft from (calendar's SubmitDraftView), sent to the whole window: the route's words in
-// every language, the date of the start for the event's date, its type and discipline by their English names
+// a text's {placeholders} filled from v, each through `as` (escapeHTML for a description), an unknown one left
+const fillIn = (text, v, as = x => x) => text.replace(/\{(\w+)\}/g, (m, k) => k in v ? as(v[k]) : m);
+// the route as a GPX track for the event's map: its points, a loop's closed back at its start
+function routeGpx(r) {
+  const pts = r.loop ? r.pts.concat([r.pts[0]]) : r.pts;
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="' + escapeHTML(location.host) + '" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>' + escapeHTML(r.name) + '</name><trkseg>'
+    + pts.map(p => '<trkpt lat="' + p[0] + '" lon="' + p[1] + '"><ele>' + p[2] + '</ele></trkpt>').join('') + '</trkseg></trk></gpx>\n';
+}
+// The form the site keeps a draft from (calendar's SubmitDraftView), sent to the whole window: the words of a ride or a
+// race in every language, the date of the start for the event's date, its type and discipline, where the route starts
+// for the venue there, the route's track; for a race its registration with men and women and the race it is to hold
 function sendEventDraft(r, g, at) {
-  const form = document.createElement('form'), tpl = r.event;
+  const form = document.createElement('form'), race = (g.kind || 'race') === 'race';
   form.method = 'post'; form.action = langPath(Records.me.event_draft_url); form.target = '_top';
   const put = (name, value) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; form.appendChild(i); };
   const pad = n => String(n).padStart(2, '0');
   put('csrfmiddlewaretoken', Site.csrf()); put('date_start', at.getFullYear() + '-' + pad(at.getMonth() + 1) + '-' + pad(at.getDate()));
   Object.keys(LOCALES).forEach(lang => {
-    const v = eventWords(lang, r, g, at), html = s => s.replace(/\{(\w+)\}/g, (m, k) => k in v ? escapeHTML(v[k]) : m);
-    put('title_' + lang, tpl.title[lang]); put('preview_text_' + lang, tpl.preview[lang].replace(/\{(\w+)\}/g, (m, k) => k in v ? v[k] : m));
-    put('description_' + lang, html(tpl.text[lang]));
+    const v = eventWords(lang, r, g, at), words = race
+      ? [t('ev.raceTitle', null, lang), t('ev.racePreview', null, lang), t('ev.raceText', null, lang)]
+      : [t('ev.rideTitle', null, lang), t('ev.ridePreview', null, lang), t('ev.rideText', null, lang)];
+    put('title_' + lang, fillIn(words[0], v)); put('preview_text_' + lang, fillIn(words[1], v));
+    put('description_' + lang, fillIn(words[2], v, escapeHTML));
   });
-  tpl.types.forEach(n => put('event_type', n)); tpl.disciplines.forEach(n => put('discipline', n));
+  EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);
+  put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); put('track_name', r.id); put('track_gpx', routeGpx(r));
+  if (race) {
+    const laps = r.loop ? RACE_LAPS : null;
+    put('registration', '1'); put('virtual_race', g.id);
+    put('categories', JSON.stringify([{ name: t('ev.catMen'), male: true, female: false, laps }, { name: t('ev.catWomen'), male: false, female: true, laps }]));
+  }
   document.body.appendChild(form); form.submit(); form.remove();
 }
 // "Start" while waiting: the rider rides alone and the race goes on without them (a host hands it on)
@@ -253,13 +293,17 @@ function renderMP() {
     }
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
     if (g.id === LINKED && !MP.linkShown) { MP.linkShown = true; card.scrollIntoView({ block: 'center' }); } // what the link named
-    card.querySelector('b').textContent = (g.is_host ? t('mp.yours') : t('mp.hostGathers', { name: g.host.name })) + ': ' + routeTitle(g);
+    const ride = (g.kind || 'race') === 'ride';
+    const who = g.is_host ? (ride ? t('mp.yoursRide') : t('mp.yours')) : ride ? t('mp.hostGathersRide', { name: g.host.name }) : t('mp.hostGathers', { name: g.host.name });
+    card.querySelector('b').textContent = who + ': ' + routeTitle(g);
     const small = card.querySelector('small');
     small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     if (g.event) { // a race with protocols: its event, linked; a time trial said so; the member's own bib, category, laps and start
       const [before, after] = t('mp.raceOf', { title: '\u0000' }).split('\u0000'), a = document.createElement('a');
       a.href = langPath(g.event.url); a.target = '_top'; a.textContent = L(g.event.title);
       small.append(before, a, after + (g.mode === 'itt' ? t('mp.raceItt') : '') + (g.me ? t('mp.raceMe', { bib: g.me.bib, group: g.me.group, laps: g.me.laps }) + (g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : '') : ''));
+    } else if (g.mode === 'itt') { // a time trial without an event: the member's own start, as they joined
+      small.append(t('mp.raceItt') + (g.me && g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : ''));
     }
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
@@ -268,7 +312,7 @@ function renderMP() {
     else { btn.textContent = t('mp.join'); btn.disabled = mpClash(g) || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });
   // one race to wait for at a time; one at a date and time keeps an hour from the others, as the site checks
-  create.disabled = !!mine && $('#mpDelay').value !== 'at'; $('#mpEvent').disabled = !!MP.eventBusy;
+  create.disabled = !mpKind() || (!!mine && $('#mpDelay').value !== 'at'); $('#mpEvent').disabled = !!MP.eventBusy;
   renderStartSum();
 }
 // in a race with protocols the rider's own category: its riders ride its laps, the others are not in the same race

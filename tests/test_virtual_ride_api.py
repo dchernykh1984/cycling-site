@@ -137,6 +137,12 @@ class WhoIsRidingTests(MemberClientMixin, TestCase):
         self.assertTrue(body["authenticated"])
         self.assertEqual(body["user_id"], user.pk)
         self.assertEqual(body["name"], user.public_display_name)
+        # a participant's event form registers no one: their page offers no race's event
+        self.assertFalse(body["organizes"])
+
+    def test_an_organizer_is_told_they_may_make_a_race_an_event_with_its_registration(self):
+        organizer = _user("olga", role=User.Role.ORGANIZER)
+        self.assertTrue(self.member(organizer).get(f"{API}/me").json()["organizes"])
 
     def test_the_trainer_page_hands_out_the_csrf_cookie_the_framed_page_sends_back(self):
         response = Client().get(reverse("virtual_ride"))

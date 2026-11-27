@@ -199,21 +199,30 @@ class MapsTests(SimpleTestCase):
         # the API saves a ride, a group race and a position only under a key like these
         self.assertEqual([key for key in keys if not re.fullmatch(_ROUTE, key)], [])
 
-    def test_every_route_carries_the_event_announcing_a_group_race_on_it(self):
-        # "Add event" fills the event form with it: what an event's form takes, in every language, the race's own
-        # link and time in its description; the type and the discipline by the English names the lists have
-        placeholders = {"link", "time", "date", "km", "climb", "wind", "join"}
+    def test_every_route_carries_its_way_and_finish_for_an_event_on_it(self):
+        # "Add event" writes a ride's or a race's words round them in every language: the way, the route's length and
+        # climb put in, and where it finishes
         for route in _routes():
             event = route["event"]
-            for part in ("title", "preview", "text"):
+            self.assertEqual(set(event), {"way", "finish"}, route["id"])
+            for part in ("way", "finish"):
                 self.assertEqual(set(event[part]), {"ru", "kk", "en"}, route["id"])
-                for text in event[part].values():
-                    self.assertTrue(text.strip(), route["id"])
-                    self.assertLessEqual(set(re.findall(r"\{(\w+)\}", text)), placeholders, (route["id"], text))
-            for text in event["text"].values():
-                self.assertIn('<a href="{link}">', text, route["id"])
-                self.assertIn("{time}", text, route["id"])
-            self.assertTrue(all(text.strip() for text in event["types"] + event["disciplines"]), route["id"])
+                self.assertTrue(all(text.strip() for text in event[part].values()), route["id"])
+            for text in event["way"].values():
+                self.assertLessEqual(set(re.findall(r"\{(\w+)\}", text)), {"km", "climb"}, (route["id"], text))
+            self.assertFalse(any("{" in text for text in event["finish"].values()), route["id"])
+
+    def test_a_ride_s_and_a_race_s_event_carry_the_link_the_time_and_the_route(self):
+        texts = trainer_page.texts()
+        for lang in ("ru", "kk", "en"):
+            for kind in ("ride", "race"):
+                text = texts[lang][f"ev.{kind}Text"]
+                for part in ('<a href="{link}">', "{time}", "{name}", "{way}", "{finish}", "{wind}", "{join}"):
+                    self.assertIn(part, text, (lang, kind))
+                self.assertIn("{name}", texts[lang][f"ev.{kind}Title"], (lang, kind))
+            # a race says how it starts and, on a loop, whose laps
+            self.assertIn("{how}", texts[lang]["ev.raceText"], lang)
+            self.assertIn("{laps}", texts[lang]["ev.raceText"], lang)
 
     def test_a_route_s_name_fits_the_site_in_every_language(self):
         # the page sends the name it shows with a saved ride and a group race, as it is

@@ -10,6 +10,7 @@ from playwright.sync_api import Page, ViewportSize, expect
 from accounts.models import User
 from api.endpoints.virtual_ride import PresenceIn
 from calendar_app.models import Discipline, DisciplineCategory, EventType
+from locations.models import Location
 from tests import trainer_page
 from tests.e2e import contrast
 from tests.e2e.conftest import inject_session
@@ -97,6 +98,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, LINKED = null;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const groupWind = () => null; // a race in still air
+            const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
@@ -147,6 +149,7 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
                  start_at: at(2 * day + .5 * hour), wind_ms: 6, wind_from_deg: 270}
             ]};
             const Records = {me: {user_id: 2}}, mpStartLocal = g => Date.parse(g.start_at), LINKED = null;
+            const mpKind = () => 'race'; // the page set to race
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
@@ -408,6 +411,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             const Records = {me: {user_id: 2}}, mpStartLocal = () => Date.now() + 60000, groupLink = id => 'LINK-' + id;
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const groupWind = () => null; // a race in still air
+            const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
@@ -1697,47 +1701,111 @@ def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server
         assert wide >= 44 and high >= 44, (city.text_content(), wide, high)
 
 
-@pytest.mark.django_db(transaction=True)
-def test_add_event_gathers_the_race_and_opens_the_event_form_filled_from_the_route(page: Page, live_server):
-    rider = User.objects.create_user(
-        username="e2e_vr_event", email="e2e_vr_event@test.local", password="testpass123!", role=User.Role.PARTICIPANT
-    )
-    # the lists as the migrations seed them -- laid again where a test before this one emptied the tables
+def _road_lists() -> dict:
+    """The type and disciplines an event from the trainer takes, as the migrations seed them -- laid again where a
+    test before this one emptied the tables."""
     virtual, _ = EventType.objects.get_or_create(name_en="Virtual Ride", defaults={"name_ru": "Virtual", "order": 1})
     road, _ = DisciplineCategory.objects.get_or_create(name_en="Road Cycling", defaults={"name_ru": "Road", "order": 1})
-    coffee, _ = Discipline.objects.get_or_create(
-        name_en="Coffee Ride", category=road, defaults={"name_ru": "Coffee Ride", "order": 1}
-    )
-    inject_session(page, live_server, rider)
+    named = {
+        name: Discipline.objects.get_or_create(name_en=name, category=road, defaults={"name_ru": name, "order": k})[0]
+        for k, name in enumerate(("Coffee Ride", "Road Race", "Individual Time Trial"), start=1)
+    }
+    return {"virtual": virtual, **named}
+
+
+def _add_event_tomorrow(page: Page, live_server, member: User, mode: str):
+    """The member's trainer, in its frame on the site, set to `mode`: "Add event" for tomorrow at seven in the
+    evening on their own clock; the event form it opens, and the day it names."""
+    inject_session(page, live_server, member)
     page.goto(f"{live_server.url}/en/virtual-ride/")
     frame = page.frame_locator("iframe.virtual-ride-frame")
     page.wait_for_load_state("networkidle")
     if not frame.locator("html").evaluate("() => typeof phase !== 'undefined' && phase === 'menu'"):
         pytest.skip("this browser cannot draw 3D, so the trainer stops before its menu")
     expect(frame.locator("#mpCreate")).to_be_enabled()  # the lobby answered: the member rides together
+    frame.locator(f"#modeSeg [data-mode='{mode}']").click()
     frame.locator("#mpDelay").select_option("at")
-    # tomorrow at seven in the evening, on the member's own clock
     day = frame.locator("html").evaluate(
         "() => { const d = new Date(Date.now() + 864e5), p = n => String(n).padStart(2, '0');"
         " return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }"
     )
     frame.locator("#mpDate").fill(day)
     frame.locator("#mpTime").fill("19:00")
+    start = frame.locator("html").evaluate("() => ROUTES.find(r => r.id === 'center').pts[0]")
+    return frame, day, start
+
+
+@pytest.mark.django_db(transaction=True)
+def test_add_event_gathers_a_ride_and_opens_the_event_form_filled_from_the_route(page: Page, live_server):
+    rider = User.objects.create_user(
+        username="e2e_vr_event", email="e2e_vr_event@test.local", password="testpass123!", role=User.Role.PARTICIPANT
+    )
+    lists = _road_lists()
+    frame, day, _start = _add_event_tomorrow(page, live_server, rider, "free")
     with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
         frame.locator("#mpEvent").click()
-    race = GroupRide.objects.get(host=rider)
-    assert race.route == "center"
-    expect(page.locator("#id_title_en")).to_have_value("Virtual group race: Central loop")
+    ride = GroupRide.objects.get(host=rider)
+    assert (ride.route, ride.kind) == ("center", GroupRide.Kind.RIDE)
+    expect(page.locator("#id_title_en")).to_have_value("Virtual ride: Central loop")
     expect(page.locator("#id_title_ru")).to_have_value(re.compile(r"\S"))
     expect(page.locator("#id_date_start")).to_have_value(day)
     description = page.locator("#id_description_en").input_value()
-    assert f"{live_server.url}/en/virtual-ride/?group={race.pk}" in description, description
-    assert "19:00 (UTC" in description and "{" not in description, description
-    assert f"/kk/virtual-ride/?group={race.pk}" in page.locator("#id_description_kk").input_value()
+    assert f"{live_server.url}/en/virtual-ride/?group={ride.pk}" in description, description
+    assert "19:00 (UTC" in description and "Abay, Dostyk" in description and "{" not in description, description
+    assert f"/kk/virtual-ride/?group={ride.pk}" in page.locator("#id_description_kk").input_value()
     types = page.locator("#id_event_types option:checked").evaluate_all("options => options.map(o => +o.value)")
-    assert types == [virtual.pk], types
+    assert types == [lists["virtual"].pk], types
     chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
-    assert chosen == [coffee.pk], chosen
+    assert chosen == [lists["Coffee Ride"].pk], chosen
+    # the route's track goes with it; a ride has no registration of its own
+    expect(page.locator("#route-draft-track")).to_be_visible()
+    expect(page.locator("#reg_enabled")).to_have_count(0)  # a participant's form registers no one
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_and_race(
+    page: Page, live_server, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path  # the track the event keeps, kept out of the media of every other run
+    organizer = User.objects.create_user(
+        username="e2e_vr_race", email="e2e_vr_race@test.local", password="testpass123!", role=User.Role.ORGANIZER
+    )
+    lists = _road_lists()
+    frame, _day, (lat, lng, *_rest) = _add_event_tomorrow(page, live_server, organizer, "race")
+    # the venue the place tree has where the route starts
+    city = (
+        Location.add_root(name_ru="KZ", name_en="KZ")
+        .add_child(name_ru="Almaty Region", name_en="Almaty Region")
+        .add_child(name_ru="Almaty", name_en="Almaty")
+    )
+    venue = city.add_child(name_ru="Start", name_en="Start", lat=round(lat, 6), lng=round(lng, 6))
+    with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
+        frame.locator("#mpEvent").click()
+    race = GroupRide.objects.get(host=organizer)
+    assert (race.kind, race.mode, race.competition_id) == (GroupRide.Kind.RACE, GroupRide.Mode.GROUP, None)
+    expect(page.locator("#id_title_en")).to_have_value("Virtual race: Central loop")
+    description = page.locator("#id_description_en").input_value()
+    assert "everyone starts at the same moment" in description and "register on this page" in description, description
+    chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
+    assert chosen == [lists["Road Race"].pk], chosen
+    expect(page.locator("#id_location")).to_have_value(str(venue.pk))
+    expect(page.locator("#reg_enabled")).to_be_checked()
+    rows = json.loads(page.locator("#categories_json_input").input_value())
+    assert [(r["name"], r["male"], r["female"], r["laps"]) for r in rows] == [
+        ("Men", True, False, 3),
+        ("Women", False, True, 3),
+    ], rows
+    expect(page.locator("#route-draft-track")).to_be_visible()
+    # saved: the event holds the race, and the route's track draws its map
+    page.get_by_role("button", name="Save", exact=True).click()
+    page.wait_for_load_state("networkidle")
+    refused = page.locator(".text-danger, .alert-danger, .invalid-feedback").all_inner_texts()
+    assert "/calendar/submit/" not in page.url and not refused, (page.url, refused)  # off the form, to the calendar
+    race.refresh_from_db()
+    event = race.competition
+    assert event is not None and event.title_en == "Virtual race: Central loop"
+    assert event.file_route.name == "competitions/routes/center.gpx", event.file_route.name
+    assert event.registration_enabled and event.registration_categories.count() == 2
 
 
 @pytest.mark.django_db(transaction=True)
