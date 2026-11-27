@@ -9,6 +9,7 @@ import json
 import tempfile
 from datetime import timedelta
 
+from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -81,7 +82,9 @@ class EventDraftTests(TestCase):
     def test_nothing_is_an_event_until_it_is_submitted_and_then_the_draft_is_gone(self):
         self.client.post(reverse("calendar_submit_draft"), DRAFT)
         self.assertFalse(Competition.objects.exists())
-        self.client.post(reverse("calendar_submit"), {"title_ru": "Virtual race", "date_start": "2026-12-02"})
+        key = self.client.get(reverse("calendar_submit") + "?draft=1").context["draft_key"]
+        submitted = {"title_ru": "Virtual race", "date_start": "2026-12-02", "draft_key": key}
+        self.client.post(reverse("calendar_submit"), submitted)
         self.assertTrue(Competition.objects.filter(title_ru="Virtual race").exists())
         self.assertNotIn("title_en", self.client.get(reverse("calendar_submit") + "?draft=1").context["form"].initial)
 
@@ -341,6 +344,24 @@ class VirtualRaceDraftTests(TestCase):
         # without a registration and a bib they would ride it untimed
         self.assertFalse(race.memberships.exists())
         self.assertEqual(race.last_start_at, race.start_at)
+
+    def test_an_organizer_is_told_when_their_race_was_not_held_and_another_tab_s_draft_stays(self):
+        race = self.race()
+        self.draft(virtual_ride=str(race.pk), registration="1")
+        key = self.form_page().context["draft_key"]
+        # an event made by hand meanwhile, in another tab: the draft is still there for its own form
+        self.submit("", title="By hand")
+        self.assertEqual(self.client.session["event_draft"]["key"], key)
+        answer = self.submit(key, registers=False)
+        told = [str(m) for m in get_messages(answer.wsgi_request)]
+        self.assertIn(
+            gettext(
+                "The race is not held by this event: only an event with registration on the site holds a "
+                "race, before it starts."
+            ),
+            told,
+        )
+        self.assertNotIn("event_draft", self.client.session)
 
     def test_an_event_that_registers_nobody_or_is_over_holds_no_race(self):
         # a race held by them could be joined by no one: joining asks for a registration
