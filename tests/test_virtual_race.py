@@ -88,6 +88,24 @@ class MakingARaceTests(RaceTestCase):
         self.make(start_in_s=7200)
         self.event.refresh_from_db()
         self.assertEqual(self.event.virtual_ride, body["id"])
+        # once cancelled, the next race made for the event is the one its page opens: it kept opening the cancelled one
+        self.client_of(self.organizer).post(f"{API}/groups/{body['id']}/cancel")
+        third = self.make(start_in_s=2400).json()["id"]
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.virtual_ride, third)
+
+    def test_an_event_s_page_opens_its_race_in_place_of_one_it_did_not_hold(self):
+        # a race on the page whose event did not hold it (its registration closed then) is replaced by one it holds
+        start = timezone.now() + timedelta(hours=3)  # its host may gather another race within the hour
+        race_kind = GroupRide.Kind.RACE
+        loose = GroupRide.objects.create(route="granfondo", kind=race_kind, host=self.organizer, start_at=start)
+        self.event.virtual_ride = loose.pk
+        self.event.save(update_fields=["virtual_ride"])
+        made = self.make()
+        self.assertEqual(made.status_code, 201, made.content)
+        held = made.json()["id"]
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.virtual_ride, held)
 
     def test_nobody_else_ties_a_race_to_the_event_and_an_admin_ties_one_to_any(self):
         other = _member("other", User.Role.ORGANIZER)

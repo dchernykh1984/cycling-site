@@ -11,6 +11,7 @@ from http import HTTPStatus
 from typing import Any
 
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -916,9 +917,14 @@ def create_group(request, payload: GroupIn):
         )
         # a race with protocols takes its host as a rider only when they are registered for the event
         _enter(group, request.auth, quiet=True)
-        # and its event's page opens it, as an event made from the race on the page does (Competition.virtual_ride)
+        # and its event's page opens it, as an event made from the race on the page does (Competition.virtual_ride) --
+        # in place of a race cancelled, or one the event did not hold (its registration closed then): that page went
+        # on opening a race nobody could be timed in
         if event is not None:
-            Competition.objects.filter(pk=event.pk, virtual_ride__isnull=True).update(virtual_ride=group.pk)
+            stale = GroupRide.objects.filter(Q(cancelled=True) | Q(kind=GroupRide.Kind.RACE, competition__isnull=True))
+            Competition.objects.filter(pk=event.pk).filter(
+                Q(virtual_ride__isnull=True) | Q(virtual_ride__in=stale.values("pk"))
+            ).update(virtual_ride=group.pk)
     return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
 
 
