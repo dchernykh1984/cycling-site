@@ -6,9 +6,10 @@ function toast(t, dur) { const el = $('#toast'); el.textContent = t; el.classLis
 const COUNT_DIGITS_S = 10;
 function showCount() {
   const el = $('#count'); if (cdT < -0.8) { el.classList.add('hidden'); return; }
-  // a wait of minutes or days on a ride's start line: the time left in words, smaller; the last ten seconds large
+  // a wait of minutes or days on a ride's start line: the time left alone, smaller -- on the line it can only be the
+  // start's; the last ten seconds large
   const n = Math.ceil(cdT), long = n > COUNT_DIGITS_S; el.classList.toggle('long', long);
-  el.textContent = long ? t('mp.countdown', { t: fmtCountdown(n) }) : n > 0 ? n : t('count.go');
+  el.textContent = long ? fmtCountdown(n) : n > 0 ? n : t('count.go');
 }
 function gradeColor(g) { const p = g * 100; if (p < -1.5) return 'rgba(61,123,182,.85)'; if (p < 2) return 'rgba(76,124,85,.85)'; if (p < 5) return 'rgba(214,160,40,.88)'; if (p < 8) return 'rgba(214,110,40,.9)'; return 'rgba(195,50,59,.92)'; }
 let profBase = null, profScale = null;
