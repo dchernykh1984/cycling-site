@@ -197,7 +197,7 @@ function eventWords(lang, r, g, at) {
     km: (T.L / 1000).toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
     climb: String(Math.round(T.gain)),
     wind: g.wind_ms > 0 ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg, lang) }, lang) : '',
-    join: t('mp.join', null, lang),
+    join: t((g.kind || 'race') === 'race' ? 'mp.toStart' : 'mp.join', null, lang), // a race's registered riders come to its line
     name: (r.names && r.names[lang]) || r.name
   };
   v.way = fillIn(r.event.way[lang], v); v.finish = r.event.finish[lang];

@@ -2071,8 +2071,9 @@ def test_add_event_gathers_a_ride_and_opens_the_event_form_filled_from_the_route
     expect(page.locator("#id_date_start")).to_have_value(day)
     description = page.locator("#id_description_en").input_value()
     link = f"{live_server.url}/en/virtual-ride/?group={ride.pk}"
-    # the words name the ride's page and are its link; the form shows the link, made by the site, not typed
-    assert re.search(rf'<a href="{re.escape(link)}"[^>]*>on the ride\'s page</a>', description), description
+    # the words name the virtual ride page -- not the event's own, where they are read -- and are its link; the form
+    # shows the link, made by the site, not typed
+    assert re.search(rf'<a href="{re.escape(link)}"[^>]*>on the virtual ride page</a>', description), description
     assert "19:00 (UTC" in description and "Abay, Dostyk" in description and "{" not in description, description
     expect(page.locator("#virtual-ride-field a")).to_have_attribute("href", f"/en/virtual-ride/?group={ride.pk}")
     expect(page.locator("#id_url_announcement")).to_have_value("")
@@ -2110,6 +2111,9 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     expect(page.locator("#id_title_en")).to_have_value("Virtual race: Central loop")
     description = page.locator("#id_description_en").input_value()
     assert "everyone starts at the same moment" in description and "register on this page" in description, description
+    # read on the race's own page, the link names the virtual ride's, and the button there that takes a rider in
+    assert "on the virtual ride page" in description and "the race's page" not in description, description
+    assert "press \u201cGo to the start\u201d" in description, description
     chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
     assert chosen == [lists["Road Race"].pk], chosen
     venue = Location.objects.get(name_en='Virtual world: start of the route "Central loop"')
