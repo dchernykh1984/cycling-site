@@ -8,11 +8,7 @@ const GATE_BOOTH_M = 2.8, GATE_ARM_STRIPE = 1;
 addObject('gate', (G, lm, T, { lam, box, cyl, land }) => {
   G.userData.spread = true;
   const W = T.route.width;
-  // the route's first pass by it: the nearest of its points, the earliest of those within a metre of that
-  let best = Infinity; const d2 = i => (T.X[i] - lm.x) ** 2 + (T.Z[i] - lm.z) ** 2;
-  for (let i = 0; i < T.N; i++) best = Math.min(best, d2(i));
-  let first = 0; while (Math.sqrt(d2(first)) > Math.sqrt(best) + 1) first++;
-  const o = sampleAt(T, T.D[first], {}), side = lm.side === 'left' ? -1 : 1;
+  const o = sampleAt(T, T.D[firstPassAt(T, lm.x, lm.z)], {}), side = lm.side === 'left' ? -1 : 1; // its first pass
   G.position.set(lm.x, 0, lm.z);
   const ring = lm.booth.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x, q.z]; });
   const xs = ring.map(p => p[0]), zs = ring.map(p => p[1]), bw = Math.max(2.4, Math.min(4, Math.max(...xs) - Math.min(...xs))), bd = Math.max(2.4, Math.min(4, Math.max(...zs) - Math.min(...zs)));

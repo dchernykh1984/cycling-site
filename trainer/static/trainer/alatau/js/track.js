@@ -168,6 +168,15 @@ function riderHeading(R) {
   const b = riderPos(R, _hb, R.s - 1), f = riderPos(R, _hf, R.s + 1), dx = f.px - b.px, dz = f.pz - b.pz;
   return dx * dx + dz * dz > 1e-6 ? Math.atan2(dx, dz) : Math.atan2(f.tx, f.tz);
 }
+// The route's first pass by a place on its metres: the earliest of its points within FIRST_PASS_M of the nearest. A road
+// ridden out and back passes it twice, each pass's points 4 m apart: within a metre, its way back's came first
+const FIRST_PASS_M = 2.5;
+function firstPassAt(T, x, z) {
+  const d2 = i => (T.X[i] - x) ** 2 + (T.Z[i] - z) ** 2; let best = Infinity;
+  for (let i = 0; i < T.N; i++) best = Math.min(best, d2(i));
+  let i = 0; while (Math.sqrt(d2(i)) > Math.sqrt(best) + FIRST_PASS_M) i++;
+  return i;
+}
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each
