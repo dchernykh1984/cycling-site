@@ -69,6 +69,20 @@ function overTunnel(T, s) {
 // the land's shader leaves it out: the zone as boxes along the route, 50 m long at most, wide enough for the bend.
 function holesOf(T, W) {
   const out = [], a = {}, b = {}, m = {};
+  // a road going on down a cutting under the route: its cutting, as boxes 40 m long at most
+  (T.route.roads || []).filter(r => r.onward).forEach(r => {
+    const { q, floor } = onwardUnder(T, W, r);
+    let k0 = -1;
+    const box = (i0, i1) => {
+      const p0 = q[i0], p1 = q[i1], L = Math.hypot(p1.x - p0.x, p1.z - p0.z) || 1;
+      out.push([new THREE.Vector4((p0.x + p1.x) / 2, (p0.z + p1.z) / 2, (p1.x - p0.x) / L, (p1.z - p0.z) / L), new THREE.Vector4(L / 2 + .5, r.w / 2 + .35 + 1, terrainH(T, p0.x, p0.z), terrainH(T, p1.x, p1.z))]);
+    };
+    q.forEach((p, i) => {
+      const deep = floor[i] < terrainH(T, p.x, p.z) - .3;
+      if (deep && k0 < 0) k0 = i;
+      if ((!deep || i === q.length - 1) && k0 >= 0) { for (let s = k0; s < i; s += 10) box(s, Math.min(i, s + 10)); k0 = -1; }
+    });
+  });
   tunnelZones(T).forEach(z => {
     const n = Math.max(1, Math.ceil((z.s1 - z.s0) / 50));
     for (let k = 0; k < n; k++) {
@@ -166,12 +180,40 @@ function addRoads(G, T, W, roads, ground, decks = []) {
 // it begins ONWARD_LEAD_M before the turn, a centimetre under the route's own road, which gives way to it from there
 // (scripts/virtual_ride/turn_on_road.py): the route's road ends where its points do, up to 4 m apart, and left a gap
 const ROAD_OVER_LAND_M = 1.2, ONWARD_BLEND_M = 60, ONWARD_LEAD_M = 6;
+// A road going on that passes under the route further on (Granfondo's Al-Farabi into its tunnel under the frontage
+// roads' crossing at its near turn): its points 4 m apart, and each one's floor -- down a cutting, as a road under the
+// route goes, UNDER_DEPTH_M under the route where it crosses, coming up at UNDER_GRADE (Infinity where none)
+function onwardUnder(T, W, r) {
+  const q = along(r.pts.map(p => xzOf(T, p)), 4), cum = [0], crossings = [];
+  for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
+  let run = null;
+  q.forEach((p, i) => {
+    const under = cum[i] > ONWARD_BLEND_M / 2 && routeGap(T, p.x, p.z) < W / 2 + .5; // past where it leaves the route
+    if (under) { const d = routeGap(T, p.x, p.z); if (!run || d < run.d) run = { d, x: p.x, z: p.z }; }
+    else if (run) { crossings.push({ ...run, y: routeNearest(T, run.x, run.z).y }); run = null; }
+  });
+  if (run) crossings.push({ ...run, y: routeNearest(T, run.x, run.z).y });
+  const floor = q.map(p => Math.min(Infinity, ...crossings.map(c => c.y - UNDER_DEPTH_M + Math.max(0, Math.hypot(p.x - c.x, p.z - c.z) - r.w / 2 - W / 2 - 4) * UNDER_GRADE)));
+  return { q, cum, floor };
+}
 function addOnwardRoads(G, T, W, roads, ground, roadMat) {
-  const P = [], U = [], I = [];
+  const P = [], U = [], I = [], WP = [], WI = [];
   roads.forEach(r => {
-    const q = along(r.pts.map(p => xzOf(T, p)), 4), from = routeNearest(T, q[0].x, q[0].z).y, cum = [0];
-    for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
-    const ys = q.map((p, i) => { const k = clamp(cum[i] / ONWARD_BLEND_M, 0, 1); return from + (ground(p.x, p.z) + ROAD_OVER_LAND_M - from) * k * k * (3 - 2 * k); });
+    const { q, cum, floor } = onwardUnder(T, W, r), from = routeNearest(T, q[0].x, q[0].z).y;
+    const ys = q.map((p, i) => { const k = clamp(cum[i] / ONWARD_BLEND_M, 0, 1); return Math.min(floor[i], from + (ground(p.x, p.z) + ROAD_OVER_LAND_M - from) * k * k * (3 - 2 * k)); });
+    // its cutting's walls, from its floor to a parapet over the land -- under the route's road, to that road's deck
+    for (const k of [-1, 1]) {
+      let wall = [];
+      const flush = () => { if (wall.length > 1) wallOf(WP, WI, wall, .35); wall = []; };
+      q.forEach((p, i) => {
+        if (floor[i] > ground(p.x, p.z) - .3) { flush(); return; }
+        const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+        const x = p.x - (b.z - a.z) / L * (r.w / 2 + .3) * k, z = p.z + (b.x - a.x) / L * (r.w / 2 + .3) * k;
+        const top = routeGap(T, x, z) < W / 2 + .5 ? routeNearest(T, x, z).y - .4 : ground(x, z) + .9;
+        wall.push({ x, z, y0: ys[i] - .2, y1: top });
+      });
+      flush();
+    }
     const base = P.length / 3;
     q.forEach((p, i) => {
       const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1, rx = -(b.z - a.z) / L, rz = (b.x - a.x) / L;
@@ -184,17 +226,29 @@ function addOnwardRoads(G, T, W, roads, ground, roadMat) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
   g.setIndex(I); g.computeVertexNormals();
   const m = new THREE.Mesh(g, roadMat); m.name = 'onward'; G.add(m);
+  meshOf(G, WP, WI, new THREE.MeshLambertMaterial({ color: 0xc2beb4, side: THREE.DoubleSide }), 'onward cuttings');
+}
+// A road round the route, or one under it, that runs along a road going on ahead (roads_ahead.py): drawn by it, its
+// OpenStreetMap way as grey pieces over and under it is left out
+function alongAhead(T, roads) {
+  const lines = roads.filter(r => r.ahead).map(r => ({ w: r.w, q: along(r.pts.map(p => xzOf(T, p)), 4) }));
+  return r => {
+    if (!lines.length) return false;
+    const q = along(r.pts.map(p => xzOf(T, p)), 5);
+    return q.filter(p => lines.some(l => l.q.some(a => Math.hypot(a.x - p.x, a.z - p.z) < l.w / 2 + 1))).length > q.length / 2;
+  };
 }
 // Which of the route's points lie on a road going on past its turn: where the route's own line leaves the road's middle
 // for the rider's lane round the turn, the road is that one, not the route's (1 a point on it, else 0)
 function onwardCover(T, roads, W) {
   const out = new Uint8Array(T.N);
   roads.forEach(r => {
-    const q = r.pts.map(p => xzOf(T, p));
+    const { q, floor } = onwardUnder(T, W, r);
     for (let i = 0; i < T.N; i++) {
       for (let j = 0, cum = 0; j + 1 < q.length; j++) {
         const a = q[j], b = q[j + 1], dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1, f = ((T.X[i] - a.x) * dx + (T.Z[i] - a.z) * dz) / (L * L);
-        const on = f >= 0 && f <= 1 && cum + f * L >= ONWARD_LEAD_M; // short of that, the route's own road
+        // short of ONWARD_LEAD_M, the route's own road; and where it goes under the route, the route's road over it
+        const on = f >= 0 && f <= 1 && cum + f * L >= ONWARD_LEAD_M && floor[j] === Infinity && floor[j + 1] === Infinity;
         cum += L;
         if (on && Math.hypot(T.X[i] - a.x - dx * f, T.Z[i] - a.z - dz * f) < W / 2) { out[i] = 1; break; }
       }
@@ -310,6 +364,7 @@ function addRouteStructures(G, T, W, ground) {
 }
 
 // --- roads that go under the route: down a cutting between retaining walls to clear its road
+const UNDER_DEPTH_M = 6.5, UNDER_GRADE = .06;
 function addUnderpasses(G, T, W, list, ground) {
   const P = [], I = [], W2 = [], WI = [];
   list.forEach(u => {
@@ -319,7 +374,7 @@ function addUnderpasses(G, T, W, list, ground) {
     let cross = null;
     q.forEach(p => { const n = routeNearest(T, p.x, p.z); if (!cross || n.d < cross.d) cross = { d: n.d, y: n.y, x: p.x, z: p.z }; });
     if (!cross || cross.d > W) return;
-    const floor = p => Math.min(ground(p.x, p.z) + .02, cross.y - 6.5 + Math.max(0, Math.hypot(p.x - cross.x, p.z - cross.z) - u.w / 2 - W / 2 - 4) * .06);
+    const floor = p => Math.min(ground(p.x, p.z) + .02, cross.y - UNDER_DEPTH_M + Math.max(0, Math.hypot(p.x - cross.x, p.z - cross.z) - u.w / 2 - W / 2 - 4) * UNDER_GRADE);
     const deep = q.filter(p => floor(p) < ground(p.x, p.z) - .3);
     if (deep.length < 2) return;
     band(P, I, deep, u.w / 2, floor);

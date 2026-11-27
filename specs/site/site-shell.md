@@ -284,7 +284,10 @@ own -- it is a loop ridden lap after lap, a race finishing on its way back past 
 start (Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_on_road.py`). Where its road ends, it turns round a circle
 of asphalt instead, bearing right into it and round it to the left, no road going on past it (the Cosmostation's
 top; `tests/test_virtual_ride_maps.py`). A dual carriageway the route turns back on goes on ahead past the turn,
-each half drawn as the route's own road (Granfondo 2026's Al-Farabi; `scripts/virtual_ride/roads_ahead.py`). A route from one place to another stops at its finish, its road going on past it
+each half drawn as the route's own road -- down a cutting between walls where it goes under the route, the land open
+over it (Granfondo 2026's Al-Farabi; `scripts/virtual_ride/roads_ahead.py`); a stretch of the route on a narrower road
+is drawn as wide as that road, marked for its lanes, its riders in its right lane (Granfondo's frontage roads at its
+near turn; `scripts/virtual_ride/narrow.py`). A route from one place to another stops at its finish, its road going on past it
 as the route's own (Medeu's serpentine on to Shymbulak; `scripts/virtual_ride/road_past_finish.py`). A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
 scenery's own ground as it is: the real ranges, hills and valleys, lowered by the Earth's curve as a rider sees
 them, and not drawn over that ground; within 400 m of that ground's edge the ground comes to

@@ -66,7 +66,9 @@ function buildTrack(r) {
   }
   // the streets it rides, each from the point where it begins (maps.js): { s, n: its names, null where none }
   const streets = (r.streets || []).map(([k, nm]) => ({ s: ptS[k] || 0, n: nm }));
-  return { route: r, origin: O, N, X, Y, Z, D, L, TX, TZ, streets, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
+  const T = { route: r, origin: O, N, X, Y, Z, D, L, TX, TZ, streets, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
+  T.half = narrowHalves(T, r);
+  return T;
 }
 // Where a route comes back onto road it rode before -- out and back along one road, a loop round a turn: again[i]
 // is 1 where point i lies on the road of a stretch ridden earlier (its own lane apart), over[i] how many earlier
@@ -92,6 +94,28 @@ function ridden(X, Z, D, L, loop, W) {
     const c = key(X[i], Z[i]); if (!cell.has(c)) cell.set(c, []); cell.get(c).push(i);
   }
   return { again, over };
+}
+// A stretch on a narrower road than the route's (narrow.py's "narrow", [[point, point, width, lanes]] -- Granfondo
+// 2026's frontage roads and their crossing over Al-Farabi at its near turn): the road's half width at each sample,
+// eased over NARROW_EASE_M at each end; null for a route with none
+const NARROW_EASE_M = 20;
+function narrowHalves(T, r) {
+  if (!r.narrow) return null;
+  const out = new Float32Array(T.N).fill(r.width / 2);
+  r.narrow.forEach(([i0, i1, w]) => {
+    const s0 = T.ptS[i0], s1 = T.ptS[i1];
+    for (let i = 0; i < T.N; i++) {
+      const s = T.D[i], k = s < s0 ? (s0 - s) / NARROW_EASE_M : s > s1 ? (s - s1) / NARROW_EASE_M : 0;
+      if (k < 1) out[i] = Math.min(out[i], w / 2 + (r.width - w) / 2 * k * k * (3 - 2 * k));
+    }
+  });
+  return out;
+}
+// the road's half width where a rider is
+function halfAt(T, s) {
+  if (!T.half) return T.route.width / 2;
+  if (T.loop) s = ((s % T.L) + T.L) % T.L;
+  return T.half[clamp(Math.round(s / (T.L / (T.N - 1))), 0, T.N - 1)];
 }
 function sampleAt(T, s, o) {
   if (T.loop) s = ((s % T.L) + T.L) % T.L; else s = clamp(s, 0, T.L);
@@ -156,8 +180,8 @@ const keepLane = W => Math.min(3.2, W / 2 - 1.5);
 // the right lane, all within the road's edges
 function laneOf(R, o) {
   if (o.line == null) return R.lane;
-  const W = world.T.route.width;
-  return clamp(o.line + R.lane - keepLane(W), -W / 2 + .6, W / 2 - .6);
+  const W = world.T.route.width, h = halfAt(world.T, R.s || 0);
+  return clamp(o.line + R.lane - keepLane(W), -h + .6, h - .6);
 }
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
 function riderPos(R, out, s = R.s) { const o = sampleAt(world.T, s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
