@@ -1441,11 +1441,27 @@ class DraftPictureView(ParticipantRequiredMixin, View):
         return HttpResponse(data, content_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
 
 
-def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> bool:
+def _race_not_held(comp) -> str:
+    """Why an organizer's event does not hold their race, in the words the form tells them: it waits for review, it is
+    closed to the public -- a race's event is named on every rider's card --, or it registers nobody or the race has
+    started (_apply_draft)."""
+    if comp.status != Competition.Status.APPROVED:
+        return _("The race is not held by this event: it awaits review, and only a published event holds a race.")
+    if comp.is_hidden or comp.invite_only:
+        return _(
+            "The race is not held by this event: only a public event, neither hidden nor by invitation, holds a race."
+        )
+    return _(
+        "The race is not held by this event: only an event with registration on the site holds a race, before it "
+        "starts."
+    )
+
+
+def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> str | None:
     """The draft's track, picture and ride for the event made from it (calendar_app.draft): the track and the picture
     unless the member chose a file of their own; the ride or race -- their own, not cancelled -- as the one the event
-    is ridden in, and a race, still to come, held by an organizer's event, which registers its riders. False when an
-    organizer's race could not be held -- the event registers nobody, may not hold it, or it started meanwhile."""
+    is ridden in, and a race, still to come, held by an organizer's event, which registers its riders. When an
+    organizer's race could not be held, why (_race_not_held); else None."""
     from trainer import race as races
     from trainer.models import GroupRide
 
@@ -1459,12 +1475,12 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> bool:
         Competition.objects.filter(pk=comp.pk).update(preview_image=comp.preview_image.name)
     ride = GroupRide.objects.filter(pk=draft.get("virtual_ride") or 0, host=user, cancelled=False).first()
     if ride is None:
-        return True
+        return None
     comp.virtual_ride = ride.pk
     Competition.objects.filter(pk=comp.pk).update(virtual_ride=ride.pk)
     # held only by an event that registers riders and may hold it -- public and not over -- so that it can be joined
     if not is_organizer or ride.kind != GroupRide.Kind.RACE:
-        return True
+        return None
     held = comp.registration_enabled and races.can_tie(user, comp)
     if held:
         held = GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
@@ -1476,7 +1492,7 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> bool:
             race = GroupRide.objects.get(pk=ride.pk)
             race.memberships.filter(registration__isnull=True).delete()
             races.write_start(race)
-    return bool(held)
+    return None if held else _race_not_held(comp)
 
 
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
@@ -1558,7 +1574,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             cd = form.cleaned_data
             if is_organizer and not _validate_deadline(reg_form, cd["date_start"], cd.get("date_end")):
                 return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
-            held = True  # the draft's race held, or none to hold
+            not_held = None  # the draft's race held, or none to hold
             try:
                 # Resolve, lock and re-validate the location, then save the competition in one
                 # transaction so a concurrent delete/level-change of the venue can't bind this
@@ -1594,7 +1610,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     comp.event_types.set(cd.get("event_types") or [])
                     if is_organizer:
                         _save_categories(comp, reg_form, True)
-                    held = _apply_draft(_posted_draft(request), comp, request.user, is_organizer)
+                    not_held = _apply_draft(_posted_draft(request), comp, request.user, is_organizer)
                     # The event assistant's conversation that filled the form goes on from the
                     # event's edit page (issue #353).
                     link_conversation(request.POST.get("assistant_conversation"), comp, request.user)
@@ -1603,14 +1619,8 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             else:
                 if _posted_draft(request):  # the draft became an event; one opened in another tab stays
                     request.session.pop(EVENT_DRAFT, None)
-                if not held:
-                    messages.warning(
-                        request,
-                        _(
-                            "The race is not held by this event: only an event with registration on the site holds a "
-                            "race, before it starts."
-                        ),
-                    )
+                if not_held:
+                    messages.warning(request, not_held)
                 return redirect("calendar_list")
         return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
 
