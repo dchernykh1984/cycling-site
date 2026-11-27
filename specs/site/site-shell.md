@@ -129,7 +129,11 @@ The setup page lays its sections one a row -- the route, the mode, riding with f
 the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
 whatever a remembered device is called or a menu has chosen, Safari included, and the route cards keep
-inside their section. It offers a member who
+inside their section. The right corner of its top bar holds the volume of the menu's music (`data/menu-music.mp3`,
+looped), above My records on a phone, which leaves it no room beside: every start of the page is silent, the music
+plays while the setup page is on screen and its volume is above 0 -- from the first touch of the slider, as a browser
+lets a page sound -- and stops for a ride; a browser that refuses to play it stays silent, and on an
+iPhone, whose volume a page cannot set, the slider only turns it on and off. It offers a member who
 has not connected Strava to connect it with Strava's button, and tells one who has that the rides go
 there, with a link to the profile's Strava card to manage it (`tests/e2e/test_virtual_ride.py`);
 the results say when the ride is on Strava ("View on Strava") or why not, with "Send again"; a ride
