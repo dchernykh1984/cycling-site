@@ -29,6 +29,8 @@ START_CITY_RADIUS_M = 40_000
 _ROUTE_NAME_CHARS = 60
 #: A draft's track: a route of a few hundred points, far more than one needs and little enough for a session.
 MAX_TRACK_BYTES = 512 * 1024
+#: The trainer page's word that its draft brings registration (a race's): the form field `registration` set to it.
+REGISTERS = "1"
 MAX_CATEGORIES = 10
 MAX_LAPS = 1000
 MAX_BIB = 99_999
