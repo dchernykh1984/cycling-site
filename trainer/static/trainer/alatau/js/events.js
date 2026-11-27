@@ -8,7 +8,9 @@ $('#btnStart').onclick = async () => {
   groupRide = null; if (mpMyGroup()) await mpLeaveMyGroup(); startRace();
 };
 $('#mpCreate').onclick = mpCreateGroup;
-$('#mpEvent').onclick = mpAddEvent;
+// the calendar box as it was left last time, in this browser
+$('#mpEvent').checked = store.get('mpEvent', false) === true;
+$('#mpEvent').addEventListener('change', e => store.set('mpEvent', e.target.checked));
 $('#mpDelay').addEventListener('change', () => { renderWhen(); renderMP(); });
 $('#mpRaceMode').addEventListener('change', renderRaceOpts);
 renderWhen(); // a browser may bring a chosen date and time back with the page

@@ -196,23 +196,51 @@ def test_block_three_gathers_what_the_mode_rides_together(page: Page, live_serve
     for control in ("#mpRaceMode", "#mpRaceInterval"):
         box = page.locator(control).bounding_box()
         assert box and box["height"] >= 44, (control, box)
-    # a race's event, with its registration on the site, is an organizer's to add
+    # a race's event, with its registration on the site, is an organizer's to add: the calendar box
     page.select_option("#mpDelay", "at")
-    expect(page.locator("#mpEvent")).to_be_hidden()
+    expect(page.locator("#mpEventL")).to_be_hidden()
     page.evaluate("Records.me = Object.assign({}, Records.me, { organizes: true }); renderRaceOpts()")
-    expect(page.locator("#mpEvent")).to_be_visible()
+    expect(page.locator("#mpEventL")).to_be_visible()
     # a free ride gathers a ride together: no race's settings, and anyone adds its event
     page.evaluate("Records.me = Object.assign({}, Records.me, { organizes: false })")
     page.click("#modeSeg [data-mode='free']")
     expect(page.locator("#mpCreate")).to_have_text(page.evaluate("t('mp.createRide')"))
     expect(page.locator("#mpRaceOpts")).to_be_hidden()
-    expect(page.locator("#mpEvent")).to_be_visible()
+    expect(page.locator("#mpEventL")).to_be_visible()
     asked = page.evaluate("mpRace({ start_in_s: 120 })")
     assert asked["kind"] == "ride" and "mode" not in asked, asked
     # a workout gathers nothing: each rides their own plan, and the block says so and where to go instead
     page.click("#modeSeg [data-mode='plan']")
     expect(page.locator("#mpPlanNote")).to_have_text(page.evaluate("t('mp.planNote')"))
     expect(page.locator("#mpBody")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_calendar_box_is_kept_as_it_was_left_and_unticked_the_button_only_gathers(page: Page, live_server):
+    """Two buttons, "Gather a ride" and "Add event", read as two ways of doing one thing: one button, and a box that
+    sends its ride or race on to the event form -- left ticked or not as it was last time."""
+    _trainer_in_its_menu(page, live_server)
+    page.click("#modeSeg [data-mode='free']")
+    page.select_option("#mpDelay", "at")
+    expect(page.locator("#mpEventL")).to_have_text(page.evaluate("t('mp.eventOn')"))
+    page.check("#mpEvent")
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#mpEvent")).to_be_checked()
+    asked = page.evaluate(
+        """() => {
+            const asked = [];
+            MP.status = 'on'; mpAction = (path, body) => asked.push('gather ' + path + ' ' + body.kind);
+            mpAddEvent = () => asked.push('event form');
+            settings.mode = 'free'; renderPlanEditor();
+            $('#mpDelay').value = 'at'; renderWhen();
+            mpCreateGroup();
+            $('#mpEvent').checked = false; mpCreateGroup();
+            $('#mpDelay').value = '60'; renderWhen(); $('#mpEvent').checked = true; mpCreateGroup();
+            return asked;
+        }"""
+    )
+    # ticked at a date and time: its event's form; unticked, or with a start minutes away, the ride alone
+    assert asked == ["event form", "gather /groups ride", "gather /groups ride"], asked
 
 
 @pytest.mark.django_db(transaction=True)

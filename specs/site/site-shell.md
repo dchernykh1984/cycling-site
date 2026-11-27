@@ -161,8 +161,9 @@ others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
 and a card further ahead names its day and time. A time trial without an event starts its riders an interval
 apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
-its last rider's. Beside a date and time, "Add event" gathers the ride or the race then (or takes the member's own
-of that kind on that route at that minute) and sends the whole window to the event form filled from it
+its last rider's. At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
+browser), sends the gather button on: it gathers the ride or the race then (or takes the member's own of that kind on
+that route at that minute) and sends the whole window to the event form filled from it
 ([events](events.md), story 1.6): a ride's words or a race's in ru, kk and en round the route's own way and finish
 (each route of a map carries them, `event`), the type "Virtual Ride" and the discipline "Coffee Ride" for a ride,
 "Road Race" or "Individual Time Trial" for a race by its mode; the venue the place tree has within 300 m of the

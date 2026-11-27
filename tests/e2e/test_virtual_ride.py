@@ -1820,7 +1820,8 @@ def test_add_event_gathers_a_ride_and_opens_the_event_form_filled_from_the_route
     lists = _road_lists()
     frame, day, _start = _add_event_tomorrow(page, live_server, rider, "free")
     with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
-        frame.locator("#mpEvent").click()
+        frame.locator("#mpEvent").check()
+        frame.locator("#mpCreate").click()
     ride = GroupRide.objects.get(host=rider)
     assert (ride.route, ride.kind) == ("center", GroupRide.Kind.RIDE)
     expect(page.locator("#id_title_en")).to_have_value("Virtual ride: Central loop")
@@ -1857,7 +1858,8 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     )
     venue = city.add_child(name_ru="Start", name_en="Start", lat=round(lat, 6), lng=round(lng, 6))
     with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
-        frame.locator("#mpEvent").click()
+        frame.locator("#mpEvent").check()
+        frame.locator("#mpCreate").click()
     race = GroupRide.objects.get(host=organizer)
     assert (race.kind, race.mode, race.competition_id) == (GroupRide.Kind.RACE, GroupRide.Mode.GROUP, None)
     expect(page.locator("#id_title_en")).to_have_value("Virtual race: Central loop")
