@@ -327,7 +327,7 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
   const thin = Math.min(1, OWN_TREES / Math.max(1, woods.reduce((a, w) => a + w.want, 0)));
   woods.forEach(({ ring, kind, want }) => {
     const xs = ring.map(p => p[0]), zs = ring.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
-    want = Math.round(want * thin);
+    want = thin < 1 ? Math.floor(want * thin + r()) : want; // a small wood keeps a tree now and then, not none at all
     for (let k = 0, put = 0; put < want && k < want * 6; k++) {
       const x = x0 + r() * (x1 - x0), z = z0 + r() * (z1 - z0);
       if (insideRing(ring, x, z)) { add(x, z, kind); put++; }
