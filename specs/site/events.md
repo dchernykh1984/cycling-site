@@ -62,11 +62,12 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 6. **Given** another page hands the form a draft (the virtual ride's "Add event": a POST to
    `/<lang>/calendar/submit/draft/` with the titles, link preview lines and descriptions in each language,
    the start date, and event types and disciplines named in English, as every database's lists name them;
-   besides, a point the venue is chosen at, registration with its categories, a route's track and a virtual race
+   besides, a route's start and names, registration with its categories, a route's track and a virtual race
    of the member's own),
    **Then** it is kept for the member's session and the form opens filled with it
    (`/calendar/submit/?draft=1`) -- the descriptions cleaned as an event's are, a name no list has left out, the
-   public venue within 300 m of the point (none further), registration on with the categories in the editor, a
+   route's start as a venue of the virtual world (the one so named within 100 m, else one proposed then under the
+   nearest public city, public for an organizer, awaiting review for anyone else), registration on with the categories in the editor, a
    line saying the track is attached -- nothing an event until submitted; submitting drops the draft. A form
    opened from the draft sends its key back, and only then does the event made from it take the track (unless the
    member chose a file of their own) and, an organizer's, hold the race; what is not a drawable track, someone

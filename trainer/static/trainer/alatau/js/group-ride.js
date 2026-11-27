@@ -192,8 +192,8 @@ function routeGpx(r) {
     + pts.map(p => '<trkpt lat="' + p[0] + '" lon="' + p[1] + '"><ele>' + p[2] + '</ele></trkpt>').join('') + '</trkseg></trk></gpx>\n';
 }
 // The form the site keeps a draft from (calendar's SubmitDraftView), sent to the whole window: the words of a ride or a
-// race in every language, the date of the start for the event's date, its type and discipline, where the route starts
-// for the venue there, the route's track; for a race its registration with men and women and the race it is to hold
+// race in every language, the date of the start for the event's date, its type and discipline, the route's start
+// as its venue in the virtual world, the route's track; for a race its registration with men and women and the race it is to hold
 function sendEventDraft(r, g, at) {
   const form = document.createElement('form'), race = (g.kind || 'race') === 'race';
   form.method = 'post'; form.action = langPath(Records.me.event_draft_url); form.target = '_top';
@@ -208,7 +208,9 @@ function sendEventDraft(r, g, at) {
     put('description_' + lang, fillIn(words[2], v, escapeHTML));
   });
   EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);
-  put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); put('track_name', r.id); put('track_gpx', routeGpx(r));
+  // its start in the virtual world, named after the route in each language, for the event's venue
+  put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); Object.keys(LOCALES).forEach(lang => put('route_name_' + lang, (r.names && r.names[lang]) || r.name));
+  put('track_name', r.id); put('track_gpx', routeGpx(r));
   if (race) {
     const laps = r.loop ? RACE_LAPS : null;
     put('registration', '1'); put('virtual_race', g.id);

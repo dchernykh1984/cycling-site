@@ -1850,13 +1850,12 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     )
     lists = _road_lists()
     frame, _day, (lat, lng, *_rest) = _add_event_tomorrow(page, live_server, organizer, "race")
-    # the venue the place tree has where the route starts
-    city = (
+    # the city the route starts in: the event's venue is the route's start in the virtual world, made under it
+    (
         Location.add_root(name_ru="KZ", name_en="KZ")
         .add_child(name_ru="Almaty Region", name_en="Almaty Region")
-        .add_child(name_ru="Almaty", name_en="Almaty")
+        .add_child(name_ru="Almaty", name_en="Almaty", lat=round(lat, 6) + 0.01, lng=round(lng, 6))
     )
-    venue = city.add_child(name_ru="Start", name_en="Start", lat=round(lat, 6), lng=round(lng, 6))
     with page.expect_navigation(url=re.compile(r"/en/calendar/submit/\?draft=1$")):
         frame.locator("#mpEvent").check()
         frame.locator("#mpCreate").click()
@@ -1867,6 +1866,8 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     assert "everyone starts at the same moment" in description and "register on this page" in description, description
     chosen = page.evaluate("() => JSON.parse(document.getElementById('disc-selected-data').textContent)")
     assert chosen == [lists["Road Race"].pk], chosen
+    venue = Location.objects.get(name_en='Virtual world: start of the route "Central loop"')
+    assert (round(float(venue.lat), 4), round(float(venue.lng), 4)) == (round(lat, 4), round(lng, 4))
     expect(page.locator("#id_location")).to_have_value(str(venue.pk))
     expect(page.locator("#reg_enabled")).to_be_checked()
     rows = json.loads(page.locator("#categories_json_input").input_value())

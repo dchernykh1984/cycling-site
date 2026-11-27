@@ -5904,3 +5904,8 @@ msgstr "Раздельный старт"
 #: calendar_app/templates/calendar_app/submit.html
 msgid "The route's track is attached when the event is saved, unless you choose a file of your own."
 msgstr "Трек маршрута приложится к мероприятию при сохранении, если вы не выберете свой файл."
+
+#: calendar_app/draft.py
+#, python-format
+msgid "Virtual world: start of the route \"%(route)s\""
+msgstr "Виртуальный мир: старт трассы «%(route)s»"

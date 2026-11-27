@@ -1,6 +1,6 @@
 """What another page hands the event form to start from (SubmitDraftView), besides the words, the date, the types and
-the disciplines: the venue at a point, registration with its categories, a route's track to attach and a virtual race
-the event is to hold -- what the virtual ride's "Add event" sends (specs/site/site-shell.md).
+the disciplines: the venue of a virtual route's start, registration with its categories, a route's track to attach and
+a virtual race the event is to hold -- what the virtual ride's calendar box sends (specs/site/site-shell.md).
 
 A draft is the asking member's, kept in their session; the form takes its extras only when it was opened from it and
 sends back its key, so a draft left over from another time never lands on an event made by hand later.
@@ -12,14 +12,19 @@ import json
 import math
 import secrets
 
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.translation import gettext
 
+from accounts import roles
 from agent.venues import distance_metres
 from calendar_app import tracks
-from locations.models import Level, Location, on_earth, public_places
+from locations.models import Level, Location, chain_is_approved, on_earth, places_seen_by, public_places
 
-#: How far from a route's start a venue still is its start: the distance two venues are told apart by.
-START_VENUE_RADIUS_M = 300
+#: A virtual route's start in the virtual world: a venue so named within this many metres of it is that start.
+VIRTUAL_VENUE_RADIUS_M = 100
+#: The public city such a venue hangs under lies within this many metres of the start.
+START_CITY_RADIUS_M = 40_000
+_ROUTE_NAME_CHARS = 60
 #: A draft's track: a route of a few hundred points, far more than one needs and little enough for a session.
 MAX_TRACK_BYTES = 512 * 1024
 MAX_CATEGORIES = 10
@@ -33,28 +38,62 @@ def new_key() -> str:
     return secrets.token_urlsafe(16)
 
 
-def venue_at(lat: str, lng: str) -> int | None:
-    """The public venue nearest the point and within START_VENUE_RADIUS_M of it, else None: a route's start where the
-    place tree has it, never a venue made up for it."""
+def _near(places, point: tuple[float, float], radius_m: float) -> list[Location]:
+    """The places with coordinates within radius_m of the point, nearest first."""
+    dlat = radius_m / _METRES_PER_DEGREE
+    dlng = dlat / max(math.cos(math.radians(point[0])), 0.01)
+    box = places.filter(
+        lat__range=(point[0] - dlat, point[0] + dlat), lng__range=(point[1] - dlng, point[1] + dlng)
+    ).exclude(lat=None)
+    measured = [(distance_metres(point, (float(p.lat), float(p.lng))), p.pk, p) for p in box]
+    return [p for metres, _pk, p in sorted(measured) if metres is not None and metres <= radius_m]
+
+
+def _venue_names(route_names: dict[str, str]) -> dict[str, str] | None:
+    """A virtual route's start, named in each language so that nobody comes to the place to meet."""
+    fallback = (route_names.get("ru") or "").strip()
+    if not fallback:
+        return None
+    names = {}
+    for lang in ("ru", "kk", "en"):
+        route = ((route_names.get(lang) or "").strip() or fallback)[:_ROUTE_NAME_CHARS]
+        with translation.override(lang):
+            names[lang] = gettext('Virtual world: start of the route "%(route)s"') % {"route": route}
+    return names
+
+
+def virtual_venue(user, lat: str, lng: str, route_names: dict[str, str]) -> int | None:
+    """The venue of a virtual route's start, in the virtual world: the one so named within VIRTUAL_VENUE_RADIUS_M of
+    it that the member sees, else one proposed now under the nearest public city -- public for an organizer, awaiting
+    review for anyone else, usable at once either way, as the event form proposes a venue. None without a point, a
+    route's name or a city near it."""
     try:
         point = (float(lat), float(lng))
     except (TypeError, ValueError):
         return None
-    if not on_earth(*point):
+    names = _venue_names(route_names)
+    if not on_earth(*point) or names is None:
         return None
-    dlat = START_VENUE_RADIUS_M / _METRES_PER_DEGREE
-    dlng = dlat / max(math.cos(math.radians(point[0])), 0.01)
-    venues = Location.objects.filter(
-        public_places(),
-        depth=Level.VENUE,
-        is_hidden=False,
-        is_deleted=False,
-        lat__range=(point[0] - dlat, point[0] + dlat),
-        lng__range=(point[1] - dlng, point[1] + dlng),
+    venues = Location.objects.filter(places_seen_by(user), depth=Level.VENUE, is_deleted=False, name_ru=names["ru"])
+    found = _near(venues, point, VIRTUAL_VENUE_RADIUS_M)
+    if found:
+        return found[0].pk
+    cities = Location.objects.filter(public_places(), depth=Level.CITY, is_deleted=False, is_hidden=False)
+    near = _near(cities, point, START_CITY_RADIUS_M)
+    if not near:
+        return None
+    city = near[0]
+    venue = Location.propose_venue(
+        city,
+        names["ru"],
+        round(point[0], 6),
+        round(point[1], 6),
+        name_kk=names["kk"],
+        name_en=names["en"],
+        submitted_by=user,
+        approved=roles.at_least(user, roles.PUBLISH_EVENTS) and chain_is_approved(city),
     )
-    measured = [(distance_metres(point, (float(v.lat), float(v.lng))), v.pk) for v in venues]
-    near = [(metres, pk) for metres, pk in measured if metres is not None and metres <= START_VENUE_RADIUS_M]
-    return min(near)[1] if near else None
+    return venue.pk
 
 
 def categories(raw: str) -> list[dict]:

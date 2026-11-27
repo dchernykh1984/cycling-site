@@ -1380,9 +1380,12 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         for field, model, name in (("event_types", EventType, "event_type"), ("disciplines", Discipline, "discipline")):
             named = model.objects.filter(name_en__in=request.POST.getlist(name))
             draft[field] = list(named.values_list("pk", flat=True))
-        # the virtual ride's (calendar_app.draft): the venue at its route's start, registration with its categories,
-        # the route's track and the race the event is to hold
-        location = drafts.venue_at(request.POST.get("start_lat"), request.POST.get("start_lng"))
+        # the virtual ride's (calendar_app.draft): its route's start in the virtual world, registration with its
+        # categories, the route's track and the race the event is to hold
+        names = {lang: request.POST.get(f"route_name_{lang}", "") for lang in ("ru", "kk", "en")}
+        location = drafts.virtual_venue(
+            request.user, request.POST.get("start_lat"), request.POST.get("start_lng"), names
+        )
         if location:
             draft["location"] = location
         if request.POST.get("registration") == "1":
