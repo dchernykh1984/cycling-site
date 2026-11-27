@@ -1389,7 +1389,7 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         if location:
             draft["location"] = location
         if request.POST.get("registration") == "1":
-            draft["registration"] = True
+            draft["registration"] = drafts.registration(request.POST)
             draft["categories"] = drafts.categories(request.POST.get("categories", ""))
         announcement = drafts.web_link(request.POST.get("url_announcement", ""))
         if announcement:
@@ -1476,9 +1476,9 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             # a draft another page handed over (SubmitDraftView), when the address asks for it
             draft = request.session.get(EVENT_DRAFT) if request.GET.get("draft") else None
             form = SubmitCompetitionForm(initial=draft, user=request.user)
-            reg_form = RegistrationSettingsForm(
-                initial={"registration_enabled": bool(draft and draft.get("registration"))}
-            )
+            # a race's registration as its draft set it, else none
+            registers = (draft or {}).get("registration")
+            reg_form = RegistrationSettingsForm(initial=registers if isinstance(registers, dict) else {})
             categories_json = json.dumps((draft or {}).get("categories") or [])
         else:
             # Everything but the parts that belong to the edition being copied: the dates are what

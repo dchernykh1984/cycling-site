@@ -395,6 +395,7 @@ const TEXT_EN = {
     "ev.raceLaps": ", your laps are your registration category's",
     "ev.catMen": "Men",
     "ev.catWomen": "Women",
+    "ev.stravaLink": "Strava link",
     "mp.startsOn": "Starts {when}",
     "mp.raceMode": "Mode",
     "mp.modeGroup": "Group race",

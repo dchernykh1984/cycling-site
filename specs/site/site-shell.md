@@ -171,7 +171,8 @@ that route at that minute) and sends the whole window to the event form filled f
 else one proposed then under the nearest public city (public for an organizer, awaiting review for anyone else); its
 page as the event's announcement, as the words "on the ride's page" link to it in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
 file of their own; and for a race -- an organizer's only, as only an organizer's form registers riders --
-registration on the site with the categories Men and Women, three laps each on a loop, and the race itself, which
+registration on the site with the categories Men (bibs 100-999) and Women (1-99), born from 1900 on, three
+laps each on a loop, each as many riders as its bibs and the race 999, a Strava link asked of each and listed, and the race itself, which
 the event holds once saved. The form takes its draft's extras only with the key the draft gave it, so a draft left
 over never lands on an event made by hand (`calendar_app/draft.py`, `tests/test_event_draft.py`). The page fills
 the start's time with its UTC offset, its day, the link on the site's page in each language, the route's name,
