@@ -395,6 +395,7 @@ const TEXT_KK = {
     "ev.raceLaps": ", шеңбер саны — тіркелу санаты бойынша",
     "ev.catMen": "Ерлер",
     "ev.catWomen": "Әйелдер",
+    "ev.stravaLink": "Strava сілтемесі",
     "mp.startsOn": "Старт {when}",
     "mp.raceMode": "Режим",
     "mp.modeGroup": "Топтық жарыс",

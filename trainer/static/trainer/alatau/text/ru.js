@@ -395,6 +395,7 @@ const TEXT_RU = {
     "ev.raceLaps": ", число кругов — по категории регистрации",
     "ev.catMen": "Мужчины",
     "ev.catWomen": "Женщины",
+    "ev.stravaLink": "Ссылка на Strava",
     "mp.startsOn": "Старт {when}",
     "mp.raceMode": "Режим",
     "mp.modeGroup": "Групповая гонка",

@@ -177,18 +177,55 @@ class VirtualRaceDraftTests(TestCase):
         self.draft(start_lat="43.2381", start_lng="76.9452")  # no route's name to give it
         self.assertIsNone(self.form_page().context["form"]["location"].value())
 
-    def test_a_race_s_registration_comes_on_with_its_categories(self):
+    def test_a_race_s_registration_comes_on_with_its_categories_and_settings(self):
+        year = timezone.localdate().year
+        men = {"name": "Men", "male": True, "female": False, "laps": 3, "birth_from": 1900, "birth_to": year}
+        women = {**men, "name": "Women", "male": False, "female": True}
         rows = [
-            {"name": "Men", "male": True, "female": False, "laps": 3},
-            {"name": "Women", "male": False, "female": True, "laps": 3},
+            {**men, "bib_from": 100, "bib_to": 999, "max_participants": 900},
+            {**women, "bib_from": 1, "bib_to": 99, "max_participants": 99},
+            {"name": "Out of range", "laps": 0, "birth_from": 1800, "bib_from": -5, "max_participants": True},
             {"name": " "},
             "not a row",
         ]
-        self.draft(registration="1", categories=json.dumps(rows))
+        settings = {
+            "birth_date_mode": "year",
+            "max_participants": "999",
+            "additional_info_mode": "strava",
+            "additional_info_label": "Strava link",
+            "show_additional_info_in_list": "1",
+            "additional_info_required": "1",
+        }
+        self.draft(registration="1", categories=json.dumps(rows), **settings)
         page = self.form_page()
-        self.assertTrue(page.context["reg_form"].initial["registration_enabled"])
-        shown = [(r["name"], r["male"], r["female"], r["laps"]) for r in json.loads(page.context["categories_json"])]
-        self.assertEqual(shown, [("Men", True, False, 3), ("Women", False, True, 3)])
+        initial = page.context["reg_form"].initial
+        self.assertEqual(
+            {k: initial.get(k) for k in ["registration_enabled", *settings]},
+            {
+                "registration_enabled": True,
+                "birth_date_mode": "year",
+                "max_participants": 999,
+                "additional_info_mode": "strava",
+                "additional_info_label": "Strava link",
+                "show_additional_info_in_list": True,
+                "additional_info_required": True,
+            },
+        )
+        keys = ("name", "male", "female", "birth_from", "birth_to", "laps", "bib_from", "bib_to", "max_participants")
+        shown = [tuple(r[k] for k in keys) for r in json.loads(page.context["categories_json"])]
+        self.assertEqual(
+            shown,
+            [
+                ("Men", True, False, "1900", str(year), 3, 100, 999, 900),
+                ("Women", False, True, "1900", str(year), 3, 1, 99, 99),
+                ("Out of range", False, False, None, None, None, None, None, None),
+            ],
+        )
+        # a setting the form refuses is left to its default
+        self.draft(registration="1", additional_info_mode="no such mode", max_participants="-3")
+        initial = self.form_page().context["reg_form"].initial
+        self.assertNotIn("additional_info_mode", initial)
+        self.assertNotIn("max_participants", initial)
 
     def test_the_ride_s_page_is_its_announcement_and_no_other_kind_of_address_is(self):
         link = "https://example.com/en/virtual-ride/?group=7"

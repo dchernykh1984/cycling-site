@@ -1,5 +1,6 @@
 """Record labels render independently of WebGL and external trainer sensors."""
 
+import datetime
 import json
 import math
 import re
@@ -1874,10 +1875,19 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     expect(page.locator("#id_location")).to_have_value(str(venue.pk))
     expect(page.locator("#reg_enabled")).to_be_checked()
     rows = json.loads(page.locator("#categories_json_input").input_value())
-    assert [(r["name"], r["male"], r["female"], r["laps"]) for r in rows] == [
-        ("Men", True, False, 3),
-        ("Women", False, True, 3),
+    year = str(datetime.date.today().year)
+    keys = ("name", "male", "female", "birth_from", "birth_to", "laps", "bib_from", "bib_to", "max_participants")
+    # women 1-99, men 100-999, each as many as its bibs, born from 1900 on, three laps of the loop
+    assert [tuple(r[k] for k in keys) for r in rows] == [
+        ("Men", True, False, "1900", year, 3, 100, 999, 900),
+        ("Women", False, True, "1900", year, 3, 1, 99, 99),
     ], rows
+    # the race all of them, a Strava link asked of each and shown in the list
+    expect(page.locator("input[name=max_participants]")).to_have_value("999")
+    expect(page.locator("select[name=additional_info_mode]")).to_have_value("strava")
+    expect(page.locator("input[name=additional_info_label]")).to_have_value("Strava link")
+    expect(page.locator("input[name=show_additional_info_in_list]")).to_be_checked()
+    expect(page.locator("input[name=additional_info_required]")).to_be_checked()
     expect(page.locator("#route-draft-track")).to_be_visible()
     # saved: the event holds the race, and the route's track draws its map
     page.get_by_role("button", name="Save", exact=True).click()

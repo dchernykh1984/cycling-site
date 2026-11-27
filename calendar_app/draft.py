@@ -31,6 +31,18 @@ _ROUTE_NAME_CHARS = 60
 MAX_TRACK_BYTES = 512 * 1024
 MAX_CATEGORIES = 10
 MAX_LAPS = 1000
+MAX_BIB = 99_999
+MAX_PARTICIPANTS = 100_000
+FIRST_BIRTH_YEAR = 1900
+#: A race's registration settings a draft may set, each as the event form cleans it.
+REGISTRATION_SETTINGS = (
+    "birth_date_mode",
+    "max_participants",
+    "additional_info_mode",
+    "additional_info_label",
+    "show_additional_info_in_list",
+    "additional_info_required",
+)
 _CATEGORY_NAME_CHARS = 100  # RegistrationCategory.name
 _TRACK_NAME_CHARS = 60
 _URL_CHARS = 200  # Competition's URLFields
@@ -99,29 +111,53 @@ def virtual_venue(user, lat: str, lng: str, route_names: dict[str, str]) -> int 
     return venue.pk
 
 
+def _whole(value, low: int, high: int) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) and low <= value <= high else None
+
+
+def _year(value) -> str | None:
+    """A year of birth as the category editor shows it in years: a string, from 1900 to next year."""
+    year = _whole(value, FIRST_BIRTH_YEAR, timezone.localdate().year + 1)
+    return str(year) if year is not None else None
+
+
+def registration(post) -> dict:
+    """A race's registration settings for the form to start from: on, and what else the draft sets that the form's own
+    fields take; a value they refuse is left to the form's default."""
+    from calendar_app.forms import RegistrationSettingsForm
+
+    fields, settings = RegistrationSettingsForm().fields, {"registration_enabled": True}
+    for name in REGISTRATION_SETTINGS:
+        if name in post:
+            try:
+                settings[name] = fields[name].clean(post.get(name))
+            except ValidationError:
+                continue
+    return settings
+
+
 def categories(raw: str) -> list[dict]:
-    """Registration categories as the form's category editor reads them: a name, who they are for and the laps; any
-    row not so made is left out."""
+    """Registration categories as the form's category editor reads them in years: a name, who they are for, the years
+    of birth, the laps, the bibs and how many may enter; a value out of its range is left out, a row not so made too."""
     try:
         rows = json.loads(raw or "[]")
-    except ValueError:
+    except (ValueError, RecursionError):  # json says a nesting too deep with the latter
         return []
     out = []
     for row in rows[:MAX_CATEGORIES] if isinstance(rows, list) else []:
         if not isinstance(row, dict) or not isinstance(row.get("name"), str) or not row["name"].strip():
             continue
-        laps = row.get("laps")
         out.append(
             {
                 "name": row["name"].strip()[:_CATEGORY_NAME_CHARS],
                 "male": row.get("male") is True,
                 "female": row.get("female") is True,
-                "birth_from": None,
-                "birth_to": None,
-                "laps": laps if isinstance(laps, int) and not isinstance(laps, bool) and 0 < laps <= MAX_LAPS else None,
-                "bib_from": None,
-                "bib_to": None,
-                "max_participants": None,
+                "birth_from": _year(row.get("birth_from")),
+                "birth_to": _year(row.get("birth_to")),
+                "laps": _whole(row.get("laps"), 1, MAX_LAPS),
+                "bib_from": _whole(row.get("bib_from"), 1, MAX_BIB),
+                "bib_to": _whole(row.get("bib_to"), 1, MAX_BIB),
+                "max_participants": _whole(row.get("max_participants"), 1, MAX_PARTICIPANTS),
             }
         )
     return out

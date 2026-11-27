@@ -156,8 +156,9 @@ const LOCALES = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-GB' };
 // ride either way, a ride a coffee ride, a race a road race or a time trial by its mode
 const EVENT_TYPES = ['Virtual Ride'];
 const EVENT_DISCIPLINE = { ride: 'Coffee Ride', group: 'Road Race', itt: 'Individual Time Trial' };
-// a race's registration as its event starts with it: men and women, a loop's laps
-const RACE_LAPS = 3;
+// a race's registration as its event starts with it: men and women born from 1900 on, a loop's laps, the women's bibs
+// and the men's -- each category as many riders as its bibs, the race all of them -- and a Strava link asked of each
+const RACE_LAPS = 3, FIRST_BIRTH_YEAR = 1900, RACE_BIBS = { women: [1, 99], men: [100, 999] };
 // the ride's or race's words in one language: its time on the member's clock with the clock's offset from UTC, the
 // day, the link to it on the site's page in that language, the route -- its name, way with its length and climb, and
 // finish -- its wind, the word on the button that joins it; a race's start and, on a loop, its laps
@@ -213,9 +214,17 @@ function sendEventDraft(r, g, at) {
   put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); Object.keys(LOCALES).forEach(lang => put('route_name_' + lang, (r.names && r.names[lang]) || r.name));
   put('track_name', r.id); put('track_gpx', routeGpx(r));
   if (race) {
-    const laps = r.loop ? RACE_LAPS : null;
+    const laps = r.loop ? RACE_LAPS : null, born = { birth_from: FIRST_BIRTH_YEAR, birth_to: new Date().getFullYear() };
+    const bibs = ([a, b]) => ({ bib_from: a, bib_to: b, max_participants: b - a + 1 });
+    const all = Object.values(RACE_BIBS).reduce((n, [a, b]) => n + b - a + 1, 0);
     put('registration', '1'); put('virtual_race', g.id);
-    put('categories', JSON.stringify([{ name: t('ev.catMen'), male: true, female: false, laps }, { name: t('ev.catWomen'), male: false, female: true, laps }]));
+    put('categories', JSON.stringify([
+      Object.assign({ name: t('ev.catMen'), male: true, female: false, laps }, born, bibs(RACE_BIBS.men)),
+      Object.assign({ name: t('ev.catWomen'), male: false, female: true, laps }, born, bibs(RACE_BIBS.women))
+    ]));
+    put('birth_date_mode', 'year'); put('max_participants', all);
+    put('additional_info_mode', 'strava'); put('additional_info_label', t('ev.stravaLink'));
+    put('show_additional_info_in_list', '1'); put('additional_info_required', '1');
   }
   document.body.appendChild(form); form.submit(); form.remove();
 }
