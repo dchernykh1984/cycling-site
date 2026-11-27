@@ -433,6 +433,18 @@ def test_a_road_going_on_ahead_goes_down_only_where_the_route_crosses_over_it(pa
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_stretch_on_a_narrower_road_is_drawn_as_wide_as_that_road(page: Page, live_server):
+    # Granfondo's frontage roads, two lanes, were drawn as wide as Al-Farabi's three
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildTrack === 'function'")
+    halves = page.evaluate(
+        """() => { const r = ROUTES.find(x => x.id === 'granfondo'), T = buildTrack(r), [i0, i1] = r.narrow[0];
+          return [Math.min(...T.half), T.half[0], halfAt(T, (T.ptS[i0] + T.ptS[i1]) / 2)]; }"""
+    )
+    assert halves == [3.75, 5.75, 3.75], halves
+
+
+@pytest.mark.django_db(transaction=True)
 def test_power_lines_stand_off_the_road_and_hang_high_over_it(page: Page, live_server):
     faults = _faults(
         page,
