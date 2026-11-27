@@ -1,8 +1,11 @@
 'use strict';
 /* A Ferris wheel on two A-frame legs, its cabins hanging round the rim; lm.h its height (30 m unless given), lm.rot
-   the way its face turns. */
+   the way its face turns. Its rim and spokes are as thick as a rider sees them from the route: half a metre, more the
+   further it stands -- a 30 m wheel a kilometre and a half off, Kok-Tobe's, was a ring thinner than a pixel. */
+const WHEEL_RIM_PER_M = 1 / 1500;
 addObject('wheel', (G, lm, T, { lam, box, cyl }) => {
-  const H = lm.h || 30, R = H / 2 - 1.2, hub = H - R - 1.2, white = lam(0xf1f1ec), rim = Math.max(.22, H / 130);
+  const H = lm.h || 30, R = H / 2 - 1.2, hub = H - R - 1.2, white = lam(0xf1f1ec);
+  const rim = Math.max(.22, H / 60, (lm.dist || 0) * WHEEL_RIM_PER_M);
   for (const k of [-.9, .9]) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(R, rim, 6, 72), white); ring.position.set(0, hub, k); G.add(ring);
   }
