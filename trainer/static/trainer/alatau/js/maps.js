@@ -14,7 +14,8 @@
 // colour is known }, drawn as OpenStreetMap's are), barriers ({ gap: metres }: a guardrail and a catch fence that far
 // beyond each edge, broken at the buildings), trees ({ rows: [lines], woods: [rings], pts: [places] }, and woods by
 // their leaves where OpenStreetMap gives them: firs, broad, mixed) in place of the scattered ones -- a gorge's only
-// with firs --, traffic lights (signals: [[latitude, longitude], ...] on its road, always green for its riders) and
+// with firs --, traffic lights (signals: [[latitude, longitude], ...] on its road, always green for its riders), a
+// mountain road's guardrails and chevrons (rails: { from, to }: [latitude, longitude] each, on its first pass) and
 // what stands round it (js/surroundings.js) -- each where OpenStreetMap maps it:
 //   roads   [{ w: metres, pts, lanes }]   the roads it meets and passes, on the ground, rising onto its own
 //   over    [{ w, pts, foot }]            bridges over it, a footbridge's (foot) or a road's: the deck's line

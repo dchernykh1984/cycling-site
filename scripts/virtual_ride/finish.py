@@ -2,7 +2,7 @@
 
 python -I finish.py route.json around.json meta.json map.js
 
-meta.json: {id, name, desc, event, scenery, origin?, mountains?, ...} -- what a person writes; route.json the
+meta.json: {id, name, desc, event, scenery, origin?, mountains?, rails?, ...} -- what a person writes; route.json the
 geometry (build_route.py); around.json the surroundings (surroundings.py). The route's tunnels get their real
 profile here: 6.5 m under the ground line between ramps 100 m long, the barometer having smoothed the dip away.
 """
@@ -85,6 +85,8 @@ for k in ("buildings", "roads", "over", "under", "bridges", "lines", "water", "t
         entry[k] = v
 if tunnels:
     entry["tunnels"] = tunnels
+if "rails" in meta:  # a mountain road's guardrails, from and to a place on it (js/maps.js)
+    entry["rails"] = meta["rails"]
 if not entry.get("oneway"):
     entry.pop("oneway", None)
 
