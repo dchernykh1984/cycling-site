@@ -183,12 +183,26 @@ const ROAD_OVER_LAND_M = 1.2, ONWARD_BLEND_M = 60, ONWARD_LEAD_M = 6;
 // A road going on that passes under the route further on (Granfondo's Al-Farabi into its tunnel under the frontage
 // roads' crossing at its near turn): its points 4 m apart, and each one's floor -- down a cutting, as a road under the
 // route goes, UNDER_DEPTH_M under the route where it crosses, coming up at UNDER_GRADE (Infinity where none)
+// the route this far either way from where a road going on leaves it is its own turn; the route crosses it within
+// ONWARD_ACROSS of square to it
+const ONWARD_OWN_TURN_M = 80, ONWARD_ACROSS = .7;
 function onwardUnder(T, W, r) {
-  const q = along(r.pts.map(p => xzOf(T, p)), 4), cum = [0], crossings = [];
+  const q = along(r.pts.map(p => xzOf(T, p)), 4), cum = [0], crossings = [], s0 = routeNearest(T, q[0].x, q[0].z).s, o = {};
   for (let i = 1; i < q.length; i++) cum.push(cum[i - 1] + Math.hypot(q[i].x - q[i - 1].x, q[i].z - q[i - 1].z));
+  // the route over it, not the turn it goes on past -- a turn on the road reaches 25 m past where its road leaves it
+  // -- nor the road it goes on as past a finish (Medeu's on to Shymbulak, which the route's nearest point runs on along)
+  const apart = s => { const d = Math.abs(s - s0); return T.loop ? Math.min(d, T.L - d) : d; };
+  const over = (p, i) => {
+    if (routeGap(T, p.x, p.z) >= W / 2 + .5) return false;
+    const n = routeNearest(T, p.x, p.z);
+    if (n.s < 0 || n.s > T.L || apart(n.s) <= ONWARD_OWN_TURN_M) return false;
+    const a = q[Math.max(0, i - 1)], b = q[Math.min(q.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    sampleAt(T, n.s, o);
+    return Math.abs(((b.x - a.x) * o.tx + (b.z - a.z) * o.tz) / L) < ONWARD_ACROSS;
+  };
   let run = null;
   q.forEach((p, i) => {
-    const under = cum[i] > ONWARD_BLEND_M / 2 && routeGap(T, p.x, p.z) < W / 2 + .5; // past where it leaves the route
+    const under = over(p, i);
     if (under) { const d = routeGap(T, p.x, p.z); if (!run || d < run.d) run = { d, x: p.x, z: p.z }; }
     else if (run) { crossings.push({ ...run, y: routeNearest(T, run.x, run.z).y }); run = null; }
   });
