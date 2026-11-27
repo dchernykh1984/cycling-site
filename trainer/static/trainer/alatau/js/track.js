@@ -178,13 +178,13 @@ const keepLane = W => Math.min(3.2, W / 2 - 1.5);
 // how far right of the road's middle a rider rides at the place o (a sample of the track): their lane; on a route
 // that carries its rider's line, that line -- the apex of a corner taken by it -- with a bunch spread round it as round
 // the right lane, all within the road's edges
-function laneOf(R, o) {
+function laneOf(R, o, s = R.s) {
   if (o.line == null) return R.lane;
-  const W = world.T.route.width, h = halfAt(world.T, R.s || 0);
+  const W = world.T.route.width, h = halfAt(world.T, s || 0); // the road's width where o is, not where the rider is
   return clamp(o.line + R.lane - keepLane(W), -h + .6, h - .6);
 }
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
-function riderPos(R, out, s = R.s) { const o = sampleAt(world.T, s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
+function riderPos(R, out, s = R.s) { const o = sampleAt(world.T, s, out), lane = laneOf(R, o, s); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
 const _hb = {}, _hf = {};
 // the way a rider faces: along the line they ride, from a metre behind them to a metre ahead -- or, where those two
 // meet, past the end of a route that is not a loop (a finisher rolling on), the route's own way there
