@@ -202,8 +202,8 @@ on the same route, each page reports its position about once a second and draws 
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
 fastest first (a ride together names no winner); deleting one moves the others up. A race with protocols
 (specs/495-virtual-race) is a race an event holds: made with its event from the trainer as above, or through the
-API (`POST /api/v1/virtual-ride/groups` with `competition_id`) by the event's organizer or an admin for any public
-event not over, with the mode, gaps, interval and drafting rule the race keeps. Only riders registered for the
+API (`POST /api/v1/virtual-ride/groups` with `competition_id`, which links an event that links no race yet to it, as
+the page's event does) by the event's organizer or an admin for any public event not over, with the mode, gaps, interval and drafting rule the race keeps. Only riders registered for the
 event ride it, and registering is joining: a registered member's card counts down, offers its start line -- which
 takes them into the race -- and, in place of "Join", the list of the event's registered riders; anyone else's -- its host's
 too, who rides it only once registered -- sends them to the event's registration (the card says which: `event.registered`, `register_url`, `participants_url`). A
