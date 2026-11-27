@@ -1654,6 +1654,39 @@ def test_the_far_relief_is_left_out_over_the_scenery_s_own_ground(page: Page, li
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_detail_grid_of_the_relief_gives_way_to_the_grid_under_it_without_a_step(page: Page, live_server):
+    """Medeu's fine grid ended inside four city sceneries in a step of up to 34 m: across every detail grid's edge
+    the land now goes on within a metre."""
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof reliefAt === 'function'")
+    worst = page.evaluate(
+        """() => {
+            let worst = 0, seen = 0;
+            for (const c of CITIES.filter(c => c.relief && c.relief.detail)) {
+                const T = buildTrack(ROUTES.find(r => r.city === c.id)), at = (lat, lon) => {
+                    const q = proj(lat, lon, T.origin); return reliefAt(T, q.x, q.z);
+                };
+                for (const g of c.relief.detail) {
+                    const [la0, dla, nr] = g.lat, [lo0, dlo, nc] = g.lon;
+                    const la1 = la0 + dla * (nr - 1), lo1 = lo0 + dlo * (nc - 1);
+                    for (let f = .05; f < 1; f += .1) {
+                        const lat = la0 + (la1 - la0) * f, lon = lo0 + (lo1 - lo0) * f, e = 1e-6;
+                        for (const [a, b] of [[[la0 + e * Math.sign(dla), lon], [la0 - e * Math.sign(dla), lon]],
+                                              [[la1 - e * Math.sign(dla), lon], [la1 + e * Math.sign(dla), lon]],
+                                              [[lat, lo0 + e], [lat, lo0 - e]], [[lat, lo1 - e], [lat, lo1 + e]]]) {
+                            const hin = at(...a), hout = at(...b);
+                            if (hin != null && hout != null) { worst = Math.max(worst, Math.abs(hin - hout)); seen++; }
+                        }
+                    }
+                }
+            }
+            return [seen, worst];
+        }"""
+    )
+    assert worst[0] > 0 and worst[1] < 1, worst
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_map_s_relief_stands_where_srtm_has_it(page: Page, live_server):
     """The land beyond the scenery is the map's SRTM relief: the snowy range where it really rises, south of
     Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches (over the scenery's own ground

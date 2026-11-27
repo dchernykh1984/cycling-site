@@ -15,13 +15,25 @@ function gridAt(g, lat, lon) {
   return H[i * nc + j] * (1 - u) * (1 - v) + H[(i + 1) * nc + j] * u * (1 - v) + H[i * nc + j + 1] * (1 - u) * v + H[(i + 1) * nc + j + 1] * u * v;
 }
 // The map's SRTM ground at (x, z) on the route's metres, or null outside its grid: a detail grid where one covers
-// the place, else the map's own (js/maps.js)
+// the place, else the map's own (js/maps.js); over a detail grid's outer DETAIL_FADE cells it gives way to the grid
+// under it, where it ended in a step (Medeu's in four city sceneries, up to 34 m)
+const DETAIL_FADE = 3;
 function reliefAt(T, x, z) {
   const rel = mapOf(T.route).relief;
   if (!rel) return null;
-  const { lat, lon } = unproj(x, z, T.origin);
-  for (const g of (rel.detail || []).concat([rel])) { const h = gridAt(g, lat, lon); if (h != null) return h; }
-  return null;
+  const { lat, lon } = unproj(x, z, T.origin), grids = (rel.detail || []).concat([rel]);
+  const at = k => {
+    if (k >= grids.length) return null;
+    const g = grids[k], h = gridAt(g, lat, lon);
+    if (h == null) return at(k + 1);
+    if (k === grids.length - 1) return h;
+    const fi = (lat - g.lat[0]) / g.lat[1], fj = (lon - g.lon[0]) / g.lon[1];
+    const inside = Math.min(fi, fj, g.lat[2] - 1 - fi, g.lon[2] - 1 - fj) / DETAIL_FADE;
+    if (inside >= 1) return h;
+    const under = at(k + 1);
+    return under == null ? h : under + (h - under) * inside;
+  };
+  return at(0);
 }
 // The far relief's own surface at (x, z): the map's grid alone, on the two triangles a cell is drawn as -- split from
 // its next column's corner to its next row's, as addRelief lays them -- lowered by the Earth's curve

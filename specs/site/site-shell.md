@@ -268,7 +268,8 @@ pylons, stations and legs; one that lies flat on it, a rink, has the ground unde
 level -- Medeu's ice, its oval, stands and floodlights, in a bowl of the valley's floor; a dam lies on the land
 it crosses, Medeu's along its crest as OpenStreetMap draws it, its stair climbing the face towards the route. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
 it over the next 500 m, to the land SRTM has there -- a city's slopes and hills, Kok-Tobe and the Sunkar hill on
-finer grids of their own; a gorge's walls rise to it from a few metres off its road, the Medeu gorge's on a grid a
+finer grids of their own, each giving way to the map's grid over its outer three cells; a gorge's walls rise to it
+from a few metres off its road, the Medeu gorge's on a grid a
 thousandth of a degree fine over its whole scenery, and only a gorge on a map without a relief has its walls drawn.
 Outside a tunnel's cutting the ground as drawn keeps 10 cm under the road and what lies beside it: where a plane of
 it leaning on a wall would rise over them, its vertices go down as far. What a route carries from OpenStreetMap
