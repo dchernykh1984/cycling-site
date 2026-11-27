@@ -404,5 +404,15 @@ function addRelief(grp, T, rel, plain, x0, x1, z0, z1, ground) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
   g.setIndex(I); g.computeVertexNormals();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true }); farHaze(mat);
+  // inside the scenery's box its own ground is the land: the relief's facets there, a kilometre across, stood through
+  // it where it dips between their corners (Medeu's gorge, by up to 110 m), so they are left out
+  const haze = mat.onBeforeCompile, box = new THREE.Vector4(x0, z0, x1, z1);
+  mat.onBeforeCompile = sh => {
+    haze(sh);
+    sh.uniforms.sceneBox = { value: box };
+    sh.vertexShader = 'varying vec2 vBoxXZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vBoxXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = 'uniform vec4 sceneBox;\nvarying vec2 vBoxXZ;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n  if (vBoxXZ.x > sceneBox.x && vBoxXZ.x < sceneBox.z && vBoxXZ.y > sceneBox.y && vBoxXZ.y < sceneBox.w) discard;');
+  };
+  mat.customProgramCacheKey = () => 'far-range-boxed';
   const relief = new THREE.Mesh(g, mat); relief.name = 'relief'; grp.add(relief);
 }

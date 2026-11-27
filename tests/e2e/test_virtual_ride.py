@@ -1625,6 +1625,35 @@ def test_a_range_runs_on_past_where_the_view_reaches(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_far_relief_is_left_out_over_the_scenery_s_own_ground(page: Page, live_server):
+    """Its facets, a kilometre across, stood through the near ground where it dips between their corners: up to
+    110 m out of Medeu's gorge. Drawn alone and looked at from straight above, the relief shows round the scenery's
+    box and nothing over it."""
+    _trainer_in_its_menu(page, live_server)
+    seen = page.evaluate(
+        """() => {
+            const T = buildWorld(ROUTES.find(r => r.id === 'medeu')).T;
+            const relief = scenery.children.find(o => o.name === 'relief');
+            const alone = new THREE.Scene(), rt = new THREE.WebGLRenderTarget(32, 32), px = new Uint8Array(4);
+            alone.add(new THREE.Mesh(relief.geometry, relief.material));
+            alone.add(new THREE.AmbientLight(0xffffff, 1));
+            const look = (x, z) => {
+                const cam = new THREE.PerspectiveCamera(5, 1, 100, 60000);
+                cam.position.set(x, 30000, z); cam.lookAt(x, 0, z);
+                renderer.setRenderTarget(rt); renderer.setClearColor(0xff00ff, 1); renderer.clear();
+                renderer.render(alone, cam);
+                renderer.readRenderTargetPixels(rt, 16, 16, 1, 1, px); renderer.setRenderTarget(null);
+                return px[0] === 255 && px[1] === 0 && px[2] === 255;
+            };
+            const cx = (T.minX + T.maxX) / 2, cz = (T.minZ + T.maxZ) / 2;
+            return { over: look(cx, cz), beyond: look(T.maxX + 6000, cz) };
+        }"""
+    )
+    # nothing drawn over the box's middle; the relief drawn well beyond it
+    assert seen == {"over": True, "beyond": False}, seen
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_map_s_relief_stands_where_srtm_has_it_and_keeps_under_the_scenery_s_ground(page: Page, live_server):
     """The land beyond the scenery is the map's SRTM relief: the snowy range where it really rises, south of
     Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches; under the scenery's own
