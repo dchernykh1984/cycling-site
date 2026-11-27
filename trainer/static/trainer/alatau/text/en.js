@@ -118,6 +118,7 @@ const TEXT_EN = {
     "trainer.mag": "Magnetic",
     "trainer.rollers": "Rollers",
     "trainer.smart": "Smart",
+    "trainer.hint": "Needed only when neither the trainer nor a power meter sends the power: then it is counted from the wheel's speed or the cadence by the trainer's type. A smart trainer and a power meter send the power themselves, and this choice does not change it.",
     "bike.type": "Bike type",
     "bike.kg": "Bike weight, kg",
     "bike.wheel": "Wheel",

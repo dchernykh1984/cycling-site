@@ -1817,6 +1817,19 @@ def test_a_smart_trainer_is_one_of_the_trainers_and_rides_by_its_own_power(page:
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_trainer_s_type_says_it_counts_the_power_only_when_nothing_sends_it(page: Page, live_server):
+    """A rider on a smart trainer could not tell what the trainer's type is for."""
+    _trainer_in_its_menu(page, live_server)
+    hint = page.locator("#trainerHint")
+    expect(hint).to_be_visible()
+    expect(hint).to_have_text(page.evaluate("t('trainer.hint')"))
+    # right under its control, and read with it by a screen reader
+    expect(page.locator("#trainer")).to_have_attribute("aria-describedby", "trainerHint")
+    after = page.evaluate("document.querySelector('#trainer').closest('.field').nextElementSibling.id")
+    assert after == "trainerHint", after
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
     page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
     _trainer_in_its_menu(page, live_server)
