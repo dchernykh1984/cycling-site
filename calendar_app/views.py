@@ -53,7 +53,7 @@ from protocols import sections as protocol_sections
 from protocols.access import shows_protocols
 
 from . import draft as drafts
-from . import organizers
+from . import organizers, ride_picture
 from .forms import (
     AddCompetitionCommentForm,
     CompetitionFilterForm,
@@ -1397,6 +1397,9 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         ride = drafts.ride_of(request.user, request.POST.get("virtual_ride"))
         if ride:
             draft["virtual_ride"] = ride
+        picture = drafts.picture(request.POST)
+        if picture:
+            draft["picture"] = picture
         draft["key"] = drafts.new_key()
         request.session[EVENT_DRAFT] = draft
         return redirect(reverse("calendar_submit") + "?draft=1")
@@ -1410,24 +1413,47 @@ def _posted_draft(request) -> dict:
 
 
 def _draft_context(draft: dict | None) -> dict:
-    """What the form says of its draft: its key, sent back with the form, and whether a track comes with it."""
+    """What the form says of its draft: its key, sent back with the form, whether a track comes with it, its ride, and
+    the address of its picture."""
     draft = draft or {}
     return {
         "draft_key": draft.get("key", ""),
         "draft_track": bool(draft.get("track")),
         "draft_ride": draft.get("virtual_ride"),
+        "draft_picture": reverse("calendar_draft_picture", args=[draft["key"]]) if draft.get("picture") else "",
     }
 
 
+def _draft_picture(draft: dict) -> bytes | None:
+    picture = draft.get("picture")
+    return ride_picture.draw(**picture) if picture else None
+
+
+class DraftPictureView(ParticipantRequiredMixin, View):
+    """The picture the event made from the member's draft will carry, for its form to show: from the draft kept in
+    their own session, by its key."""
+
+    def get(self, request, key):
+        draft = request.session.get(EVENT_DRAFT) or {}
+        data = _draft_picture(draft) if key == draft.get("key") else None
+        if data is None:
+            raise Http404
+        return HttpResponse(data, content_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
+
+
 def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
-    """The draft's track and ride for the event made from it (calendar_app.draft): the track unless the member chose a
-    file of their own; the ride or race -- their own, not cancelled -- as the one the event is ridden in, and a race,
-    still to come, held by an organizer's event, which registers its riders."""
+    """The draft's track, picture and ride for the event made from it (calendar_app.draft): the track and the picture
+    unless the member chose a file of their own; the ride or race -- their own, not cancelled -- as the one the event
+    is ridden in, and a race, still to come, held by an organizer's event, which registers its riders."""
     from trainer.models import GroupRide
 
     track = draft.get("track")
     if track and not comp.file_route:
         comp.file_route.save(track["name"], ContentFile(track["gpx"].encode()), save=True)
+    picture = None if comp.preview_image else _draft_picture(draft)
+    if picture:
+        comp.preview_image.save(f"ride-{comp.pk}.jpg", ContentFile(picture), save=False)
+        Competition.objects.filter(pk=comp.pk).update(preview_image=comp.preview_image.name)
     ride = GroupRide.objects.filter(pk=draft.get("virtual_ride") or 0, host=user, cancelled=False).first()
     if ride is None:
         return

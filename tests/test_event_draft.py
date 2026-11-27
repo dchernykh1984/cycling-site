@@ -4,16 +4,20 @@ The page posts the event's words in each language, its date and its types and di
 form opens filled with them for the member to check and submit. Nothing is an event until they do.
 """
 
+import io
 import json
 import tempfile
 from datetime import timedelta
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext
+from PIL import Image
 
 from accounts.models import User
+from calendar_app import ride_picture
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.views import _selected_discipline_ids
 from locations.models import Location, LocationProposal
@@ -95,6 +99,15 @@ GPX = (
     '<trkpt lat="43.2390" lon="76.9460"><ele>805</ele></trkpt><trkpt lat="43.2400" lon="76.9470"><ele>810</ele></trkpt>'
     "</trkseg></trk></gpx>"
 )
+
+
+# the lines of the ride's picture, as the virtual ride's page writes them in its language
+PICTURE = {
+    "picture_route": "oldtown",
+    "picture_when": "Tue, 2 December \u00b7 19:00 (UTC+5)",
+    "picture_title": "Virtual race: Old centre",
+    "picture_facts": "4.5 km, 63 m of climbing",
+}
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
@@ -266,6 +279,42 @@ class VirtualRaceDraftTests(TestCase):
         event = Competition.objects.get(title_ru="Virtual race")
         self.assertTrue(event.file_route.name.endswith("oldtown.gpx"), event.file_route.name)
         self.assertEqual(event.file_route.read().decode(), GPX)
+
+    def test_the_ride_s_picture_shows_on_the_form_and_is_the_event_s_unless_the_member_chose_one(self):
+        self.draft(**PICTURE)
+        page = self.form_page()
+        self.assertContains(page, 'id="ride-picture"')
+        shown = self.client.get(page.context["draft_picture"])
+        self.assertEqual(shown["Content-Type"], "image/jpeg")
+        self.assertEqual(Image.open(io.BytesIO(shown.content)).size, (ride_picture.WIDTH, ride_picture.HEIGHT))
+        self.submit(page.context["draft_key"])
+        event = Competition.objects.get(title_ru="Virtual race")
+        self.assertEqual(Image.open(event.preview_image).size, (ride_picture.WIDTH, ride_picture.HEIGHT))
+        # a picture of the member's own is the event's
+        self.draft(**PICTURE)
+        own = io.BytesIO()
+        Image.new("RGB", (400, 300), "navy").save(own, "PNG")
+        payload = {
+            "title_ru": "Own picture",
+            "date_start": "2026-12-02",
+            "location": str(self.start.pk),
+            "draft_key": self.form_page().context["draft_key"],
+            "preview_image": SimpleUploadedFile("own.png", own.getvalue(), content_type="image/png"),
+        }
+        self.client.post(reverse("calendar_submit"), payload)
+        self.assertEqual(Image.open(Competition.objects.get(title_ru="Own picture").preview_image).size, (400, 300))
+
+    def test_a_route_without_a_view_has_no_picture_and_a_draft_s_picture_is_its_own_member_s(self):
+        self.draft(**{**PICTURE, "picture_route": "no-such-route"})
+        self.assertEqual(self.form_page().context["draft_picture"], "")
+        self.draft(**PICTURE)
+        address = self.form_page().context["draft_picture"]
+        self.assertEqual(self.client.get(reverse("calendar_draft_picture", args=["another-key"])).status_code, 404)
+        someone = User.objects.create_user(
+            username="someone", email="s@example.com", password="Pass1234!", role=User.Role.PARTICIPANT
+        )
+        self.client.force_login(someone)  # a session without that draft
+        self.assertEqual(self.client.get(address).status_code, 404)
 
     def test_what_holds_no_track_is_not_attached(self):
         self.draft(track_name="oldtown", track_gpx="<gpx>nothing to draw</gpx>")

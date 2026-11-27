@@ -15,6 +15,7 @@ urlpatterns = [
     path("map/events/", views.CalendarMapAPIView.as_view(), name="calendar_map_api"),
     path("submit/", views.SubmitCompetitionView.as_view(), name="calendar_submit"),
     path("submit/draft/", views.SubmitDraftView.as_view(), name="calendar_submit_draft"),
+    path("submit/draft/<str:key>/picture.jpg", views.DraftPictureView.as_view(), name="calendar_draft_picture"),
     path("moderate/", views.ModerationView.as_view(), name="calendar_moderate"),
     path("<int:pk>/", views.CompetitionDetailView.as_view(), name="competition_detail"),
     path("<int:pk>/event.ics", CompetitionEventICSView.as_view(), name="competition_ics"),

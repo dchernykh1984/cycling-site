@@ -5912,3 +5912,11 @@ msgstr "Оны виртуалды заезд беті береді, оны өз�
 #: calendar_app/templates/calendar_app/detail.html
 msgid "Open the ride"
 msgstr "Заезды ашу"
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "The ride's picture below is attached when the event is saved, unless you choose a picture of your own."
+msgstr "Төмендегі заезд суреті іс-шара сақталғанда тіркеледі, егер өз суретіңізді таңдамасаңыз."
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "The ride's picture"
+msgstr "Заезд суреті"

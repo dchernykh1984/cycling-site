@@ -213,6 +213,12 @@ function sendEventDraft(r, g, at) {
   // its start in the virtual world, named after the route in each language, for the event's venue
   put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); Object.keys(LOCALES).forEach(lang => put('route_name_' + lang, (r.names && r.names[lang]) || r.name));
   put('track_name', r.id); put('track_gpx', routeGpx(r));
+  // the picture a chat shows for the event, in the page's language: the route's view with the day and time, the
+  // title and the route's length and climb over it (calendar_app/ride_picture.py)
+  const here = eventWords(LANG, r, g, at);
+  put('picture_route', r.id); put('picture_when', here.date + ' · ' + here.time);
+  put('picture_title', fillIn(race ? t('ev.raceTitle') : t('ev.rideTitle'), here));
+  put('picture_facts', t('route.meta', { d: here.km, g: here.climb }));
   if (race) {
     const laps = r.loop ? RACE_LAPS : null, born = { birth_from: FIRST_BIRTH_YEAR, birth_to: new Date().getFullYear() };
     const bibs = ([a, b]) => ({ bib_from: a, bib_to: b, max_participants: b - a + 1 });

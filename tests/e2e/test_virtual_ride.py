@@ -1971,6 +1971,10 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     expect(page.locator("input[name=show_additional_info_in_list]")).to_be_checked()
     expect(page.locator("input[name=additional_info_required]")).to_be_checked()
     expect(page.locator("#route-draft-track")).to_be_visible()
+    # the ride's picture for a chat's card, drawn from the route's view, the day and time and the title
+    picture = page.locator("#ride-picture")
+    expect(picture).to_be_visible()
+    assert picture.evaluate("img => [img.complete, img.naturalWidth, img.naturalHeight]") == [True, 1200, 630]
     # saved: the event holds the race, and the route's track draws its map
     page.get_by_role("button", name="Save", exact=True).click()
     page.wait_for_load_state("networkidle")
@@ -1982,6 +1986,7 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     assert event.file_route.name == "competitions/routes/center.gpx", event.file_route.name
     assert event.registration_enabled and event.registration_categories.count() == 2
     assert event.virtual_ride == race.pk  # its page opens the race
+    assert event.preview_image.name == f"competitions/preview/ride-{event.pk}.jpg", event.preview_image.name
 
 
 @pytest.mark.django_db(transaction=True)
