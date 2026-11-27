@@ -420,3 +420,11 @@ class WhyNoCategoryTests(TestCase):
         self.assertContains(page, "<li>Orlov Gleb: gender, date of birth</li>", html=True)
         # the coach knows their own details: what keeps them out is the event's categories
         self.assertContains(page, "None of this event&#x27;s categories takes your gender and year of birth.")
+
+    def test_an_event_taking_anyone_s_data_lists_nobody_s_missing_details(self):
+        # each row's form there asks the gender and the date of birth: the coach was told to complete profiles
+        free = make_open_competition(registration_mode="free")
+        make_category(free, "Women", female=True, male=False)
+        coach = make_user("coach3", gender="M", birth_date=datetime.date(1985, 5, 5))
+        _manage(coach, make_user("gleb3", first_name="Gleb", last_name="Orlov"))
+        self.assertNotContains(self.page(coach, free), 'id="register-missing"')
