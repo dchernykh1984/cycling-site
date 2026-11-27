@@ -59,7 +59,9 @@ function buildTrack(r) {
       line[i] = src[k][3] + (src[k2][3] - src[k][3]) * f;
     }
   }
-  return { route: r, origin: O, N, X, Y, Z, D, L, TX, TZ, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
+  // the streets it rides, each from the point where it begins (maps.js): { s, n: its names, null where none }
+  const streets = (r.streets || []).map(([k, nm]) => ({ s: ptS[k] || 0, n: nm }));
+  return { route: r, origin: O, N, X, Y, Z, D, L, TX, TZ, streets, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
 }
 // Where a route comes back onto road it rode before -- out and back along one road, a loop round a turn: again[i]
 // is 1 where point i lies on the road of a stretch ridden earlier (its own lane apart), over[i] how many earlier
@@ -135,6 +137,12 @@ function routeNearest(T, x, z) {
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const i of T.grid.get((cx + a) + ',' + (cz + b)) || []) { const d = Math.hypot(T.X[i] - x, T.Z[i] - z); if (d < best) { best = d; bi = i; } }
   if (best <= ROUTE_CELL) return { d: best, y: T.Y[bi], s: T.D[bi] };
   const n = nearest(T, x, z); return { d: Math.min(best, n.d), y: n.y, s: n.s };
+}
+// the names of the street the route rides at distance s, or null where the map has none
+function streetAt(T, s) {
+  if (T.loop) s = ((s % T.L) + T.L) % T.L;
+  let at = null; for (const st of T.streets) { if (st.s > s) break; at = st.n; }
+  return at;
 }
 // The lane a rider keeps on a road this wide: the right one, a metre and a half in from the edge
 const keepLane = W => Math.min(3.2, W / 2 - 1.5);

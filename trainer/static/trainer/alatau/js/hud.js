@@ -67,6 +67,10 @@ function updateHUD(inp, grade) {
   // the wind as the rider feels it here: ahead, behind or from the side
   const hw = $('#hudWind'), tail = me.tail || 0; hw.classList.toggle('hidden', !rideWind);
   if (rideWind) hw.textContent = tail > .5 ? t('wind.tail', { v: fmt1(tail) }) : tail < -.5 ? t('wind.head', { v: fmt1(-tail) }) : t('wind.cross');
+  // the street ridden, under the map: its name where the map has one
+  const street = streetAt(world.T, me.s), hs = $('#hudStreet'), named = street ? L(street) : '';
+  if (hs.textContent !== named) hs.textContent = named;
+  hs.classList.toggle('hidden', !named);
   const tg = Trainer.info(); $('#uGrade').textContent = tg != null ? t('hud.onTrainer', { p: fmtPct(tg) }) : t('hud.grade');
   // a trainer that does not ride the route -- another app or computer has it, or it refuses the grade -- says so in
   // words, and once a ride out loud why (not again each time a refusal comes and goes), when no other message is on
