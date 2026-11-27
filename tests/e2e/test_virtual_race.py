@@ -214,10 +214,15 @@ def test_block_three_gathers_what_the_mode_rides_together(page: Page, live_serve
     expect(page.locator("#mpEventL")).to_be_visible()
     asked = page.evaluate("mpRace({ start_in_s: 120 })")
     assert asked["kind"] == "ride" and "mode" not in asked, asked
-    # a workout gathers nothing: each rides their own plan, and the block says so and where to go instead
+    # a workout gathers nothing: each rides their own plan, and the block says so and where to go instead -- but
+    # the rides the member is in, a link's word and how things stand are still theirs to see
     page.click("#modeSeg [data-mode='plan']")
     expect(page.locator("#mpPlanNote")).to_have_text(page.evaluate("t('mp.planNote')"))
-    expect(page.locator("#mpBody")).to_be_hidden()
+    for gathering in ("#mpCreate", "#mpRaceOpts", "#mpEventHint", "#mpHint"):
+        expect(page.locator(gathering)).to_be_hidden()
+    page.evaluate("mpNote('note')")
+    for seen in ("#mpStatus", "#mpNote"):
+        expect(page.locator(seen)).to_be_visible()
 
 
 @pytest.mark.django_db(transaction=True)
