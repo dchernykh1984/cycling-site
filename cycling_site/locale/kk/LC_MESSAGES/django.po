@@ -5955,7 +5955,7 @@ msgstr "Қатысушыға сәйкес санаттар толды: %(names)s
 #: registrations/registering.py registrations/templates/registrations/register.html
 #, python-format
 msgid "Registration is closed: all places are taken (%(n)s)."
-msgstr "Тіркеу жабық: барлық орын толды (%(n)s)."
+msgstr "Тіркелу жабық: барлық орын толды (%(n)s)."
 
 #: registrations/registering.py registrations/templates/registrations/register.html
 msgid "To pick a category, the site needs each person's gender and date of birth. Missing:"
