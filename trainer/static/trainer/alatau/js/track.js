@@ -23,6 +23,12 @@ function buildTrack(r) {
   const Y1 = new Float32Array(N); box(Y0, Y); box(Y, Y1); box(Y1, Y);
   if (r.loop) Y[N - 1] = Y[0];
   for (let i = 1; i < N; i++) D[i] = D[i - 1] + Math.hypot(X[i] - X[i - 1], Z[i] - Z[i - 1]);
+  // the way the route runs at each point, from the point before it to the point after (sampleAt bends by them)
+  const TX = new Float32Array(N), TZ = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const a = r.loop ? at(i - 1) : Math.max(i - 1, 0), b = r.loop ? at(i + 1) : Math.min(i + 1, N - 1);
+    const dx = X[b] - X[a], dz = Z[b] - Z[a], l = Math.hypot(dx, dz) || 1; TX[i] = dx / l; TZ[i] = dz / l;
+  }
   let gain = 0, minY = 1e9, maxY = -1e9, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
   for (let i = 0; i < N; i++) { if (i && Y[i] > Y[i - 1]) gain += Y[i] - Y[i - 1]; minY = Math.min(minY, Y[i]); maxY = Math.max(maxY, Y[i]); minX = Math.min(minX, X[i]); maxX = Math.max(maxX, X[i]); minZ = Math.min(minZ, Z[i]); maxZ = Math.max(maxZ, Z[i]); }
   const cx = [], cz = [], cy = [], cd = [];
@@ -53,7 +59,7 @@ function buildTrack(r) {
       line[i] = src[k][3] + (src[k2][3] - src[k][3]) * f;
     }
   }
-  return { route: r, origin: O, N, X, Y, Z, D, L, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
+  return { route: r, origin: O, N, X, Y, Z, D, L, TX, TZ, loop: !!r.loop, gain, minY, maxY, minX, maxX, minZ, maxZ, C, again, over, ptS, line };
 }
 // Where a route comes back onto road it rode before -- out and back along one road, a loop round a turn: again[i]
 // is 1 where point i lies on the road of a stretch ridden earlier (its own lane apart), over[i] how many earlier
@@ -85,8 +91,14 @@ function sampleAt(T, s, o) {
   let lo = 0, hi = T.N - 1;
   while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T.D[m] <= s) lo = m; else hi = m; }
   const f = (s - T.D[lo]) / ((T.D[hi] - T.D[lo]) || 1);
-  o.x = T.X[lo] + (T.X[hi] - T.X[lo]) * f; o.y = T.Y[lo] + (T.Y[hi] - T.Y[lo]) * f; o.z = T.Z[lo] + (T.Z[hi] - T.Z[lo]) * f;
-  let tx = T.X[hi] - T.X[lo], tz = T.Z[hi] - T.Z[lo]; const l = Math.hypot(tx, tz) || 1; o.tx = tx / l; o.tz = tz / l;
+  // between two points the route bends as their ways say, a cubic from one to the other: a corner turns smoothly,
+  // where a straight line between them turned at each point and a lane's line jumped back there by up to two metres
+  const d = T.D[hi] - T.D[lo], f2 = f * f, f3 = f2 * f, a0 = 2 * f3 - 3 * f2 + 1, a1 = (f3 - 2 * f2 + f) * d, b0 = 3 * f2 - 2 * f3, b1 = (f3 - f2) * d;
+  o.x = a0 * T.X[lo] + a1 * T.TX[lo] + b0 * T.X[hi] + b1 * T.TX[hi]; o.z = a0 * T.Z[lo] + a1 * T.TZ[lo] + b0 * T.Z[hi] + b1 * T.TZ[hi];
+  o.y = T.Y[lo] + (T.Y[hi] - T.Y[lo]) * f;
+  const g0 = 6 * f2 - 6 * f, g1 = (3 * f2 - 4 * f + 1) * d, g2 = (3 * f2 - 2 * f) * d;
+  const tx = g0 * (T.X[lo] - T.X[hi]) + g1 * T.TX[lo] + g2 * T.TX[hi], tz = g0 * (T.Z[lo] - T.Z[hi]) + g1 * T.TZ[lo] + g2 * T.TZ[hi], l = Math.hypot(tx, tz) || 1;
+  o.tx = tx / l; o.tz = tz / l;
   o.rx = -o.tz; o.rz = o.tx; // вправо по ходу
   o.line = T.line ? T.line[lo] + (T.line[hi] - T.line[lo]) * f : null;
   return o;
@@ -135,7 +147,10 @@ function laneOf(R, o) {
   return clamp(o.line + R.lane - keepLane(W), -W / 2 + .6, W / 2 - .6);
 }
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
-function riderPos(R, out) { const o = sampleAt(world.T, R.s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
+function riderPos(R, out, s = R.s) { const o = sampleAt(world.T, s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
+// the way a rider faces: along the line they ride, from a metre behind them to a metre ahead
+const _hb = {}, _hf = {};
+function riderHeading(R) { const b = riderPos(R, _hb, R.s - 1), f = riderPos(R, _hf, R.s + 1); return Math.atan2(f.px - b.px, f.pz - b.pz); }
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each

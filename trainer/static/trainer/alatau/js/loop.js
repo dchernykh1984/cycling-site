@@ -33,7 +33,7 @@ function frame(now) {
   // боты: позиция и анимация
   bots.forEach(b => {
     if (!frozen) b.phase += (b.cad || 0) / 60 * Math.PI * 2 * dt;
-    const o = riderPos(b, _p0), m = riderModels.get(b); m.g.position.set(o.px, o.y, o.pz); m.g.rotation.y = Math.atan2(o.tx, o.tz); m.g.rotation.x = -Math.atan(gradeAt(T, b.s)); poseRider(m, b.phase);
+    const o = riderPos(b, _p0), m = riderModels.get(b); m.g.position.set(o.px, o.y, o.pz); m.g.rotation.y = riderHeading(b); m.g.rotation.x = -Math.atan(gradeAt(T, b.s)); poseRider(m, b.phase);
   });
   updateCamera(frozen ? 0 : dt, frozen ? 0 : inp.cad || 0, me.v);
   // пост-обработка
