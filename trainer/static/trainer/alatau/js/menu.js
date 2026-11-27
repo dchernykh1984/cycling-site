@@ -56,3 +56,13 @@ function renderWind() {
   $('#windOpts').classList.toggle('hidden', !w.on); $('#windHint').classList.toggle('hidden', !w.on);
 }
 function showLoading(on) { $('#loading').classList.toggle('hidden', !on); }
+// The menu's music, at the volume of its slider: it plays while the menu is on screen and the volume is above 0. A
+// browser lets a page sound only once it is touched -- the slider is -- and one that refuses to play it leaves the
+// menu silent, the page working on.
+// shortcut: iOS ignores an element's volume, so on an iPhone the slider only turns the music on and off; send the
+// music through a Web Audio gain if iPhone riders ask for more
+function playMusic() {
+  const music = $('#music'), v = $('#musicVol').value / 100;
+  music.volume = v;
+  if (v) music.play().catch(() => {}); else music.pause();
+}

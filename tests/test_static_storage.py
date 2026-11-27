@@ -40,10 +40,10 @@ class TrainerPageHashedLinksTests(SimpleTestCase):
 
     def test_the_page_links_the_hashed_versions_of_its_own_files(self):
         links = re.findall(r'(?:src|href)="(alatau/[^"]+)"', self.page)
-        self.assertEqual(len(links), len(trainer_page.local_files()))
+        self.assertEqual(len(links), len(trainer_page.local_files()) + 1)  # and the menu's music
         for link in links:
             # the very file the page was built with: a changed script renames itself and the page
-            name = "trainer/" + re.sub(r"\.[0-9a-f]{12}(\.(?:js|css))$", r"\1", link)
+            name = "trainer/" + re.sub(r"\.[0-9a-f]{12}(\.(?:js|css|mp3))$", r"\1", link)
             self.assertNotEqual(name, "trainer/" + link, link)
             self.assertEqual("trainer/" + link, self.storage.stored_name(name))
             self.assertTrue(self.storage.exists("trainer/" + link), link)

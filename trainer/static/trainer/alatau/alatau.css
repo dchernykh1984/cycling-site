@@ -92,6 +92,12 @@ button{cursor:pointer}
 .topbar .brand{margin:0;align-items:center;gap:12px}
 .topbar .brand h1{font-size:26px}
 #btnRecords{margin:0}
+/* the music's volume in the corner; where a phone has no room beside My records, it goes above it, the two 44 px
+   zones meeting without overlapping */
+.top-acts{display:flex;flex-wrap:wrap-reverse;justify-content:flex-end;align-items:center;gap:0 12px}
+.vol{display:flex;align-items:center;gap:6px}
+.vol svg{width:20px;height:20px;flex:none}
+.vol input{width:120px;height:44px;margin:0;accent-color:var(--apple)} /* a finger's tap across its whole height */
 .setup{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px))}
 .setup-in{max-width:1120px;margin:0 auto}
 .setup .lead{margin:0 0 16px;max-width:760px}
@@ -149,6 +155,7 @@ button{cursor:pointer}
   .grid,.cols{grid-template-columns:1fr}
   .startbar .btn.primary{min-width:0;padding:14px 26px}
   .topbar .brand h1{font-size:22px}
+  .vol input{width:72px}
 }
 
 /* ---------- hud (always over 3D, theme-independent) ---------- */
