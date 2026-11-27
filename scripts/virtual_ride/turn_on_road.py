@@ -3,7 +3,8 @@ cone -- a loop ridden lap after lap -- and the road going on past each turn as O
 
 python -I turn_on_road.py map.js osm.json route_id
 
-- the turns: the route's loop round at its far end (the shortest stretch from a point back to that same point) and
+- the turns: the route's loop round at its far end (the shortest stretch from a point back to that same point) -- or,
+  a route out to a point and straight back the same road, that point, its way back then the way there reversed -- and
   the one turn_at_start.py put after its last point, or none there, become turns on the road where each reached: the
   way there keeps the road's middle to SHIFT_M before the turn, then moves to where its rider rides as the rider's
   line (each point's fourth value) comes to the middle -- the rider drifting from their lane to the road's edge --;
@@ -30,6 +31,7 @@ POINT_M = 1.0  # the points' spacing round the turn itself
 ONWARD_M = 1500.0  # the road drawn on past a turn: to the horizon on the steppe
 ONWARD_LEAD_M = 6.0  # it begins so far before the turn, under the route's own road there (js/surroundings.js)
 SAME_POINT_M = 0.5
+REACH_M = 2.0  # with no loop round to say how far its riders went: the turn begins so far past its last point
 
 src = Path(map_path).read_text(encoding="utf-8")
 data = json.loads(src[src.index("addMap(") + 7 : src.rindex(")")])
@@ -57,7 +59,6 @@ def same(a, b):
 back_home = max(i for i in range(1, len(pts)) if same(pts[i], pts[0]))
 pts = pts[: back_home + 1]
 pairs = [(a, b) for a in range(1, len(pts) - 1) for b in range(a + 3, min(len(pts) - 1, a + 200))]
-k1, k2 = min(((a, b) for a, b in pairs if same(pts[a], pts[b])), key=lambda ab: ab[1] - ab[0])
 
 
 def way_to(a, b):
@@ -101,6 +102,32 @@ def round_the_turn():
 
 ROUND = round_the_turn()
 TURN_M = SHIFT_M + max(a for a, _ in ROUND)  # from where the way there leaves the road's middle to the turn's far point
+
+
+loops = [(a, b) for a, b in pairs if same(pts[a], pts[b])]
+
+
+def cut_before(i, metres):
+    """The way there up to ``metres`` short of point ``i`` along it, ending on a point put there."""
+    left, k = metres, i
+    while k > 0:
+        step = math.dist(xy(pts[k - 1]), xy(pts[k]))
+        if step >= left:
+            (ax, ay), (bx, by), f = xy(pts[k - 1]), xy(pts[k]), (step - left) / step
+            lat, lon = ll(ax + (bx - ax) * f, ay + (by - ay) * f)
+            return [*pts[:k], [lat, lon, round(pts[k - 1][2] + (pts[k][2] - pts[k - 1][2]) * f)]]
+        left -= step
+        k -= 1
+    raise SystemExit("the way there is shorter than a turn")
+
+
+if loops:
+    k1, k2 = min(loops, key=lambda ab: ab[1] - ab[0])
+else:  # out to its farthest point and back: the way back is the way there reversed, the turn reaching that point
+    top = max(range(len(pts)), key=lambda i: math.dist(xy(pts[i]), xy(pts[0])))
+    there = cut_before(top, TURN_M + REACH_M)
+    pts = [*there, *there[::-1][1:]]
+    k1 = k2 = len(there) - 1
 
 
 def turn(at, ux, uy, far):
@@ -166,10 +193,11 @@ def onward(at, ux, uy, far):
 
 
 fux, fuy = way_to(pts[k1 - 1], pts[k1])
-far_at = reach(pts[k1], fux, fuy, pts[k1 : k2 + 1])
+far_at = reach(pts[k1], fux, fuy, pts[k1 : k2 + 1]) if k2 > k1 else TURN_M + REACH_M
+back_home = len(pts) - 1
 sux, suy = way_to(pts[back_home - 1], pts[back_home])
-start_loop = [p[:3] for p in entry["pts"][back_home:]]
-start_at = reach(pts[back_home], sux, suy, start_loop) if len(start_loop) > 2 else far_at
+start_loop = [p[:3] for p in entry["pts"][back_home:]] if loops else []
+start_at = reach(pts[back_home], sux, suy, start_loop) if len(start_loop) > 2 else TURN_M + REACH_M
 with_line = [[*p, LANE] for p in pts]
 entry["pts"] = (
     with_line[: k1 + 1]
