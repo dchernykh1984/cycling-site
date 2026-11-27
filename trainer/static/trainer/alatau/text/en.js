@@ -173,6 +173,8 @@ const TEXT_EN = {
     "arch.finish": "FINISH",
     "count.go": "Go!",
     "plan.total": "Steps: {n}, total time {t}. The workout ends when the last step does; a short route repeats in laps.",
+    "plan.chartPower": "Power by step: {v} {u}, {t} in all",
+    "plan.chartCad": "Cadence by step: {v} {u}, {t} in all",
     "plan.stepFront": "Chainring, step {n}",
     "plan.stepRear": "Sprocket, step {n}",
     "plan.stepCad": "Cadence, step {n}",

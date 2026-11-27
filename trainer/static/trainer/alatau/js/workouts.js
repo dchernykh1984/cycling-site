@@ -48,12 +48,36 @@ function renderIcu() {
     $('#plIcuInfo').textContent = picked == null ? '' : Icu.pickFailed ? t('icu.pickFailed', { name, msg: Icu.pickFailed }) : !Icu.plan ? t('icu.loadingOne', { name })
       : t('icu.picked', { name: Icu.plan.name, n: Icu.plan.steps.length, t: fmtTime(planSeconds(Icu.plan.steps)) }) + (Icu.plan.ftp ? t('icu.ftp', { w: Icu.plan.ftp }) : '');
   }
-  if (phase === 'menu') renderStartSum();
+  renderPlanChart(); if (phase === 'menu') renderStartSum();
 }
 const planSeconds = steps => steps.reduce((a, s) => a + s.min * 60, 0);
 // what a plan ride rides: the picked workout once loaded, else the own plan
 function planToRide() {
   return icuPicked() != null && Icu.plan ? { steps: Icu.plan.steps, cues: Icu.plan.cues, name: Icu.plan.name } : { steps: settings.plan.steps, cues: [], name: null };
+}
+// The plan to ride under the plan screen, a bar a step: as long as the step and as high as its target -- the power
+// where the plan sets one (a ramp a slope; a step without a target no bar), else the cadence -- titled with both
+function renderPlanChart() {
+  const plan = planWaits() ? null : planToRide(), steps = plan ? plan.steps.filter(s => s.min > 0) : [];
+  const byPower = steps.some(s => s.w != null), of = s => byPower ? [s.w, s.w2 != null ? s.w2 : s.w] : [s.cad, s.cad];
+  const vals = steps.flatMap(of).filter(v => v != null), hi = Math.max(0, ...vals), lo = Math.min(...vals);
+  $('#plChart').classList.toggle('hidden', !(hi > 0));
+  if (!(hi > 0)) return;
+  const W = 600, H = 80, total = planSeconds(steps), unit = byPower ? t('u.w') : t('u.rpm');
+  const y = v => H - v / hi * (H - 4);
+  const svg = $('#plChartSvg'), make = (name, parent) => parent.appendChild(document.createElementNS('http://www.w3.org/2000/svg', name));
+  svg.textContent = '';
+  let x = 0;
+  steps.forEach(s => {
+    const w = s.min * 60 / total * W, [a, b] = of(s);
+    if (a != null) {
+      const bar = make('polygon', svg);
+      bar.setAttribute('points', [x, H, x, y(a), x + w, y(b), x + w, H].map(n => +n.toFixed(1)).join(' '));
+      make('title', bar).textContent = fmtTime(s.min * 60) + ' · ' + (a === b ? a : a + '–' + b) + ' ' + unit;
+    }
+    x += w;
+  });
+  $('#plChartCap').textContent = t(byPower ? 'plan.chartPower' : 'plan.chartCad', { v: lo === hi ? hi : lo + '–' + hi, u: unit, t: fmtTime(total) });
 }
 // a picked workout still loading, or one that failed to: no plan ride starts until it is there or another is picked
 const planWaits = () => icuPicked() != null && !Icu.plan;

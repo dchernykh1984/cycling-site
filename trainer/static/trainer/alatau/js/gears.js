@@ -41,6 +41,7 @@ function syncPlanFromRecords() {
 const planTotalMin = () => settings.plan.steps.reduce((a, s) => a + (+s.min || 0), 0);
 function renderPlanTotal() {
   const m = planTotalMin(); $('#plTotal').textContent = t('plan.total', { n: settings.plan.steps.length, t: fmtTime(m * 60) });
+  renderPlanChart();
 }
 function opts(n, teeth, sel) { let h = ''; for (let i = 1; i <= n; i++) h += '<option value="' + i + '"' + (i === sel ? ' selected' : '') + '>' + i + ' (' + teeth[i - 1] + ')</option>'; return h; }
 function renderPlanEditor() {
