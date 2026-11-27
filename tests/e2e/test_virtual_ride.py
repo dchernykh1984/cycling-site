@@ -1854,6 +1854,37 @@ def test_the_demo_power_goes_to_a_kilowatt_and_a_half_finer_where_riders_ride(pa
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_plan_to_ride_draws_what_each_step_asks_for_under_it(page: Page, live_server):
+    """A picked workout said how many steps and how long, not what each step asks for."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate("() => { settings.mode = 'plan'; renderPlanEditor(); }")
+    # the own plan by gears and cadence: its cadence, a bar a step
+    expect(page.locator("#plChart")).to_be_visible()
+    expect(page.locator("#plChartSvg polygon")).to_have_count(page.evaluate("settings.plan.steps.length"))
+    expect(page.locator("#plChartCap")).to_contain_text(page.evaluate("t('u.rpm')"))
+    # a workout from intervals.icu: its power, a ramp a slope, a step without a target no bar
+    got = page.evaluate(
+        """() => {
+            Records.me = { authenticated: true, intervals_connected: true };
+            settings.planIcu = 7; Icu.list = [{ id: 7, name: 'Ramps', date: '2026-11-27' }];
+            const steps = [{ min: 10, w: 150 }, { min: 5, w: 200, w2: 250 }, { min: 2, w: null }];
+            Icu.plan = { name: 'Ramps', steps };
+            renderIcu();
+            const bars = [...document.querySelectorAll('#plChartSvg polygon')];
+            const width = b => { const p = b.getAttribute('points').split(' ').map(Number); return p[4] - p[0]; };
+            const titles = bars.map(b => b.querySelector('title').textContent);
+            return { titles, caption: $('#plChartCap').textContent, widths: bars.map(width) };
+        }"""
+    )
+    # a middle dot between a step's time and its target, an en dash in a range
+    assert got["titles"] == ["10:00 \u00b7 150 W", "5:00 \u00b7 200\u2013250 W"], got
+    assert got["caption"] == "Power by step: 150\u2013250 W, 17:00 in all", got
+    # as long as each step: 10 of the 17 minutes, then 5
+    assert [round(w) for w in got["widths"]] == [353, 176], got
+    expect(page.locator("#plChartSvg")).to_have_attribute("aria-labelledby", "plChartCap")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
     page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
     _trainer_in_its_menu(page, live_server)
