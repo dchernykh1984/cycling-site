@@ -52,8 +52,8 @@ function farReliefAt(T, x, z) {
 const RELIEF_FROM = 80, RELIEF_OVER = 500, GORGE_FROM = 6, GORGE_OVER = 60;
 // a gorge's land snowy from SNOW_FROM_M, white from SNOW_WHOLE_M: the Cosmostation's top white, as the maintainer likes it
 const SNOW_FROM_M = 3000, SNOW_WHOLE_M = 3200;
-function terrainH(T, x, z) {
-  const n = nearest(T, x, z); let h = n.y - 1.2;
+function terrainH(T, x, z, near) {
+  const n = near || nearest(T, x, z); let h = n.y - 1.2; // near: the route's nearest point, when the caller has it
   // round a tunnel and its ramps the land keeps the ground line up to their walls: the road goes down into a cutting,
   // the ground does not; inside the walls the land is left out (landMaterial)
   const cut = T.route.tunnels ? cutGround(T, n.s) : null;
@@ -104,14 +104,15 @@ function sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad) {
   const xs = pad.ring.map(p => p[0]), zs = pad.ring.map(p => p[1]), m = pad.margin, n = pad.ring.length;
   const inside = (x, z) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const [xi, zi] = pad.ring[i], [xj, zj] = pad.ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
   const edge = (x, z) => { let d = Infinity; for (let i = 0, j = n - 1; i < n; j = i++) d = Math.min(d, segDist(x, z, pad.ring[j][0], pad.ring[j][1], pad.ring[i][0], pad.ring[i][1])); return d; };
+  const lx = Math.min(...xs) - m, hx = Math.max(...xs) + m, lz = Math.min(...zs) - m, hz = Math.max(...zs) + m;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i);
-    if (x < Math.min(...xs) - m || x > Math.max(...xs) + m || z < Math.min(...zs) - m || z > Math.max(...zs) + m) continue;
+    if (x < lx || x > hx || z < lz || z > hz) continue;
     if (pos.getY(i) > pad.y && (inside(x, z) || edge(x, z) <= m)) pos.setY(i, pad.y);
   }
 }
 // how deep a trunk goes into the ground: a slope under it leaves no gap at its foot
-const ROOT_M = .3;
+const ROOT_M = .3, LAND_POINTS = 200000;
 let world_osmKept = 0;
 // the course to ride, and the scenery along it
 function buildWorld(route) {
@@ -124,13 +125,16 @@ function buildWorld(route) {
   // --- рельеф ---
   const margin = gorge ? 2400 : 1600;
   const x0 = T.minX - margin, x1 = T.maxX + margin, z0 = T.minZ - margin, z1 = T.maxZ + margin;
-  const nx = Math.min(260, Math.ceil((x1 - x0) / 40)), nz = Math.min(260, Math.ceil((z1 - z0) / 40));
+  // cells 40 m across, LAND_POINTS at most: a long route's land had cells 50 by 85 m, too coarse for a road cut into a
+  // gorge's side (the Cosmostation's)
+  const cell = Math.max(40, Math.sqrt((x1 - x0) * (z1 - z0) / LAND_POINTS));
+  const nx = Math.ceil((x1 - x0) / cell), nz = Math.ceil((z1 - z0) / cell);
   const tg = new THREE.PlaneGeometry(x1 - x0, z1 - z0, nx, nz); tg.rotateX(-Math.PI / 2); tg.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
   const pos = tg.attributes.position, cols = new Float32Array(pos.count * 3);
   const cGrass = new THREE.Color(0x7c8a58), cDust = new THREE.Color(0x9a9684), cForest = new THREE.Color(0x3c5536), cRock = new THREE.Color(0x837a6c), cSnow = new THREE.Color(0xeef2f5), tmp = new THREE.Color();
   const cDry = new THREE.Color(0xa49b67), cMeadow = new THREE.Color(0x8b8e58); // the steppe: dry grass, and greener hollows
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z), x0, x1, z0, z1); pos.setY(i, h);
+    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z, n), x0, x1, z0, z1); pos.setY(i, h);
     const nz2 = fbm(x * .01, z * .01, 3);
     if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > SNOW_FROM_M) tmp.lerp(cSnow, clamp((h - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1)); }
     else if (steppe) tmp.copy(cDry).lerp(cMeadow, clamp(fbm(x * .0012, z * .0012, 3) * 1.6 - .45, 0, 1) * .85).lerp(cDust, clamp(1 - (n.d - W) / 30, 0, 1) * .5 + nz2 * .12);
