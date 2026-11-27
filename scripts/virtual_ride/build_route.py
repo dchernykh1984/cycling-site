@@ -11,7 +11,8 @@ config (JSON):
                             pass and down): the route is the way out alone, from 20 m before the start line to its
                             farthest point, its heights the barometer's on the way out (turn_on_road.py lays the
                             way back and its turns) -- by place along the lap they took the way back's for the way
-                            out's, hundreds of metres apart on a mountain road
+                            out's, hundreds of metres apart on a mountain road; a detour off the road and back on
+                            the way (for water, a stop) is cut out
   against_oneway            optional true: the course rides one-way carriageways against their direction (the
                             one closed to it -- the Institute of Nuclear Physics' does the Alatau road's both
                             ways), so a lap is matched to the carriageway it was ridden on, whichever way it runs
@@ -513,6 +514,7 @@ print(
 )
 
 loop = True
+SPUR_M, DETOUR_M = 4.0, 600.0  # a detour off the road comes back within SPUR_M of where it left, after at most DETOUR_M
 RADIUS_MIN = 6.0  # metres: the road's middle round a hairpin, its rider 2 m inside it
 GRADE_TURN = 1.0  # points of grade in 10 m: the trainer's resistance turns smoothly, the tests take 1.5
 if cfg.get("out_and_back"):
@@ -526,6 +528,25 @@ if cfg.get("out_and_back"):
     there = [(line[k][0] + (line[k + 1][0] - line[k][0]) * f, line[k][1] + (line[k + 1][1] - line[k][1]) * f)]
     there += line[k + 1 : far + 1]
     keep = [-1, *range(k + 1, far + 1)]  # each point's index on the lap's line, the first put between two of them
+    # a detour off the road and back -- for water, a stop -- is no part of the way: a stretch that comes back to within
+    # SPUR_M of a point it left, after more than twice that and at most DETOUR_M, is cut out
+    walked = [0.0]
+    for a, b in itertools.pairwise(there):
+        walked.append(walked[-1] + dist(a, b))
+    kept, i = [], 0
+    while i < len(there):
+        kept.append(i)
+        rejoin = [
+            j
+            for j in range(i + 2, len(there))
+            if 2 * SPUR_M < walked[j] - walked[i] <= DETOUR_M and dist(there[i], there[j]) < SPUR_M
+        ]
+        if rejoin:
+            print(
+                f"a detour cut out: {walked[max(rejoin)] - walked[i]:.0f} m from {walked[i]:.0f} m on", file=sys.stderr
+            )
+        i = max(rejoin) + 1 if rejoin else i + 1
+    there, keep = [there[i] for i in kept], [keep[i] for i in kept]
     # a corner whose rounding came out uneven -- a hairpin's two roundings met, a turn of 36 degrees in a metre and a
     # half (the Cosmostation's to Big Almaty Lake) -- evened out: a point turning tighter than RADIUS_MIN moves half
     # way to the middle of its neighbours, until none does
