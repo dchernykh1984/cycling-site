@@ -4,14 +4,14 @@
    the road where the road passes through (12 unless given), down to the ground -- ending where the valley's sides
    rise over it --; over the road an opening GALLERY_M high between upright walls beyond its edges, the dam over it;
    on its upstream face, towards the route's way on, a row of white posts. */
-const GALLERY_M = 5.5, GALLERY_SIDE_M = 1.5, DAM_POST_EVERY = 5, DAM_STEP = 1.5;
+const GALLERY_M = 5.5, GALLERY_SIDE_M = 1.5, CHECKDAM_POST_EVERY = 5, CHECKDAM_STEP = 1.5;
 addObject('checkdam', (G, lm, T, { land }) => {
   G.userData.spread = true; G.position.set(lm.x, 0, lm.z); // it stands each part on the land itself
   const W = T.route.width, thick = lm.thick || 20, line = lm.crest.map(p => { const q = proj(p[0], p[1], T.origin); return { x: q.x, z: q.z }; });
   // where the road passes under it: the crest's point nearest the route, the road's height there
   let at = null;
   along(line, 2).forEach(p => { const n = routeNearest(T, p.x, p.z); if (!at || n.d < at.d) at = { d: n.d, y: n.y, s: n.s }; });
-  const top = at.y + (lm.h || 12), floor = at.y + GALLERY_M, way = sampleAt(T, at.s, {}), pts = along(line, DAM_STEP);
+  const top = at.y + (lm.h || 12), floor = at.y + GALLERY_M, way = sampleAt(T, at.s, {}), pts = along(line, CHECKDAM_STEP);
   // each step along the crest: its two corners across (downstream, upstream), each down to the ground; a step whose
   // corners come over the road is the opening; one whose ground rises over the top is in the valley's side
   const cols = pts.map((p, i) => {
@@ -55,7 +55,7 @@ addObject('checkdam', (G, lm, T, { land }) => {
   // the white posts along its upstream edge, where it stands over the valley
   const white = new THREE.MeshLambertMaterial({ color: 0xe9e7e0 });
   cols.forEach((col, i) => {
-    if (i % Math.round(DAM_POST_EVERY / DAM_STEP) || col.open || col.gone || col.c[1].y > top - 3) return;
+    if (i % Math.round(CHECKDAM_POST_EVERY / CHECKDAM_STEP) || col.open || col.gone || col.c[1].y > top - 3) return;
     const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.6, 1.2), white); m.position.set(col.c[1].x - lm.x, top + 1.3, col.c[1].z - lm.z); G.add(m);
   });
 });
