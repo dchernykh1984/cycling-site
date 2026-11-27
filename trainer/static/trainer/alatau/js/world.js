@@ -339,7 +339,13 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
 // past the middle to another stretch of road, nor over FILL_MAX_M.
 const FILL_SLOPE = 1.5, FILL_MAX_M = 40, FILL_FROM_M = .4;
 function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
-  const P = [], I = [], o = {}, bridges = (T.route.bridges || []).map(([a, b]) => [T.ptS[a] - 8, T.ptS[b] + 8]);
+  const P = [], I = [], C = [], o = {}, bridges = (T.route.bridges || []).map(([a, b]) => [T.ptS[a] - 8, T.ptS[b] + 8]);
+  // earth, as the land round it turns stony and snowy with the height: in the snow a grey fill stood out
+  const earth = new THREE.Color(0x7d7a5c), rock = new THREE.Color(0x837a6c), snow = new THREE.Color(0xeef2f5), c = new THREE.Color();
+  const fillColour = y => {
+    c.copy(earth).lerp(rock, clamp((y - ROCK_FROM_M) / (ROCK_WHOLE_M - ROCK_FROM_M), 0, 1)).lerp(snow, clamp((y - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1));
+    return [c.r, c.g, c.b];
+  };
   for (const k of [0, 1]) {
     const side = k ? 1 : -1;
     let prev = null;
@@ -364,11 +370,12 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
           fill = [a.x, top, a.z, ...(end ? [end.x, end.y, end.z] : [last.x, last.y, last.z])];
         }
       }
-      if (fill && prev) { const b = P.length / 3; P.push(...prev, ...fill); I.push(b, b + 1, b + 3, b, b + 3, b + 2); }
+      if (fill && prev) { const b = P.length / 3; P.push(...prev, ...fill); I.push(b, b + 1, b + 3, b, b + 3, b + 2); [prev[1], prev[4], fill[1], fill[4]].forEach(y => C.push(...fillColour(y))); }
       prev = fill;
     }
   }
-  meshOf(grp, P, I, new THREE.MeshLambertMaterial({ color: 0x8a8270, side: THREE.DoubleSide }), 'fills');
+  const m = meshOf(grp, P, I, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 'fills');
+  if (m) m.geometry.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
 }
 // Traffic lights where the route's road has them: a pole each side beyond the edge, its lights turned to the riders
 // coming on that side -- a ride's lights always green
