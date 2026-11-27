@@ -462,6 +462,7 @@ function roomBeside(T, W) {
       if (back <= gap || Math.abs(dx * o.tx + dz * o.tz) > 3) continue;
       if (Math.abs(((T.X[k2] - T.X[k1]) * o.tx + (T.Z[k2] - T.Z[k1]) * o.tz) / tl) < .9) continue; // crossing, not alongside
       const lat = dx * o.rx + dz * o.rz, side = lat > 0 ? 1 : 0, free = Math.abs(lat) - W;
+      if (Math.abs(lat) < W / 2) continue; // its own road ridden back the other way: no neighbour, its shoulders stay
       if (free < room[side][i]) { room[side][i] = free; first[side][i] = T.D[i] < T.D[j] ? 1 : 0; }
     }
   }

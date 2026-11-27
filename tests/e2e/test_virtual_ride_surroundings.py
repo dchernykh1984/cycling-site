@@ -375,6 +375,22 @@ def test_a_barrier_between_a_dual_carriageway_s_halves_stands_off_both(page: Pag
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_road_ridden_out_and_back_keeps_its_shoulders(page: Page, live_server):
+    # its way back on the same road was taken for a neighbour 7 m inside it: no gravel shoulder along the whole of
+    # the Cosmostation or Kyrbaltabay, and no fill under a road on a slope
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof roomBeside === 'function'")
+    faults = page.evaluate(
+        """() => ROUTES.filter(r => r.id === 'kosmostantsiya' || r.id === 'kyrbaltabay-tuganbay').map(r => {
+          const T = buildTrack(r), room = roomBeside(T, r.width);
+          let none = 0; for (let i = 0; i < T.N; i++) if (room[0][i] < 1 && room[1][i] < 1) none++;
+          return none / T.N > .1 ? r.id + ': no room beside ' + Math.round(none / T.N * 100) + '% of it' : null;
+        }).filter(Boolean)"""
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_power_lines_stand_off_the_road_and_hang_high_over_it(page: Page, live_server):
     faults = _faults(
         page,
