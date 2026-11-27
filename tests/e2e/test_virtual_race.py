@@ -488,6 +488,22 @@ def test_a_rider_who_leaves_the_line_in_its_last_seconds_is_not_put_straight_bac
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_refusal_to_gather_a_ride_for_the_calendar_stays_in_the_status_line(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """async () => {
+            MP.status = 'on'; MP.groups = []; mpSchedule = () => {}; settings.mode = 'free';
+            const at = Date.now() + 2 * 3600e3;
+            mpWhen = () => ({ start_at: new Date(at).toISOString(), at });
+            Site.post = async () => { throw new Error('You already have a group race starting within an hour'); };
+            await mpAddEvent();
+            renderMP(); // the lobby, drawn again each second
+        }"""
+    )
+    expect(page.locator("#mpStatus")).to_contain_text("You already have a group race starting within an hour")
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
