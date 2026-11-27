@@ -296,18 +296,24 @@ def test_every_route_s_grade_rises_and_falls_without_steps(page: Page, live_serv
 def test_a_rider_turns_through_every_corner_smoothly(page: Page, live_server):
     # a rider keeping the right lane turns by at most 12 degrees in half a metre, and their turning grows and eases by
     # at most 5 degrees from one half metre to the next: drawn along straight lines between the route's points, their
-    # lane jumped back at each point of a corner and the rider swung round in four or five jerks
+    # lane jumped back at each point of a corner and the rider swung round in four or five jerks. A turn back on the
+    # road -- the route reversing within 8 m either side -- turns as tight as its road is wide (the Cosmostation's 7 m,
+    # 13.5 degrees on the track's 4 m samples): there only its turning's growth is held
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
     page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildCourse === 'function'")
     faults = page.evaluate(
         """() => ROUTES.flatMap(r => {
           world = buildCourse(r); // riderPos rides the course being ridden
-          const T = world.T, R = { lane: keepLane(r.width) }, way = [], out = [];
+          const T = world.T, R = { lane: keepLane(r.width) }, way = [], out = [], a = {}, b = {};
+          const turningBack = s => {
+            sampleAt(T, s - 8, a); sampleAt(T, s + 8, b);
+            return a.tx * b.tx + a.tz * b.tz < -.87;
+          };
           for (let s = 0; s < T.L - 1; s += .5) { R.s = s; way.push(riderHeading(R)); }
           let turning = 0;
           for (let i = 1; i < way.length; i++) {
             const turn = Math.abs(((way[i] - way[i - 1] + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * 180 / Math.PI;
-            if (turn > 12 || Math.abs(turn - turning) > 5) {
+            if ((turn > 12 && !turningBack(i / 2)) || Math.abs(turn - turning) > 5) {
               out.push(r.id + ': turns ' + turn.toFixed(1) + ' degrees in half a metre at ' + i / 2 + ' m');
               break;
             }
