@@ -6,6 +6,8 @@ python -I narrow.py map.js route_id '[{"from": [lat, lon], "to": [lat, lon], "wi
 - each stretch: from the route's point nearest ``from`` to the one nearest ``to`` after it, written as the route's
   "narrow" ([[point, point, width, lanes]]; js/track.js eases the road's width to it over 20 m), the riders' line
   there kept to its right lane (js/track.js keepLane: 1.5 m in from its edge, 3.2 m from its middle at most)
+- a stretch a later run leaves out is the route's width again, but its riders' line stays as this run kept it: build
+  the route again (finish.py) to have the source's line back
 """
 
 import json
