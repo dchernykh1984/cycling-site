@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, transaction
@@ -51,6 +52,7 @@ from locations.models import (
 from protocols import sections as protocol_sections
 from protocols.access import shows_protocols
 
+from . import draft as drafts
 from . import organizers
 from .forms import (
     AddCompetitionCommentForm,
@@ -1378,8 +1380,50 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         for field, model, name in (("event_types", EventType, "event_type"), ("disciplines", Discipline, "discipline")):
             named = model.objects.filter(name_en__in=request.POST.getlist(name))
             draft[field] = list(named.values_list("pk", flat=True))
+        # the virtual ride's (calendar_app.draft): the venue at its route's start, registration with its categories,
+        # the route's track and the race the event is to hold
+        location = drafts.venue_at(request.POST.get("start_lat"), request.POST.get("start_lng"))
+        if location:
+            draft["location"] = location
+        if request.POST.get("registration") == "1":
+            draft["registration"] = True
+            draft["categories"] = drafts.categories(request.POST.get("categories", ""))
+        track = drafts.track(request.POST.get("track_name", ""), request.POST.get("track_gpx", ""))
+        if track:
+            draft["track"] = track
+        race = drafts.race_of(request.user, request.POST.get("virtual_race"))
+        if race:
+            draft["virtual_race"] = race
+        draft["key"] = drafts.new_key()
         request.session[EVENT_DRAFT] = draft
         return redirect(reverse("calendar_submit") + "?draft=1")
+
+
+def _posted_draft(request) -> dict:
+    """The draft the posted form was opened from, by the key it sends back; none for a form opened otherwise."""
+    draft = request.session.get(EVENT_DRAFT) or {}
+    key = request.POST.get("draft_key", "")
+    return draft if key and key == draft.get("key") else {}
+
+
+def _draft_context(draft: dict | None) -> dict:
+    """What the form says of its draft: its key, sent back with the form, and whether a track comes with it."""
+    draft = draft or {}
+    return {"draft_key": draft.get("key", ""), "draft_track": bool(draft.get("track"))}
+
+
+def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
+    """The draft's track and race for the event made from it (calendar_app.draft): the track unless the member chose
+    a file of their own, the race -- their own, still to come -- only for an organizer's event, which registers."""
+    from trainer.models import GroupRide
+
+    track = draft.get("track")
+    if track and not comp.file_route:
+        comp.file_route.save(track["name"], ContentFile(track["gpx"].encode()), save=True)
+    if draft.get("virtual_race") and is_organizer:
+        GroupRide.objects.filter(
+            pk=draft["virtual_race"], host=user, competition__isnull=True, cancelled=False, start_at__gt=timezone.now()
+        ).update(competition=comp)
 
 
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
@@ -1415,17 +1459,21 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
             "is_organizer_plus": is_organizer,
             "categories_json": request.POST.get("categories_json") or "[]",
             "initial_location_id": form["location"].value() or "",
+            **_draft_context(_posted_draft(request)),
             **self._discipline_context(request.user, form),
         }
 
     def get(self, request):
         source = self._clone_source(request)
+        draft = None
         if source is None:
             # a draft another page handed over (SubmitDraftView), when the address asks for it
             draft = request.session.get(EVENT_DRAFT) if request.GET.get("draft") else None
             form = SubmitCompetitionForm(initial=draft, user=request.user)
-            reg_form = RegistrationSettingsForm()
-            categories_json = "[]"
+            reg_form = RegistrationSettingsForm(
+                initial={"registration_enabled": bool(draft and draft.get("registration"))}
+            )
+            categories_json = json.dumps((draft or {}).get("categories") or [])
         else:
             # Everything but the parts that belong to the edition being copied: the dates are what
             # the organizer is here to change, and last year's results are not this year's.
@@ -1444,6 +1492,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                 "clone_source": source,
                 "categories_json": categories_json,
                 "initial_location_id": (source.location_id or "") if source else "",
+                **_draft_context(draft),
                 **self._discipline_context(request.user, form),
             },
         )
@@ -1491,6 +1540,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     comp.event_types.set(cd.get("event_types") or [])
                     if is_organizer:
                         _save_categories(comp, reg_form, True)
+                    _apply_draft(_posted_draft(request), comp, request.user, is_organizer)
                     # The event assistant's conversation that filled the form goes on from the
                     # event's edit page (issue #353).
                     link_conversation(request.POST.get("assistant_conversation"), comp, request.user)
