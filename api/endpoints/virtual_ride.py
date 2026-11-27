@@ -44,9 +44,9 @@ router = Router(tags=["virtual-ride"])
 
 
 _ROUTE = r"^[a-z0-9][a-z0-9_-]{0,39}$"
-# The strongest wind a ride or a group race is ridden in, m/s: a hurricane's, beyond the gusts of 40 m/s and more
-# storms bring to a lowland
-_MAX_WIND_MS = 50
+# The strongest wind a ride or a group race is ridden in, m/s: the most a smart trainer can be told against its
+# rider (FTMS's wind speed, at most 32.767 m/s)
+_MAX_WIND_MS = 30
 _MAX_HISTORY = 100
 # The trainer page's settings, as JSON: a long own plan is a few kilobytes
 _MAX_SETTINGS = 64 * 1024
