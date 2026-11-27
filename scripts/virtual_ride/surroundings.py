@@ -10,6 +10,10 @@ Adds to the route (lat/lon rounded to ~0.1 m):
   lines      [{k, pts}]           power lines (k "power"), minor ones ("minor") and railways ("rail")
   water      [{w, pts}|{area}]    rivers, canals and streams; lakes and ponds
   trees      {rows, woods, pts}   tree rows, woods, orchards and parks, single trees
+
+The fourth argument, JSON, sets the distances above and "own_rest": 1 -- the route's own ways drawn where it does not
+ride them, a dual carriageway's other half beside a stretch ridden one way (the Institute of Nuclear Physics' Alatau
+road); without it a way the route rides is left out whole.
 """
 
 import itertools
@@ -350,7 +354,7 @@ for e in ways:
         hit = hit or crossing(a, b)
     bridge = t.get("bridge") not in (None, "no") or lay > 0
     tunnel = t.get("tunnel") not in (None, "no") or lay < 0 or t.get("cutting") in ("yes",)
-    if e["id"] in own_ids:
+    if e["id"] in own_ids and not NEAR.get("own_rest"):
         continue
 
     def across(hit, pts=pts):
