@@ -989,8 +989,10 @@ def join_group(request, group_id: int):
 @router.post("/groups/{group_id}/leave", response=GroupOut, auth=member_auth, summary="Leave a group race")
 def leave_group(request, group_id: int):
     """A host who leaves hands the race to the rider who joined next; alone in it, they cancel it. A race with
-    protocols stays its maker's, and keeps the bib of a rider who leaves for them. A time trial under way keeps its
-    order: a rider who left it would move every later rider's start."""
+    protocols, and a ride or race an event's page opens (Competition.virtual_ride), stay their maker's: the event
+    announces them -- its host warming up alone an hour before cancelled the ride it announced. A race with protocols
+    keeps the bib of a rider who leaves for them. A time trial under way keeps its order: a rider who left it would
+    move every later rider's start."""
     opened = _open_group(group_id)
     if opened.mode == GroupRide.Mode.ITT and opened.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
@@ -1002,11 +1004,12 @@ def leave_group(request, group_id: int):
             group.kept_bibs[str(gone.registration_id)] = gone.bib
             group.save(update_fields=["kept_bibs"])
         GroupRideMember.objects.filter(group=group, user=request.auth).delete()
-        if group.host_id == request.auth.pk:
+        announced = Competition.objects.filter(virtual_ride=group.pk, is_deleted=False).exists()
+        if group.host_id == request.auth.pk and group.competition_id is None and not announced:
             heir = group.memberships.order_by("joined_at", "pk").first()
-            if heir is None and group.competition_id is None:
+            if heir is None:
                 group.cancelled = True
-            elif heir is not None and group.competition_id is None:
+            else:
                 group.host_id = heir.user_id
             group.save(update_fields=["cancelled", "host"])
     left = GroupRide.objects.select_related("host", "competition").get(pk=group_id)
