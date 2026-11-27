@@ -283,6 +283,15 @@ class MapsTests(SimpleTestCase):
             self.assertEqual((road["onward"], road["w"], road["lanes"]), (True, route["width"], route["lanes"]))
             self.assertGreater(length, 300)  # on to where OpenStreetMap's way with its name ends
 
+    def test_granfondo_turns_by_its_two_lane_frontage_roads_at_its_near_turn(self):
+        # its frontage roads and their crossing over Al-Farabi were drawn as wide as the avenue, three lanes a way: the
+        # turn read as the avenue's own; the avenue goes on ahead into its tunnel
+        route = next(r for r in _routes() if r["id"] == "granfondo")
+        ((i0, i1, width, lanes),) = route["narrow"]
+        self.assertEqual((width, lanes), (7.5, 2))
+        self.assertTrue(all(p[3] <= width / 2 - 1.5 for p in route["pts"][i0 : i1 + 1]))
+        self.assertEqual(len([r for r in route["roads"] if r.get("ahead")]), 4)
+
     def test_medeu_s_road_goes_on_past_its_finish_as_the_route_s_own(self):
         # the serpentine on up to Shymbulak was pieces of a grey side road, cut off at the arch
         route = next(r for r in _routes() if r["id"] == "medeu")

@@ -2,10 +2,12 @@
 the route turns back across the median or leaves it for a side road -- Granfondo 2026's Al-Farabi, which went on as
 pieces of grey road, so that its turns read as loops:
 
-python -I roads_ahead.py map.js osm.json route_id '[{"from": [lat, lon], "toward": [lat, lon]}, ...]'
+python -I roads_ahead.py map.js osm.json route_id '[{"from": [lat, lon], "toward": [lat, lon], "highway": kind}, ...]'
 
 - each road: from the OpenStreetMap way nearest ``from`` that runs toward ``toward`` (either way along it: a one-way
-  carriageway coming toward the turn is drawn back from it), AHEAD_M on along it and the ways that go on from its
+  carriageway coming toward the turn is drawn back from it), of the OpenStreetMap class ``highway`` where given -- a
+  side road leaving the avenue from the same point, as the frontage road Granfondo leaves it for at its near turn,
+  is not it --, AHEAD_M on along it and the ways that go on from its
   end with its name and class, the straightest where there are several
 - written as the route's roads marked "onward" and "ahead", of the route's width and lanes (js/surroundings.js draws
   them as its own road); the ones a run before wrote are replaced
@@ -44,14 +46,16 @@ ways = [
 ]
 
 
-def nearest_way(start, toward):
+def nearest_way(start, toward, highway=None):
     """The way nearest ``start`` that runs toward ``toward``: (its index, its segment's, the fraction along that, and
     whether toward is the way's own direction)."""
     bx, by = xy(start)
     tx, ty = xy(toward)
     ux, uy = tx - bx, ty - by
     best = None
-    for k, (_, _, line) in enumerate(ways):
+    for k, (_, kind, line) in enumerate(ways):
+        if highway and kind != highway:
+            continue
         for i in range(len(line) - 1):
             (sx, sy), (ex, ey) = line[i], line[i + 1]
             dx, dy = ex - sx, ey - sy
@@ -82,9 +86,9 @@ def next_way(road, name, kind, line):
     return min(options, key=lambda o: o[0])[1:] if options else None
 
 
-def ahead(start, toward):
+def ahead(start, toward, highway=None):
     """The road from the way nearest ``start`` toward ``toward``, AHEAD_M along it and on into the ways after it."""
-    k, i, g, forward = nearest_way(start, toward)
+    k, i, g, forward = nearest_way(start, toward, highway)
     name, kind, line = ways[k]
     (sx, sy), (ex, ey) = line[i], line[i + 1]
     road = [(sx + (ex - sx) * g, sy + (ey - sy) * g)]
@@ -109,7 +113,7 @@ def ahead(start, toward):
 
 
 roads = [r for r in entry.get("roads", []) if not r.get("ahead")]
-entry["roads"] = [*roads, *(ahead(s["from"], s["toward"]) for s in spec)]
+entry["roads"] = [*roads, *(ahead(s["from"], s["toward"], s.get("highway")) for s in spec)]
 print(f"{rid}: {len(spec)} roads ahead, {len(entry['roads'])} roads", file=sys.stderr)
 
 

@@ -225,21 +225,27 @@ function buildWorld(route) {
   // where the route turns back on its road, it is drawn as the road going on past the turn (addOnwardRoads), not as
   // the route's own line, which leaves the road's middle for the rider's lane there
   const onward = (route.roads || []).filter(r => r.onward), covered = onwardCover(T, onward, W), onOnward = i => covered[i] === 1;
-  ribbon(-W / 2, W / 2, .06, roadMat, 9, onOnward);
+  // a stretch on a narrower road (T.half): its own width, marked for its own lanes, the switch half way through its ease
+  const narrowest = T.half ? Math.min(...T.half) : W / 2, half = i => T.half ? T.half[i] : W / 2, thin = i => T.half != null && T.half[i] < (W / 2 + narrowest) / 2;
+  ribbon(i => -half(i), half, .06, roadMat, 9, i => onOnward(i) || (thin(i) && thin(i - 1)));
+  if (T.half) {
+    const narrowTex = roadTexture(route.narrow[0][3], route.oneway); narrowTex.wrapS = THREE.ClampToEdgeWrapping; narrowTex.wrapT = THREE.RepeatWrapping;
+    ribbon(i => -half(i), half, .06, new THREE.MeshLambertMaterial({ map: narrowTex }), 9, i => onOnward(i) || (!thin(i) && !thin(i - 1)));
+  }
   // what lies beside the road on each side: as wide as the land the route leaves -- half the strip between a dual
   // carriageway's two halves -- broken where a road round it meets it
   const room = roomBeside(T, W), onRoad = roadsNear(T, route.roads), o2 = {};
   const sideOf = (k, wide) => i => clamp(room[k][i] / 2, 0, wide);
   // none where the land between is under a metre, where a road meets the route, or over another stretch's road
   const mouth = (k, wide) => i => {
-    sampleAt(T, T.D[i], o2); const off = (k ? 1 : -1) * (W / 2 + sideOf(k, wide)(i) * .5), x = o2.x + o2.rx * off, z = o2.z + o2.rz * off;
+    sampleAt(T, T.D[i], o2); const off = (k ? 1 : -1) * (half(i) + sideOf(k, wide)(i) * .5), x = o2.x + o2.rx * off, z = o2.z + o2.rz * off;
     return onOnward(i) || room[k][i] < 1 || onRoad(x, z, 0) || routeGap(T, x, z) < W / 2 - .1;
   };
   // a city's pavements, else gravel: beside the route's road and the road going on past its turns
   const town = !gorge && !steppe, sideWide = town ? 5 : 2.5, sideLift = town ? .18 : .02;
   const sideMat = new THREE.MeshLambertMaterial({ color: town ? 0xa7a59c : 0x8b8574 });
-  ribbon(i => -W / 2 - sideOf(0, sideWide)(i), -W / 2, sideLift, sideMat, 1, mouth(0, sideWide));
-  ribbon(W / 2, i => W / 2 + sideOf(1, sideWide)(i), sideLift, sideMat, 1, mouth(1, sideWide));
+  ribbon(i => -half(i) - sideOf(0, sideWide)(i), i => -half(i), sideLift, sideMat, 1, mouth(0, sideWide));
+  ribbon(half, i => half(i) + sideOf(1, sideWide)(i), sideLift, sideMat, 1, mouth(1, sideWide));
   addMedianBarriers(grp, T, W, room);
   // a turning circle where the road ends: its asphalt over the road ridden round it, which there crosses itself
   turningCircles(T, route).forEach(c => {
@@ -251,10 +257,11 @@ function buildWorld(route) {
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
   // a bridge over the route first: the roads that lead to it climb onto its deck
   const decks = route.over ? overDecks(T, W, route.over) : [];
-  if (route.roads) addRoads(grp, T, W, route.roads.filter(r => !r.onward), ground, decks);
+  const byAhead = alongAhead(T, onward);
+  if (route.roads) addRoads(grp, T, W, route.roads.filter(r => !r.onward && !byAhead(r)), ground, decks);
   if (onward.length) addOnwardRoads(grp, T, W, onward, ground, roadMat);
   if (decks.length) addOverpasses(grp, T, W, decks, ground);
-  if (route.under) addUnderpasses(grp, T, W, route.under, ground);
+  if (route.under) addUnderpasses(grp, T, W, route.under.filter(u => !byAhead(u)), ground);
   if (route.bridges || route.tunnels) addRouteStructures(grp, T, W, ground);
   if (route.lines) addLines(grp, T, route.lines, ground);
   if (route.water) addWater(grp, T, route.water, ground);
