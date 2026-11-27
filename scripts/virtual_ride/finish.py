@@ -79,7 +79,7 @@ for k in ("loop", "width", "lanes", "oneway"):
 entry["desc"] = meta["desc"]
 entry["event"] = meta["event"]
 entry["pts"] = pts
-for k in ("buildings", "roads", "over", "under", "bridges", "lines", "water", "trees"):
+for k in ("buildings", "roads", "over", "under", "bridges", "lines", "water", "trees", "signals"):
     v = around.get(k)
     if v and (not isinstance(v, dict) or any(v.values())):
         entry[k] = v

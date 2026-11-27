@@ -12,6 +12,7 @@ Adds to the route (lat/lon rounded to ~0.1 m):
   water      [{w, pts}|{area}]    rivers, canals and streams; lakes and ponds
   trees      {rows, woods, pts}   tree rows, woods, orchards and parks, single trees; a wood OSM gives its leaf_type
                                   goes to firs (needleleaved), broad (broadleaved) or mixed instead of woods
+  signals    [[lat, lon]]         traffic lights on the route's road (OSM highway=traffic_signals)
 
 The fourth argument, JSON, sets the distances above and "own_rest": 1 -- the route's own ways drawn where it does not
 ride them, a dual carriageway's other half beside a stretch ridden one way (the Institute of Nuclear Physics' Alatau
@@ -530,6 +531,8 @@ for e in ways:
 for e in osm:
     if e["t"] == "n" and e["tags"].get("natural") == "tree" and gap(xy(*e["ll"])) < NEAR["trees"]:
         out["trees"]["pts"].append(ll(xy(*e["ll"])))
+    if e["t"] == "n" and e["tags"].get("highway") == "traffic_signals" and gap(xy(*e["ll"])) < W / 2 + 3:
+        out.setdefault("signals", []).append(ll(xy(*e["ll"])))
 # power towers stand at a line's vertices: OSM's own, the line drawn from tower to tower
 summary = {k: (len(v) if isinstance(v, list) else {kk: len(vv) for kk, vv in v.items()}) for k, v in out.items()}
 print(json.dumps(summary), file=sys.stderr)
