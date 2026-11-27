@@ -1977,10 +1977,10 @@ def test_the_wind_is_kept_with_the_settings_and_named_before_the_start(page: Pag
     expect(page.locator("#windFrom")).to_have_value("270")
     expect(page.locator("#windMs")).to_have_value("7")
     expect(page.locator("#startSum")).to_contain_text("wind 7 m/s from the west")
-    # a hurricane's 50 m/s at the most
+    # 30 m/s at the most, as much as a smart trainer can be told
     page.fill("#windMs", "60")
     page.locator("#windMs").dispatch_event("change")
-    assert page.evaluate("store.get('settings', {}).wind.ms") == 50
+    assert page.evaluate("store.get('settings', {}).wind.ms") == 30
 
 
 @pytest.mark.django_db(transaction=True)
