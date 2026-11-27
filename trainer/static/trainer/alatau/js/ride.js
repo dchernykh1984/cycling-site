@@ -133,7 +133,7 @@ function stepRide(dt, inp, t) {
         const lap = Math.floor((me.s - world.S0) / T.L);
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
       }
-      world.lms.forEach(l => { if (l.done || l.dist > 700) return; let ahead = l.s - me.s; if (T.loop) ahead = ((ahead % T.L) + T.L) % T.L; if (ahead < 220 && ahead > -40) { l.done = true; rideEvent('sight', l); } });
+      world.lms.forEach(l => { if (l.done || l.dist > 700) return; let past = me.s - sightCue(T, l); if (T.loop) past = ((past % T.L) + T.L) % T.L; if (past >= 0 && past < SIGHT_CUE_SPAN_M) { l.done = true; rideEvent('sight', l); } });
     } else { me.s += stepRider(me, 60, grade, dt); }
   }
   bots.forEach(b => {

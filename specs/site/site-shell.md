@@ -290,7 +290,9 @@ carriageway's two halves lies their median -- a pavement each way where it is wi
 narrow one -- and one road ridden twice has one height, the barometer's lag up and down a slope evened out. Where
 a route's points carry the rider's line, the rider rides it -- the source track's way through a corner it took by
 the apex, the right lane elsewhere -- with the bunch round it and the camera on it, always on the road. A sight
-shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km; a building OpenStreetMap
+shows on a route within its own reach, else 14 km for one seen from afar, else 1.3 km, and a rider is told of it
+220 m before its nearest point, earlier the further it stands off, and before a tunnel's cutting that would hide
+it; a building OpenStreetMap
 outlines may be one, drawn to its outline and height with its name lit on its roof (the Royal Tulip hotel by
 Medeu's way). Tests:
 `tests/test_virtual_ride_maps.py`, `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_ride_surroundings.py`.
