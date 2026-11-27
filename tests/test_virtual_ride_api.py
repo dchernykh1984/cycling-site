@@ -417,6 +417,15 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         places = dict(VirtualRide.objects.filter(group_id=group_id).values_list("user_id", "place"))
         self.assertEqual(places, {self.guest.pk: 1, self.host.pk: 2})
 
+    def test_a_ride_together_names_no_winner(self):
+        group_id = self.create(kind="ride").json()["id"]
+        self.post(self.client_g, f"/groups/{group_id}/join")
+        # each page claimed first place
+        self.post(self.client_h, "/rides", _ride(group_id=group_id, duration_s=1520, place=1, field_size=1))
+        self.post(self.client_g, "/rides", _ride(group_id=group_id, duration_s=1490, place=1, field_size=1))
+        places = set(VirtualRide.objects.filter(group_id=group_id).values_list("place", "field_size"))
+        self.assertEqual(places, {(None, None)})
+
 
 class FinishingTogetherTests(MemberClientMixin, TransactionTestCase):
     def test_two_members_finishing_at_once_get_different_places(self):
