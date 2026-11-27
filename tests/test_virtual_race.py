@@ -403,3 +403,51 @@ class JoiningAtOnceTests(TransactionTestCase):
             first.join(timeout=10)
             second.join(timeout=10)
         self.assertEqual(sorted(GroupRideMember.objects.values_list("bib", flat=True)), ["11", "12"])
+
+
+class GatheringARideOrARaceTests(TestCase):
+    """The page gathers what its mode is set to: a free ride a ride together, a race a race -- a time trial without an
+    event starting its riders in the order they joined."""
+
+    def setUp(self):
+        self.host = _member("host")
+
+    def gather(self, user, **over):
+        client = Client()
+        client.force_login(user)
+        payload = {"route": "granfondo", "route_name": "Granfondo 2026", "start_in_s": 600, **over}
+        return client.post(f"{API}/groups", payload, content_type="application/json")
+
+    def seen_by(self, user, path):
+        client = Client()
+        client.force_login(user)
+        return client.get(f"{API}{path}").json()
+
+    def test_a_ride_together_is_gathered_and_listed_as_a_ride(self):
+        made = self.gather(self.host, kind="ride")
+        self.assertEqual(made.status_code, 201, made.content)
+        self.assertEqual(made.json()["kind"], "ride")
+        self.assertEqual([g["kind"] for g in self.seen_by(_member("guest"), "/groups")], ["ride"])
+        # a race is a race, as it was before rides were told apart
+        self.assertEqual(self.gather(_member("racer")).json()["kind"], "race")
+
+    def test_a_ride_together_has_neither_a_time_trial_nor_an_event(self):
+        self.assertEqual(self.gather(self.host, kind="ride", mode="itt").status_code, 422)
+        event = make_open_competition(submitted_by=self.host)
+        self.assertEqual(self.gather(self.host, kind="ride", competition_id=event.pk).status_code, 422)
+        self.assertFalse(GroupRide.objects.exists())
+
+    def test_a_time_trial_without_an_event_starts_its_riders_in_the_order_they_joined(self):
+        group = self.gather(self.host, mode="itt", itt_interval_s=30).json()["id"]
+        riders = [_member("anna"), _member("boris")]
+        for user in riders:
+            client = Client()
+            client.force_login(user)
+            self.assertEqual(client.post(f"{API}/groups/{group}/join").status_code, 200)
+        offsets = [self.seen_by(user, f"/groups/{group}")["me"]["start_offset_s"] for user in (self.host, *riders)]
+        self.assertEqual(offsets, [0, 30, 60])
+        # the lobby keeps it until moments after its last rider's own start
+        made = GroupRide.objects.get(pk=group)
+        self.assertEqual(made.last_start_at, made.start_at + timedelta(seconds=60))
+        # a race without an event, not a time trial, starts everyone at once as before
+        self.assertIsNone(self.gather(_member("vera")).json()["me"])

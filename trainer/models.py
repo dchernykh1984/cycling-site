@@ -62,11 +62,16 @@ class VirtualRide(models.Model):
 
 
 class GroupRide(models.Model):
-    """A race that several members start together: one host, a route and a start time.
+    """A ride or a race that several members start together: one host, a route and a start time.
 
     A race may belong to an event (specs/495-virtual-race): its registered riders join with bibs, ride their
     category's laps, and the site writes the race's timing into the event's timing streams (``trainer.race``).
     """
+
+    class Kind(models.TextChoices):
+        # what the page that gathered it was set to: a free ride's ride together, or a race
+        RIDE = "ride", _("Ride together")
+        RACE = "race", _("Race")
 
     class Mode(models.TextChoices):
         GROUP = "group", _("Group race")
@@ -74,6 +79,8 @@ class GroupRide(models.Model):
 
     route = models.CharField(max_length=40)
     route_name = models.CharField(max_length=120, blank=True, default="")
+    # a ride starts everyone at once and has no event; a race may be a time trial or an event's
+    kind = models.CharField(max_length=4, choices=Kind.choices, default=Kind.RACE)
     host = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hosted_group_rides")
     start_at = models.DateTimeField(db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
