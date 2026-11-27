@@ -208,6 +208,7 @@ function sendEventDraft(r, g, at) {
     put('description_' + lang, fillIn(words[2], v, escapeHTML));
   });
   EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);
+  put('url_announcement', eventWords(LANG, r, g, at).link); // its page, in the page's language, as its announcement
   // its start in the virtual world, named after the route in each language, for the event's venue
   put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); Object.keys(LOCALES).forEach(lang => put('route_name_' + lang, (r.names && r.names[lang]) || r.name));
   put('track_name', r.id); put('track_gpx', routeGpx(r));

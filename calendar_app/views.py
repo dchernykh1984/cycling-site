@@ -1391,6 +1391,9 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         if request.POST.get("registration") == "1":
             draft["registration"] = True
             draft["categories"] = drafts.categories(request.POST.get("categories", ""))
+        announcement = drafts.web_link(request.POST.get("url_announcement", ""))
+        if announcement:
+            draft["url_announcement"] = announcement  # the virtual ride's page: where its riders gather
         track = drafts.track(request.POST.get("track_name", ""), request.POST.get("track_gpx", ""))
         if track:
             draft["track"] = track
