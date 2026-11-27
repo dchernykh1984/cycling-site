@@ -2085,6 +2085,65 @@ def test_a_city_s_button_is_big_enough_to_tap_on_a_phone(page: Page, live_server
         assert wide >= 44 and high >= 44, (city.text_content(), wide, high)
 
 
+# Each play() the page asks of a sound, counted
+_PLAYS = """(() => { const play = HTMLMediaElement.prototype.play; window.plays = 0;
+    HTMLMediaElement.prototype.play = function () { window.plays += 1; return play.call(this); }; })()"""
+_SOUNDING = "() => { const m = document.querySelector('#music'); return !m.paused && m.currentTime > 0; }"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_menu_s_music_starts_silent_plays_once_raised_and_waits_out_a_ride(
+    page: Page, live_server, browser_name: str
+):
+    """Silent at every start of the page; raised on its slider -- a key or a tap, the touch a browser waits for
+    before a page may sound -- it plays at that volume, stops for a ride and plays again back in the menu. Chromium
+    is seen to play the MP3; another browser here only to be asked."""
+    page.add_init_script(_PLAYS)
+    _trainer_in_its_menu(page, live_server)
+    volume, music = page.locator("#musicVol"), page.locator("#music")
+    expect(volume).to_have_value("0")
+    assert music.evaluate("m => [m.paused, m.volume]") == [True, 0]
+    assert page.evaluate("plays") == 0
+    volume.press("ArrowRight")
+    expect(volume).to_have_value("5")
+    assert music.evaluate("m => m.volume") == pytest.approx(0.05)
+    assert page.evaluate("plays") > 0
+    if browser_name == "chromium":
+        page.wait_for_function(_SOUNDING, polling=100)  # the page's frames are the test's: polled by the clock
+    page.click("#modeSeg [data-mode='free']")
+    page.click("#btnStart")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    assert music.evaluate("m => m.paused")
+    asked = page.evaluate("plays")
+    page.click("#btnPause")
+    page.click("#btnQuit")
+    expect(page.locator("#menu")).to_be_visible()
+    assert page.evaluate("plays") > asked
+    if browser_name == "chromium":
+        page.wait_for_function(_SOUNDING, polling=100)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize("width", [360, 1280])
+def test_the_music_s_volume_sits_in_the_top_bar_s_corner_named_and_big_enough_to_tap(
+    page: Page, live_server, width: int
+):
+    """The slider is the top bar's rightmost control -- on a phone above My records, which leaves it no room beside --
+    named in the page's language, and it and My records each answer a tap across 44 px: neither covers the other,
+    in Kazakh, the longest."""
+    page.set_viewport_size({"width": width, "height": 740})
+    _trainer_in_its_menu(page, live_server, "kk")
+    volume = page.get_by_role("slider", name=page.evaluate("TEXT.kk['music.volume']"), exact=True)
+    records = page.locator("#btnRecords")
+    for control in (volume, records):
+        wide, high = control.evaluate(_REACH)
+        assert wide >= 44 and high >= 44, (control, wide, high)
+    v, r = volume.bounding_box(), records.bounding_box()
+    assert v is not None and r is not None
+    assert v["x"] + v["width"] >= r["x"] + r["width"] - 0.5 and v["y"] <= r["y"] + 0.5, (v, r)
+    assert page.locator(".topbar").evaluate("bar => bar.scrollWidth <= bar.clientWidth")
+
+
 def _road_lists() -> dict:
     """The type and disciplines an event from the trainer takes, as the migrations seed them -- laid again where a
     test before this one emptied the tables."""

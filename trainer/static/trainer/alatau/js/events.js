@@ -24,6 +24,10 @@ $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.arm
     if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
 ['#windOn', '#windFrom', '#windMs'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderWind(); renderStartSum(); }));
 $('#demoP').addEventListener('input', e => setDemo(+e.target.value));
+// silent at every start of the page, whatever the browser brings back with it; the volume follows the finger, and
+// the music starts on the slider's change too: on a touch screen the finger's release lets a page sound, not the drag
+$('#musicVol').value = 0;
+['input', 'change'].forEach(type => $('#musicVol').addEventListener(type, playMusic));
 $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateModeUI(); };
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };
 $('#gearV').parentElement.style.pointerEvents = 'auto'; $('#gearV').title = t('plan.chainringTitle');

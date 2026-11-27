@@ -69,6 +69,7 @@ function startMenu() { // страница 1: настройки (3D-сцена 
   me = newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, 0, 2.6);
   applyLook('clean'); setView(settings.view, true); renderStartSum();
   groupRide = null; rideMode = settings.mode; MP.resultsFor = null; $('#btnPhoto').classList.remove('hidden'); if (MP.status === 'on') mpSchedule(300); renderMP();
+  playMusic();
 }
 function renderStartSum() {
   const el = $('#startSum'); if (!el) return;
@@ -86,6 +87,7 @@ function renderStartSum() {
 const HEAVY_SCENERY = 800, heavyRoute = r => (r.buildings || []).length + (r.roads || []).length > HEAVY_SCENERY;
 // страница 2: заезд
 function startRace() {
+  $('#music').pause(); // the menu's music is the menu's: a ride is ridden without it
   readSettings();
   rideMode = groupRide ? 'race' : settings.mode;
   rideWind = groupRide ? groupRide.wind : ownWind(); // in a group race, its host's: everyone in it rides in one air

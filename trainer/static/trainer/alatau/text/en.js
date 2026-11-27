@@ -9,6 +9,7 @@ const TEXT_EN = {
     "a11y.minimap": "Mini map",
     "a11y.profile": "Elevation profile",
     "records.title": "My records",
+    "music.volume": "Music volume",
     "lead": "To ride alone, set up the ride and press “Start” to open it; for a ride together or a race, press “Go to the start” on its card below. Connect sensors, a heart rate monitor or a smart trainer, or ride in demo mode.",
     "sec.route": "Route",
     "sec.mode": "Mode",

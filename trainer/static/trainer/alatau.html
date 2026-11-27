@@ -17,7 +17,12 @@
 <div id="menu" class="page" role="main" data-t-label="a11y.setup">
   <header class="topbar">
     <div class="brand"><svg width="44" height="28" viewBox="0 0 54 34" aria-hidden="true"><path d="M2 32 L16 10 L22 18 L30 4 L52 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M26 10 L30 4 L34 10 L31 9 L29 11 Z" fill="currentColor"/><circle cx="44" cy="9" r="4" fill="#C3323B"/></svg><h1 data-t="brand"></h1></div>
-    <button class="btn" id="btnRecords" type="button" data-t="records.title"></button>
+    <div class="top-acts">
+      <button class="btn" id="btnRecords" type="button" data-t="records.title"></button>
+      <!-- the menu's music: silent at every start of the page, its volume in the corner -->
+      <label class="vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg><input type="range" id="musicVol" min="0" max="100" step="5" value="0" data-t-label="music.volume"></label>
+      <audio id="music" src="alatau/data/menu-music.mp3" loop preload="none"></audio>
+    </div>
   </header>
   <div class="setup"><div class="setup-in">
     <p class="lead" data-t="lead"></p>
