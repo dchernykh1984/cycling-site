@@ -7,6 +7,7 @@ form opens filled with them for the member to check and submit. Nothing is an ev
 import io
 import json
 import tempfile
+import uuid
 from datetime import timedelta
 from unittest import mock
 
@@ -266,10 +267,22 @@ class VirtualRaceDraftTests(TestCase):
             self.assertContains(shown, gettext("Go to the virtual ride"))
         ride.refresh_from_db()
         self.assertIsNone(ride.competition)
-        # its edit page shows it and keeps it, whatever a form sends
+        # its edit page shows it, and neither its form nor the API takes another: a change to the event keeps it
         edit = self.client.get(reverse("competition_edit", args=[event.pk]))
         self.assertContains(edit, 'id="virtual-ride-field"')
-        self.assertEqual(Competition._meta.get_field("virtual_ride").editable, False)
+        self.assertNotIn("virtual_ride", edit.context["form"].fields)
+        self.organizer.api_token = uuid.uuid4()
+        self.organizer.save(update_fields=["api_token"])
+        other = self.race(kind=GroupRide.Kind.RIDE)
+        patched = self.client.patch(
+            f"/api/v1/competitions/{event.pk}",
+            data=json.dumps({"title": {"ru": "Renamed"}, "virtual_ride": other.pk}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.organizer.api_token}",
+        )
+        self.assertEqual(patched.status_code, 200, patched.content)
+        event.refresh_from_db()
+        self.assertEqual((event.title_ru, event.virtual_ride), ("Renamed", ride.pk))
 
     def test_the_api_names_the_ride_an_event_is_ridden_in(self):
         ride = self.race()
