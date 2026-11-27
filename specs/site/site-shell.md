@@ -270,7 +270,8 @@ road is drawn once, each way in its own lane, and a route that ends where it sta
 under one arch for both; turned round on its road at its start as at its far end -- from edge to edge, its
 curvature easing in and out, the road going on past each turn as OpenStreetMap has it and drawn as the route's
 own -- it is a loop ridden lap after lap, a race finishing on its way back past its line, before the turn at its
-start (Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_on_road.py`). A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
+start (Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_on_road.py`). A route from one place to another stops at its finish, its road going on past it
+as the route's own (Medeu's serpentine on to Shymbulak; `scripts/virtual_ride/road_past_finish.py`). A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
 scenery's own ground as it is: the real ranges, hills and valleys, lowered by the Earth's curve as a rider sees
 them, and not drawn over that ground; within 400 m of that ground's edge the ground comes to
 the relief's own surface, on the triangles the relief is drawn as, so they meet there within a metre. A map without one raises a range instead, which runs 150 km either

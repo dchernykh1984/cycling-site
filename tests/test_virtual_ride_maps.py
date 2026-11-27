@@ -251,6 +251,19 @@ class MapsTests(SimpleTestCase):
             )
             self.assertGreater(length, 1000)
 
+    def test_medeu_s_road_goes_on_past_its_finish_as_the_route_s_own(self):
+        # the serpentine on up to Shymbulak was pieces of a grey side road, cut off at the arch
+        route = next(r for r in _routes() if r["id"] == "medeu")
+        (onward,) = [r for r in route["roads"] if r.get("onward")]
+        end = route["pts"][-1]
+        kx = 111320 * math.cos(math.radians(end[0]))
+        far = [math.hypot((p[1] - end[1]) * kx, (p[0] - end[0]) * 111195) for p in onward["pts"]]
+        self.assertLess(min(far), 1)  # it leaves the route's own last point
+        length = sum(
+            math.hypot((b[1] - a[1]) * kx, (b[0] - a[0]) * 111195) for a, b in itertools.pairwise(onward["pts"])
+        )
+        self.assertEqual((onward["lanes"], onward["w"] < route["width"], length > 1000), (2, True, True))
+
     def test_the_institute_s_figure_eight_never_crosses_itself(self):
         # its loops meet on the Alatau road's two carriageways, each ridden one way on its left one, as the ride it is
         # built from went: no crossroads -- matched to the carriageways by traffic's way, it crossed itself twice

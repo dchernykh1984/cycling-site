@@ -120,6 +120,9 @@ Two more passes over a map entry, each writing it where it stands:
   start -- a loop -- from edge to edge, the road going on past each turn as OpenStreetMap has it (`"onward"` roads,
   drawn as the route's own) (Kyrbaltabay -- Tuganbay); laps are a loop's, a route from one place to another ends at
   its finish, and a loop turned at its start finishes a race on its way back past its line.
+- `road_past_finish.py map.js osm.json id way_id`: the road a route from one place to another rides, going on
+  past its finish along that OpenStreetMap way as the route's own road, its pieces among the roads round the
+  route dropped (Medeu's serpentine on to Shymbulak).
 
 A route's picture for an event's link card is its view in the virtual world, `maps/<map>/views/<id>.jpg`, 1200 by
 630: rendered from its scene (headless Chromium draws it with SwiftShader), a rider in front of what the route is
