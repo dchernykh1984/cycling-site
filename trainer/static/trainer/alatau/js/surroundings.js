@@ -13,13 +13,13 @@ function along(q, step) {
   if (q.length) out.push(q[q.length - 1]);
   return out;
 }
-// a band of half-width h along points, each of its edges' points at the height y gives that point (and its index),
-// its geometry's positions and indexes added to P and I
+// a band of half-width h -- a number, or one per point from h(point) -- along points, each of its edges' points at the
+// height y gives that point (and its index), its geometry's positions and indexes added to P and I
 function band(P, I, pts, h, y) {
   const base = P.length / 3;
   pts.forEach((p, i) => {
-    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-    const rx = -(b.z - a.z) / L, rz = (b.x - a.x) / L, l = { x: p.x - rx * h, z: p.z - rz * h }, r = { x: p.x + rx * h, z: p.z + rz * h };
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1, w = typeof h === 'function' ? h(p) : h;
+    const rx = -(b.z - a.z) / L, rz = (b.x - a.x) / L, l = { x: p.x - rx * w, z: p.z - rz * w }, r = { x: p.x + rx * w, z: p.z + rz * w };
     P.push(l.x, y(l, i), l.z, r.x, y(r, i), r.z);
     if (i) { const v = base + i * 2; I.push(v - 2, v - 1, v, v - 1, v + 1, v); }
   });
@@ -99,7 +99,7 @@ function landMaterial(T, W) {
   return mat;
 }
 
-const ROAD_CREASE_M = 2.5, ROAD_JOIN_M = 1;
+const ROAD_CREASE_M = 2.5, ROAD_JOIN_M = 1, RAMP_WALL_GAP_M = .3, ROAD_NARROWEST_HALF_M = 1;
 // --- the roads round the route: on the ground, rising onto the route's own road where they meet it
 function addRoads(G, T, W, roads, ground, decks = []) {
   const P = [], I = [], WP = [], WI = [], ramps = rampsOf(T, roads, decks, ground);
@@ -123,9 +123,9 @@ function addRoads(G, T, W, roads, ground, decks = []) {
     };
     const height = (p, i) => {
       const n = routeNearest(T, p.x, p.z), land = onLand(p, i) + lift, g = Math.max(land, up ? up[i] : -Infinity);
-      // what it meets is the route itself: not the valley drawn on past its finish, nor its road down a tunnel's ramp
-      // between walls, which a street beside keeps the ground over
-      const ramp = T.route.tunnels && cutGround(T, n.s) != null && overTunnel(T, n.s) == null;
+      // what it meets is the route itself: not the valley drawn on past its finish, nor -- beside it -- its road down a
+      // tunnel's ramp between walls, which a street beside keeps the ground over; on the route's road, under it
+      const ramp = T.route.tunnels && n.d >= W / 2 + .3 && cutGround(T, n.s) != null && overTunnel(T, n.s) == null;
       if (n.d > W / 2 + 22 || n.s > T.L || ramp || (up && up[i] > -Infinity && toJoin(i) > 30)) return g;
       // over a tunnel the street keeps the ground line; under the route's own road a hand's breadth below it, so the
       // two never flicker; off its edge rising to it over 22 m, and never under the land beside it
@@ -134,7 +134,14 @@ function addRoads(G, T, W, roads, ground, decks = []) {
       if (n.d < W / 2 + .3) return n.y - .05;
       return Math.max(n.y + (g - n.y) * clamp((n.d - W / 2) / 22, 0, 1), n.d > W / 2 + ROAD_JOIN_M ? land : -Infinity);
     };
-    band(P, I, q, r.w / 2, height);
+    // beside a tunnel's ramp a street runs up to its wall, never over its cutting: narrower where its edge would be
+    // (Central loop's, by 0.6 m, hung 3 m over the road down the ramp)
+    const half = p => {
+      const n = routeNearest(T, p.x, p.z);
+      if (!T.route.tunnels || cutGround(T, n.s) == null || overTunnel(T, n.s) != null) return r.w / 2;
+      return clamp(n.d - W / 2 - RAMP_WALL_GAP_M, ROAD_NARROWEST_HALF_M, r.w / 2);
+    };
+    band(P, I, q, half, height);
     if (!up) return;
     // a ramp up to a bridge stands between retaining walls, from the ground to a parapet over the road
     for (const side of [-1, 1]) {
