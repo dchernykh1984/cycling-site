@@ -4,12 +4,19 @@ The page posts the event's words in each language, its date and its types and di
 form opens filled with them for the member to check and submit. Nothing is an event until they do.
 """
 
-from django.test import TestCase
+import json
+import tempfile
+from datetime import timedelta
+
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.views import _selected_discipline_ids
+from locations.models import Location
+from trainer.models import GroupRide
 
 DRAFT = {
     "title_ru": "Virtual group race: Old centre",
@@ -78,3 +85,105 @@ class EventDraftTests(TestCase):
         response = self.client.post(reverse("calendar_submit_draft"), DRAFT)
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("account_login"), response["Location"])
+
+
+#: A route's track as the virtual ride sends it: three points of the old centre
+GPX = (
+    '<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">'
+    '<trk><name>Old centre</name><trkseg><trkpt lat="43.2380" lon="76.9450"><ele>800</ele></trkpt>'
+    '<trkpt lat="43.2390" lon="76.9460"><ele>805</ele></trkpt><trkpt lat="43.2400" lon="76.9470"><ele>810</ele></trkpt>'
+    "</trkseg></trk></gpx>"
+)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class VirtualRaceDraftTests(TestCase):
+    """The virtual ride's "Add event" also brings the venue at its route's start, a race's registration with its
+    categories, the route's track and the race the event is to hold -- taken only by the form its draft opened."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.organizer = User.objects.create_user(
+            username="org", email="org@example.com", password="Pass1234!", role=User.Role.ORGANIZER
+        )
+        city = (
+            Location.add_root(name_ru="KZ", name_en="KZ")
+            .add_child(name_ru="Region", name_en="Region")
+            .add_child(name_ru="City", name_en="City")
+        )
+        cls.start = city.add_child(name_ru="Start", name_en="Start", lat=43.2380, lng=76.9450)
+        city.add_child(name_ru="Far", name_en="Far", lat=43.2600, lng=76.9450)  # 2.4 km on
+
+    def setUp(self):
+        self.client.force_login(self.organizer)
+
+    def race(self, host=None, kind=GroupRide.Kind.RACE):
+        start = timezone.now() + timedelta(days=3)
+        return GroupRide.objects.create(route="oldtown", host=host or self.organizer, kind=kind, start_at=start)
+
+    def draft(self, **extra):
+        return self.client.post(reverse("calendar_submit_draft"), {**DRAFT, **extra})
+
+    def form_page(self):
+        return self.client.get(reverse("calendar_submit") + "?draft=1")
+
+    def submit(self, key, title="Virtual race"):
+        payload = {"title_ru": title, "date_start": "2026-12-02", "location": str(self.start.pk), "draft_key": key}
+        return self.client.post(reverse("calendar_submit"), payload)
+
+    def test_the_venue_at_the_route_s_start_is_chosen_and_none_further_than_300_m(self):
+        self.draft(start_lat="43.2381", start_lng="76.9452")
+        self.assertEqual(self.form_page().context["form"]["location"].value(), self.start.pk)
+        self.draft(start_lat="43.2490", start_lng="76.9450")  # 1.2 km from either
+        self.assertIsNone(self.form_page().context["form"]["location"].value())
+
+    def test_a_race_s_registration_comes_on_with_its_categories(self):
+        rows = [
+            {"name": "Men", "male": True, "female": False, "laps": 3},
+            {"name": "Women", "male": False, "female": True, "laps": 3},
+            {"name": " "},
+            "not a row",
+        ]
+        self.draft(registration="1", categories=json.dumps(rows))
+        page = self.form_page()
+        self.assertTrue(page.context["reg_form"].initial["registration_enabled"])
+        shown = [(r["name"], r["male"], r["female"], r["laps"]) for r in json.loads(page.context["categories_json"])]
+        self.assertEqual(shown, [("Men", True, False, 3), ("Women", False, True, 3)])
+
+    def test_the_route_s_track_is_attached_unless_the_member_chose_a_file(self):
+        self.draft(track_name="oldtown", track_gpx=GPX)
+        page = self.form_page()
+        self.assertContains(page, 'id="route-draft-track"')
+        self.submit(page.context["draft_key"])
+        event = Competition.objects.get(title_ru="Virtual race")
+        self.assertTrue(event.file_route.name.endswith("oldtown.gpx"), event.file_route.name)
+        self.assertEqual(event.file_route.read().decode(), GPX)
+
+    def test_what_holds_no_track_is_not_attached(self):
+        self.draft(track_name="oldtown", track_gpx="<gpx>nothing to draw</gpx>")
+        self.assertFalse(self.form_page().context["draft_track"])
+
+    def test_the_race_is_held_by_the_event_made_from_its_draft(self):
+        race = self.race()
+        self.draft(virtual_race=str(race.pk), registration="1")
+        self.submit(self.form_page().context["draft_key"])
+        race.refresh_from_db()
+        self.assertEqual(race.competition, Competition.objects.get(title_ru="Virtual race"))
+
+    def test_a_form_opened_otherwise_takes_nothing_of_a_draft_left_over(self):
+        race = self.race()
+        self.draft(virtual_race=str(race.pk), track_name="oldtown", track_gpx=GPX)
+        self.submit("")  # the form opened by hand later sends no key
+        race.refresh_from_db()
+        self.assertIsNone(race.competition)
+        self.assertFalse(Competition.objects.get(title_ru="Virtual race").file_route)
+
+    def test_someone_else_s_race_or_a_ride_is_held_by_no_event(self):
+        other = User.objects.create_user(
+            username="other", email="other@example.com", password="Pass1234!", role=User.Role.ORGANIZER
+        )
+        for race in (self.race(host=other), self.race(kind=GroupRide.Kind.RIDE)):
+            self.draft(virtual_race=str(race.pk))
+            self.submit(self.form_page().context["draft_key"], title=f"Virtual race {race.pk}")
+            race.refresh_from_db()
+            self.assertIsNone(race.competition)

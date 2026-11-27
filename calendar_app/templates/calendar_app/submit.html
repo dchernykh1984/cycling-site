@@ -106,6 +106,7 @@
         {% endif %}
       {% endfor %}
 
+      {% if draft_key %}<input type="hidden" name="draft_key" value="{{ draft_key }}">{% endif %}
       {% with initial_location_id=form.location.value %}
         {% include "calendar_app/_location_cascade.html" %}
       {% endwith %}
@@ -138,6 +139,7 @@
         <div class="form-text" id="route-file-hint">{% trans "and the track file, from which the map draws the track" %}</div>
         {{ form.file_route }}
         {% if form.file_route.errors %}<div class="text-danger small mt-1">{% for e in form.file_route.errors %}{{ e }}{% endfor %}</div>{% endif %}
+        {% if draft_track %}<div class="form-text" id="route-draft-track">{% trans "The route's track is attached when the event is saved, unless you choose a file of your own." %}</div>{% endif %}
       </div>
 
       <div class="mb-3">
