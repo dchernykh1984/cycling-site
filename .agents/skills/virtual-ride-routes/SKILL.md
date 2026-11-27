@@ -186,6 +186,18 @@ Each was found by the maintainer riding a route; the engine or a tool now avoids
 - **What the maintainer remembers of the colours.** In the Big Almaty gorge grass gives way to stone from 2600 to
   2800 m and snow lies from 3000 m, white from 3200 m; woods follow OpenStreetMap's `leaf_type` (spruces, broadleaved,
   mixed), not one kind at random.
+- **A road hanging over its slope.** On the Cosmostation's serpentines the road hung up to 30 m over the land: a
+  gorge's road lies on an earth fill down to it (`addFills`), and where its own way back made the room beside it read
+  as none (`roomBeside`), no fill was built -- the same road ridden back is not a neighbour. A road a sight shapes
+  the land under (the Ayusai dam's hairpins, `SHAPES`) gets no fill: the land is moved instead.
+- **Rivers that climb.** Drawn on the coarse land, the gorge's river climbed onto the road's shelf and down again: a
+  gorge's river runs down its bed now (`carveRivers`, never rising, the land cut under it but not the road's own
+  triangles -- cut, they left the road over a hollow and its fills filled it), and a river's water area whose shore
+  falls more than 3 m is drawn by its line, not as a flat sheet across the slope. A band's heights come by the point's
+  index: its edge points carry no height, and one NaN culled all the water, lakes too.
+- **A pipe broken at the road.** The BAO pipe stopped at each side of the road: it runs on under a bridge (the
+  road's edges over it, from below the tube to the parapets), down under the deck only within 4 m of the road: a
+  pipe on the slope beside a hairpin stays on its supports.
 
 ## Checks before calling a route done
 
