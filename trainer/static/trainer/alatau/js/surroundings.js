@@ -338,6 +338,7 @@ function addUnderpasses(G, T, W, list, ground) {
 
 // --- lines seen from the road: power lines on towers or poles, their wires sagging; railways on their ballast
 const LINE_REACH = 1500; // as far as the scenery's ground: further out they would hang over the plain
+const LINE_CLEAR_M = 6;
 function addLines(G, T, lines, ground) {
   const towers = [], poles = [], wires = [], P = [], I = [], rails = [];
   lines.forEach(l => {
@@ -353,20 +354,34 @@ function addLines(G, T, lines, ground) {
       return;
     }
     const power = l.k === 'power', h = power ? 26 : 9, arm = power ? [-4.2, 0, 4.2] : [-.6, .6];
-    const stands = q.filter(p => routeGap(T, p.x, p.z) < LINE_REACH && routeGap(T, p.x, p.z) > 6).map(p => ({ x: p.x, z: p.z, y: ground(p.x, p.z) }));
+    const stands = q.filter(p => routeGap(T, p.x, p.z) < LINE_REACH && routeGap(T, p.x, p.z) > T.route.width / 2 + 3).map(p => ({ x: p.x, z: p.z, y: ground(p.x, p.z) }));
     stands.forEach((p, i) => {
       const nb = stands[Math.min(stands.length - 1, i + 1)], pb = stands[Math.max(0, i - 1)];
       p.rot = Math.atan2(nb.x - pb.x, nb.z - pb.z);
       (power ? towers : poles).push(p);
     });
+    // a span over the route's road keeps its wires LINE_CLEAR_M over it: the stands either side rise as it asks --
+    // a gorge's line from the valley's floor up across a road on its side hung 4.7 m over it
+    const sagOf = span => Math.min(power ? 6 : 1.5, span * span / 30000);
+    const wireY = (a, b, f, sag) => a.y + (a.lift || 0) + h - 1 + (b.y + (b.lift || 0) - a.y - (a.lift || 0)) * f - sag * 4 * f * (1 - f);
+    for (let i = 0; i + 1 < stands.length; i++) {
+      const a = stands[i], b = stands[i + 1], span = Math.hypot(b.x - a.x, b.z - a.z);
+      if (span > 600) continue;
+      let need = 0;
+      for (let k = 0; k <= 32; k++) {
+        const f = k / 32, x = a.x + (b.x - a.x) * f, z = a.z + (b.z - a.z) * f, n = routeNearest(T, x, z);
+        if (n.d < T.route.width / 2 + 1) need = Math.max(need, LINE_CLEAR_M - (wireY(a, b, f, sagOf(span)) - n.y));
+      }
+      if (need > 0) { a.lift = Math.max(a.lift || 0, need); b.lift = Math.max(b.lift || 0, need); }
+    }
     for (let i = 0; i + 1 < stands.length; i++) {
       const a = stands[i], b = stands[i + 1], span = Math.hypot(b.x - a.x, b.z - a.z);
       if (span > 600) continue; // a line that leaves the scenery and comes back is not one wire
-      const sag = Math.min(power ? 6 : 1.5, span * span / 30000);
+      const sag = sagOf(span);
       for (const off of arm) {
         const ax = a.x + Math.cos(a.rot) * off, az = a.z - Math.sin(a.rot) * off, bx = b.x + Math.cos(b.rot) * off, bz = b.z - Math.sin(b.rot) * off;
         for (let k = 0; k < 8; k++) {
-          const f0 = k / 8, f1 = (k + 1) / 8, y = f => a.y + h - 1 + (b.y - a.y) * f - sag * 4 * f * (1 - f);
+          const f0 = k / 8, f1 = (k + 1) / 8, y = f => wireY(a, b, f, sag);
           wires.push(ax + (bx - ax) * f0, y(f0), az + (bz - az) * f0, ax + (bx - ax) * f1, y(f1), az + (bz - az) * f1);
         }
       }
@@ -382,7 +397,8 @@ function addLines(G, T, lines, ground) {
   const stand = (list, geo, sx, sy, colour, name, lattice) => {
     if (!list.length) return;
     const im = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: colour, wireframe: !!lattice }), list.length), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(sx, sy, sx), V = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
-    list.forEach((p, i) => { Q.setFromAxisAngle(up, p.rot); V.set(p.x, p.y - ROOT_M, p.z); M.compose(V, Q, S); im.setMatrixAt(i, M); });
+    // a stand risen for a span over the road: a tower or a pole taller, an arm higher
+    list.forEach((p, i) => { Q.setFromAxisAngle(up, p.rot); V.set(p.x, p.y - ROOT_M + (sy === 1 ? p.lift || 0 : 0), p.z); S.set(sx, sy === 1 ? 1 : sy + (p.lift || 0), sx); M.compose(V, Q, S); im.setMatrixAt(i, M); });
     im.name = name; G.add(im);
   };
   // a lattice tower as a slim four-sided spire with its cross-arm; a pole as a post with its own
