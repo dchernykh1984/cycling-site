@@ -1,5 +1,5 @@
 """A virtual race with protocols on the trainer's page (specs/495-virtual-race): who drafts whom by its rules, the
-route's control points and the crossings the page reports, the bib on the kit, the race's settings for an event,
+route's control points and the crossings the page reports, the bib on the kit, what block 3 gathers in each mode,
 and the phone told a heavy route may run slowly."""
 
 import pytest
@@ -170,21 +170,12 @@ def test_crossings_left_over_go_from_the_menu_with_their_race_and_are_sent_once(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_an_organizer_sets_a_race_up_for_their_event(page: Page, live_server):
+def test_block_three_gathers_what_the_mode_rides_together(page: Page, live_server):
+    """A race with its settings at hand in race mode, a ride together in a free ride, nothing in a workout."""
     _trainer_in_its_menu(page, live_server)
-    expect(page.locator("#mpRaceBox")).to_be_hidden()  # a member without events of their own sees nothing of it
-    page.evaluate(
-        """async () => {
-            Site.get = async path => path === '/events'
-                ? [{ id: 3, title: { ru: 'Zimnii kubok', kk: 'Qysqy kubok', en: 'Winter Cup' }, url: '/ru/calendar/3/',
-                     date_start: '2026-12-20' }] : [];
-            await mpLoadEvents();
-        }"""
-    )
-    expect(page.locator("#mpRaceBox")).to_be_visible()
-    expect(page.locator("#mpRaceOpts")).to_be_hidden()
-    page.select_option("#mpRaceEvent", "3")
-    expect(page.locator("#mpRaceOpts")).to_be_visible()
+    page.click("#modeSeg [data-mode='race']")
+    expect(page.locator("#mpCreate")).to_have_text(page.evaluate("t('mp.create')"))
+    expect(page.locator("#mpRaceOpts")).to_be_visible()  # no event to choose before them any more
     expect(page.locator("#mpRaceGapL")).to_be_visible()
     expect(page.locator("#mpRaceIntervalL")).to_be_hidden()
     page.select_option("#mpRaceMode", "itt")
@@ -194,23 +185,57 @@ def test_an_organizer_sets_a_race_up_for_their_event(page: Page, live_server):
     expect(page.locator("#mpRaceDraftL")).to_be_hidden()
     page.fill("#mpRaceInterval", "45")
     asked = page.evaluate("routeSel = 'center'; mpRace({ start_in_s: 120 })")
-    assert {k: asked[k] for k in ("competition_id", "mode", "itt_interval_s", "loop", "start_in_s")} == {
-        "competition_id": 3,
+    assert {k: asked.get(k) for k in ("kind", "mode", "itt_interval_s", "loop", "start_in_s", "competition_id")} == {
+        "kind": "race",
         "mode": "itt",
         "itt_interval_s": 45,
         "loop": True,
         "start_in_s": 120,
+        "competition_id": None,
     }, asked
-    # a race for a date and time: the event is there already, so no new event is offered for it
-    page.select_option("#mpDelay", "at")
-    expect(page.locator("#mpEvent")).to_be_hidden()
-    page.select_option("#mpRaceEvent", "")
-    expect(page.locator("#mpEvent")).to_be_visible()
-    assert "competition_id" not in page.evaluate("mpRace({ start_in_s: 120 })")
-    page.select_option("#mpRaceEvent", "3")
-    for control in ("#mpRaceEvent", "#mpRaceMode", "#mpRaceInterval"):
+    for control in ("#mpRaceMode", "#mpRaceInterval"):
         box = page.locator(control).bounding_box()
         assert box and box["height"] >= 44, (control, box)
+    # a race's event, with its registration on the site, is an organizer's to add
+    page.select_option("#mpDelay", "at")
+    expect(page.locator("#mpEvent")).to_be_hidden()
+    page.evaluate("Records.me = Object.assign({}, Records.me, { organizes: true }); renderRaceOpts()")
+    expect(page.locator("#mpEvent")).to_be_visible()
+    # a free ride gathers a ride together: no race's settings, and anyone adds its event
+    page.evaluate("Records.me = Object.assign({}, Records.me, { organizes: false })")
+    page.click("#modeSeg [data-mode='free']")
+    expect(page.locator("#mpCreate")).to_have_text(page.evaluate("t('mp.createRide')"))
+    expect(page.locator("#mpRaceOpts")).to_be_hidden()
+    expect(page.locator("#mpEvent")).to_be_visible()
+    asked = page.evaluate("mpRace({ start_in_s: 120 })")
+    assert asked["kind"] == "ride" and "mode" not in asked, asked
+    # a workout gathers nothing: each rides their own plan, and the block says so and where to go instead
+    page.click("#modeSeg [data-mode='plan']")
+    expect(page.locator("#mpPlanNote")).to_have_text(page.evaluate("t('mp.planNote')"))
+    expect(page.locator("#mpBody")).to_be_hidden()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_card_tells_a_ride_from_a_race_and_a_time_trial_says_the_rider_s_own_start(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            const soon = new Date(Date.now() + 600e3).toISOString();
+            const later = new Date(Date.now() + 7200e3).toISOString();
+            const host = { user_id: 7, name: 'Anna' };
+            MP.status = 'on';
+            MP.groups = [
+                { id: 1, route: 'center', start_at: soon, host, members: [host], kind: 'ride', mode: 'group' },
+                { id: 2, route: 'center', start_at: later, host, members: [host], is_member: true, kind: 'race',
+                  mode: 'itt', itt_interval_s: 30, me: { bib: '', group: '', laps: 1, start_offset_s: 60 } },
+            ];
+            renderMP();
+        }"""
+    )
+    cards = page.locator("#mpGroups .mp-group")
+    expect(cards.nth(0).locator("b")).to_contain_text("Anna is gathering a ride")
+    expect(cards.nth(1).locator("b")).to_contain_text("Anna is gathering a race")
+    expect(cards.nth(1).locator("small")).to_contain_text("Individual time trial. Your start 1:00 after the race's.")
 
 
 @pytest.mark.django_db(transaction=True)

@@ -148,19 +148,32 @@ smart trainer is told the wind against the rider, the HUD says it is ahead, behi
 summary names it. A ride with wind is saved with it and marked so; it counts for peak power, the rider's own, but
 sets no route record or top speed. In a group race every member rides in its host's wind, kept with the race and
 named on its card; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,
-`tests/test_virtual_ride_api.py`). Members ride together: the settings page lists who else is on it and the
-open group races; a member gathers a race on the chosen route with a start 20 s to 1 h away (the
+`tests/test_virtual_ride_api.py`). Members ride together as the mode says: a free ride gathers a ride together
+(everyone starting at once; no event, no time trial), a race a race with its settings at hand -- a group race or
+an individual time trial, the gap between the categories' starts or the interval between the riders', whether
+categories draft each other -- and a workout nothing: each rides their own plan, and block 3 says so and where to
+go instead; a link to a ride or a race opened in a workout turns the page once to the mode that rides it. The
+settings page lists who else is on it and the open rides and races, each card saying which; a member gathers one
+on the chosen route with a start 20 s to 1 h away (the
 page offers 30 s to 1 h) or at a date and time on their own clock, up to a year ahead; one host's races start an
 hour apart at least, ten waiting at most (every lobby lists them all), and a member joins any race an hour from the
 others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
-and a card further ahead names its day and time. Beside a date and time, "Add event" gathers the race then (or
-takes the member's own on that route at that minute) and sends the whole window to the event form filled from the
-route's template ([events](events.md), story 1.6): each route of a map carries one, `event`, with the event's
-title, link preview and description in ru, kk and en and its type and discipline by their English names ("Virtual
-Ride", "Coffee Ride": the member changes them in the form). The page fills the start's time with its UTC offset,
-its day, the race's link on the site's page in each language, the route's length and climb, the race's wind and the
-word on the button that joins it; the date goes into the event's date. "Start" while waiting rides alone and
+and a card further ahead names its day and time. A time trial without an event starts its riders an interval
+apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
+its last rider's. Beside a date and time, "Add event" gathers the ride or the race then (or takes the member's own
+of that kind on that route at that minute) and sends the whole window to the event form filled from it
+([events](events.md), story 1.6): a ride's words or a race's in ru, kk and en round the route's own way and finish
+(each route of a map carries them, `event`), the type "Virtual Ride" and the discipline "Coffee Ride" for a ride,
+"Road Race" or "Individual Time Trial" for a race by its mode; the venue the place tree has within 300 m of the
+route's start; the route's track, attached as the event's track file when it is saved unless the member chose a
+file of their own; and for a race -- an organizer's only, as only an organizer's form registers riders --
+registration on the site with the categories Men and Women, three laps each on a loop, and the race itself, which
+the event holds once saved. The form takes its draft's extras only with the key the draft gave it, so a draft left
+over never lands on an event made by hand (`calendar_app/draft.py`, `tests/test_event_draft.py`). The page fills
+the start's time with its UTC offset, its day, the link on the site's page in each language, the route's name,
+length and climb, the wind and the word on the button that joins it, and for a race how it starts and, on a loop,
+whose laps; the date goes into the event's date. "Start" while waiting rides alone and
 leaves the race to the others: a host who leaves hands it to the
 rider who joined next, and only a host alone in it cancels it that way ("Cancel" cancels it for all). Each
 race card has "Share": the phone's share sheet, or the link copied, to `/<lang>/virtual-ride/?group=<id>`;
@@ -169,11 +182,11 @@ into view, tells a guest to sign in and brings them back to it, and says when th
 has started or does not exist. During a group race, or a free ride
 on the same route, each page reports its position about once a second and draws the others
 (`trainer/live.py`; rows older than 15 s count as gone). Group results are the members' saved rides,
-fastest first; deleting one moves the others up. A race with protocols (specs/495-virtual-race) is a group race
-tied to an event: its maker -- the event's organizer, or an admin for any public event not over -- picks the
-event under "Riding with friends" and sets the mode (a group race, or an individual time trial in which nobody
-drafts), the gap between the categories' starts or the interval between the riders', and in a group race whether
-riders of different categories draft each other. Only riders registered for the event join it (a rider who is not
+fastest first (a ride together names no winner); deleting one moves the others up. A race with protocols
+(specs/495-virtual-race) is a race an event holds: made with its event from the trainer as above, or through the
+API (`POST /api/v1/virtual-ride/groups` with `competition_id`) by the event's organizer or an admin for any public
+event not over, with the mode, gaps, interval and drafting rule the race keeps. Only riders registered for the
+event join it (a rider who is not
 is sent to the event's page), each with a bib: the one the event gave their registration, else the first free one
 in their category's range, kept across leaving and joining; the bib is drawn on every rider's back and named on
 the race's card with the event, the rider's category, laps and own start. A rider rides their category's laps on a
@@ -211,8 +224,8 @@ is a loop, the road's width and lanes (one lane, a racetrack's, has no centre li
 (`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges), its own buildings, barriers and
 trees when it has them (footprints with a height; a guardrail and a catch fence a gap beyond each edge, broken at the
 buildings; rows and woods, in the steppe or on a racetrack, instead of trees scattered at random -- all as
-OpenStreetMap maps them) and the event
-announcing a group race on it (`event`); and the
+OpenStreetMap maps them) and the way and the finish
+an event on it is written round (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
 line each, in the order the menu shows the cities, so a new map is its folder and that line; a map

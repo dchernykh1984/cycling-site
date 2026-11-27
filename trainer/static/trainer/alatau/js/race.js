@@ -70,7 +70,8 @@ function startMenu() { // страница 1: настройки (3D-сцена 
 function renderStartSum() {
   const el = $('#startSum'); if (!el) return;
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
-  const mode = (typeof MP !== 'undefined' && mpMyGroup()) ? t('sum.group') : settings.mode === 'plan' ? planSummary() : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
+  const mine = typeof MP !== 'undefined' && mpMyGroup();
+  const mode = mine ? ((mine.kind || 'race') === 'ride' ? t('sum.groupRide') : t('sum.group')) : settings.mode === 'plan' ? planSummary() : settings.mode === 'free' ? t('where.free') : +settings.bots ? t('sum.raceBots', { n: settings.bots }) : t('sum.raceAlone');
   const sm = Sensors.mode(), dev = sm === 'demo' ? t('sum.demo') : sm === 'power' ? t('sum.power') : sm === 'speed' ? t('sum.speed') : t('sum.cadence');
   el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = r.name;
   const w = (typeof MP !== 'undefined' && mpMyGroup()) ? null : ownWind();
@@ -109,7 +110,11 @@ function startRace() {
     $('#btnFinish').classList.toggle('hidden', !(planMode || freeMode));
     $('#pauseHint').textContent = freeMode ? t('pause.free') : planMode ? t('pause.plan') : t('pause.race');
     if (freeMode) setTimeout(() => toast(t('toast.free'), 5), 4500);
-    if (groupRide) { $('#pauseHint').textContent = t('pause.group'); setTimeout(() => toast(me.bib ? t('toast.race', { bib: me.bib }) : t('toast.group'), 4), 300); }
+    if (groupRide) {
+      const ride = groupRide.kind === 'ride', itt = groupRide.race && groupRide.race.mode === 'itt';
+      $('#pauseHint').textContent = ride ? t('pause.groupRide') : t('pause.group');
+      setTimeout(() => toast(me.bib ? t('toast.race', { bib: me.bib }) : ride ? t('toast.groupRide') : itt ? t('toast.groupItt') : t('toast.group'), 4), 300);
+    }
     $('#btnPhoto').classList.toggle('hidden', !!groupRide);
     raceT = 0; cdT = groupRide ? Math.max(.5, (groupRide.startAt - Date.now()) / 1000) : 3.999; phase = 'countdown'; paused = false;
     $('#menu').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#count').classList.remove('hidden');
@@ -126,7 +131,8 @@ function finishRace() {
   const avgP = Math.round(st.sumP / Math.max(1, st.t));
   const ride = { id: Date.now().toString(36), date: Date.now(), route: world.route.id, time: Math.round(t * 10) / 10, dist: Math.round(distKm * 100) / 100, avgSpeed: Math.round(distKm / (t / 3600) * 10) / 10, avgPower: avgP, real: st.real, demo: st.demoT > st.t * .5, maxSpeed: Math.round(st.maxV * 36) / 10, gain: Math.round(st.gain), avgCad: st.nCad ? Math.round(st.sumCad / st.nCad) : null, avgHR: st.nHR ? Math.round(st.sumHR / st.nHR) : null, place, of: list.length, char: settings.char, group: !!groupRide, wind: rideWind };
   const rec = Records.add(ride, me.powerLog || []), pb = rec.prev && rec.prev.time;
-  $('#resTitle').textContent = place === 1 && bots.length ? (groupRide ? tr('res.winGroup') : tr('res.win')) : tr('res.finish');
+  // a ride together has no winner: its riders finish
+  $('#resTitle').textContent = place === 1 && bots.length && !(groupRide && groupRide.kind === 'ride') ? (groupRide ? tr('res.winGroup') : tr('res.win')) : tr('res.finish');
   $('#resSub').textContent = world.route.name + (bots.length ? tr('res.place', { p: place, n: list.length }) : '') + (pb && t >= pb ? tr('res.best', { t: fmtTime(pb) }) : '.') + (humans && list.some(x => x.human && x.est) ? tr('res.pending') : '');
   $('#resRec').innerHTML = rec.news.length ? '<b>' + tr('res.newRecords') + '</b><ul>' + rec.news.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '';
   $('#resRec').classList.toggle('hidden', !rec.news.length);

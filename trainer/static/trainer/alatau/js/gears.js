@@ -49,6 +49,7 @@ function renderPlanEditor() {
   document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode ? 'true' : 'false'));
   $('#planEd').classList.toggle('hidden', settings.mode !== 'plan');
   $('#raceOpts').classList.toggle('hidden', settings.mode !== 'race');
+  renderRaceOpts(); // block 3 gathers what the mode rides together, or nothing in a workout
   $('#plFront').innerHTML = Object.keys(FRONTS).concat('custom').map(k => '<option value="' + k + '"' + (k === P.front ? ' selected' : '') + '>' + FRONT_LABEL[k] + '</option>').join('');
   $('#plCass').innerHTML = CASS_GROUPS.map(g => '<optgroup label="' + g[0] + '">' + g[1].map(k => '<option value="' + k + '"' + (k === P.cass ? ' selected' : '') + '>' + cassName(k) + '</option>').join('') + '</optgroup>').join('') + '<option value="custom"' + (P.cass === 'custom' ? ' selected' : '') + '>' + t('bike.custom') + '</option>';
   $('#plFrontCustomF').classList.toggle('hidden', P.front !== 'custom'); $('#plCassCustomF').classList.toggle('hidden', P.cass !== 'custom');
