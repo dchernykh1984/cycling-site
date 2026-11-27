@@ -11,6 +11,7 @@ from unittest import mock
 from django.db import connections
 from django.db.models import F
 from django.test import Client, TestCase, TransactionTestCase
+from django.urls import reverse
 from django.utils import timezone, translation
 
 from accounts.models import User
@@ -150,6 +151,33 @@ class JoiningTests(RaceTestCase):
         self.assertIn(self.event.get_absolute_url(), refused.json()["detail"])
         rejected = self.rider("emil", self.elite, is_rejected=True)
         self.assertEqual(self.join(rejected, group).status_code, 403)
+
+    def test_a_race_card_says_whether_the_member_is_registered_and_where_to_register_or_see_who_is(self):
+        """ "Join" did nothing for a member the event did not have: the card now says whether it has them, and where
+        to register or to see who is registered -- on the race, in the lobby's list and in its presence alike."""
+        group = self.make().json()["id"]
+        register = reverse("registrations:register", kwargs={"pk": self.event.pk})
+        participants = reverse("registrations:participant_list", kwargs={"pk": self.event.pk})
+        riders = {
+            "registered": (self.rider("anna", self.elite), True),
+            "rejected": (self.rider("emil", self.elite, is_rejected=True), False),
+            "not": (_member("dana"), False),
+        }
+        for who, (user, registered) in riders.items():
+            client = self.client_of(user)
+            lobby = client.post(f"{API}/presence", {"status": "lobby"}, content_type="application/json").json()
+            cards = [
+                client.get(f"{API}/groups/{group}").json(),
+                next(g for g in client.get(f"{API}/groups").json() if g["id"] == group),
+                next(g for g in lobby["groups"] if g["id"] == group),
+            ]
+            for card in cards:
+                event = card["event"]
+                self.assertEqual(
+                    (event["registered"], event["register_url"], event["participants_url"]),
+                    (registered, register, participants),
+                    who,
+                )
 
     def test_a_bib_the_event_gave_the_registration_is_kept(self):
         group = self.make().json()["id"]

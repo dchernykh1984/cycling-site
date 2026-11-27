@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Совместная езда: лобби, групповые гонки и соперники онлайн ---------------- */
-const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [] };
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), refused: new Set(), failed: null, lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [] };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
 // the address of a group race: the site's page that frames the trainer, which also hands a newcomer
@@ -102,6 +102,9 @@ const MP_HOUR = 3600e3;
 // how long until a start, in days, hours, minutes and seconds: the larger ones only once there are any
 const fmtCountdown = sec => { const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), p2 = n => String(n).padStart(2, '0'); return (d ? t('cd.days', { d }) + ' ' : '') + (d || h ? t('cd.hours', { h }) + ' ' : '') + (d || h || m ? t('cd.minutes', { m: d || h ? p2(m) : m }) + ' ' : '') + t('cd.seconds', { s: d || h || m ? p2(sec % 60) : sec % 60 }); };
 function mpMyGroup() { return MP.groups.find(g => g.is_member && mpStartLocal(g) - Date.now() < MP_HOUR); }
+// a race an event holds that the member is registered for and has not come to the line of yet: registering is
+// joining it, and its line takes them in (mpEnter)
+const mpRegistered = g => !g.is_member && !!(g.event && g.event.registered);
 const mpClash = g => MP.groups.some(o => o.is_member && o.id !== g.id && Math.abs(Date.parse(o.start_at) - Date.parse(g.start_at)) < MP_HOUR);
 // the start the menu asks for: { start_in_s }, or { start_at, at } at a date and time on the member's own clock, or
 // null for a moment too soon, too far or not filled in
@@ -123,17 +126,25 @@ function renderWhen() {
 const mpStartOf = g => mpStartLocal(g) + ((g.me && g.me.start_offset_s) || 0) * 1000;
 // onto the ride's or race's start line, the scene drawn, counting down to its start: by itself seven seconds before
 // it, or as soon as the member asks ("Go to the start"), however long before
-function mpEnter(g) {
-  MP.started.add(g.id); groupRide = { gid: g.id, startAt: mpStartOf(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
+async function mpEnter(g) {
+  MP.started.add(g.id);
+  if (mpRegistered(g)) { // into the race as they come to its line, their bib given then; a refusal is said, once
+    try { g = await Site.post('/groups/' + g.id + '/join'); } catch (e) { MP.started.delete(g.id); MP.refused.add(g.id); mpFailed(e); return; }
+  }
+  groupRide = { gid: g.id, startAt: mpStartOf(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
   routeSel = g.route; renderMenu(); startRace();
 }
 function mpMaybeStart() {
-  const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
+  const g = mpMyGroup() || MP.groups.find(x => mpRegistered(x) && mpStartLocal(x) - Date.now() < MP_HOUR);
+  if (!g || MP.started.has(g.id) || MP.refused.has(g.id)) return;
   const at = mpStartOf(g), now = Date.now();
   if (now >= at - 7000 && now < at + 30000) mpEnter(g);
 }
+// a refusal stays in the status line a while: the lobby, drawn again at once, wiped it before anyone read it
+const MP_FAILED_MS = 10000;
+function mpFailed(e) { MP.failed = { msg: t('mp.failed', { msg: e.message }), until: Date.now() + MP_FAILED_MS }; renderMP(); }
 async function mpAction(path, body) {
-  try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
+  try { await Site.post(path, body); MP.failed = null; } catch (e) { mpFailed(e); }
   mpSchedule(50);
 }
 // a ride or a race, as the mode gathers, on the chosen route in the host's wind, which is its riders'
@@ -303,7 +314,7 @@ function renderMP() {
     else st.textContent = MP.status === 'connecting' ? t('mp.connecting') : t('mp.offSite');
     renderStartSum(); return;
   }
-  st.textContent = MP.online.length ? t('mp.others', { n: MP.online.length }) : t('mp.alone');
+  st.textContent = MP.failed && Date.now() < MP.failed.until ? MP.failed.msg : MP.online.length ? t('mp.others', { n: MP.online.length }) : t('mp.alone');
   MP.online.forEach(p => {
     const el = document.createElement('span'); el.className = 'mp-chip';
     const where = p.status === 'ride' ? (p.group_id ? t('where.group') : p.mode === 'free' ? t('where.free') : p.mode === 'plan' ? t('where.plan') : t('where.race')) + ': ' + routeName(p.route) : t('where.lobby');
@@ -330,10 +341,10 @@ function renderMP() {
     const who = g.is_host ? (ride ? t('mp.yoursRide') : t('mp.yours')) : ride ? t('mp.hostGathersRide', { name: g.host.name }) : t('mp.hostGathers', { name: g.host.name });
     card.querySelector('b').textContent = who + ': ' + routeTitle(g);
     // a ride or race the member is in: the time left to its start, ticking each second, from the day they joined
-    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || g.is_host) && left > 0;
+    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || g.is_host || mpRegistered(g)) && left > 0;
     count.classList.toggle('hidden', !counting); if (counting) count.textContent = t('mp.countdown', { t: fmtCountdown(left) });
     const small = card.querySelector('small');
-    small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
+    small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + (g.members.length ? t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) : '.') + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     if (g.event) { // a race with protocols: its event, linked; a time trial said so; the member's own bib, category, laps and start
       const [before, after] = t('mp.raceOf', { title: '\u0000' }).split('\u0000'), a = document.createElement('a');
       a.href = langPath(g.event.url); a.target = '_top'; a.textContent = L(g.event.title);
@@ -342,10 +353,14 @@ function renderMP() {
       small.append(t('mp.raceItt') + (g.me && g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : ''));
     }
     const go = card.querySelector('.go'); go.classList.toggle('hidden', !counting); go.textContent = t('mp.toStart');
-    go.onclick = () => { if (!MP.started.has(g.id)) mpEnter(g); };
+    go.onclick = () => { if (!MP.started.has(g.id)) { MP.refused.delete(g.id); mpEnter(g); } };
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
+    const ev = g.event;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }
+    // a race an event holds is its registered riders': theirs see who else is, anyone else is sent to register
+    else if (ev && ev.registered) { btn.textContent = t('mp.registered'); btn.onclick = () => window.open(langPath(ev.participants_url), '_top'); }
+    else if (ev) { btn.textContent = t('mp.register'); btn.disabled = left === 0; btn.onclick = () => window.open(langPath(ev.register_url), '_top'); }
     else if (g.is_member) { btn.textContent = t('mp.leave'); btn.onclick = () => mpAction('/groups/' + g.id + '/leave'); }
     else { btn.textContent = t('mp.join'); btn.disabled = mpClash(g) || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });

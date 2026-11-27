@@ -49,14 +49,27 @@ def can_tie(user, competition: Competition) -> bool:
     return competition.submitted_by_id == user.pk and roles.at_least(user, roles.PUBLISH_EVENTS)
 
 
+def _registrations_of(user):
+    """The rider's own registrations that were not rejected: the ones a race with protocols takes."""
+    return CompetitionRegistration.objects.filter(user=user, is_rejected=False)
+
+
 def registration_of(user, competition: Competition) -> CompetitionRegistration | None:
     """The rider's own registration for the event that was not rejected."""
     return (
-        CompetitionRegistration.objects.filter(competition=competition, user=user, is_rejected=False)
+        _registrations_of(user)
+        .filter(competition=competition)
         .select_related("category", "team")
         .order_by("registered_at", "pk")
         .first()
     )
+
+
+def registered_for(user, event_ids) -> set[int]:
+    """Which of these events the rider holds a registration for, as registration_of finds one: in one query."""
+    if not event_ids:
+        return set()
+    return set(_registrations_of(user).filter(competition_id__in=event_ids).values_list("competition_id", flat=True))
 
 
 def writing(race) -> bool:

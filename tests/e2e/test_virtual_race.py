@@ -347,6 +347,78 @@ def test_a_member_waits_on_the_start_line_for_the_real_start_however_far_ahead(p
     assert page.evaluate("MP.started.has(4)") is False
 
 
+_AN_EVENT_S_RACE = """registered => {
+    window.open = (url, target) => { window.opened = [url, target]; }; // the site's pages, opened in the top window
+    MP.status = 'on'; MP.offset = 0; mpSchedule = () => {}; // the site is not asked: this is the race
+    MP.groups = [{ id: 9, route: 'center', route_name: 'Center', host: { user_id: 2, name: 'Organizer' },
+        is_host: false, is_member: false, members: [], cancelled: false, wind_ms: 0, wind_from_deg: 0, kind: 'race',
+        start_at: new Date(Date.now() + 2 * 3600e3).toISOString(), mode: 'group', group_gap_s: 0,
+        itt_interval_s: 30, draft_between_groups: true, loop: true, me: null,
+        event: { id: 3, title: { ru: 'Zimnii kubok', kk: 'Qysqy kubok', en: 'Winter Cup' }, url: '/ru/calendar/3/',
+                 registered, register_url: '/ru/competitions/3/register/',
+                 participants_url: '/ru/competitions/3/participants/' } }];
+    renderMP();
+}"""
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_race_card_sends_a_member_the_event_does_not_have_to_register(page: Page, live_server):
+    """ "Join" on a race an event holds did nothing for a member not registered for it: the site refused, and the
+    lobby, drawn again at once, wiped the refusal. The card sends them to the event's registration instead, and a
+    race no one has come to yet does not read "Riders: ."."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_AN_EVENT_S_RACE, False)
+    card = page.locator('#mpGroups .mp-group[data-gid="9"]')
+    expect(card.locator(".act")).to_have_text(page.evaluate("t('mp.register')"))
+    expect(card.locator(".go")).to_be_hidden()
+    expect(card.locator("small")).not_to_contain_text(page.evaluate("t('mp.members', { list: '' })").strip(" ."))
+    card.locator(".act").click()
+    assert page.evaluate("window.opened") == ["/en/competitions/3/register/", "_top"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_registered_member_s_race_card_counts_down_lists_the_registered_and_its_line_takes_them_in(
+    page: Page, live_server
+):
+    """Registering for the event is joining its race: the card counts down and offers its start line, which takes
+    the member into the race with their bib, and in place of "Join" the list of who is registered."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_AN_EVENT_S_RACE, True)
+    card = page.locator('#mpGroups .mp-group[data-gid="9"]')
+    expect(card.locator(".act")).to_have_text(page.evaluate("t('mp.registered')"))
+    expect(card.locator(".mp-countdown")).to_be_visible()
+    card.locator(".act").click()
+    assert page.evaluate("window.opened") == ["/en/competitions/3/participants/", "_top"]
+    page.evaluate(
+        """() => {
+            window.asked = [];
+            Site.post = async path => {
+                window.asked.push(path);
+                const me = { bib: '12', group: 'Elite', laps: 2, start_offset_s: 0 };
+                const members = [{ user_id: 1, name: 'Me', bib: '12' }];
+                return Object.assign({}, MP.groups[0], { is_member: true, members, me });
+            };
+        }"""
+    )
+    card.locator(".go").click()
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    assert page.evaluate("[window.asked, me.bib]") == [["/groups/9/join"], "12"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """async () => {
+            MP.status = 'on'; MP.groups = []; mpSchedule = () => {};
+            Site.post = async () => { throw new Error('Your category has no free bib left'); };
+            await mpAction('/groups/9/join');
+            renderMP(); // the lobby, drawn again each second
+        }"""
+    )
+    expect(page.locator("#mpStatus")).to_contain_text("Your category has no free bib left")
+
+
 @pytest.mark.django_db(transaction=True)
 def test_a_race_card_names_its_event_and_each_rider_s_bib(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)

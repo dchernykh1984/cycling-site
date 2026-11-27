@@ -280,6 +280,11 @@ class RaceEventOut(Schema):
     id: int
     title: LocalizedStr  # in ru, kk and en: the page names it in its own language
     url: str
+    # whether the asking member holds a registration for it, which joining its race takes; where to register, and
+    # where its registered riders are listed
+    registered: bool = False
+    register_url: str = ""
+    participants_url: str = ""
 
 
 class RaceMeOut(Schema):
@@ -415,13 +420,20 @@ def _member(user, membership: GroupRideMember | None = None) -> MemberOut:
     )
 
 
-def _event_out(competition: Competition) -> RaceEventOut:
+def _event_out(competition: Competition, registered: bool) -> RaceEventOut:
     return RaceEventOut(
-        id=competition.pk, title=localize_field(competition, "title"), url=competition.get_absolute_url()
+        id=competition.pk,
+        title=localize_field(competition, "title"),
+        url=competition.get_absolute_url(),
+        registered=registered,
+        register_url=reverse("registrations:register", kwargs={"pk": competition.pk}),
+        participants_url=reverse("registrations:participant_list", kwargs={"pk": competition.pk}),
     )
 
 
-def _group_out(group: GroupRide, user) -> GroupOut:
+def _group_out(group: GroupRide, user, registered: set[int] | None = None) -> GroupOut:
+    """A race's card for the member; ``registered``: the events of a lobby's races they hold a registration for,
+    found for all of them at once (race.registered_for), else asked for this race's own."""
     # the lobby's races come with their members, their registrations and categories (live.open_groups)
     memberships = list(group.memberships.all())
     mine = next((m for m in memberships if m.user_id == user.pk), None)
@@ -448,7 +460,13 @@ def _group_out(group: GroupRide, user) -> GroupOut:
         wind_from_deg=group.wind_from_deg,
         kind=GroupRide.Kind(group.kind),
         # every member's lobby lists the race: its event named only while the event is public
-        event=_event_out(group.competition) if group.competition and is_public(group.competition) else None,
+        event=_event_out(
+            group.competition,
+            group.competition_id
+            in (registered if registered is not None else race.registered_for(user, {group.competition_id})),
+        )
+        if group.competition and is_public(group.competition)
+        else None,
         mode=GroupRide.Mode(group.mode),
         group_gap_s=group.group_gap_s,
         itt_interval_s=group.itt_interval_s,
@@ -808,7 +826,9 @@ def keep_settings(request, payload: TrainerSettingsIn):
 
 @router.get("/groups", response=list[GroupOut], auth=member_auth, summary="Group races open to join")
 def list_groups(request):
-    return [_group_out(g, request.auth) for g in live.open_groups()]
+    groups = list(live.open_groups())
+    registered = race.registered_for(request.auth, {g.competition_id for g in groups if g.competition_id})
+    return [_group_out(g, request.auth, registered) for g in groups]
 
 
 @router.post(
@@ -1030,6 +1050,8 @@ def presence(request, payload: PresenceIn):
     ]
     online_rows = live.online(now).exclude(user=request.auth)
     riding = me_row.status == LiveRider.Status.RIDE
-    groups = [] if riding else [_group_out(g, request.auth) for g in live.open_groups(now)]
+    listed = [] if riding else list(live.open_groups(now))
+    registered = race.registered_for(request.auth, {g.competition_id for g in listed if g.competition_id})
+    groups = [_group_out(g, request.auth, registered) for g in listed]
     online_out = [OnlineOut(**_online_out(r)) for r in online_rows]
     return PresenceOut(server_now=now, online=online_out, groups=groups, riders=riders)

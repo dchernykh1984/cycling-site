@@ -202,8 +202,10 @@ fastest first (a ride together names no winner); deleting one moves the others u
 (specs/495-virtual-race) is a race an event holds: made with its event from the trainer as above, or through the
 API (`POST /api/v1/virtual-ride/groups` with `competition_id`) by the event's organizer or an admin for any public
 event not over, with the mode, gaps, interval and drafting rule the race keeps. Only riders registered for the
-event join it (a rider who is not
-is sent to the event's page), each with a bib: the one the event gave their registration, else the first free one
+event ride it, and registering is joining: a registered member's card counts down, offers its start line -- which
+takes them into the race -- and, in place of "Join", the list of the event's registered riders; anyone else's sends
+them to the event's registration (the card says which: `event.registered`, `register_url`, `participants_url`). A
+refusal stays in the lobby's status line for ten seconds. Each rides with a bib: the one the event gave their registration, else the first free one
 in their category's range, kept across leaving and joining; the bib is drawn on every rider's back and named on
 the race's card with the event, the rider's category, laps and own start. A rider rides their category's laps on a
 loop, a route that is not one once; the control points are the start-finish line and the route's turns back, each
