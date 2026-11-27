@@ -131,7 +131,7 @@ async function mpAction(path, body) {
 function mpRace(when) {
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind(), kind = mpKind();
   // a race's mode, and the gaps and the drafting rule an event's registration gives categories to
-  const race = kind === 'race' ? { mode: $('#mpRaceMode').value, group_gap_s: clamp(+$('#mpRaceGap').value || 0, 0, 3600), itt_interval_s: clamp(+$('#mpRaceInterval').value || 30, 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
+  const race = kind === 'race' ? { mode: $('#mpRaceMode').value, group_gap_s: clamp(Math.round(+$('#mpRaceGap').value || 0), 0, 3600), itt_interval_s: clamp(Math.round(+$('#mpRaceInterval').value || 30), 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
   return Object.assign({ route: r.id, route_name: r.name, kind, loop: !!r.loop, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
 }
 function mpCreateGroup() {

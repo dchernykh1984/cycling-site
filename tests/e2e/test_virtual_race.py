@@ -198,6 +198,9 @@ def test_block_three_gathers_what_the_mode_rides_together(page: Page, live_serve
         "start_in_s": 120,
         "competition_id": None,
     }, asked
+    # whole seconds, as the site takes them: 45.5 typed is 46
+    page.fill("#mpRaceInterval", "45.5")
+    assert page.evaluate("mpRace({ start_in_s: 120 }).itt_interval_s") == 46
     for control in ("#mpRaceMode", "#mpRaceInterval"):
         box = page.locator(control).bounding_box()
         assert box and box["height"] >= 44, (control, box)
