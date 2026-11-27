@@ -109,7 +109,7 @@ function renderWhen() {
   const at = $('#mpDelay').value === 'at', pad = n => String(n).padStart(2, '0'), day = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   // an event for a ride, by anyone; for a race, with its registration, by an organizer
   const offered = at && (mpKind() === 'ride' || (mpKind() === 'race' && mpOrganizes()));
-  $('#mpWhen').classList.toggle('hidden', !at); ['#mpEvent', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !offered));
+  $('#mpWhen').classList.toggle('hidden', !at); ['#mpEventL', '#mpEventHint'].forEach(id => $(id).classList.toggle('hidden', !offered));
   if (at && !$('#mpDate').value) { const d = new Date(Date.now() + 2 * MP_HOUR); $('#mpDate').value = day(d); $('#mpTime').value = pad(d.getHours()) + ':00'; }
   $('#mpDate').min = day(new Date()); $('#mpDate').max = day(new Date(Date.now() + 365 * 864e5));
 }
@@ -132,15 +132,17 @@ function mpRace(when) {
 }
 function mpCreateGroup() {
   if (MP.status !== 'on' || !mpKind()) return;
+  // at a date and time with "Add it to the calendar" ticked: the ride or race, and its event's form
+  if (!$('#mpEventL').classList.contains('hidden') && $('#mpEvent').checked) { mpAddEvent(); return; }
   const when = mpWhen(); if (!when) { mpNote(t('mp.badTime')); return; }
   mpAction('/groups', mpRace(when));
 }
-// "Add event": the race at that date and time -- the member's own on this route at that minute, or a new one -- and
-// the event form, filled from the route's template, for the member to check and submit
+// With the calendar box ticked: the ride or race at that date and time -- the member's own of that kind on this route
+// at that minute, or a new one -- and the event form, filled from the route's template, for the member to check
 async function mpAddEvent() {
   const when = mpWhen(); if (!when || !when.start_at) { mpNote(t('mp.badTime')); return; }
   if (MP.status !== 'on' || MP.eventBusy || !mpKind()) return;
-  MP.eventBusy = true; $('#mpEvent').disabled = true; // one race and one form for one press
+  MP.eventBusy = true; $('#mpCreate').disabled = true; // one race and one form for one press
   try {
     const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
     const kind = mpKind(), same = x => x.is_host && x.route === r.id && (x.kind || 'race') === kind && Math.abs(Date.parse(x.start_at) - when.at) < 60e3;
@@ -265,7 +267,7 @@ function renderMP() {
   const create = $('#mpCreate'), online = $('#mpOnline'), box = $('#mpGroups');
   online.innerHTML = '';
   if (MP.status !== 'on') {
-    create.disabled = true; $('#mpEvent').disabled = true; box.innerHTML = '';
+    create.disabled = true; box.innerHTML = '';
     if (MP.status === 'guest') { st.innerHTML = escapeHTML(LINKED ? t('mp.guestLinked') : t('mp.guest')) + ' <a href="' + escapeHTML(Site.loginHref()) + '" target="_top">' + escapeHTML(t('signIn')) + '</a>'; }
     else st.textContent = MP.status === 'connecting' ? t('mp.connecting') : t('mp.offSite');
     renderStartSum(); return;
@@ -312,7 +314,7 @@ function renderMP() {
     else { btn.textContent = t('mp.join'); btn.disabled = mpClash(g) || left === 0; btn.onclick = () => mpAction('/groups/' + g.id + '/join'); }
   });
   // one race to wait for at a time; one at a date and time keeps an hour from the others, as the site checks
-  create.disabled = !mpKind() || (!!mine && $('#mpDelay').value !== 'at'); $('#mpEvent').disabled = !!MP.eventBusy;
+  create.disabled = !mpKind() || !!MP.eventBusy || (!!mine && $('#mpDelay').value !== 'at');
   renderStartSum();
 }
 // in a race with protocols the rider's own category: its riders ride its laps, the others are not in the same race
