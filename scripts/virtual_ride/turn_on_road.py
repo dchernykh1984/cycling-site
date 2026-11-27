@@ -293,7 +293,8 @@ if circle:
     far_turn, asphalt = round_circle(pts[k1], fux, fuy)
     entry["circles"] = [asphalt]
     far_said = f"round a circle of {asphalt[2]} m after point {k1}"
-else:
+else:  # a circle an earlier run laid is gone with its turn
+    entry.pop("circles", None)
     far_turn, far_said = turn(pts[k1], fux, fuy, far_at), f"{far_at:.1f} m past point {k1}"
 entry["pts"] = with_line[: k1 + 1] + far_turn + with_line[k2 : back_home + 1] + turn(pts[back_home], sux, suy, start_at)
 entry["loop"] = True
