@@ -147,7 +147,7 @@ are kept but never count. The mode's box "Wind" sets a wind -- the bearing it bl
 eight, and its speed, 1-30 m/s, the most a smart trainer can be told -- kept with the other settings (in the
 browser, and with a member's account): the air drags each rider by their speed through it, the wind's share along
 their way (the side wind is left out), a smart trainer is told the wind against the rider, the HUD says it is
-ahead, behind or beside them, and the start's
+ahead, behind or beside them and the minimap, north up, shows it as an arrow the way it blows with its speed, and the start's
 summary names it. A ride with wind is saved with it and marked so; it counts for peak power, the rider's own, but
 sets no route record or top speed. In a group race every member rides in its host's wind, kept with the race and
 named on its card; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,

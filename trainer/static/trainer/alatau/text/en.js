@@ -151,6 +151,7 @@ const TEXT_EN = {
     "attr.osm": "© OpenStreetMap contributors",
     "attr.after": " (ODbL), the relief from SRTM. Geometry and heights are simplified, some trees are generated.",
     "city.soon": "coming soon",
+    "u.ms": "m/s",
     "u.kmh": "km/h",
     "u.w": "W",
     "u.wDemo": "W, demo",

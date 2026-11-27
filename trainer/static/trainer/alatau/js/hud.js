@@ -47,7 +47,18 @@ function drawMini() {
   g.fillStyle = '#fff'; g.beginPath(); g.arc(p[0], p[1], 11, 0, 7); g.fill(); g.fillStyle = '#C3323B'; g.beginPath(); g.arc(p[0], p[1], 8, 0, 7); g.fill();
   world.lms.forEach(l => { if (l.dist > 700) return; const q = P(l.x, l.z); if (q[0] < 0 || q[1] < 0 || q[0] > W || q[1] > H) return; g.save(); g.translate(q[0], q[1]); g.rotate(Math.PI / 4); g.fillStyle = '#E5A23A'; g.fillRect(-6, -6, 12, 12); g.restore(); });
   g.fillStyle = 'rgba(243,246,249,.6)'; g.font = '600 18px Golos Text, sans-serif'; g.fillText(t('map.north'), W - 26, 24);
+  // the wind ridden in, as it blows over the map, north up: an arrow the way it goes and its speed
+  if (rideWind) {
+    const [dx, dy] = windArrow(rideWind.from), cx = 40, cy = 40, r = 24;
+    g.strokeStyle = g.fillStyle = 'rgba(243,246,249,.92)'; g.lineWidth = 5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx - dx * r, cy - dy * r); g.lineTo(cx + dx * (r - 10), cy + dy * (r - 10)); g.stroke();
+    g.beginPath(); g.moveTo(cx + dx * (r + 4), cy + dy * (r + 4)); g.lineTo(cx + dx * (r - 12) - dy * 10, cy + dy * (r - 12) + dx * 10);
+    g.lineTo(cx + dx * (r - 12) + dy * 10, cy + dy * (r - 12) - dx * 10); g.closePath(); g.fill();
+    g.font = '700 22px Golos Text, sans-serif'; g.textAlign = 'center'; g.fillText(Math.round(rideWind.ms) + ' ' + t('u.ms'), cx, cy + r + 30); g.textAlign = 'start';
+  }
 }
+// the way a wind blowing from `from` degrees (0 north, 90 east) goes over a north-up map: [right, down]
+const windArrow = from => [Math.sin((from + 180) * Math.PI / 180), -Math.cos((from + 180) * Math.PI / 180)];
 function updateHUD(inp, grade) {
   const spd = me.v * 3.6, st = me.stats, span = world.FIN - world.S0, done = clamp(me.s - world.S0, 0, span);
   const once = rideMode === 'race' || (rideMode === 'free' && !world.T.loop); // a race, or a ride from place to place
