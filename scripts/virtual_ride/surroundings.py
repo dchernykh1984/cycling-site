@@ -418,19 +418,30 @@ for e in ways:
 
 # ---------------------------------------------------------------- the route's own bridges and tunnels, as point indexes
 DAMS = [e["xy"] for e in ways if e["tags"].get("waterway") == "dam"]
-DAM_M = 10.0  # a gallery runs through a dam's body: within its outline, or this near its line
 
 
-def in_dam(p):
+def crosses(a, b, c, d):
+    """Whether segment a-b crosses segment c-d."""
+
+    def turn(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    return turn(a, b, c) * turn(a, b, d) < 0 and turn(c, d, a) * turn(c, d, b) < 0
+
+
+def in_dam(line):
+    """Whether a tunnel's way runs through a dam: its middle inside a dam's outline, or the way crossing a dam's line
+    -- a tunnel only beside one is a tunnel."""
+    mid = ((line[0][0] + line[-1][0]) / 2, (line[0][1] + line[-1][1]) / 2)
     for ring in DAMS:
         if len(ring) > 3 and dist(ring[0], ring[-1]) < 0.5:  # an outline: inside it
             hit = False
             for (ax, ay), (bx, by) in itertools.pairwise(ring):
-                if (ay > p[1]) != (by > p[1]) and p[0] < ax + (bx - ax) * (p[1] - ay) / (by - ay):
+                if (ay > mid[1]) != (by > mid[1]) and mid[0] < ax + (bx - ax) * (mid[1] - ay) / (by - ay):
                     hit = not hit
             if hit:
                 return True
-        if min(seg_near(p, a, b)[0] for a, b in itertools.pairwise(ring)) < DAM_M:
+        elif any(crosses(a, b, c, d) for a, b in itertools.pairwise(line) for c, d in itertools.pairwise(ring)):
             return True
     return False
 
@@ -444,8 +455,7 @@ for e in ways:
     )
     if not kind:
         continue
-    mid = ((e["xy"][0][0] + e["xy"][-1][0]) / 2, (e["xy"][0][1] + e["xy"][-1][1]) / 2)
-    if kind == "tunnels" and in_dam(mid):
+    if kind == "tunnels" and in_dam(e["xy"]):
         print(f"way {e['id']}: a gallery through a dam, the road level in it", file=sys.stderr)
         continue
     a, b = e["xy"][0], e["xy"][-1]
