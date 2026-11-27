@@ -123,6 +123,9 @@ button{cursor:pointer}
 .mp-group.linked{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
 .mp-group{flex-wrap:wrap}
 .mp-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+/* the host's wind for their race, on its own row of the card until the start */
+.mp-wind{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:end;flex-basis:100%}
+.mp-wind.hidden{display:none}
 .mp-create{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .mp-create select{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px}
 /* a race's settings, in race mode: its mode, the gaps or the interval, the drafting between categories */

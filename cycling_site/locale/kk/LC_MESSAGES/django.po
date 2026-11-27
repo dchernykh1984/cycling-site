@@ -5977,3 +5977,7 @@ msgstr "Санат таңдау үшін жынысы мен туған күні
 #, python-format
 msgid "The categories for this gender and year of birth are full: %(names)s."
 msgstr "Осы жыныс пен туған жылға арналған санаттар толды: %(names)s."
+
+#: api/endpoints/virtual_ride.py
+msgid "Only the host can change this group race's wind"
+msgstr "Топтық жарыстың желін тек ұйымдастырушы өзгерте алады"

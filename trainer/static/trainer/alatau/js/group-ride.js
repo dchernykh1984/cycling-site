@@ -47,6 +47,7 @@ const mpOrganizes = () => !!(Records.me && Records.me.organizes);
 // happened on the site's clock, as a chronometer would take it -- a rider who started late carries the time they lost
 function mpCrossing(point, last, ago) { MP.crossings.push({ gid: groupRide.gid, point, last, at_ms: Math.round(Date.now() + MP.offset - ago * 1000) }); }
 const groupWind = g => g.wind_ms > 0 ? { ms: g.wind_ms, from: g.wind_from_deg || 0 } : null;
+const WIND_STEP_DEG = 45; // the setup's directions, the card's wind row's too: eight, 45 degrees apart
 const MP_COLORS = [0x2f6db5, 0x3f8f5a, 0x7a4fb0, 0x1f9aa3, 0xb53f7a, 0xe5a23a, 0x5a6470, 0xd36b2c, 0x2c3e8f, 0x8fa33a];
 const mpColor = id => MP_COLORS[Math.abs(+id || 0) % MP_COLORS.length];
 const mpStartLocal = g => Date.parse(g.start_at) - MP.offset;   // время старта по своим часам
@@ -88,6 +89,10 @@ async function mpPoll() {
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
     MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
     if (!riding) MP.groups = res.groups || [];
+    else if (groupRide && phase === 'countdown') { // on a race's line: its host may change its wind until the start
+      const g = (res.groups || []).find(x => x.id === groupRide.gid);
+      if (g) { groupRide.wind = groupWind(g); rideWind = groupRide.wind; }
+    }
     if (phase === 'menu') { mpFollowLink(); mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
   } catch (e) {
     if (e.status === 401 || e.status === 403) { MP.status = 'guest'; renderMP(); MP.busy = false; return; }
@@ -143,6 +148,11 @@ function mpMaybeStart() {
 // a refusal stays in the status line a while: the lobby, drawn again at once, wiped it before anyone read it
 const MP_FAILED_MS = 10000;
 function mpFailed(e) { MP.failed = { msg: t('mp.failed', { msg: e.message }), until: Date.now() + MP_FAILED_MS }; renderMP(); }
+// the host's new wind for their race, as the card's wind row sets it
+async function mpSetWind(g, ms, from) {
+  try { await Site.patch('/groups/' + g.id, { wind_ms: ms, wind_from_deg: from }); MP.failed = null; } catch (e) { mpFailed(e); }
+  mpSchedule(50);
+}
 async function mpAction(path, body) {
   try { await Site.post(path, body); MP.failed = null; } catch (e) { mpFailed(e); }
   mpSchedule(50);
@@ -332,7 +342,7 @@ function renderMP() {
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
       card = document.createElement('div'); card.dataset.gid = g.id;
-      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-acts"><button class="btn primary go hidden" type="button"></button><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
+      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-wind hidden"><label class="mp-field"><span></span><input class="ms" type="number" min="0" max="30" step="1" inputmode="numeric"></label><label class="mp-field"><span></span><select class="from"></select></label></div><div class="mp-acts"><button class="btn primary go hidden" type="button"></button><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
       box.appendChild(card);
     }
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
@@ -351,6 +361,17 @@ function renderMP() {
       small.append(before, a, after + (g.mode === 'itt' ? t('mp.raceItt') : '') + (g.me ? t('mp.raceMe', { bib: g.me.bib, group: g.me.group, laps: g.me.laps }) + (g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : '') : ''));
     } else if (g.mode === 'itt') { // a time trial without an event: the member's own start, as they joined
       small.append(t('mp.raceItt') + (g.me && g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : ''));
+    }
+    // its host changes its wind until the start, the riders on its line too taking it: not while one sets it
+    const windRow = card.querySelector('.mp-wind'), setting = g.is_host && left > 0;
+    windRow.classList.toggle('hidden', !setting);
+    if (setting) {
+      const ms = windRow.querySelector('.ms'), from = windRow.querySelector('.from'), [msName, fromName] = windRow.querySelectorAll('.mp-field > span');
+      msName.textContent = t('wind.ms'); fromName.textContent = t('wind.from');
+      if (from.options.length !== $('#windFrom').options.length) from.innerHTML = $('#windFrom').innerHTML;
+      if (document.activeElement !== ms) ms.value = String(Math.round(g.wind_ms || 0));
+      if (document.activeElement !== from) from.value = String(WIND_STEP_DEG * (Math.round((g.wind_from_deg || 0) / WIND_STEP_DEG) % (360 / WIND_STEP_DEG)));
+      ms.onchange = from.onchange = () => mpSetWind(g, clamp(Math.round(+ms.value || 0), 0, +ms.max), +from.value || 0);
     }
     const go = card.querySelector('.go'); go.classList.toggle('hidden', !counting); go.textContent = t('mp.toStart');
     go.onclick = () => { if (!MP.started.has(g.id)) { MP.refused.delete(g.id); mpEnter(g); } };

@@ -319,6 +319,13 @@ class GroupOut(Schema):
     me: RaceMeOut | None = None
 
 
+class GroupWindIn(Schema):
+    """The wind a group race's riders ride in, as its host changes it before the start."""
+
+    wind_ms: float = Field(..., ge=0, le=_MAX_WIND_MS)
+    wind_from_deg: int = Field(..., ge=0, le=359)
+
+
 class GroupIn(Schema):
     route: str = Field(..., pattern=_ROUTE, max_length=40)
     route_name: str = Field("", max_length=120)
@@ -474,6 +481,11 @@ def _group_out(group: GroupRide, user, registered: set[int] | None = None) -> Gr
         loop=group.loop,
         me=me,
     )
+
+
+def _runs(group: GroupRide, user) -> bool:
+    """Whether the member runs the race -- cancels it, changes its wind: its host, or an admin."""
+    return group.host_id == user.pk or roles.at_least(user, roles.Role.ADMIN)
 
 
 def _open_group(group_id: int) -> GroupRide:
@@ -979,10 +991,24 @@ def leave_group(request, group_id: int):
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")
 def cancel_group(request, group_id: int):
     group = _open_group(group_id)
-    if group.host_id != request.auth.pk and not roles.at_least(request.auth, roles.Role.ADMIN):
+    if not _runs(group, request.auth):
         raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can cancel this group race"))
     group.cancelled = True
     group.save(update_fields=["cancelled"])
+    return _group_out(group, request.auth)
+
+
+@router.patch("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="Change a group race's wind")
+def change_group(request, group_id: int, payload: GroupWindIn):
+    """Its host changes the wind its riders ride in until it starts; a page already on its line takes the new one with
+    its next call (presence)."""
+    group = _open_group(group_id)
+    if not _runs(group, request.auth):
+        raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can change this group race's wind"))
+    if group.start_at <= timezone.now():
+        raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
+    group.wind_ms, group.wind_from_deg = payload.wind_ms, payload.wind_from_deg
+    group.save(update_fields=["wind_ms", "wind_from_deg"])
     return _group_out(group, request.auth)
 
 
@@ -1050,7 +1076,12 @@ def presence(request, payload: PresenceIn):
     ]
     online_rows = live.online(now).exclude(user=request.auth)
     riding = me_row.status == LiveRider.Status.RIDE
-    listed = [] if riding else list(live.open_groups(now))
+    # riding, the lobby is not drawn; on a race's line before its start, the race alone -- its host may change its wind
+    listed = []
+    if not riding:
+        listed = list(live.open_groups(now))
+    elif me_row.group_id is not None:
+        listed = list(live.open_groups(now).filter(pk=me_row.group_id, start_at__gt=now))
     registered = race.registered_for(request.auth, {g.competition_id for g in listed if g.competition_id})
     groups = [_group_out(g, request.auth, registered) for g in listed]
     online_out = [OnlineOut(**_online_out(r)) for r in online_rows]

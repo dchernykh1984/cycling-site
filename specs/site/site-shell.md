@@ -150,7 +150,8 @@ their way (the side wind is left out), a smart trainer is told the wind against 
 ahead, behind or beside them and the minimap, north up, shows it as an arrow the way it blows with its speed, and the start's
 summary names it. A ride with wind is saved with it and marked so; it counts for peak power, the rider's own, but
 sets no route record or top speed. In a group race every member rides in its host's wind, kept with the race and
-named on its card; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,
+named on its card; its host -- or an admin -- changes it on the card until the start (`PATCH
+/api/v1/virtual-ride/groups/<id>`, 30 m/s at most), and a page already on its line rides in the new one; the own wind is for riding alone (`tests/e2e/test_virtual_ride.py`,
 `tests/test_virtual_ride_api.py`). Members ride together as the mode says: a free ride gathers a ride together
 (everyone starting at once; no event, no time trial), a race a race with its settings at hand -- a group race or
 an individual time trial, the gap between the categories' starts or the interval between the riders', whether
