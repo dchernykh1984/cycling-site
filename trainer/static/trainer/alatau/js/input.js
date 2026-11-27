@@ -1,6 +1,8 @@
 'use strict';
 /* ---------------- Ввод мощности ---------------- */
 function readInput() {
+  // the power a wheel or cadence sensor alone gives on the rider's trainer: a smart trainer sends its own, and ridden
+  // by such a sensor alone it counts as a fluid one
   const mode = Sensors.mode(), circ = settings.circ / 1000, curve = TRAINERS[settings.trainer] || TRAINERS.fluid;
   let P = 0, cad = Sensors.crank(), wheelKmh = 0;
   if (mode === 'power') { P = Sensors.power(); }

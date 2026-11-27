@@ -1797,6 +1797,26 @@ def test_the_trainer_s_difficulty_says_the_legs_feel_it_and_the_speed_does_not(p
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_smart_trainer_is_one_of_the_trainers_and_rides_by_its_own_power(page: Page, live_server):
+    """A rider on a smart trainer found only fluid, magnetic and rollers to choose from."""
+    _trainer_in_its_menu(page, live_server)
+    expect(page.locator("#trainer option[value='smart']")).to_have_text(page.evaluate("t('trainer.smart')"))
+    page.select_option("#trainer", "smart")
+    assert page.evaluate("settings.trainer") == "smart"
+    powers = page.evaluate(
+        """() => {
+            Sensors.power = () => 250; Sensors.wheel = () => 300;
+            const by = mode => { Sensors.mode = () => mode; return Math.round(readInput().P); };
+            const own = by('power'), wheel = by('speed');
+            settings.trainer = 'fluid';
+            return { own, wheel, fluid: by('speed') };
+        }"""
+    )
+    # the trainer's own power; a wheel sensor alone on it counts as on a fluid trainer
+    assert powers["own"] == 250 and powers["wheel"] == powers["fluid"] > 0, powers
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_remembered_route_no_map_has_any_more_gives_way_to_the_first(page: Page, live_server):
     page.add_init_script("localStorage.setItem('alatau:route', JSON.stringify('gone'))")
     _trainer_in_its_menu(page, live_server)

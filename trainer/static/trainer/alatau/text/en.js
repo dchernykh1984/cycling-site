@@ -117,6 +117,7 @@ const TEXT_EN = {
     "trainer.fluid": "Fluid",
     "trainer.mag": "Magnetic",
     "trainer.rollers": "Rollers",
+    "trainer.smart": "Smart",
     "bike.type": "Bike type",
     "bike.kg": "Bike weight, kg",
     "bike.wheel": "Wheel",

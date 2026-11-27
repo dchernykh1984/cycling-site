@@ -117,6 +117,7 @@ const TEXT_KK = {
     "trainer.fluid": "Сұйықтықты",
     "trainer.mag": "Магнитті",
     "trainer.rollers": "Роллерлер",
+    "trainer.smart": "Ақылды (смарт)",
     "bike.type": "Велосипед түрі",
     "bike.kg": "Велосипед салмағы, кг",
     "bike.wheel": "Дөңгелек",
