@@ -238,6 +238,36 @@ def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_every_route_s_grade_rises_and_falls_without_steps(page: Page, live_server):
+    # a route's points lie 4 m apart all along it, and its grade changes by under a point and a half in 10 m: spaced
+    # by its map's points, from centimetres to twenty metres apart, it jumped by up to ten points in a few metres
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildTrack === 'function'")
+    faults = page.evaluate(
+        """() => ROUTES.flatMap(r => {
+          const T = buildTrack(r), out = [], g = [];
+          for (let i = 1; i < T.N; i++) {
+            const step = T.D[i] - T.D[i - 1];
+            if (step < 3.4 || step > 4.6) {
+              out.push(r.id + ': points ' + step.toFixed(2) + ' m apart at ' + Math.round(T.D[i]) + ' m');
+              break;
+            }
+          }
+          for (let s = 0; s <= T.L; s += 2) g.push(gradeAt(T, s) * 100);
+          for (let i = 5; i < g.length; i++) {
+            const jump = Math.abs(g[i] - g[i - 5]);
+            if (jump > 1.5) {
+              out.push(r.id + ': grade jumps ' + jump.toFixed(1) + ' points at ' + i * 2 + ' m');
+              break;
+            }
+          }
+          return out;
+        })"""
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server):
     # the ground as drawn is flat between the terrain's vertices, tens of metres apart: set on the shape those vertices
     # sample rather than on the ground itself, a tree or a house hangs in the air where the ground dips under it

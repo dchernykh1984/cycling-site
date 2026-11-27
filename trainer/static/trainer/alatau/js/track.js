@@ -9,12 +9,18 @@ function buildTrack(r) {
   const O = r.origin || mapOf(r).origin; // the route's metres: its own origin's, else its map's; its sights and riders share them
   const v = src.map(p => { const q = proj(p[0], p[1], O); return new THREE.Vector3(q.x, p[2], q.z); });
   const curve = new THREE.CatmullRomCurve3(v, !!r.loop, 'centripetal', .5);
+  // the curve measured every half metre: with three.js's 200 steps for the whole route its points came centimetres to
+  // twenty metres apart, and the grade and the road bent at them
+  let chord = 0; for (let i = 1; i < v.length; i++) chord += v[i].distanceTo(v[i - 1]);
+  curve.arcLengthDivisions = Math.ceil(chord * 2);
   const n = Math.max(80, Math.round(curve.getLength() / 4));
   const sp = curve.getSpacedPoints(n);
   const N = sp.length, X = new Float32Array(N), Y0 = new Float32Array(N), Z = new Float32Array(N), Y = new Float32Array(N), D = new Float64Array(N);
   for (let i = 0; i < N; i++) { X[i] = sp[i].x; Y0[i] = sp[i].y; Z[i] = sp[i].z; }
-  const R = 10, M = N - 1;
-  for (let i = 0; i < N; i++) { let s = 0, c = 0; for (let k = -R; k <= R; k++) { let j = i + k; j = r.loop ? ((j % M) + M) % M : clamp(j, 0, N - 1); s += Y0[j]; c++; } Y[i] = s / c; }
+  // heights averaged three times over 60 m (15 points): the grade rises and falls without a step at either end
+  const R = 7, M = N - 1, at = j => r.loop ? ((j % M) + M) % M : clamp(j, 0, N - 1);
+  const box = (A, B) => { for (let i = 0; i < N; i++) { let s = 0; for (let k = -R; k <= R; k++) s += A[at(i + k)]; B[i] = s / (2 * R + 1); } };
+  const Y1 = new Float32Array(N); box(Y0, Y); box(Y, Y1); box(Y1, Y);
   if (r.loop) Y[N - 1] = Y[0];
   for (let i = 1; i < N; i++) D[i] = D[i - 1] + Math.hypot(X[i] - X[i - 1], Z[i] - Z[i - 1]);
   let gain = 0, minY = 1e9, maxY = -1e9, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;

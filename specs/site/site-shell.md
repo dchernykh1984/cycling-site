@@ -122,7 +122,8 @@ language the page spoke then; the page itself shows the routes it knows in its c
 the profile shows the stored name. A member's page records the ride's track, a point a second: where
 the rider is on the route's map (a route follows the streets its description names, along OpenStreetMap's
 ways on the side a rider keeps to, each corner rounded within the street; its heights are SRTM's, smoothed over
-150 m; the map's sights stand where OpenStreetMap has them), height, distance, speed, power, cadence and pulse.
+150 m, and the page lays its points 4 m apart along it and averages their heights three times over 60 m, so the
+grade rises and falls without steps; the map's sights stand where OpenStreetMap has them), height, distance, speed, power, cadence and pulse.
 The setup page lays its sections one a row -- the route, the mode, riding with friends, the rider, the devices and
 the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
