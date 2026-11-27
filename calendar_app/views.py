@@ -1481,8 +1481,8 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> str | None:
     # held only by an event that registers riders and may hold it -- public and not over -- so that it can be joined
     if not is_organizer or ride.kind != GroupRide.Kind.RACE:
         return None
-    held = comp.registration_enabled and races.can_tie(user, comp)
-    if held:
+    held = 0
+    if races.can_tie(user, comp):
         held = GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
             competition=comp
         )

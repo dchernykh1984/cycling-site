@@ -39,8 +39,8 @@ def device_id(race) -> str:
 
 def can_tie(user, competition: Competition) -> bool:
     """An event's own organizer ties a race to it, an admin to any; the event public -- every member's lobby names it
-    on the race's card -- and not over."""
-    if not is_public(competition):
+    on the race's card --, not over, and registering on the site: its riders join by their registration."""
+    if not is_public(competition) or not competition.registration_enabled:
         return False
     if (competition.date_end or competition.date_start) < timezone.localdate():
         return False
