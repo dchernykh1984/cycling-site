@@ -76,6 +76,8 @@ const TEXT_EN = {
     "mp.cancel": "Cancel",
     "mp.leave": "Leave",
     "mp.join": "Join",
+    "mp.register": "Register",
+    "mp.registered": "Registered riders",
     "mp.failed": "That did not work: {msg}",
     "mp.rider": "Rider",
     "you": "You",

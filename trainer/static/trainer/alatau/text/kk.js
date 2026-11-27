@@ -76,6 +76,8 @@ const TEXT_KK = {
     "mp.cancel": "Болдырмау",
     "mp.leave": "Қатыспау",
     "mp.join": "Қатысу",
+    "mp.register": "Тіркелу",
+    "mp.registered": "Тіркелгендер тізімі",
     "mp.failed": "Болмады: {msg}",
     "mp.rider": "Шабандоз",
     "you": "Сіз",

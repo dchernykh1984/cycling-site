@@ -76,6 +76,8 @@ const TEXT_RU = {
     "mp.cancel": "Отменить",
     "mp.leave": "Не участвовать",
     "mp.join": "Участвовать",
+    "mp.register": "Зарегистрироваться",
+    "mp.registered": "Список зарегистрированных",
     "mp.failed": "Не получилось: {msg}",
     "mp.rider": "Гонщик",
     "you": "Вы",

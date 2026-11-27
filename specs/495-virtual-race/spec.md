@@ -19,8 +19,9 @@ phone is told so, and a route is lightened only without losing quality.
 - **Bibs** are given when a registered rider joins the race: the first free number in their category's range
   (`bib_from` to `bib_to`), or from 1 when the category has none; a bib the event already gave the registration
   (a start list from StartProtocolMaker) is kept.
-- **Only riders registered for the event** (a registration not rejected) may join; anyone else is told to register
-  first, with the event's registration link.
+- **Only riders registered for the event** (a registration not rejected) ride it, and registering is joining: the
+  race's card shows a registered member its countdown, its start line -- which takes them in, giving their bib -- and
+  the list of the event's registered riders; anyone else is sent to the event's registration (2026-11-27).
 - **The race is made in the virtual ride**, where a group race is gathered: its maker picks one of their own events
   (an organizer's own, any for an admin). Its groups, laps and bib ranges come from the event's registration.
 - **The timing is written by the site itself** into the event's timing streams -- the token never reaches a
@@ -45,7 +46,8 @@ phone is told so, and a route is lightened only without losing quality.
 1. **Given** a rider registered for the event (not rejected), **When** they join the race, **Then** they get a bib:
    the one the event gave their registration, else the first free one in their category's range; the bib stays
    theirs if they leave and join again.
-2. **Given** a rider without a registration, **Then** joining is refused with the reason and the event's link.
+2. **Given** a rider without a registration, **Then** joining is refused with the reason and the event's link, and the
+   race's card sends them to the event's registration in place of "Join".
 3. **Given** two riders joining at once, **Then** they never get the same bib.
 
 ### User Story 3 - The race runs by itself (Priority: P1)
