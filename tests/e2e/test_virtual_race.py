@@ -478,6 +478,16 @@ def test_on_a_time_trial_s_line_the_start_follows_the_site_and_a_cancelled_race_
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_rider_who_leaves_the_line_in_its_last_seconds_is_not_put_straight_back(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_A_RACE, 0)  # its start two seconds ahead
+    page.evaluate("() => { MP.status = 'on'; mpSchedule = () => {}; mpMaybeStart(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.evaluate("() => { startMenu(); mpMaybeStart(); }")
+    assert page.evaluate("phase") == "menu"
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

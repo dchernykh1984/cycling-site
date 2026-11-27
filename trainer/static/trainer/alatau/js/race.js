@@ -59,8 +59,9 @@ function renderPreview(dt) {
 }
 function renderChars() {} // выбор героев убран
 function startMenu() { // страница 1: настройки (3D-сцена скрыта и не рисуется)
-  // back from a start line before its start: the ride waits for the member again, by itself or their button
-  if (phase === 'countdown' && groupRide && typeof MP !== 'undefined') MP.started.delete(groupRide.gid);
+  // back from a start line before its start: the ride waits for the member again, by itself or their button -- but not
+  // in its last seconds, when it would take them straight back
+  if (phase === 'countdown' && groupRide && typeof MP !== 'undefined' && groupRide.startAt - Date.now() > MP_ENTER_BEFORE_MS) MP.started.delete(groupRide.gid);
   phase = 'menu'; paused = false; photo = false;
   $('#menu').classList.remove('hidden'); $('#gl').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#count').classList.add('hidden');
   $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');

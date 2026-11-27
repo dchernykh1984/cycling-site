@@ -142,13 +142,14 @@ async function mpEnter(g) {
   groupRide = { gid: g.id, startAt: mpStartOf(g), raceAt: mpStartLocal(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
   routeSel = g.route; renderMenu(); startRace();
 }
+// the ride takes its member onto its line by itself from MP_ENTER_BEFORE_MS before their start to MP_ENTER_AFTER_MS after;
 // a race may drop out of the line's answer MP_GONE_MARGIN_MS before its start, the clocks apart
-const MP_GONE_MARGIN_MS = 3000;
+const MP_ENTER_BEFORE_MS = 7000, MP_ENTER_AFTER_MS = 30000, MP_GONE_MARGIN_MS = 3000;
 function mpMaybeStart() {
   const g = mpMyGroup() || MP.groups.find(x => mpRegistered(x) && mpStartLocal(x) - Date.now() < MP_HOUR);
   if (!g || MP.started.has(g.id) || MP.refused.has(g.id)) return;
   const at = mpStartOf(g), now = Date.now();
-  if (now >= at - 7000 && now < at + 30000) mpEnter(g);
+  if (now >= at - MP_ENTER_BEFORE_MS && now < at + MP_ENTER_AFTER_MS) mpEnter(g);
 }
 // a refusal stays in the status line a while: the lobby, drawn again at once, wiped it before anyone read it
 const MP_FAILED_MS = 10000;
