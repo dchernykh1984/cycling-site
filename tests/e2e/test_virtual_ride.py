@@ -124,6 +124,7 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
         _cut(source, pattern)
         for pattern in (
             r"^const MP_HOUR = .*?;$",
+            r"^const fmtCountdown = .*?;$",
             r"^const mpClash = .*?;$",
             r"^const groupWind = .*?;$",
             r"^const windFrom = .*?;$",
@@ -153,7 +154,7 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
             const mpKind = () => 'race'; // the page set to race
             const fmtTime = String, routeName = String, routeTitle = g => g.route_name, hexs = String, mpColor = String;
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
-            eval(words + code);
+            eval(words + code + ';window.fmtCountdown = fmtCountdown;'); // a const in eval stays in it
             window.t = t;
             renderMP();
         }""",
@@ -161,6 +162,23 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
     )
     cards = page.locator("#mpGroups > div")
     expect(cards.nth(0).locator("small")).to_contain_text(page.evaluate("t('mp.startsOn', { when: '' })").strip())
+    # the member's own counts down to its start, in days, hours, minutes and seconds; a race they are not in does not
+    expect(cards.nth(0).locator(".mp-countdown")).to_contain_text(page.evaluate("t('mp.countdown', { t: '' })").strip())
+    expect(cards.nth(0).locator(".mp-countdown")).to_contain_text(re.compile("^\\D*[12] "))
+    expect(cards.nth(1).locator(".mp-countdown")).to_be_hidden()
+    told = page.evaluate(
+        """() => {
+            const u = (k, v) => t(k, v);
+            return [
+                [fmtCountdown(3725),
+                 [u('cd.hours', { h: 1 }), u('cd.minutes', { m: '02' }), u('cd.seconds', { s: '05' })]],
+                [fmtCountdown(59), [u('cd.seconds', { s: 59 })]],
+                [fmtCountdown(90061), [u('cd.days', { d: 1 }), u('cd.hours', { h: 1 }), u('cd.minutes', { m: '01' }),
+                                       u('cd.seconds', { s: '01' })]],
+            ];
+        }"""
+    )
+    assert all(said == " ".join(parts) for said, parts in told), told
     expect(cards.nth(2).locator("small")).to_contain_text(page.evaluate("t('mp.wind', { ms: 6, from: t('wind.w') })"))
     # a race an hour and a half from the member's own may be joined; one half an hour from it may not
     expect(cards.nth(1).locator("button.act")).to_be_enabled()
@@ -469,6 +487,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
     pieces = [
         _cut(source, pattern)
         for pattern in (
+            r"^const fmtCountdown = .*?;$",
             r"^function renderMP\(\) \{.*?^\}",
             r"^function mpNote\(text\) \{.*?\}$",
             r"^async function mpShare\(g\) \{.*?^\}",

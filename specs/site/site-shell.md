@@ -162,7 +162,8 @@ page offers 30 s to 1 h) or at a date and time on their own clock, up to a year 
 hour apart at least, ten waiting at most (every lobby lists them all), and a member joins any race an hour from the
 others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
-and a card further ahead names its day and time. A time trial without an event starts its riders an interval
+and a card further ahead names its day and time; on the card of a ride or race the member is in, the time to its
+start counts down each second in days, hours, minutes and seconds. A time trial without an event starts its riders an interval
 apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
 its last rider's. At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
 browser), sends the gather button on: it gathers the ride or the race then (or takes the member's own of that kind on
