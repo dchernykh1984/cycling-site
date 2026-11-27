@@ -190,6 +190,11 @@ class MakingARaceTests(RaceTestCase):
         # nor its riders' names, bibs and times, nor a leave that rewrote its start list for a stranger
         self.assertEqual(someone.get(f"{API}/groups/{group}/results").status_code, 404)
         self.assertEqual(someone.post(f"{API}/groups/{group}/leave").status_code, 404)
+        # cancelled too: "cancelled" told them it was there
+        GroupRide.objects.filter(pk=group).update(cancelled=True)
+        self.assertEqual(self.join(_member("erik"), group).status_code, 404)
+        self.assertEqual(someone.post(f"{API}/groups/{group}/leave").status_code, 404)
+        GroupRide.objects.filter(pk=group).update(cancelled=False)
         organizer = self.client_of(self.organizer)
         self.assertEqual(organizer.get(f"{API}/groups/{group}").json()["event"]["id"], self.event.pk)
         # a deleted event's race stays its host's to cancel, named after no event
