@@ -78,7 +78,18 @@ function routeBuildings(route, T) {
   return prepOSM(route.buildings.map(b => [b.h * 10, 0].concat(...b.pts.map(p => { const q = proj(p[0], p[1], T.origin); return [q.x * 10, q.z * 10]; }))), route.buildings.map(b => b.c));
 }
 // Все здания маршрута — одна геометрия: стены, крыша, цвет фасада в вершинах
-function addOSMBuildings(grp, T, W, lms, osmB) {
+// ground(x, z): the land as drawn (js/world.js groundOf); a building goes down to the lowest of it under its walls,
+// every BUILDING_FOOT_STEP metres along them, its roof as high over the land at its middle as it was
+const BUILDING_FOOT_STEP = 10;
+function footOf(ring, ground) {
+  let low = Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i], q = ring[(i + 1) % ring.length], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / BUILDING_FOOT_STEP));
+    for (let k = 0; k < n; k++) low = Math.min(low, ground(p[0] + (q[0] - p[0]) * k / n, p[1] + (q[1] - p[1]) * k / n));
+  }
+  return low;
+}
+function addOSMBuildings(grp, T, W, lms, osmB, ground) {
   const cell = 30, rg = new Map();
   for (let i = 0; i < T.N; i += 2) { const k = Math.floor(T.X[i] / cell) + ',' + Math.floor(T.Z[i] / cell); (rg.get(k) || rg.set(k, []).get(k)).push(i); }
   const roadD = (x, z) => { let b = 1e9; const ci = Math.floor(x / cell), cj = Math.floor(z / cell); for (let a = -1; a <= 1; a++) for (let d = -1; d <= 1; d++) { const L = rg.get((ci + a) + ',' + (cj + d)); if (L) for (const i of L) { const v = Math.hypot(T.X[i] - x, T.Z[i] - z); if (v < b) b = v; } } return b; };
@@ -88,7 +99,8 @@ function addOSMBuildings(grp, T, W, lms, osmB) {
   osmB.list.forEach((b, bi) => {
     if (lms.some(l => Math.hypot(l.x - b.cx, l.z - b.cz) < l.r + b.r * .5)) return;   // на месте наших достопримечательностей
     if (b.ring.some(p => roadD(p[0], p[1]) < W / 2 + 5.5)) return;                    // ничего на проезжей части и тротуаре
-    const base = terrainH(T, b.cx, b.cz) - 1.5, top = base + 1.5 + b.h;
+    const mid = ground ? ground(b.cx, b.cz) : terrainH(T, b.cx, b.cz), top = mid + b.h;
+    const base = Math.min(mid, ground ? footOf(b.ring, ground) : mid) - 1.5; // where the drawn land dips under it
     let area = 0; const R0 = b.ring; for (let i = 0; i < R0.length; i++) { const p = R0[i], q = R0[(i + 1) % R0.length]; area += p[0] * q[1] - q[0] * p[1]; }
     const R = area > 0 ? R0.slice().reverse() : R0; // обход, при котором нормали стен смотрят наружу
     c.setHex(b.c != null ? b.c : b.h > 45 ? glass : pal[(bi * 2654435761 >>> 0) % pal.length]);

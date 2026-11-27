@@ -205,7 +205,7 @@ function buildWorld(route) {
   const tooClose = (x, z, rad) => routeGap(T, x, z) < rad || lms.some(l => Math.hypot(l.x - x, l.z - z) < l.r + rad * .5) || (osmB ? osmB.hit(x, z) : false) || onRoad(x, z, 1.5);
   // «окна» в застройке, чтобы достопримечательности было видно с дороги
   const inView = (s, side) => lms.some(l => { if (l.dist > 700 || (l.side === 'right' ? 1 : -1) !== side) return false; let d = Math.abs(s - l.s); if (T.loop) d = Math.min(d, T.L - d); return d < l.r + 60 + l.dist * .25; });
-  if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB); }
+  if (osmB) { world_osmKept = addOSMBuildings(grp, T, W, lms, osmB, ground); }
   else if (steppe) { /* the steppe has no houses */ }
   else if (!gorge) {
     for (const side of [-1, 1]) for (const row of [0, 1]) {

@@ -392,6 +392,20 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
                 high('a house', p.y, c.x, c.z);
               }
             });
+            // OpenStreetMap's buildings, one mesh: a sample of their walls, each wall's foot against the land under it
+            // (they hung up to 9 m over Medeu's, where the land drawn between its vertices dips under a corner)
+            const osm = kids.find(o => o.isMesh && o.material === osmMat);
+            if (osm) {
+                const wp = osm.geometry.attributes.position, wn = osm.geometry.attributes.normal;
+                const walls = Math.floor(wp.count / 6), step = Math.max(1, Math.floor(walls / 60));
+                for (let w = 0; w < walls; w += step) {
+                    const i = w * 6;
+                    if (Math.abs(wn.getY(i)) > .5) continue; // a roof's triangles
+                    const foot = Math.min(wp.getY(i), wp.getY(i + 1));
+                    high('a building', foot, wp.getX(i), wp.getZ(i));
+                    high('a building', foot, wp.getX(i + 1), wp.getZ(i + 1));
+                }
+            }
             const placed = o => world.lms.some(l => l.x === o.position.x && l.z === o.position.z);
             const sights = kids.filter(o => o.isGroup && placed(o));
             // a sight that spreads over the land -- a cable car, ski jumps -- stands on each of the parts it marks (a
