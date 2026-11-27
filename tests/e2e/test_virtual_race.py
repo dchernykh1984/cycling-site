@@ -442,6 +442,42 @@ def test_a_time_trial_s_card_counts_down_to_the_rider_s_own_start(page: Page, li
 
 
 @pytest.mark.django_db(transaction=True)
+def test_on_a_time_trial_s_line_the_start_follows_the_site_and_a_cancelled_race_sends_the_rider_back(
+    page: Page, live_server
+):
+    """Its order is by category, then bib, so a rider's own start moves as others come to the line: the line kept the
+    start it was entered with. A race cancelled meanwhile went on counting down, to a ride alone."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_A_RACE, 0)
+    page.evaluate(
+        """() => {
+            MP.status = 'on'; mpSchedule = () => {};
+            Object.assign(MP.groups[0], { mode: 'itt', start_at: new Date(Date.now() + 600e3).toISOString() });
+            mpEnter(MP.groups[0]);
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    moved = page.evaluate(
+        """async () => {
+            const me = Object.assign({}, MP.groups[0].me, { start_offset_s: 90 });
+            const g = Object.assign({}, MP.groups[0], { me }), now = new Date().toISOString();
+            Site.post = async () => ({ server_now: now, online: [], riders: [], groups: [g] });
+            MP.busy = false; await mpPoll();
+            return Math.round((groupRide.startAt - mpStartLocal(g)) / 1000);
+        }"""
+    )
+    assert moved == 90
+    page.evaluate(
+        """async () => {
+            Site.post = async () => ({ server_now: new Date().toISOString(), online: [], riders: [], groups: [] });
+            MP.busy = false; await mpPoll();
+        }"""
+    )
+    assert page.evaluate("phase") == "menu"
+    expect(page.locator("#mpNote")).to_have_text(page.evaluate("t('mp.linkCancelled')"))
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(

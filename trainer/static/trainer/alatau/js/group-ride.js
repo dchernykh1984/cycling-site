@@ -89,9 +89,12 @@ async function mpPoll() {
     MP.offset = Date.parse(res.server_now) - (t0 + t1) / 2;
     MP.online = res.online || []; MP.riders = res.riders || []; MP.recv = t1;
     if (!riding) MP.groups = res.groups || [];
-    else if (groupRide && phase === 'countdown') { // on a race's line: its host may change its wind until the start
+    else if (groupRide && phase === 'countdown') {
+      // on a race's line until its start: its host may change its wind, and a time trial's riders' starts move as
+      // others come to the line (its order is by category, then bib); gone from the answer before it, it was cancelled
       const g = (res.groups || []).find(x => x.id === groupRide.gid);
-      if (g) { groupRide.wind = groupWind(g); rideWind = groupRide.wind; }
+      if (g) { groupRide.wind = groupWind(g); rideWind = groupRide.wind; groupRide.startAt = mpStartOf(g); groupRide.race = groupRules(g); }
+      else if (Date.now() < groupRide.raceAt - MP_GONE_MARGIN_MS) { startMenu(); mpNote(t('mp.linkCancelled')); }
     }
     if (phase === 'menu') { mpFollowLink(); mpMaybeStart(); renderMP(); mpCheckLink(); } else mpSyncRemotes();
   } catch (e) {
@@ -136,9 +139,11 @@ async function mpEnter(g) {
   if (mpRegistered(g)) { // into the race as they come to its line, their bib given then; a refusal is said, once
     try { g = await Site.post('/groups/' + g.id + '/join'); } catch (e) { MP.started.delete(g.id); MP.refused.add(g.id); mpFailed(e); return; }
   }
-  groupRide = { gid: g.id, startAt: mpStartOf(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
+  groupRide = { gid: g.id, startAt: mpStartOf(g), raceAt: mpStartLocal(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
   routeSel = g.route; renderMenu(); startRace();
 }
+// a race may drop out of the line's answer MP_GONE_MARGIN_MS before its start, the clocks apart
+const MP_GONE_MARGIN_MS = 3000;
 function mpMaybeStart() {
   const g = mpMyGroup() || MP.groups.find(x => mpRegistered(x) && mpStartLocal(x) - Date.now() < MP_HOUR);
   if (!g || MP.started.has(g.id) || MP.refused.has(g.id)) return;
