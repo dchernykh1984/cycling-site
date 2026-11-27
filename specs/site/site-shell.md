@@ -100,7 +100,9 @@ watts through the site and ridden step by step: its target (a ramp moves from on
 other), the cadence it asks for, its cues as messages on the way, the time spent on the target; a
 rider without a smart trainer sees the target beside their estimated power, and the demo rides it.
 Only the picked workout's id is kept in the browser, and a workout that did not load holds the start
-until it loads or another plan is picked (`tests/e2e/test_virtual_ride_workouts.py`). A frame's time is ridden in steps of at most 50 ms, so the ride keeps real time on a device
+until it loads or another plan is picked (`tests/e2e/test_virtual_ride_workouts.py`). Under the plan screen
+the plan to ride is drawn a bar a step, as long as the step and as high as its target: the power where the plan
+sets one (a ramp a slope), else the cadence, each bar titled with its time and target. A frame's time is ridden in steps of at most 50 ms, so the ride keeps real time on a device
 that draws two frames a second or more; a longer
 pause, such as a hidden page, counts as half a second. Production names each file after a hash of
 its content, as it names the page, and the page links those names (`cycling_site/storage.py`), so the
