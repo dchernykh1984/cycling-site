@@ -190,6 +190,18 @@ function turnPoints(T) {
   T.turns = found.filter(f => f.gap < 60).map(f => f.s);
   return T.turns;
 }
+// Where a rider is told of a sight beside the route: SIGHT_AHEAD_M before its nearest point, earlier the further it
+// stands off, so that it is ahead to one side and in view; and before a tunnel's cutting that would hide it then --
+// Nurly Tau was told of in the cutting by Al-Farabi's tunnel, its walls in the way
+const SIGHT_AHEAD_M = 220, SIGHT_CUE_SPAN_M = 60, SIGHT_OFF_AHEAD = 1.2;
+function sightCue(T, l) {
+  if (l.cue != null) return l.cue;
+  let at = l.s - Math.max(SIGHT_AHEAD_M, l.dist * SIGHT_OFF_AHEAD);
+  const zones = typeof tunnelZones === 'function' && T.route.tunnels ? tunnelZones(T) : [];
+  for (const z of zones) if (at >= z.s0 - 20 && at <= z.s1 + 20) at = z.s0 - 40;
+  l.cue = T.loop ? ((at % T.L) + T.L) % T.L : Math.max(0, at);
+  return l.cue;
+}
 // the course of a ride: its track, where it starts and finishes, and the sights along it
 // a route out and back ends where it starts: its finish is the start's line, under the one arch of both
 function buildCourse(route) {

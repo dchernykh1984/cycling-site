@@ -336,6 +336,23 @@ def test_a_free_ride_from_one_place_to_another_ends_at_its_finish_and_a_loop_lap
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_sight_is_told_of_where_it_is_in_view_and_not_in_a_tunnel_s_cutting(page: Page, live_server):
+    """Nurly Tau was told of on the Central loop and Granfondo while their riders were down Al-Farabi's tunnel,
+    whose walls hid it: a sight is told of before such a cutting, ahead of it to one side."""
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildCourse === 'function'")
+    seen = page.evaluate(
+        """() => ['center', 'granfondo'].map(id => {
+            const c = buildCourse(ROUTES.find(r => r.id === id)), T = c.T, l = c.lms.find(x => x.type === 'towers');
+            const cue = sightCue(T, l), cut = tunnelZones(T).some(z => cue >= z.s0 - 20 && cue <= z.s1 + 20);
+            return [id, Math.round(l.s - cue), cut];
+        })"""
+    )
+    # out of every cutting, and at least the usual way before its nearest point
+    assert all(not cut and before >= 220 for _id, before, cut in seen), seen
+
+
+@pytest.mark.django_db(transaction=True)
 def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server):
     # the ground as drawn is flat between the terrain's vertices, tens of metres apart: set on the shape those vertices
     # sample rather than on the ground itself, a tree or a house hangs in the air where the ground dips under it
