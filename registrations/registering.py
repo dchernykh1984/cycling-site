@@ -50,6 +50,58 @@ def cannot_fill(competition, person) -> bool:
     )
 
 
+def missing_details(person) -> list[str]:
+    """What choosing a category asks of a person that their profile lacks, in words: their gender, their date of
+    birth."""
+    return [
+        word
+        for word, known in ((gettext("gender"), person.gender), (gettext("date of birth"), person.birth_date))
+        if not known
+    ]
+
+
+def has_categories(competition) -> bool:
+    return RegistrationCategory.objects.filter(competition=competition, is_deleted=False).exists()
+
+
+def category_refusal(competition, person, offered=None, own=True) -> str:
+    """Why a person whose gender and date of birth are known has no category of the event to enter, in words: none
+    of its categories takes them, or the ones that do are full. "" when one is open to them, when the event has no
+    categories, or when what they lack is their gender or date of birth (missing_details names it). ``own`` speaks
+    to the reader of their own entry, else of someone they enter."""
+    if not (person.gender and person.birth_date):
+        return ""
+    fitting = [
+        c
+        for c in RegistrationCategory.objects.filter(competition=competition, is_deleted=False)
+        if c.matches(person.gender, person.birth_date)
+    ]
+    if not fitting:
+        if not has_categories(competition):
+            return ""
+        return (
+            gettext("None of this event's categories takes your gender and year of birth.")
+            if own
+            else gettext("None of this event's categories takes their gender and year of birth.")
+        )
+    open_ids = {c.pk for c in (offered if offered is not None else open_categories(competition))}
+    if any(c.pk in open_ids for c in fitting):
+        return ""
+    names = ", ".join(c.name for c in fitting)
+    return (
+        gettext("The categories for you are full: %(names)s.")
+        if own
+        else gettext("The categories for them are full: %(names)s.")
+    ) % {"names": names}
+
+
+def closed_reason(competition) -> str:
+    """Why the event takes no entries, in words: every place taken, or simply closed."""
+    if competition.is_registration_open(ignore_limit=True) and competition.is_limit_reached():
+        return gettext("Registration is closed: all places are taken (%(n)s).") % {"n": competition.max_participants}
+    return gettext("Registration is closed.")
+
+
 def open_categories(competition) -> list[RegistrationCategory]:
     """The event's categories still taking entries."""
     return [c for c in RegistrationCategory.objects.filter(competition=competition, is_deleted=False) if c.is_open()]
@@ -273,6 +325,7 @@ class Row:
     virtual: bool = False  # a person without an account, added by the reader (issue #438)
     team: str = ""  # the person's team, for the page's filter (issue #440)
     fits: tuple[int, ...] = ()  # the open categories the person's gender and birth date fit, for the filter
+    refusal: str = ""  # why no category is open to the person, though their gender and date of birth are known
 
     @property
     def prefix(self) -> str:
@@ -319,6 +372,8 @@ def rows_for(competition, user) -> list[Row] | None:
         )
         row.team = person.team
         row.fits = tuple(c.pk for c in available_categories(competition, person.gender, person.birth_date, offered))
+        if not row.fits:
+            row.refusal = category_refusal(competition, person, offered, own=is_reader)
         if cannot_fill(competition, person):
             row.blocked = (
                 gettext("Complete your profile to register: it lacks your name, gender or date of birth.")

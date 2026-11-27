@@ -79,6 +79,14 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "rows": rows,
                 "nobody": nobody,
+                # who among them lacks what choosing a category asks: their gender, their date of birth
+                "missing_people": [
+                    (row.label, ", ".join(registering.missing_details(row.profile)))
+                    for row in rows
+                    if row.profile is not None and registering.missing_details(row.profile)
+                ]
+                if registering.has_categories(competition)
+                else [],
                 "is_free": registering.is_free(competition),
                 "relay_enabled": False,
                 "all_categories_json": self._categories_json(competition),
@@ -139,6 +147,11 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 "competition": competition,
                 "form": form,
                 "profile_incomplete": not user.gender or not user.birth_date,
+                # what choosing a category asks that the profile lacks, and why none is open to the reader
+                "missing": ", ".join(registering.missing_details(user))
+                if registering.has_categories(competition)
+                else "",
+                "category_refusal": registering.category_refusal(competition, user),
                 "is_free": competition.registration_mode == competition.RegistrationMode.FREE,
                 "relay_enabled": competition.relay_enabled,
                 "relay_max_members": competition.relay_max_members,
@@ -160,6 +173,7 @@ class RegisterForCompetitionView(ParticipantRequiredMixin, View):
                 {
                     "competition": competition,
                     "registration_closed": True,
+                    "closed_reason": registering.closed_reason(competition),
                 },
             )
 

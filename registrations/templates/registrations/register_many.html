@@ -24,6 +24,16 @@ come back open with the reason. Filters by name, team and category narrow a long
 {% if rows %}
 <p class="text-muted mb-3">{% trans "Tick whom to register: each person is entered with their profile's data. Open their details to check them or to add what the event asks; what you add goes into the registration only." %}</p>
 
+{% if missing_people %}
+{% comment %}Who cannot be given a category, and what they lack: a list rather than empty menus further down.{% endcomment %}
+<div class="alert alert-info" id="register-missing">
+  <p class="mb-1">{% trans "To pick a category, the site needs each person's gender and date of birth. Missing:" %}</p>
+  <ul class="mb-1">{% for name, what in missing_people %}<li>{{ name }}: {{ what }}</li>{% endfor %}</ul>
+  <p class="mb-0">{% trans "Add yours and those of the people you added without an account in your profile; ask the members you manage to complete their own profiles." %}
+    <a href="{% url 'account_profile' %}" class="alert-link">{% trans "Open your profile" %}</a></p>
+</div>
+{% endif %}
+
 {% if filters %}
 {% comment %}Outside the form: the filters choose what is shown, never what is sent. The categories are
 the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endcomment %}
@@ -99,6 +109,7 @@ the calendar's menu of boxes (calendar_app/_filter_multiselect_js.html).{% endco
         {% comment %}The category the person goes into, in sight while their details are folded.{% endcomment %}
         <span class="register-person-category small fw-normal">{% for c in row.form.category.field.queryset %}{% if row.form.category.value|stringformat:"s" == c.pk|stringformat:"s" %}{{ c.name }}{% endif %}{% endfor %}</span>
       </label>
+      {% if row.refusal %}<p class="small text-warning-emphasis mb-0 w-100 register-person-refusal">{{ row.refusal }}</p>{% endif %}
       {% with opened=row.form.errors %}
       <button type="button" class="btn btn-sm btn-outline-primary register-person-toggle"
               aria-controls="{{ row.ids }}form" aria-expanded="{% if opened %}true{% else %}false{% endif %}"

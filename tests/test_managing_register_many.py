@@ -358,3 +358,53 @@ class EventPageTests(TestCase):
         make_registration(relay, user=self.coach)
         with translation.override("en"):
             self.assertNotContains(self.client.get(reverse("competition_detail", args=[relay.pk])), "Register others")
+
+
+class WhyNoCategoryTests(TestCase):
+    """A reader who cannot pick a category is told why: their profile lacks a gender or a date of birth, none of the
+    event's categories takes them, the ones that do are full, or every place is taken -- never an empty menu alone."""
+
+    def setUp(self):
+        self.comp = make_open_competition(registration_mode="self_only")
+
+    def page(self, user, comp=None):
+        self.client.force_login(user)
+        with translation.override("en"):
+            return self.client.get(reverse("registrations:register", args=[(comp or self.comp).pk]))
+
+    def test_a_profile_without_a_gender_or_a_date_of_birth_is_asked_for_them_in_the_profile(self):
+        make_category(self.comp, "Open")
+        page = self.page(make_user("pavel", gender="M"))
+        self.assertContains(page, 'id="register-missing"')
+        self.assertContains(page, "Missing: date of birth.")
+        with translation.override("en"):
+            self.assertContains(page, reverse("account_profile_edit"))
+        # an event without categories asks only what it takes for its own sake
+        self.assertNotContains(self.page(make_user("nobody"), make_open_competition()), 'id="register-missing"')
+
+    def test_no_category_for_their_gender_or_age_and_full_ones_are_said_in_words(self):
+        make_category(self.comp, "Women", male=False)
+        man = make_user("man", gender="M", birth_date=datetime.date(1990, 1, 1))
+        self.assertContains(self.page(man), "None of this event&#x27;s categories takes your gender and year of birth.")
+        men = make_category(self.comp, "Men", female=False, max_participants=1)
+        make_registration(self.comp, category=men)
+        self.assertContains(self.page(man), "The categories for you are full: Men.")
+
+    def test_an_event_with_every_place_taken_says_so(self):
+        full = make_open_competition(registration_mode="self_only", max_participants=1)
+        make_registration(full)
+        page = self.page(make_user("late", gender="F", birth_date=datetime.date(1995, 3, 3)), full)
+        self.assertContains(page, "Registration is closed: all places are taken (1).")
+
+    def test_the_page_for_several_lists_who_lacks_what_and_why_a_category_is_not_theirs(self):
+        make_category(self.comp, "Women", female=True, male=False)
+        coach = make_user(
+            "coach2", first_name="Ivan", last_name="Petrov", gender="M", birth_date=datetime.date(1985, 5, 5)
+        )
+        gleb = make_user("gleb", first_name="Gleb", last_name="Orlov")
+        _manage(coach, gleb)
+        page = self.page(coach)
+        self.assertContains(page, 'id="register-missing"')
+        self.assertContains(page, "<li>Orlov Gleb: gender, date of birth</li>", html=True)
+        # the coach knows their own details: what keeps them out is the event's categories
+        self.assertContains(page, "None of this event&#x27;s categories takes your gender and year of birth.")

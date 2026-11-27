@@ -5924,3 +5924,47 @@ msgstr "Заезд суреті"
 #: calendar_app/views.py
 msgid "The race is not held by this event: only an event with registration on the site holds a race, before it starts."
 msgstr "Жарыс бұл іс-шараға байланбады: жарысты басталғанға дейін тек сайтта тіркеуі бар іс-шара ғана ұстайды."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "To pick your category, the site needs your gender and date of birth. Missing: %(missing)s."
+msgstr "Сізге санат таңдау үшін жынысыңыз бен туған күніңіз керек. Көрсетілмеген: %(missing)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Fill them in your profile"
+msgstr "Жеке кабинетте толтыру"
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "None of this event's categories takes your gender and year of birth."
+msgstr "Бұл іс-шараның бірде-бір санаты сізге жынысыңыз бен туған жылыңыз бойынша сәйкес келмейді."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "None of this event's categories takes their gender and year of birth."
+msgstr "Бұл іс-шараның бірде-бір санаты қатысушыға жынысы мен туған жылы бойынша сәйкес келмейді."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "The categories for you are full: %(names)s."
+msgstr "Сізге сәйкес санаттар толды: %(names)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "The categories for them are full: %(names)s."
+msgstr "Қатысушыға сәйкес санаттар толды: %(names)s."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+#, python-format
+msgid "Registration is closed: all places are taken (%(n)s)."
+msgstr "Тіркеу жабық: барлық орын толды (%(n)s)."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "To pick a category, the site needs each person's gender and date of birth. Missing:"
+msgstr "Санат таңдау үшін әр қатысушының жынысы мен туған күні керек. Көрсетілмеген:"
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Add yours and those of the people you added without an account in your profile; ask the members you manage to complete their own profiles."
+msgstr "Өз деректеріңізді және сіз қосқан тіркелгісіз адамдардың деректерін жеке кабинетте толтырыңыз; тіркелгісі бар қамқорлығыңыздағы адамдардан өз профилін толтыруды сұраңыз."
+
+#: registrations/registering.py registrations/templates/registrations/register.html
+msgid "Open your profile"
+msgstr "Жеке кабинетті ашу"
