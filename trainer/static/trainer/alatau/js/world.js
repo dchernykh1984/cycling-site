@@ -134,10 +134,14 @@ function buildWorld(route) {
   const nx = Math.ceil((x1 - x0) / cell), nz = Math.ceil((z1 - z0) / cell);
   const tg = new THREE.PlaneGeometry(x1 - x0, z1 - z0, nx, nz); tg.rotateX(-Math.PI / 2); tg.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
   const pos = tg.attributes.position, cols = new Float32Array(pos.count * 3);
+  const shapes = lms.map(lm => SHAPES[lm.type] && SHAPES[lm.type](lm, T)).filter(Boolean); // sights the land takes the shape of
   const cGrass = new THREE.Color(0x7c8a58), cDust = new THREE.Color(0x9a9684), cForest = new THREE.Color(0x3c5536), cRock = new THREE.Color(0x837a6c), cSnow = new THREE.Color(0xeef2f5), tmp = new THREE.Color();
   const cDry = new THREE.Color(0xa49b67), cMeadow = new THREE.Color(0x8b8e58); // the steppe: dry grass, and greener hollows
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z, n), x0, x1, z0, z1); pos.setY(i, h);
+    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z);
+    let h = edgeLand(T, x, z, terrainH(T, x, z, n), x0, x1, z0, z1);
+    for (const f of shapes) { const v = f(x, z); if (v != null && v > h) h = v; }
+    pos.setY(i, h);
     const nz2 = fbm(x * .01, z * .01, 3);
     if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > ROCK_FROM_M) tmp.lerp(cRock, clamp((h - ROCK_FROM_M) / (ROCK_WHOLE_M - ROCK_FROM_M), 0, 1)); if (h > SNOW_FROM_M) tmp.lerp(cSnow, clamp((h - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1)); }
     else if (steppe) tmp.copy(cDry).lerp(cMeadow, clamp(fbm(x * .0012, z * .0012, 3) * 1.6 - .45, 0, 1) * .85).lerp(cDust, clamp(1 - (n.d - W) / 30, 0, 1) * .5 + nz2 * .12);
@@ -200,7 +204,8 @@ function buildWorld(route) {
   ribbon(i => -W / 2 - sideOf(0, sideWide)(i), -W / 2, sideLift, sideMat, 1, mouth(0, sideWide));
   ribbon(W / 2, i => W / 2 + sideOf(1, sideWide)(i), sideLift, sideMat, 1, mouth(1, sideWide));
   addMedianBarriers(grp, T, W, room);
-  if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0), onOnward, sideWide);
+  // none where a sight is the land (a dam climbed in hairpins): a plain slope with the road on it, as in life
+  if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0) || shapes.some(f => f(x, z) != null), onOnward, sideWide);
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
   // a bridge over the route first: the roads that lead to it climb onto its deck
   const decks = route.over ? overDecks(T, W, route.over) : [];

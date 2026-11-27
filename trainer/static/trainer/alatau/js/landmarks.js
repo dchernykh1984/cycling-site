@@ -8,10 +8,12 @@
 // land(x, z) is the height of the land as drawn at a place on the route's metres, for a sight that spreads over it.
 // The ground slopes under a sight: what box and cyl stand at or below its base (y <= 0) reaches kit.sink further
 // down, so the sight goes into the ground at its lowest, its top where it was; a shape of its own does the same.
-const OBJECTS = {}, PADS = {};
+const OBJECTS = {}, PADS = {}, SHAPES = {};
 // pad(lm, T), for a sight that lies flat on the ground: { ring: [[x, z], ...] on the route's metres, y, margin } --
-// the ground under the ring and margin metres round it is laid at y, under the sight (js/world.js)
-function addObject(type, build, pad) { OBJECTS[type] = build; if (pad) PADS[type] = pad; }
+// the ground under the ring and margin metres round it is laid at y, under the sight (js/world.js); shape(lm, T), for
+// a sight that is the land itself (a dam the route climbs over): a function of (x, z) giving the land's height there,
+// or null where it leaves the land be -- the land rises to it, never sinks
+function addObject(type, build, pad, shape) { OBJECTS[type] = build; if (pad) PADS[type] = pad; if (shape) SHAPES[type] = shape; }
 // the lowest ground under a box's floor plan, on a grid of points across it
 function lowestUnder(ground, box) {
   let m = Infinity;
