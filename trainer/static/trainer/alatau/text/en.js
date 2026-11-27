@@ -103,6 +103,7 @@ const TEXT_EN = {
     "bt.already": "This device is already connected.",
     "bt.auto": "Connect automatically",
     "bt.autoBlocked": "This browser does not yet let sites connect to devices without the chooser. In Chrome the flag chrome://flags/#enable-web-bluetooth-new-permissions-backend turns it on; without it, press Connect beside the device.",
+    "bt.autoSearch": "The saved devices have not connected yet: the browser finds them only while it searches for devices. Wake the sensors (turn the pedals), press “Connect a device” and close the chooser once they connect.",
     "bt.trainerCtrl": "The trainer is connected and will set the resistance from the gradient of the route.",
     "bt.trainerNoCtrl": "The trainer sends power but did not hand over resistance control. Close Zwift and other apps and connect again.",
     "bt.hrOk": "Heart rate monitor connected.",

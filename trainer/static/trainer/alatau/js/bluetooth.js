@@ -191,6 +191,8 @@ class BLEDev {
   disconnect() { this.manual = true; try { this.dev.gatt.disconnect(); } catch (e) {} }
 }
 const SERVICES = [UUID.ftms, UUID.cp, UUID.csc, UUID.hr];
+// how long remembered devices have to come in by themselves before the page says how the browser finds them
+const AUTO_SEARCH_HINT_MS = 8000;
 const ANY_SENSOR = { filters: SERVICES.map(u => ({ services: [u] })), optionalServices: SERVICES };
 // Devices once connected are remembered by the id the browser gives them for this site and by their name.
 // A page opens a remembered device without the chooser only where the browser lists the devices the site was
@@ -261,12 +263,18 @@ const Sensors = {
     if (!this.canReopen()) { btHint(t('bt.autoBlocked'), true); return; }
     let permitted = [];
     try { permitted = await navigator.bluetooth.getDevices(); } catch (e) { return; }
+    const opened = [];
     for (const entry of this.saved) {
       const dev = permitted.find(x => x.id === entry.id);
       if (!dev) continue;
       if (dev.watchAdvertisements) dev.watchAdvertisements().catch(() => {}); // so the browser looks for it while it sleeps
-      this.open(dev, true);
+      opened.push(dev.id); this.open(dev, true);
     }
+    // A browser that has not searched since it started cannot reach a device yet (Chrome on a Mac hears no device until
+    // its chooser searches, and a page cannot search without it): the chooser's search finds them, and they connect
+    if (opened.length) setTimeout(() => {
+      if (this.devs.some(d => opened.includes(d.dev.id) && d.status !== 'online')) btHint(t('bt.autoSearch'), true);
+    }, AUTO_SEARCH_HINT_MS);
   },
   remove(d) { d.disconnect(); this.devs = this.devs.filter(x => x !== d); this.changed(); },
   tick(now) { this.devs.forEach(d => d.tick(now)); },

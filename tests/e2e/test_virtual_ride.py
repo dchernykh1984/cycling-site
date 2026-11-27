@@ -2011,27 +2011,40 @@ def test_the_cadence_against_the_target_reads_over_a_light_sky(page: Page, live_
     assert (lighter + 0.05) / (darker + 0.05) >= 3, colour
 
 
-def _bluetooth(reopens: bool, stored: dict | None = None) -> str:
+def _bluetooth(reopens: bool, stored: dict | None = None, found: bool = True) -> str:
     """A browser's Bluetooth with one heart rate monitor in reach; `reopens` gives it getDevices(), as Chrome
-    has behind its permissions flag. What the chooser was asked is in `chooserAsked`."""
+    has behind its permissions flag. What the chooser was asked is in `chooserAsked`. Not `found`, the browser has
+    not searched since it started, as Chrome on a Mac: the monitor is out of its reach until the chooser searches,
+    and the rider closes the chooser."""
     preset = "".join(
         f"localStorage.setItem('alatau:{k}', {json.dumps(json.dumps(v))});" for k, v in (stored or {}).items()
     )
-    return """(() => {
+    return (
+        """(() => {
         const characteristic = { addEventListener() {}, startNotifications: async () => {} };
         const server = { getPrimaryService: async uuid => {
             if (uuid !== 0x180D) throw new Error('not here'); return { getCharacteristic: async () => characteristic };
         } };
         const hrm = { id: 'hr-1', name: 'HRM Pro', watched: false, forgotten: false, addEventListener() {},
-            gatt: { connect: async () => server, disconnect() {} } };
+            gatt: { connect: async () => {
+                if (!window.found) throw new DOMException('Bluetooth Device is no longer in range.', 'NetworkError');
+                return server;
+            }, disconnect() {} } };
         hrm.watchAdvertisements = async () => { hrm.watched = true; };
         hrm.forget = async () => { hrm.forgotten = true; };
-        window.hrm = hrm; window.chooserAsked = [];
-        const bluetooth = { requestDevice: async options => { chooserAsked.push(options); return hrm; } };
+        window.hrm = hrm; window.chooserAsked = []; window.found = FOUND;
+        const bluetooth = { requestDevice: async options => {
+            chooserAsked.push(options);
+            if (window.found) return hrm;
+            window.found = true; throw new DOMException('User cancelled the requestDevice() chooser.', 'NotFoundError');
+        } };
         if (REOPENS) bluetooth.getDevices = async () => [hrm];
         Object.defineProperty(navigator, 'bluetooth', { value: bluetooth, configurable: true });
         if (!sessionStorage.getItem('preset')) { sessionStorage.setItem('preset', '1'); PRESET }
-    })()""".replace("REOPENS", "true" if reopens else "false").replace("PRESET", preset)
+    })()""".replace("REOPENS", str(reopens).lower())
+        .replace("PRESET", preset)
+        .replace("FOUND", str(found).lower())
+    )
 
 
 def _listed(page: Page) -> list[str]:
@@ -2072,6 +2085,22 @@ def test_with_the_box_on_remembered_devices_connect_as_the_page_opens(page: Page
     expect(page.locator("#devList li small")).to_have_text("connected")
     expect(page.locator("#btAuto")).to_be_checked()
     assert page.evaluate("[chooserAsked.length, hrm.watched]") == [0, True]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_remembered_devices_the_browser_has_not_found_yet_come_in_once_its_chooser_searches(page: Page, live_server):
+    """They connected only once the rider pressed Connect a device: Chrome reaches a device only after it searched."""
+    stored = {"devices": [{"id": "hr-1", "name": "HRM Pro"}], "btAuto": True}
+    page.clock.install()
+    page.add_init_script(_bluetooth(reopens=True, stored=stored, found=False))
+    _trainer_in_its_menu(page, live_server)
+    page.clock.run_for(9000)
+    expect(page.locator("#btHint")).to_have_text(page.evaluate("t('bt.autoSearch')"))
+    expect(page.locator("#devList li small")).to_have_text("reconnecting")
+    # the chooser searches, the rider closes it, and the page connects the monitor by itself
+    page.click("#btnConnect")
+    page.clock.run_for(6000)
+    expect(page.locator("#devList li small")).to_have_text("connected")
 
 
 @pytest.mark.django_db(transaction=True)
