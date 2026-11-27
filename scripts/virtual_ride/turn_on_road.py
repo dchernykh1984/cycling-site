@@ -49,7 +49,9 @@ CIRCLE_BEND_M = 6.0  # the bends off the road's end into the circle and back, ro
 
 src = Path(map_path).read_text(encoding="utf-8")
 data = json.loads(src[src.index("addMap(") + 7 : src.rindex(")")])
-entry = next(r for r in data["routes"] if r["id"] == rid)
+entry = next((r for r in data["routes"] if r["id"] == rid), None)
+if entry is None:
+    raise SystemExit(f"{map_path} has no route {rid!r}")
 pts = [p[:3] for p in entry["pts"]]
 origin = pts[0]
 KX, KY = 111320 * math.cos(math.radians(origin[0])), 111195
