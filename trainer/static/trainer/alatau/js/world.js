@@ -276,6 +276,7 @@ function buildWorld(route) {
   addTrees(grp, trees);
   if (route.barriers) addBarriers(grp, T, W, route.barriers.gap, ground, (x, z) => !!osmB && osmB.near(x, z, 2));
   if (route.signals) addSignals(grp, T, W, route.signals, ground);
+  if (route.rails) addRails(grp, T, W, route.rails, ground);
 
   // --- the land beyond the scenery: the map's relief as it is, else a range to the south where a route or map has one ---
   const range = route.mountains || mapOf(route).mountains;
@@ -376,6 +377,74 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
   }
   const m = meshOf(grp, P, I, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 'fills');
   if (m) m.geometry.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+}
+// A mountain road's guardrail from rails.from to rails.to (each [latitude, longitude], on the route's first pass), on
+// a side whose land falls away RAIL_DROP_M within RAIL_LOOK_M of its edge: a beam in black and white on posts on the
+// shoulder; and at a turn tighter than RAIL_TURN_DEG in 40 m, red and white chevrons on its outside, one to the riders
+// coming each way -- the road from Big Almaty Lake up to the Cosmostation, as the maintainer's photograph has it
+const RAIL_DROP_M = 2.5, RAIL_LOOK_M = 6, RAIL_OFF_M = .7, RAIL_POST_M = 4, RAIL_TURN_DEG = 100;
+function addRails(grp, T, W, rails, ground) {
+  const firstPass = p => {
+    const q = proj(p[0], p[1], T.origin); let best = Infinity;
+    const d2 = i => (T.X[i] - q.x) ** 2 + (T.Z[i] - q.z) ** 2;
+    for (let i = 0; i < T.N; i++) best = Math.min(best, d2(i));
+    let i = 0; while (Math.sqrt(d2(i)) > Math.sqrt(best) + 1) i++;
+    return T.D[i];
+  };
+  const s0 = firstPass(rails.from), s1 = firstPass(rails.to), o = {};
+  const stripes = canvasTex(256, 32, (c, w, h) => { c.fillStyle = '#f2f2ee'; c.fillRect(0, 0, w, h); c.fillStyle = '#1d1f22'; c.fillRect(w / 2, 0, w / 2, h); });
+  stripes.wrapS = THREE.RepeatWrapping;
+  const P = [], UV = [], I = [], posts = [];
+  for (const side of [-1, 1]) {
+    let prev = null;
+    for (let s = s0; s <= s1; s += 2) {
+      sampleAt(T, s, o);
+      const at = d => ({ x: o.x + o.rx * d * side, z: o.z + o.rz * d * side }), q = at(W / 2 + RAIL_LOOK_M), e = at(W / 2 + RAIL_OFF_M);
+      const steep = ground(q.x, q.z) < o.y - RAIL_DROP_M;
+      if (!steep) { prev = null; continue; }
+      const cur = [e.x, o.y, e.z, s];
+      if (prev) {
+        const b = P.length / 3;
+        P.push(prev[0], prev[1] + .6, prev[2], prev[0], prev[1] + .92, prev[2], cur[0], cur[1] + .6, cur[2], cur[0], cur[1] + .92, cur[2]);
+        UV.push(prev[3] / 2, 0, prev[3] / 2, 1, s / 2, 0, s / 2, 1);
+        I.push(b, b + 2, b + 1, b + 1, b + 2, b + 3);
+      }
+      if (Math.round(s) % RAIL_POST_M === 0) posts.push({ x: e.x, y: o.y, z: e.z });
+      prev = cur;
+    }
+  }
+  if (I.length) {
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2)); g.setIndex(I); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: stripes, side: THREE.DoubleSide })); m.name = 'rails'; grp.add(m);
+  }
+  if (posts.length) {
+    const im = new THREE.InstancedMesh(new THREE.BoxGeometry(.12, 1, .12), new THREE.MeshLambertMaterial({ color: 0x8d9296 }), posts.length), M = new THREE.Matrix4();
+    posts.forEach((p, i) => { M.makeTranslation(p.x, p.y + .35, p.z); im.setMatrixAt(i, M); });
+    im.name = 'railPosts'; grp.add(im);
+  }
+  // chevrons on the outside of the tight turns, a board to the riders coming each way
+  const chev = canvasTex(256, 96, (c, w, h) => {
+    c.fillStyle = '#d23a2f'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffffff';
+    for (let k = 0; k < 3; k++) { const x = 40 + k * 72; c.beginPath(); c.moveTo(x, 10); c.lineTo(x + 34, h / 2); c.lineTo(x, h - 10); c.lineTo(x + 18, h - 10); c.lineTo(x + 52, h / 2); c.lineTo(x + 18, 10); c.fill(); }
+  });
+  const a = {}, b = {}, way = (p, q) => Math.atan2(q.x - p.x, q.z - p.z);
+  let last = -Infinity;
+  for (let s = s0 + 20; s <= s1 - 20; s += 4) {
+    sampleAt(T, s - 20, a); sampleAt(T, s + 20, b); sampleAt(T, s, o);
+    const turn = ((Math.atan2(b.tx, b.tz) - Math.atan2(a.tx, a.tz) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+    if (Math.abs(turn) * 180 / Math.PI < RAIL_TURN_DEG || s - last < 60) continue;
+    last = s;
+    // a growing heading turns left (from facing +z to +x): its outside is on the right
+    const out = turn > 0 ? 1 : -1, x = o.x + o.rx * (W / 2 + 1.2) * out, z = o.z + o.rz * (W / 2 + 1.2) * out;
+    [[a, turn > 0], [b, turn < 0]].forEach(([from, left]) => {
+      const grey = new THREE.MeshLambertMaterial({ color: 0x9aa0a6 });
+      const board = new THREE.Mesh(new THREE.BoxGeometry(1.6, .6, .05), [grey, grey, grey, grey, new THREE.MeshBasicMaterial({ map: chev }), grey]);
+      // its front to the riders coming from there, its arrows the way the road bends for them
+      board.position.set(x, o.y + 1.5, z); board.rotation.order = 'YXZ'; board.rotation.y = way({ x, z }, from); board.rotation.z = left ? Math.PI : 0;
+      grp.add(board);
+    });
+    const post = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.6, .08), new THREE.MeshLambertMaterial({ color: 0x8d9296 })); post.position.set(x, o.y + .6, z); grp.add(post);
+  }
 }
 // Traffic lights where the route's road has them: a pole each side beyond the edge, its lights turned to the riders
 // coming on that side -- a ride's lights always green
