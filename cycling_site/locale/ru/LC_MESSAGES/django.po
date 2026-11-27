@@ -5921,3 +5921,11 @@ msgstr "Её задаёт страница виртуального заезда
 #: calendar_app/templates/calendar_app/detail.html
 msgid "Open the ride"
 msgstr "Открыть заезд"
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "The ride's picture below is attached when the event is saved, unless you choose a picture of your own."
+msgstr "Картинка заезда ниже приложится при сохранении мероприятия, если вы не выберете свою."
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "The ride's picture"
+msgstr "Картинка заезда"

@@ -303,6 +303,9 @@ DEFAULT_SKIN = "orange"
 # A skin offered once to readers in any other skin (cycling_site/skins.py, _skin_offer.html); empty
 # for none. A new skin worth recommending is a new value here.
 SKIN_OFFER = DEFAULT_SKIN
+# The skin whose logo (img/logo.png) and fonts make the picture of an event made from a virtual ride
+# (calendar_app/ride_picture.py); a skin without them leaves such an event the site's mark.
+RIDE_PICTURE_SKIN = DEFAULT_SKIN
 
 # The calendar's week (issue #383): the day a week starts on and the days of the weekend, in order,
 # numbered as JavaScript numbers them, 0 for Sunday. The defaults are the week where the site began:

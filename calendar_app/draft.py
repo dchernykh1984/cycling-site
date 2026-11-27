@@ -43,6 +43,8 @@ REGISTRATION_SETTINGS = (
     "show_additional_info_in_list",
     "additional_info_required",
 )
+#: The lines of an event's picture a draft brings, from the top down.
+PICTURE_LINES = ("when", "title", "facts")
 _CATEGORY_NAME_CHARS = 100  # RegistrationCategory.name
 _TRACK_NAME_CHARS = 60
 _METRES_PER_DEGREE = 111_000
@@ -169,6 +171,19 @@ def track(name: str, gpx: str) -> dict | None:
         return None
     stem = "".join(c for c in (name or "") if c.isascii() and (c.isalnum() or c in "-_"))[:_TRACK_NAME_CHARS]
     return {"name": (stem or "route") + ".gpx", "gpx": gpx}
+
+
+def picture(post) -> dict | None:
+    """The picture a chat shows for the event (calendar_app.ride_picture): its route's view with the day and time, the
+    title and the route's length and climb over it, as the page wrote them in its language; none for a route without
+    a view."""
+    from calendar_app import ride_picture
+
+    route = post.get("picture_route", "")
+    if ride_picture.view_of(route) is None:
+        return None
+    lines = {name: " ".join(post.get(f"picture_{name}", "").split())[: ride_picture.MAX_LINE] for name in PICTURE_LINES}
+    return {"route": route, **lines}
 
 
 def ride_of(user, raw: str) -> int | None:

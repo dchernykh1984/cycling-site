@@ -166,6 +166,10 @@
         {{ form.preview_image }}
         {% if form.preview_image.errors %}<div class="text-danger small mt-1">{% for e in form.preview_image.errors %}{{ e }}{% endfor %}</div>{% endif %}
         <div class="form-text">{% trans "Shown when somebody pastes a link to this event into a chat. Upload it before the link goes round: messengers remember the first picture they saw for a long time." %}</div>
+        {% if draft_picture %}
+        <div class="form-text" id="ride-picture-note">{% trans "The ride's picture below is attached when the event is saved, unless you choose a picture of your own." %}</div>
+        <img id="ride-picture" class="img-fluid rounded mt-2" src="{{ draft_picture }}" width="1200" height="630" alt="{% trans "The ride's picture" %}">
+        {% endif %}
       </div>
 
       <div class="mb-3">

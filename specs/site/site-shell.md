@@ -175,7 +175,11 @@ else one proposed then under the nearest public city (public for an organizer, a
 ride or race itself, which the event's page opens as "Open the ride" and its forms show as its link, set by the site
 and never typed (`Competition.virtual_ride`; `virtual_ride_url` in the API), the words "on the ride's page" linking to it
 in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
-file of their own; and for a race -- an organizer's only, as only an organizer's form registers riders --
+file of their own; the ride's picture for a chat's card, 1200 by 630 -- the route's view in the virtual world
+(`maps/<map>/views/<route>.jpg`, rendered from its scene) under the logo of the skin `RIDE_PICTURE_SKIN` names, the
+day and time, the title and the route's length and climb in the page's language, in that skin's type -- shown on the
+form and attached as the event's link preview image unless the member chose one (`calendar_app/ride_picture.py`; a
+route without a view, or a skin without a logo and fonts, has none); and for a race -- an organizer's only, as only an organizer's form registers riders --
 registration on the site with the categories Men (bibs 100-999) and Women (1-99), born from 1900 on, three
 laps each on a loop, each as many riders as its bibs and the race 999, a Strava link asked of each and listed, and the race itself, which
 the event holds once saved. The form takes its draft's extras only with the key the draft gave it, so a draft left
