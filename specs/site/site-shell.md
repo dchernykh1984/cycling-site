@@ -79,7 +79,10 @@ Connect opens it again without the chooser where the browser lists the site's de
 (`navigator.bluetooth.getDevices`, in Chrome behind `chrome://flags/#enable-web-bluetooth-new-permissions-backend`),
 and elsewhere opens the chooser with that device alone in it. With "Connect automatically" on, the
 page opens every remembered device it may as it starts and tries each until it wakes; where the
-browser does not allow it, the box says which flag turns it on (`tests/e2e/test_virtual_ride.py`).
+browser does not allow it, the box says which flag turns it on; where devices it may open have not come in
+within a few seconds -- a browser that has not searched since it started cannot reach them, Chrome on a Mac
+among them -- the page says to press Connect a device and close the chooser once they connect: its search
+finds them (`tests/e2e/test_virtual_ride.py`).
 A smart trainer is sent one command at a time, each once it has answered the one
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,
@@ -236,7 +239,8 @@ buildings with their heights and, where known, colours; the roads it meets and p
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it, the roads onto a road bridge climbing onto its deck up ramps between retaining walls; roads
 under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
-down a ramp between walls under a roof the crossing street runs over, the land at the ground line up to the walls and
+down a ramp between walls under a roof the crossing street runs over, closed at each portal by its face and the
+street's parapet, the land at the ground line up to the walls and
 none inside them; power lines on towers or poles, their wires sagging high over the road, and railways and rivers,
 as far as a rider sees them; canals and ponds; trees in rows, woods, parks and alone. Every route carries them, the
 ones made before the tools too (`scripts/virtual_ride/`, the `virtual-ride-routes` skill). Between a dual
