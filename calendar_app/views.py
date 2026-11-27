@@ -1391,15 +1391,12 @@ class SubmitDraftView(ParticipantRequiredMixin, View):
         if request.POST.get("registration") == "1":
             draft["registration"] = drafts.registration(request.POST)
             draft["categories"] = drafts.categories(request.POST.get("categories", ""))
-        announcement = drafts.web_link(request.POST.get("url_announcement", ""))
-        if announcement:
-            draft["url_announcement"] = announcement  # the virtual ride's page: where its riders gather
         track = drafts.track(request.POST.get("track_name", ""), request.POST.get("track_gpx", ""))
         if track:
             draft["track"] = track
-        race = drafts.race_of(request.user, request.POST.get("virtual_race"))
-        if race:
-            draft["virtual_race"] = race
+        ride = drafts.ride_of(request.user, request.POST.get("virtual_ride"))
+        if ride:
+            draft["virtual_ride"] = ride
         draft["key"] = drafts.new_key()
         request.session[EVENT_DRAFT] = draft
         return redirect(reverse("calendar_submit") + "?draft=1")
@@ -1415,21 +1412,31 @@ def _posted_draft(request) -> dict:
 def _draft_context(draft: dict | None) -> dict:
     """What the form says of its draft: its key, sent back with the form, and whether a track comes with it."""
     draft = draft or {}
-    return {"draft_key": draft.get("key", ""), "draft_track": bool(draft.get("track"))}
+    return {
+        "draft_key": draft.get("key", ""),
+        "draft_track": bool(draft.get("track")),
+        "draft_ride": draft.get("virtual_ride"),
+    }
 
 
 def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
-    """The draft's track and race for the event made from it (calendar_app.draft): the track unless the member chose
-    a file of their own, the race -- their own, still to come -- only for an organizer's event, which registers."""
+    """The draft's track and ride for the event made from it (calendar_app.draft): the track unless the member chose a
+    file of their own; the ride or race -- their own, not cancelled -- as the one the event is ridden in, and a race,
+    still to come, held by an organizer's event, which registers its riders."""
     from trainer.models import GroupRide
 
     track = draft.get("track")
     if track and not comp.file_route:
         comp.file_route.save(track["name"], ContentFile(track["gpx"].encode()), save=True)
-    if draft.get("virtual_race") and is_organizer:
-        GroupRide.objects.filter(
-            pk=draft["virtual_race"], host=user, competition__isnull=True, cancelled=False, start_at__gt=timezone.now()
-        ).update(competition=comp)
+    ride = GroupRide.objects.filter(pk=draft.get("virtual_ride") or 0, host=user, cancelled=False).first()
+    if ride is None:
+        return
+    comp.virtual_ride = ride.pk
+    Competition.objects.filter(pk=comp.pk).update(virtual_ride=ride.pk)
+    if is_organizer and ride.kind == GroupRide.Kind.RACE:
+        GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
+            competition=comp
+        )
 
 
 class SubmitCompetitionView(ParticipantRequiredMixin, View):

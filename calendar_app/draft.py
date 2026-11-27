@@ -1,6 +1,7 @@
 """What another page hands the event form to start from (SubmitDraftView), besides the words, the date, the types and
 the disciplines: the venue of a virtual route's start, registration with its categories, a route's track to attach and
-a virtual race the event is to hold -- what the virtual ride's calendar box sends (specs/site/site-shell.md).
+the virtual ride or race the event is ridden in -- what the virtual ride's calendar box sends
+(specs/site/site-shell.md).
 
 A draft is the asking member's, kept in their session; the form takes its extras only when it was opened from it and
 sends back its key, so a draft left over from another time never lands on an event made by hand later.
@@ -13,7 +14,6 @@ import math
 import secrets
 
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.utils import timezone, translation
 from django.utils.translation import gettext
 
@@ -45,7 +45,6 @@ REGISTRATION_SETTINGS = (
 )
 _CATEGORY_NAME_CHARS = 100  # RegistrationCategory.name
 _TRACK_NAME_CHARS = 60
-_URL_CHARS = 200  # Competition's URLFields
 _METRES_PER_DEGREE = 111_000
 
 
@@ -163,15 +162,6 @@ def categories(raw: str) -> list[dict]:
     return out
 
 
-def web_link(url: str) -> str | None:
-    """An http(s) address the event form's link fields take, else None."""
-    try:
-        URLValidator(schemes=("http", "https"))(url)
-    except ValidationError:
-        return None
-    return url if len(url) <= _URL_CHARS else None
-
-
 def track(name: str, gpx: str) -> dict | None:
     """A route's GPX to attach as the event's track file, when it is one the event's map can draw."""
     data = (gpx or "").encode()
@@ -181,8 +171,8 @@ def track(name: str, gpx: str) -> dict | None:
     return {"name": (stem or "route") + ".gpx", "gpx": gpx}
 
 
-def race_of(user, raw: str) -> int | None:
-    """The asking member's own race, to come and held by no event, that the event is to hold."""
+def ride_of(user, raw: str) -> int | None:
+    """The asking member's own ride or race, to come and held by no event, that the event is to be ridden in."""
     from trainer.models import GroupRide
 
     if not str(raw or "").isdecimal():
@@ -190,7 +180,6 @@ def race_of(user, raw: str) -> int | None:
     race = GroupRide.objects.filter(
         pk=int(raw),
         host=user,
-        kind=GroupRide.Kind.RACE,
         competition__isnull=True,
         cancelled=False,
         start_at__gt=timezone.now(),

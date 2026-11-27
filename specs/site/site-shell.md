@@ -168,8 +168,10 @@ that route at that minute) and sends the whole window to the event form filled f
 (each route of a map carries them, `event`), the type "Virtual Ride" and the discipline "Coffee Ride" for a ride,
 "Road Race" or "Individual Time Trial" for a race by its mode; the route's start as its venue in the virtual world
 -- "Virtual world: start of the route ...", so that nobody comes there to meet -- the one so named within 100 m of it,
-else one proposed then under the nearest public city (public for an organizer, awaiting review for anyone else); its
-page as the event's announcement, as the words "on the ride's page" link to it in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
+else one proposed then under the nearest public city (public for an organizer, awaiting review for anyone else); the
+ride or race itself, which the event's page opens as "Open the ride" and its forms show as its link, set by the site
+and never typed (`Competition.virtual_ride`; `virtual_ride_url` in the API), the words "on the ride's page" linking to it
+in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
 file of their own; and for a race -- an organizer's only, as only an organizer's form registers riders --
 registration on the site with the categories Men (bibs 100-999) and Women (1-99), born from 1900 on, three
 laps each on a loop, each as many riders as its bibs and the race 999, a Strava link asked of each and listed, and the race itself, which

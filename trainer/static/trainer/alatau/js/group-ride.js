@@ -209,7 +209,7 @@ function sendEventDraft(r, g, at) {
     put('description_' + lang, fillIn(words[2], v, escapeHTML));
   });
   EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);
-  put('url_announcement', eventWords(LANG, r, g, at).link); // its page, in the page's language, as its announcement
+  put('virtual_ride', g.id); // the ride or race the event is ridden in: its page opens it
   // its start in the virtual world, named after the route in each language, for the event's venue
   put('start_lat', r.pts[0][0]); put('start_lng', r.pts[0][1]); Object.keys(LOCALES).forEach(lang => put('route_name_' + lang, (r.names && r.names[lang]) || r.name));
   put('track_name', r.id); put('track_gpx', routeGpx(r));
@@ -217,7 +217,7 @@ function sendEventDraft(r, g, at) {
     const laps = r.loop ? RACE_LAPS : null, born = { birth_from: FIRST_BIRTH_YEAR, birth_to: new Date().getFullYear() };
     const bibs = ([a, b]) => ({ bib_from: a, bib_to: b, max_participants: b - a + 1 });
     const all = Object.values(RACE_BIBS).reduce((n, [a, b]) => n + b - a + 1, 0);
-    put('registration', '1'); put('virtual_race', g.id);
+    put('registration', '1');
     put('categories', JSON.stringify([
       Object.assign({ name: t('ev.catMen'), male: true, female: false, laps }, born, bibs(RACE_BIBS.men)),
       Object.assign({ name: t('ev.catWomen'), male: false, female: true, laps }, born, bibs(RACE_BIBS.women))

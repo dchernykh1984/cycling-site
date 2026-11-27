@@ -5909,3 +5909,15 @@ msgstr "Трек маршрута приложится к мероприятию
 #, python-format
 msgid "Virtual world: start of the route \"%(route)s\""
 msgstr "Виртуальный мир: старт трассы «%(route)s»"
+
+#: calendar_app/templates/calendar_app/_virtual_ride_link.html
+msgid "Link to the ride"
+msgstr "Ссылка на заезд"
+
+#: calendar_app/templates/calendar_app/_virtual_ride_link.html
+msgid "The virtual ride page sets it, and it cannot be changed."
+msgstr "Её задаёт страница виртуального заезда, изменить её нельзя."
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Open the ride"
+msgstr "Открыть заезд"

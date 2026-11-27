@@ -146,6 +146,9 @@ class Competition(index.Indexed, models.Model):
     url_registration = models.URLField(blank=True)
     url_regulations = models.URLField(blank=True)
     url_results = models.URLField(blank=True)
+    # The virtual ride or race (trainer.GroupRide's id) the event is ridden in, when it was made from the virtual
+    # ride's page: the event's page opens it. Set by the site, never typed.
+    virtual_ride = models.PositiveIntegerField(null=True, blank=True, editable=False)
     file_announcement = models.FileField(upload_to="competitions/announcements/", blank=True)
     file_regulations = models.FileField(upload_to="competitions/regulations/", blank=True)
     file_route = models.FileField(upload_to="competitions/routes/", blank=True)
