@@ -101,6 +101,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             const groupWind = () => null; // a race in still air
             const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
+            const mpRegistered = () => false; // no event holds these races
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
             window.renderMP = renderMP;
@@ -127,6 +128,8 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
             r"^const fmtCountdown = .*?;$",
             r"^const mpClash = .*?;$",
             r"^const groupWind = .*?;$",
+            r"^const WIND_STEP_DEG = .*?;",
+            r"^const mpRegistered = .*?;$",
             r"^const windFrom = .*?;$",
             r"^function renderMP\(\) \{.*?^\}",
         )
@@ -134,7 +137,7 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
     page.set_content(
         '<p id="mpStatus"></p><div id="mpOnline"></div><div id="mpGroups"></div>'
         '<select id="mpDelay"><option value="60"></option></select><button id="mpCreate"></button>'
-        '<button id="mpEvent"></button>'
+        '<button id="mpEvent"></button><select id="windFrom"><option value="270"></option></select>'
     )
     page.evaluate(
         """({words, code}) => {
@@ -545,6 +548,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             const groupWind = () => null; // a race in still air
             const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
+            const mpRegistered = () => false; // no event holds these races
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
             window.t = t;
