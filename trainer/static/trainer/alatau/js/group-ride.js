@@ -119,11 +119,18 @@ function renderWhen() {
   if (at && !$('#mpDate').value) { const d = new Date(Date.now() + 2 * MP_HOUR); $('#mpDate').value = day(d); $('#mpTime').value = pad(d.getHours()) + ':00'; }
   $('#mpDate').min = day(new Date()); $('#mpDate').max = day(new Date(Date.now() + 365 * 864e5));
 }
+// when the member starts: in a time trial their own start, their place in the start order after the race's
+const mpStartOf = g => mpStartLocal(g) + ((g.me && g.me.start_offset_s) || 0) * 1000;
+// onto the ride's or race's start line, the scene drawn, counting down to its start: by itself seven seconds before
+// it, or as soon as the member asks ("Go to the start"), however long before
+function mpEnter(g) {
+  MP.started.add(g.id); groupRide = { gid: g.id, startAt: mpStartOf(g), wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' };
+  routeSel = g.route; renderMenu(); startRace();
+}
 function mpMaybeStart() {
   const g = mpMyGroup(); if (!g || MP.started.has(g.id)) return;
-  // in a time trial the rider's own start, their place in the start order after the race's
-  const at = mpStartLocal(g) + ((g.me && g.me.start_offset_s) || 0) * 1000, now = Date.now();
-  if (now >= at - 7000 && now < at + 30000) { MP.started.add(g.id); groupRide = { gid: g.id, startAt: at, wind: groupWind(g), race: groupRules(g), kind: g.kind || 'race' }; routeSel = g.route; renderMenu(); startRace(); }
+  const at = mpStartOf(g), now = Date.now();
+  if (now >= at - 7000 && now < at + 30000) mpEnter(g);
 }
 async function mpAction(path, body) {
   try { await Site.post(path, body); } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
@@ -314,7 +321,7 @@ function renderMP() {
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
       card = document.createElement('div'); card.dataset.gid = g.id;
-      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-acts"><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
+      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-acts"><button class="btn primary go hidden" type="button"></button><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
       box.appendChild(card);
     }
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
@@ -334,6 +341,8 @@ function renderMP() {
     } else if (g.mode === 'itt') { // a time trial without an event: the member's own start, as they joined
       small.append(t('mp.raceItt') + (g.me && g.me.start_offset_s ? t('mp.raceStart', { t: fmtTime(g.me.start_offset_s) }) : ''));
     }
+    const go = card.querySelector('.go'); go.classList.toggle('hidden', !counting); go.textContent = t('mp.toStart');
+    go.onclick = () => { if (!MP.started.has(g.id)) mpEnter(g); };
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
     const btn = card.querySelector('.act'); btn.disabled = false;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }

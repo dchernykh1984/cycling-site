@@ -111,7 +111,7 @@ function stepRide(dt, inp, t) {
   const T = world.T, grade = gradeAt(T, me.s), y0 = sampleAt(T, me.s, _ry).y;
   airAround(me, y0); // in the countdown too: a smart trainer is set to the air at the start
   if (phase === 'countdown') {
-    cdT -= dt;
+    cdT = groupRide ? (groupRide.startAt - Date.now()) / 1000 : cdT - dt; // a pause keeps no one from the start
     if (cdT <= 0) { phase = 'race'; rideEvent('go'); }
   } else if (phase === 'race' || phase === 'done') {
     if (cdT > -0.8) cdT -= dt;

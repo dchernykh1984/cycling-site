@@ -182,6 +182,7 @@ button{cursor:pointer}
 .tag3d .ahead{color:#F2B25C}
 .tag3d .behind{color:#8FD19E}
 #count{inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:min(30vw,220px);text-shadow:0 6px 40px rgba(0,0,0,.5)}
+#count.long{font-size:min(6vw,44px);padding:0 16px;text-align:center}
 
 /* ---------- overlays ---------- */
 .modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(6,10,14,.55);padding:20px}

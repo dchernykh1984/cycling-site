@@ -317,6 +317,34 @@ def test_a_card_tells_a_ride_from_a_race_and_a_time_trial_says_the_rider_s_own_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_member_waits_on_the_start_line_for_the_real_start_however_far_ahead(page: Page, live_server):
+    """ "Start" while waiting rode alone, and the race took its riders onto its line seven seconds before it: a member
+    now goes to its start line when they like and counts down there to its start, in days, hours, minutes and
+    seconds while it is far, by the clock -- a pause keeps no one from it -- and may go back and come again."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(
+        """() => {
+            const host = { user_id: 7, name: 'Anna' }, me = { user_id: 1, name: 'Me' };
+            MP.status = 'on'; MP.offset = 0; mpSchedule = () => {}; // the site is not asked: these are the races
+            MP.groups = [{ id: 4, route: 'center', start_at: new Date(Date.now() + 2 * 3600e3).toISOString(), host,
+                           members: [host, me], is_member: true, kind: 'ride', mode: 'group' }];
+            renderMP();
+        }"""
+    )
+    go = page.locator("#mpGroups .mp-group .go")
+    expect(go).to_have_text(page.evaluate("t('mp.toStart')"))
+    go.click()
+    page.wait_for_function("phase === 'countdown' && world && world.route.id === 'center'", polling=100)
+    page.evaluate("drawFrame(200)")
+    left = page.evaluate("cdT")
+    assert 2 * 3600 - 60 < left <= 2 * 3600, left
+    expect(page.locator("#count")).to_contain_text(page.evaluate("t('mp.countdown', { t: '' })").strip())
+    # back to the menu before the start: the button takes them there again
+    page.evaluate("startMenu()")
+    assert page.evaluate("MP.started.has(4)") is False
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_race_card_names_its_event_and_each_rider_s_bib(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(_A_RACE, 0)
