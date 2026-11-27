@@ -777,7 +777,6 @@ def test_a_device_without_3d_is_told_so_and_the_page_raises_nothing_more(page: P
 
 
 _A_MEMBER_ASKS = {
-    "GET /api/v1/virtual-ride/events",  # the member's own events a race with protocols may be made for
     "GET /api/v1/virtual-ride/me",
     "GET /api/v1/virtual-ride/records",
     "GET /api/v1/virtual-ride/rides?limit=30",
@@ -2007,6 +2006,9 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     race.refresh_from_db()
     event = race.competition
     assert event is not None and event.title_en == "Virtual race: Central loop"
+    # every language's words filled in, none of a template's {placeholders} left
+    words = [getattr(event, f"{field}_{lang}") for field in ("title", "description") for lang in ("ru", "kk", "en")]
+    assert all(words) and not any("{" in w for w in words), words
     assert event.file_route.name == "competitions/routes/center.gpx", event.file_route.name
     assert event.registration_enabled and event.registration_categories.count() == 2
     assert event.virtual_ride == race.pk  # its page opens the race
