@@ -76,8 +76,8 @@ def test_a_road_the_route_meets_lies_under_its_road_where_they_cross(page: Page,
         for (let i = 0; i < p.count; i++) {
           const n = routeNearest(T, p.getX(i), p.getZ(i)), up = p.getY(i) - n.y;
           // 4.5 m up and more: a road onto a bridge over the route, its end over the road's edge, clear of a rider
-          // as the bridge's deck is
-          if (n.d < W / 2 - .2 && overTunnel(T, n.s) == null && up > .05 && up < 4.5) {
+          // as the bridge's deck is; the valley drawn on past a finish (past T.L) is no road a rider rides
+          if (n.d < W / 2 - .2 && n.s <= T.L && overTunnel(T, n.s) == null && up > .05 && up < 4.5) {
             out.push(r.id + ': a road ' + up.toFixed(2) + ' m over the route at ' + Math.round(n.s) + ' m');
             return;
           }
