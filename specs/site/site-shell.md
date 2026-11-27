@@ -263,7 +263,8 @@ shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene'
 stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
 their tops where they were; a sight that spreads over the land, a cable car or ski jumps, stands on each of its
 pylons, stations and legs; one that lies flat on it, a rink, has the ground under it and round it laid at its
-level -- Medeu's ice, its oval, stands and floodlights, in a bowl of the valley's floor. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
+level -- Medeu's ice, its oval, stands and floodlights, in a bowl of the valley's floor; a dam lies on the land
+it crosses, Medeu's along its crest as OpenStreetMap draws it, its stair climbing the face towards the route. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
 it over the next 500 m, to the land SRTM has there -- a city's slopes and hills, Kok-Tobe and the Sunkar hill on
 finer grids of their own; a gorge's walls rise to it from a few metres off its road, the Medeu gorge's on a grid a
 thousandth of a degree fine over its whole scenery, and only a gorge on a map without a relief has its walls drawn.

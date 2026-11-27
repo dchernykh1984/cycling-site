@@ -37,7 +37,7 @@ function addLandmark(grp, lm, T, ground, land) {
     return G;
   };
   let G = build(0);
-  if (ground) { // built once to find its floor plan, then again as deep as the ground under it asks -- and again
+  if (ground && !G.userData.spread) { // a sight that spreads over the land stands each of its parts on it itself // built once to find its floor plan, then again as deep as the ground under it asks -- and again
     // under the new one where going deeper widens it (a dam's foot keeps to its faces' slopes down a gorge)
     let sink = 0;
     for (let k = 0; k < 4; k++) {
