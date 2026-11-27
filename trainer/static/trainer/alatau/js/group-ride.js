@@ -188,7 +188,7 @@ async function mpAddEvent() {
     const kind = mpKind(), same = x => x.is_host && x.route === r.id && (x.kind || 'race') === kind && Math.abs(Date.parse(x.start_at) - when.at) < 60e3;
     const g = MP.groups.find(same) || await Site.post('/groups', mpRace(when));
     sendEventDraft(r, g, new Date(Date.parse(g.start_at)));
-  } catch (e) { $('#mpStatus').textContent = t('mp.failed', { msg: e.message }); }
+  } catch (e) { mpFailed(e); }
   MP.eventBusy = false; mpSchedule(50);
 }
 const LOCALES = { ru: 'ru-RU', kk: 'kk-KZ', en: 'en-GB' };
