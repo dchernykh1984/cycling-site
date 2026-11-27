@@ -126,6 +126,17 @@ class EnteringTests(TestCase):
         self.assertEqual(answer[0], {"row": 0, "registration_id": None, "errors": {"category": [said]}})
         self.assertFalse(CompetitionRegistration.objects.exists())
 
+    def test_a_person_whose_categories_are_full_is_told_which(self):
+        self.cat.max_participants = 1
+        self.cat.save(update_fields=["max_participants"])
+        make_registration(self.comp, category=self.cat)
+        answer = self._enter({"person": f"virtual:{self.kid.pk}"}).json()
+        with translation.override("ru"):
+            said = gettext("The categories for this gender and year of birth are full: %(names)s.") % {
+                "names": self.cat.name
+            }
+        self.assertEqual(answer[0]["errors"], {"category": [said]})
+
     def test_nobody_enters_without_a_token(self):
         body = {"competition_id": self.comp.pk, "entries": [{"person": "me"}]}
         answer = self.client.post("/api/v1/registrations/", body, content_type="application/json")
