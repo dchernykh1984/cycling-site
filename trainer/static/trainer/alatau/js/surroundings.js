@@ -409,21 +409,26 @@ function addLines(G, T, lines, ground) {
 }
 
 // --- water: rivers and canals as bands at the ground, lakes and ponds flat at the lowest ground round them
+const RIVER_AREA_FALL_M = 3;
 function addWater(G, T, water, ground) {
   const P = [], I = [], mat = new THREE.MeshLambertMaterial({ color: 0x5d7c8c, side: THREE.DoubleSide });
   water.forEach(w => {
     if (w.area) {
       const ring = w.area.map(p => xzOf(T, p));
       if (!ring.some(p => routeGap(T, p.x, p.z) < LINE_REACH) || ring.length < 3) return;
-      const y = Math.min(...ring.map(p => ground(p.x, p.z))) + .05;
+      const hs = ring.map(p => ground(p.x, p.z)), y = Math.min(...hs) + .05;
+      // in a gorge, water whose shore falls RIVER_AREA_FALL_M is a river's bed down a slope, not a lake: its line runs there
+      if (T.rivers && Math.max(...hs) - y > RIVER_AREA_FALL_M) return;
       let tris = []; try { tris = THREE.ShapeUtils.triangulateShape(ring.map(p => new THREE.Vector2(p.x, p.z)), []); } catch (e) { return; }
       const base = P.length / 3; ring.forEach(p => P.push(p.x, y, p.z)); tris.forEach(t => I.push(base + t[0], base + t[1], base + t[2]));
       return;
     }
-    const pts = along(w.pts.map(p => xzOf(T, p)), 6).filter(p => routeGap(T, p.x, p.z) < LINE_REACH && routeGap(T, p.x, p.z) > T.route.width / 2 + 1);
+    // a gorge's river along its profile, running down (carveRivers), else on the ground
+    const profile = T.rivers && T.rivers.get(w);
+    const pts = (profile || along(w.pts.map(p => xzOf(T, p)), 6)).filter(p => routeGap(T, p.x, p.z) < LINE_REACH && routeGap(T, p.x, p.z) > T.route.width / 2 + 1);
     // a river under the route's road is cut where it passes under it: each run of points on its own
     let run = [];
-    const flush = () => { if (run.length > 1) band(P, I, run, w.w / 2, p => ground(p.x, p.z) + .04); run = []; };
+    const flush = () => { if (run.length > 1) band(P, I, run, w.w / 2, profile ? (e, i) => run[i].y + .04 : e => ground(e.x, e.z) + .04); run = []; };
     pts.forEach((p, i) => { if (i && Math.hypot(p.x - pts[i - 1].x, p.z - pts[i - 1].z) > 12) flush(); run.push(p); });
     flush();
   });

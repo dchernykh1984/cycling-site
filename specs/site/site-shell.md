@@ -308,7 +308,9 @@ under it down a cutting between walls; parapets along its own bridges; its tunne
 down a ramp between walls under a roof the crossing street runs over, closed at each portal by its face and the
 street's parapet, the land at the ground line up to the walls and
 none inside them; power lines on towers or poles, their wires sagging high over the road, and railways and rivers,
-as far as a rider sees them; canals and ponds; trees in rows, woods, parks and alone. Every route carries them, the
+as far as a rider sees them -- in a gorge a river runs down its bed, never rising, the land cut under it but not
+under the road, and a river's water that falls down a slope is drawn by its line, not as a flat sheet --; canals and
+ponds; trees in rows, woods, parks and alone. Every route carries them, the
 ones made before the tools too (`scripts/virtual_ride/`, the `virtual-ride-routes` skill). Between a dual
 carriageway's two halves lies their median -- a pavement each way where it is wide, a concrete barrier down a
 narrow one -- and one road ridden twice has one height, the barometer's lag up and down a slope evened out. Where
