@@ -36,7 +36,7 @@ function updateCamera(dt, cad, speed) {
     _qd.setFromEuler(_e); camera.quaternion.multiply(_qd);
     bars.rotation.z = -Math.sin(ph) * .02 * sw;
   }
-  playerAvatar.g.position.set(o.px, o.y, o.pz); playerAvatar.g.rotation.y = Math.atan2(o.tx, o.tz); playerAvatar.g.rotation.x = -Math.atan(gradeAt(T, me.s));
+  playerAvatar.g.position.set(o.px, o.y, o.pz); playerAvatar.g.rotation.y = riderHeading(me); playerAvatar.g.rotation.x = -Math.atan(gradeAt(T, me.s));
   poseRider(playerAvatar, me.phase);
   sky.position.copy(camera.position);
 }

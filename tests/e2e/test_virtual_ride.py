@@ -268,6 +268,33 @@ def test_every_route_s_grade_rises_and_falls_without_steps(page: Page, live_serv
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_rider_turns_through_every_corner_smoothly(page: Page, live_server):
+    # a rider keeping the right lane turns by at most 12 degrees in half a metre, and their turning grows and eases by
+    # at most 5 degrees from one half metre to the next: drawn along straight lines between the route's points, their
+    # lane jumped back at each point of a corner and the rider swung round in four or five jerks
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildCourse === 'function'")
+    faults = page.evaluate(
+        """() => ROUTES.flatMap(r => {
+          world = buildCourse(r); // riderPos rides the course being ridden
+          const T = world.T, R = { lane: keepLane(r.width) }, way = [], out = [];
+          for (let s = 0; s < T.L - 1; s += .5) { R.s = s; way.push(riderHeading(R)); }
+          let turning = 0;
+          for (let i = 1; i < way.length; i++) {
+            const turn = Math.abs(((way[i] - way[i - 1] + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) * 180 / Math.PI;
+            if (turn > 12 || Math.abs(turn - turning) > 5) {
+              out.push(r.id + ': turns ' + turn.toFixed(1) + ' degrees in half a metre at ' + i / 2 + ' m');
+              break;
+            }
+            turning = turn;
+          }
+          return out;
+        })"""
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server):
     # the ground as drawn is flat between the terrain's vertices, tens of metres apart: set on the shape those vertices
     # sample rather than on the ground itself, a tree or a house hangs in the air where the ground dips under it
@@ -778,6 +805,7 @@ def _ride_alone(page: Page) -> list[str]:
         """() => {
             const L = 20000, origin = { lat: 0, lon: 0 };
             const T = { N: 2, X: [0, 0], Y: [800, 800], Z: [0, -L], D: [0, L], L, loop: false, origin };
+            T.TX = [0, 0]; T.TZ = [-1, -1]; // the way it runs at each point: north
             world = { T, S0: 20, FIN: L - 8, route: { id: 'flat' }, lms: [] };
             me = startRider(newRider('me', 0, 75, world.S0, 2)); Object.assign(me, { bike: 8, CdA: .3, Crr: .004 });
             phase = 'race';
