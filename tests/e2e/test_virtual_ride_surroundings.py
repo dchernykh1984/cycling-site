@@ -397,7 +397,11 @@ def test_a_guardrail_stands_on_a_post_every_4_m(page: Page, live_server):
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
     page.wait_for_function("typeof ROUTES !== 'undefined' && typeof addRails === 'function'")
     counts = page.evaluate(
-        """() => { const r = ROUTES.find(x => x.rails), T = buildTrack(r), o = {};
+        """() => {
+          if (!scene) { // a browser without 3D (Firefox headless) makes no renderer, which the rails' texture asks
+            scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } }; makeMaterials();
+          }
+          const r = ROUTES.find(x => x.rails), T = buildTrack(r), o = {};
           const at = s => { sampleAt(T, s, o); const p = unproj(o.x, o.z, T.origin); return [p.lat, p.lon]; };
           return [10000, 10001].map(s => {
             const grp = new THREE.Group();
