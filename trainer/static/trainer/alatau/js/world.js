@@ -50,6 +50,8 @@ function farReliefAt(T, x, z) {
 // the hills and slopes round a city's or the steppe's roads; a gorge's walls rise from 6 to 66 m off its road, its
 // road in SRTM's valley (Medeu's within metres of it); a gorge on a map without a relief has walls drawn for it
 const RELIEF_FROM = 80, RELIEF_OVER = 500, GORGE_FROM = 6, GORGE_OVER = 60;
+// a gorge's land snowy from SNOW_FROM_M, white from SNOW_WHOLE_M: the Cosmostation's top white, as the maintainer likes it
+const SNOW_FROM_M = 3000, SNOW_WHOLE_M = 3200;
 function terrainH(T, x, z) {
   const n = nearest(T, x, z); let h = n.y - 1.2;
   // round a tunnel and its ramps the land keeps the ground line up to their walls: the road goes down into a cutting,
@@ -130,7 +132,7 @@ function buildWorld(route) {
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z), x0, x1, z0, z1); pos.setY(i, h);
     const nz2 = fbm(x * .01, z * .01, 3);
-    if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > 2900) tmp.lerp(cSnow, clamp((h - 2900) / 300, 0, 1)); }
+    if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > SNOW_FROM_M) tmp.lerp(cSnow, clamp((h - SNOW_FROM_M) / (SNOW_WHOLE_M - SNOW_FROM_M), 0, 1)); }
     else if (steppe) tmp.copy(cDry).lerp(cMeadow, clamp(fbm(x * .0012, z * .0012, 3) * 1.6 - .45, 0, 1) * .85).lerp(cDust, clamp(1 - (n.d - W) / 30, 0, 1) * .5 + nz2 * .12);
     else tmp.copy(cGrass).lerp(cDust, clamp(1 - (n.d - W) / 60, 0, 1) * .7 + nz2 * .3);
     cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
