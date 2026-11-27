@@ -894,6 +894,21 @@ def _ride_alone(page: Page) -> list[str]:
     return errors
 
 
+def test_a_free_ride_from_one_place_to_another_ends_at_its_finish_without_a_lap(page: Page):
+    # it ended with a "Lap 2" toast: its whole length counted as a lap of a route that has none
+    errors = _ride_alone(page)
+    said = page.evaluate(
+        """() => {
+            const said = []; rideEvent = type => said.push(type);
+            rideMode = 'free'; me.s = world.FIN - .01; me.stats.dist = world.FIN - world.S0 - .01; me.v = 10;
+            advanceRide(.05, { P: 200, cad: 90, mode: 'demo' }, 0);
+            return said;
+        }"""
+    )
+    assert "routeEnd" in said and "lap" not in said, said
+    assert not errors, errors
+
+
 def test_a_rider_past_the_end_of_a_route_faces_its_way_not_south(page: Page):
     # a finisher rolling on past a route's end turned to face south: the points a metre either side of them met there
     errors = _ride_alone(page)
