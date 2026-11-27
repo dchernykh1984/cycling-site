@@ -374,6 +374,24 @@ def test_a_free_ride_from_one_place_to_another_ends_at_its_finish_and_a_loop_lap
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_sight_on_a_road_ridden_both_ways_is_told_on_the_side_it_is_first_seen(page: Page, live_server):
+    """Flow Park was told on the right on Granfondo, where riders pass it left one way and right the other, and on the
+    right at the end of the Cosmostation's lap, though it stands on the left at its start: on Granfondo, crossing the
+    mountains' way, it is told on the mountains' side; on the Cosmostation, on its first pass."""
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof buildTrack === 'function'")
+    told = page.evaluate(
+        """() => ['granfondo', 'kosmostantsiya'].map(id => {
+            const T = buildTrack(ROUTES.find(r => r.id === id)), l = nearLandmarks(T).find(x => x.text === 'FLOW PARK');
+            return [id, l.said, l.s < T.L / 2];
+        })"""
+    )
+    # Granfondo passes it near its far turn, past half its lap; the Cosmostation's way up is its lap's first half
+    assert [told[0][:2], told[1]] == [["granfondo", "mountains"], ["kosmostantsiya", "left", True]], told
+    assert page.evaluate("t('sight.mountains', { name: 'Flow Park' })") == "On the mountains' side: Flow Park"
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_sight_is_told_of_where_it_is_in_view_and_not_in_a_tunnel_s_cutting(page: Page, live_server):
     """Nurly Tau was told of on the Central loop and Granfondo while their riders were down Al-Farabi's tunnel,
     whose walls hid it: a sight is told of before such a cutting, ahead of it to one side."""

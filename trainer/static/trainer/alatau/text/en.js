@@ -183,6 +183,7 @@ const TEXT_EN = {
     "map.north": "N",
     "sight.right": "On the right: {name}",
     "sight.left": "On the left: {name}",
+    "sight.mountains": "On the mountains' side: {name}",
     "arch.both": "START / FINISH",
     "arch.start": "START",
     "arch.finish": "FINISH",
