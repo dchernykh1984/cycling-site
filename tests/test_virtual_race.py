@@ -123,6 +123,13 @@ class MakingARaceTests(RaceTestCase):
         )
         self.assertEqual(made.status_code, 201)
 
+    def test_an_event_without_registration_on_the_site_takes_no_race(self):
+        # nobody could join it: its riders join by their registration, as the event's page refuses it too
+        self.event.registration_enabled = False
+        self.event.save(update_fields=["registration_enabled"])
+        self.assertEqual(self.make().status_code, 403)
+        self.assertEqual(self.client_of(self.organizer).get(f"{API}/events").json(), [])
+
     def test_a_finished_or_unapproved_event_takes_no_race(self):
         self.event.date_start = self.event.date_end = timezone.localdate() - timedelta(days=1)
         self.event.save(update_fields=["date_start", "date_end"])
