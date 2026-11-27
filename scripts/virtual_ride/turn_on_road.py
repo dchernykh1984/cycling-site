@@ -32,6 +32,8 @@ from pathlib import Path
 
 map_path, osm_path, rid = sys.argv[1:4]
 circle = sys.argv[4:5] == ["circle"]
+if sys.argv[4:] and not circle:
+    raise SystemExit(f"turn_on_road.py takes 'circle' or nothing after the route's id, not {sys.argv[4:]}")
 SHIFT_M = 15.0  # the way there moving from the road's middle to where the rider rides, before the turn
 STEP_M = 2.5  # the points' spacing there
 RAMP_M = 2.0  # the turn's curvature eases in and out over this, so the rider never swings round at once
@@ -176,6 +178,8 @@ def cut_before(i, metres):
     raise SystemExit("the way there is shorter than a turn")
 
 
+if circle and (loops or homes):  # it lays a way out alone's end: a loop round far off would keep its own
+    raise SystemExit("a turning circle is for a way out alone, whose road ends where it turns")
 if loops:
     k1, k2 = min(loops, key=lambda ab: ab[1] - ab[0])
 else:  # out to its farthest point and back -- a way out alone to its end --: the way back is the way there reversed
