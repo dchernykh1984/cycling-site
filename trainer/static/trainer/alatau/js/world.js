@@ -200,6 +200,7 @@ function buildWorld(route) {
   ribbon(i => -W / 2 - sideOf(0, sideWide)(i), -W / 2, sideLift, sideMat, 1, mouth(0, sideWide));
   ribbon(W / 2, i => W / 2 + sideOf(1, sideWide)(i), sideLift, sideMat, 1, mouth(1, sideWide));
   addMedianBarriers(grp, T, W, room);
+  if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0), onOnward, sideWide);
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
   // a bridge over the route first: the roads that lead to it climb onto its deck
   const decks = route.over ? overDecks(T, W, route.over) : [];
@@ -331,6 +332,43 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
       if (insideRing(ring, x, z)) { add(x, z, kind); put++; }
     }
   });
+}
+// A gorge's road on its slope: where the land beside it lies under its shoulder, a fill of earth falls from the
+// shoulder's edge at FILL_SLOPE to one down to the land -- the land's cells, 40 m across, cannot follow a road's shelf,
+// and its road hung over the slope by up to 30 m on the Cosmostation. No fill on a bridge or at a road meeting it; none
+// past the middle to another stretch of road, nor over FILL_MAX_M.
+const FILL_SLOPE = 1.5, FILL_MAX_M = 40, FILL_FROM_M = .4;
+function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
+  const P = [], I = [], o = {}, bridges = (T.route.bridges || []).map(([a, b]) => [T.ptS[a] - 8, T.ptS[b] + 8]);
+  for (const k of [0, 1]) {
+    const side = k ? 1 : -1;
+    let prev = null;
+    for (let i = 0; i < T.N; i++) {
+      const s = T.D[i];
+      sampleAt(T, s, o);
+      const from = W / 2, top = o.y - .05; // from the road's edge: a shoulder, where drawn, lies over it
+      let fill = null;
+      const at = d => ({ x: o.x + o.rx * d * side, z: o.z + o.rz * d * side }), a = at(from), first = at(from + 2);
+      if (!onOnward(i) && !onRoad(a.x, a.z) && !bridges.some(([p, q]) => s >= p && s <= q)) {
+        // where the land 2 m out lies under the fill's slope: right at the edge it may still be up to the road
+        if (ground(first.x, first.z) < top - 2 / FILL_SLOPE - FILL_FROM_M) {
+          let end = null, last = { x: a.x, y: top, z: a.z };
+          // out to the land, or to the middle between this stretch and another -- a road ridden out and back is
+          // its own neighbour, which roomBeside counts: not here
+          for (let d = from + 1; d <= from + FILL_MAX_M; d += 1) {
+            const q = at(d), y = top - (d - from) / FILL_SLOPE, g = ground(q.x, q.z);
+            if (g >= y) { end = { x: q.x, y: g, z: q.z }; break; }
+            if (routeGap(T, q.x, q.z) < d / 2) { end = last; break; }
+            last = { x: q.x, y, z: q.z };
+          }
+          fill = [a.x, top, a.z, ...(end ? [end.x, end.y, end.z] : [last.x, last.y, last.z])];
+        }
+      }
+      if (fill && prev) { const b = P.length / 3; P.push(...prev, ...fill); I.push(b, b + 1, b + 3, b, b + 3, b + 2); }
+      prev = fill;
+    }
+  }
+  meshOf(grp, P, I, new THREE.MeshLambertMaterial({ color: 0x8a8270, side: THREE.DoubleSide }), 'fills');
 }
 // Traffic lights where the route's road has them: a pole each side beyond the edge, its lights turned to the riders
 // coming on that side -- a ride's lights always green
