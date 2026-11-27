@@ -6,7 +6,8 @@ Adds to the route (lat/lon rounded to ~0.1 m):
   over       [{w, pts, foot?}]    bridges over the route: a footbridge or a road, its deck's line where it crosses
   under      [{w, pts}]           roads that go under the route in a tunnel or a cutting
   bridges    [[i0, i1]]           stretches of the route on a bridge, as indexes of its points
-  tunnels    [[i0, i1]]           stretches of the route in a tunnel
+  tunnels    [[i0, i1]]           stretches of the route in a tunnel -- not a gallery through a dam (OSM waterway=dam):
+                                  the road runs level through it, the dam a sight standing over it
   lines      [{k, pts}]           power lines (k "power"), minor ones ("minor") and railways ("rail")
   water      [{w, pts}|{area}]    rivers, canals and streams; lakes and ponds
   trees      {rows, woods, pts}   tree rows, woods, orchards and parks, single trees
@@ -413,6 +414,24 @@ for e in ways:
         out["roads"].append(r)
 
 # ---------------------------------------------------------------- the route's own bridges and tunnels, as point indexes
+DAMS = [e["xy"] for e in ways if e["tags"].get("waterway") == "dam"]
+DAM_M = 10.0  # a gallery runs through a dam's body: within its outline, or this near its line
+
+
+def in_dam(p):
+    for ring in DAMS:
+        if len(ring) > 3 and dist(ring[0], ring[-1]) < 0.5:  # an outline: inside it
+            hit = False
+            for (ax, ay), (bx, by) in itertools.pairwise(ring):
+                if (ay > p[1]) != (by > p[1]) and p[0] < ax + (bx - ax) * (p[1] - ay) / (by - ay):
+                    hit = not hit
+            if hit:
+                return True
+        if min(seg_near(p, a, b)[0] for a, b in itertools.pairwise(ring)) < DAM_M:
+            return True
+    return False
+
+
 for e in ways:
     if e["id"] not in own_ids:
         continue
@@ -421,6 +440,10 @@ for e in ways:
         "bridges" if t.get("bridge") not in (None, "no") else "tunnels" if t.get("tunnel") not in (None, "no") else None
     )
     if not kind:
+        continue
+    mid = ((e["xy"][0][0] + e["xy"][-1][0]) / 2, (e["xy"][0][1] + e["xy"][-1][1]) / 2)
+    if kind == "tunnels" and in_dam(mid):
+        print(f"way {e['id']}: a gallery through a dam, the road level in it", file=sys.stderr)
         continue
     a, b = e["xy"][0], e["xy"][-1]
     h = math.atan2(b[1] - a[1], b[0] - a[0])
