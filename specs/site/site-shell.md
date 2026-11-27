@@ -207,7 +207,9 @@ event not over, with the mode, gaps, interval and drafting rule the race keeps. 
 event ride it, and registering is joining: a registered member's card counts down, offers its start line -- which
 takes them into the race -- and, in place of "Join", the list of the event's registered riders; anyone else's -- its host's
 too, who rides it only once registered -- sends them to the event's registration (the card says which: `event.registered`, `register_url`, `participants_url`). A
-refusal stays in the lobby's status line for ten seconds. Each rides with a bib: the one the event gave their registration, else the first free one
+race an event holds is the business of whoever may open the event, its host and its riders: no one else's lobby
+lists it, a link to it opens nothing for them and they cannot join it. A refusal stays in the lobby's status line
+for ten seconds. Each rides with a bib: the one the event gave their registration, else the first free one
 in their category's range, kept across leaving and joining; the bib is drawn on every rider's back and named on
 the race's card with the event, the rider's category, laps and own start. A rider rides their category's laps on a
 loop, a route that is not one once; the control points are the start-finish line and the route's turns back, each
