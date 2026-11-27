@@ -163,6 +163,29 @@ Each was found by the maintainer riding a route; the engine or a tool now avoids
   change to the engine or a map, run the four files whole -- `tests/test_virtual_ride_maps.py`,
   `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_race.py`, `tests/e2e/test_virtual_ride_surroundings.py`
   (`-n 6`; a test that fails only under that load passes on its own: rerun it alone before chasing it).
+- **A climb ridden up and down one road** (the Cosmostation): by place along the lap the way down's barometer was
+  taken for the way up's, 500 m off on a mountain road -- `build_route.py`'s `out_and_back` takes the way up alone,
+  its heights from its records in order; `end` stops it where the asphalt ends, not where the ride went on foot; a
+  detour off the road and back (water, a stop: 14 minutes at 16.4 km) is cut out; `turn_on_road.py` turns it there on
+  a straight. Ask where the road really ends and look at the track's walking part (slow records) before choosing.
+- **A tunnel that is a dam's gallery.** OpenStreetMap's tunnel under a mudflow dam got the 6.5 m dip of a tunnel cut
+  under the ground: the road through a dam keeps its barometer's level and the dam stands over it as a sight
+  (`surroundings.py` skips a tunnel inside a `waterway=dam`; `objects/checkdam.js`).
+- **A dam SRTM does not know, or knows.** SRTM is from 2000: a dam built since (Ayusai's, 2023) is missing from the
+  land -- draw its body, tapered at its ends onto the old valley (`taper`), its face kept off the route's road where
+  the road climbs it (`road`); an older one (Big Almaty Lake's) is in SRTM, smoothed: its crest goes a few metres
+  over SRTM's or it is not seen.
+- **Coarse land on a long route.** 64 km out and back had the land in cells 50 by 85 m under a 260-cell cap: the
+  serpentines lay on smooth mounds. The land keeps 40 m cells up to 200 000 points now; look at a serpentine from
+  above after a change to the land.
+- **One object file stopping another.** Two files of `objects/` declaring one constant at their top (`DAM_STEP`):
+  the second never loaded and Medeu's dam left the map with no visible error --
+  `test_every_object_file_loads_and_adds_its_object` finds it; prefix a file's constants with its name.
+- **A sight facing the way down.** On a road ridden out and back, a sight's nearest point may lie on the way back:
+  a sign read on the way up gives its turn (`rot`).
+- **What the maintainer remembers of the colours.** In the Big Almaty gorge grass gives way to stone from 2600 to
+  2800 m and snow lies from 3000 m, white from 3200 m; woods follow OpenStreetMap's `leaf_type` (spruces, broadleaved,
+  mixed), not one kind at random.
 
 ## Checks before calling a route done
 
