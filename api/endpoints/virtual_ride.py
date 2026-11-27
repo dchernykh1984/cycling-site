@@ -518,8 +518,12 @@ def _runs(group: GroupRide, user) -> bool:
     return group.host_id == user.pk or roles.at_least(user, roles.Role.ADMIN)
 
 
-def _open_group(group_id: int) -> GroupRide:
+def _open_group(group_id: int, user) -> GroupRide:
+    """A race still on, for the member to act on: one they may not see answers 404 first -- its "cancelled" told a
+    stranger it was there."""
     group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
+    if not _shown(group, user):
+        raise Http404
     if group.cancelled:
         raise HttpError(HTTPStatus.CONFLICT, "This group ride was cancelled")
     return group
@@ -1003,9 +1007,7 @@ def get_group(request, group_id: int):
 
 @router.post("/groups/{group_id}/join", response=GroupOut, auth=member_auth, summary="Join a group race")
 def join_group(request, group_id: int):
-    group = _open_group(group_id)
-    if not _shown(group, request.auth):
-        raise Http404
+    group = _open_group(group_id, request.auth)
     if group.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     _enter(group, request.auth)
@@ -1019,9 +1021,7 @@ def leave_group(request, group_id: int):
     announces them -- its host warming up alone an hour before cancelled the ride it announced. A race with protocols
     keeps the bib of a rider who leaves for them. A time trial under way keeps its order: a rider who left it would
     move every later rider's start."""
-    opened = _open_group(group_id)
-    if not _shown(opened, request.auth):  # a race whose event they may not open is none of theirs to leave
-        raise Http404
+    opened = _open_group(group_id, request.auth)
     if opened.mode == GroupRide.Mode.ITT and opened.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     with transaction.atomic():
@@ -1047,7 +1047,7 @@ def leave_group(request, group_id: int):
 
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")
 def cancel_group(request, group_id: int):
-    group = _open_group(group_id)
+    group = _open_group(group_id, request.auth)
     if not _runs(group, request.auth):
         raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can cancel this group race"))
     group.cancelled = True
@@ -1059,7 +1059,7 @@ def cancel_group(request, group_id: int):
 def change_group(request, group_id: int, payload: GroupWindIn):
     """Its host changes the wind its riders ride in until it starts; a page already on its line takes the new one with
     its next call (presence)."""
-    group = _open_group(group_id)
+    group = _open_group(group_id, request.auth)
     if not _runs(group, request.auth):
         raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can change this group race's wind"))
     if group.start_at <= timezone.now():
