@@ -247,7 +247,7 @@ function buildWorld(route) {
     const m = new THREE.Mesh(g, circleMat()); m.position.set(c.x, c.y + .1, c.z); m.name = 'turning circle'; grp.add(m);
   });
   // none where a sight is the land (a dam climbed in hairpins): a plain slope with the road on it, as in life
-  if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0) || shapes.some(f => f(x, z) != null), onOnward, sideWide);
+  if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0) || shapes.some(f => f(x, z) != null), onOnward, (k, i) => mouth(k, sideWide)(i) ? 0 : sideOf(k, sideWide)(i));
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
   // a bridge over the route first: the roads that lead to it climb onto its deck
   const decks = route.over ? overDecks(T, W, route.over) : [];
@@ -407,7 +407,7 @@ function circleMat() {
 // One that meets nothing within FILL_MAX_M ends on the land there. Grass as the slopes round it, earth at the road's
 // edge -- a fill of earth, as big as the land's own slopes, stood out as a wall. None on a bridge or at a road meeting it.
 const FILL_SLOPE = 1.5, FILL_MAX_M = 80, FILL_FROM_M = .4;
-function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
+function addFills(grp, T, W, ground, onRoad, onOnward, shoulder) {
   const P = [], I = [], C = [], o = {}, bridges = (T.route.bridges || []).map(([a, b]) => [T.ptS[a] - 8, T.ptS[b] + 8]);
   // the land's slope near a road, earthier at the road's edge, stony and snowy with the height as the land round it
   const slope = new THREE.Color(0x3c5536).lerp(new THREE.Color(0x7c8a58), .6), earth = new THREE.Color(0x7d7a5c), rock = new THREE.Color(0x837a6c), snow = new THREE.Color(0xeef2f5), c = new THREE.Color();
@@ -421,7 +421,8 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
     for (let i = 0; i < T.N; i++) {
       const s = T.D[i];
       sampleAt(T, s, o);
-      const from = W / 2, top = o.y - .05; // from the road's edge: a shoulder, where drawn, lies over it
+      // from the shoulder's edge, where one is drawn, at its height: from the road's it hung in the air, a guardrail on it
+      const from = W / 2 + shoulder(k, i), top = o.y;
       let fill = null;
       const at = d => ({ x: o.x + o.rx * d * side, z: o.z + o.rz * d * side }), a = at(from), first = at(from + 2);
       if (!onOnward(i) && !onRoad(a.x, a.z) && !bridges.some(([p, q]) => s >= p && s <= q)) {
