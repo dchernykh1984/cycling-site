@@ -384,13 +384,7 @@ function addFills(grp, T, W, ground, onRoad, onOnward, sideWide) {
 // coming each way -- the road from Big Almaty Lake up to the Cosmostation, as the maintainer's photograph has it
 const RAIL_DROP_M = 2.5, RAIL_LOOK_M = 6, RAIL_OFF_M = .7, RAIL_POST_M = 4, RAIL_TURN_DEG = 100;
 function addRails(grp, T, W, rails, ground) {
-  const firstPass = p => {
-    const q = proj(p[0], p[1], T.origin); let best = Infinity;
-    const d2 = i => (T.X[i] - q.x) ** 2 + (T.Z[i] - q.z) ** 2;
-    for (let i = 0; i < T.N; i++) best = Math.min(best, d2(i));
-    let i = 0; while (Math.sqrt(d2(i)) > Math.sqrt(best) + 1) i++;
-    return T.D[i];
-  };
+  const firstPass = p => { const q = proj(p[0], p[1], T.origin); return T.D[firstPassAt(T, q.x, q.z)]; };
   const s0 = firstPass(rails.from), s1 = firstPass(rails.to), o = {};
   const stripes = canvasTex(256, 32, (c, w, h) => { c.fillStyle = '#f2f2ee'; c.fillRect(0, 0, w, h); c.fillStyle = '#1d1f22'; c.fillRect(w / 2, 0, w / 2, h); });
   stripes.wrapS = THREE.RepeatWrapping;
