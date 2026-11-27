@@ -329,6 +329,18 @@ class VirtualRaceDraftTests(TestCase):
         self.client.post(reverse("calendar_submit"), payload)
         self.assertEqual(Image.open(Competition.objects.get(title_ru="Own picture").preview_image).size, (400, 300))
 
+    def test_a_skin_without_its_heading_s_italic_gives_no_picture_rather_than_failing(self):
+        # the day and time are drawn in the heading's italic: without it the page failed, the event being saved too
+        real = ride_picture._faces
+        no_italic = mock.patch.object(
+            ride_picture,
+            "_faces",
+            side_effect=lambda skin, role, style: () if style == ride_picture.ITALIC else real(skin, role, style),
+        )
+        with no_italic:
+            self.assertIsNone(ride_picture.draw("oldtown", "Sat 28 Nov, 18:00", "Virtual race", "15 km"))
+        self.assertIsNotNone(ride_picture.draw("oldtown", "Sat 28 Nov, 18:00", "Virtual race", "15 km"))
+
     def test_a_route_without_a_view_has_no_picture_and_a_draft_s_picture_is_its_own_member_s(self):
         self.draft(**{**PICTURE, "picture_route": "no-such-route"})
         self.assertEqual(self.form_page().context["draft_picture"], "")
