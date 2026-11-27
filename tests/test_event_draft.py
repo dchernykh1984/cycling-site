@@ -21,7 +21,7 @@ from calendar_app import ride_picture
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.views import _selected_discipline_ids
 from locations.models import Location, LocationProposal
-from trainer.models import GroupRide
+from trainer.models import GroupRide, GroupRideMember
 
 DRAFT = {
     "title_ru": "Virtual group race: Old centre",
@@ -330,6 +330,17 @@ class VirtualRaceDraftTests(TestCase):
         event = Competition.objects.get(title_ru="Virtual race")
         self.assertTrue(event.registration_enabled)
         self.assertEqual(race.competition, event)
+
+    def test_who_gathered_in_a_race_before_its_event_held_it_joins_again_once_registered(self):
+        race = self.race()
+        GroupRideMember.objects.create(group=race, user=self.organizer)  # the host, in it since they gathered it
+        self.draft(virtual_ride=str(race.pk), registration="1")
+        self.submit(self.form_page().context["draft_key"], registers=True)
+        race.refresh_from_db()
+        self.assertIsNotNone(race.competition)
+        # without a registration and a bib they would ride it untimed
+        self.assertFalse(race.memberships.exists())
+        self.assertEqual(race.last_start_at, race.start_at)
 
     def test_an_event_that_registers_nobody_or_is_over_holds_no_race(self):
         # a race held by them could be joined by no one: joining asks for a registration

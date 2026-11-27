@@ -1462,9 +1462,15 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
     Competition.objects.filter(pk=comp.pk).update(virtual_ride=ride.pk)
     # held only by an event that registers riders and may hold it -- public and not over -- so that it can be joined
     if is_organizer and ride.kind == GroupRide.Kind.RACE and comp.registration_enabled and races.can_tie(user, comp):
-        GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
+        held = GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
             competition=comp
         )
+        if held:
+            # who gathered in it before the event held it has no registration for it, nor a bib: they join again
+            # once registered, as everyone else does, and the start list is written for those who are left
+            race = GroupRide.objects.get(pk=ride.pk)
+            race.memberships.filter(registration__isnull=True).delete()
+            races.write_start(race)
 
 
 class SubmitCompetitionView(ParticipantRequiredMixin, View):
