@@ -457,6 +457,17 @@ def _event_out(competition: Competition, registered: bool) -> RaceEventOut:
     )
 
 
+def _answer(group: GroupRide, user) -> GroupOut:
+    """One race's card, read again with its members, their registrations and categories at once, as the lobby reads
+    its races: read member by member, a race with a hundred riders cost three hundred queries an answer."""
+    fresh = (
+        GroupRide.objects.select_related("host", "competition")
+        .prefetch_related("memberships__user", "memberships__registration__category")
+        .get(pk=group.pk)
+    )
+    return _group_out(fresh, user)
+
+
 def _group_out(group: GroupRide, user, registered: set[int] | None = None) -> GroupOut:
     """A race's card for the member; ``registered``: the events of a lobby's races they hold a registration for,
     found for all of them at once (race.registered_for), else asked for this race's own."""
@@ -925,7 +936,7 @@ def create_group(request, payload: GroupIn):
             Competition.objects.filter(pk=event.pk).filter(
                 Q(virtual_ride__isnull=True) | Q(virtual_ride__in=stale.values("pk"))
             ).update(virtual_ride=group.pk)
-    return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
+    return Status(HTTPStatus.CREATED, _answer(group, request.auth))
 
 
 @router.get(
@@ -987,7 +998,7 @@ def get_group(request, group_id: int):
     group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
     if not _shown(group, request.auth):
         raise Http404
-    return _group_out(group, request.auth)
+    return _answer(group, request.auth)
 
 
 @router.post("/groups/{group_id}/join", response=GroupOut, auth=member_auth, summary="Join a group race")
@@ -998,7 +1009,7 @@ def join_group(request, group_id: int):
     if group.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     _enter(group, request.auth)
-    return _group_out(group, request.auth)
+    return _answer(group, request.auth)
 
 
 @router.post("/groups/{group_id}/leave", response=GroupOut, auth=member_auth, summary="Leave a group race")
@@ -1031,7 +1042,7 @@ def leave_group(request, group_id: int):
             group.save(update_fields=["cancelled", "host"])
     left = GroupRide.objects.select_related("host", "competition").get(pk=group_id)
     race.write_start(left)
-    return _group_out(left, request.auth)
+    return _answer(left, request.auth)
 
 
 @router.post("/groups/{group_id}/cancel", response=GroupOut, auth=member_auth, summary="Cancel a group race")
@@ -1041,7 +1052,7 @@ def cancel_group(request, group_id: int):
         raise HttpError(HTTPStatus.FORBIDDEN, _("Only the host can cancel this group race"))
     group.cancelled = True
     group.save(update_fields=["cancelled"])
-    return _group_out(group, request.auth)
+    return _answer(group, request.auth)
 
 
 @router.patch("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="Change a group race's wind")
@@ -1055,7 +1066,7 @@ def change_group(request, group_id: int, payload: GroupWindIn):
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     group.wind_ms, group.wind_from_deg = payload.wind_ms, payload.wind_from_deg
     group.save(update_fields=["wind_ms", "wind_from_deg"])
-    return _group_out(group, request.auth)
+    return _answer(group, request.auth)
 
 
 @router.get("/groups/{group_id}/results", response=GroupResultsOut, auth=member_auth, summary="Group race results")
@@ -1074,7 +1085,7 @@ def group_results(request, group_id: int):
         )
         for r in records.group_results(group)
     ]
-    return GroupResultsOut(group=_group_out(group, request.auth), finished=finished)
+    return GroupResultsOut(group=_answer(group, request.auth), finished=finished)
 
 
 # -- Riding together -------------------------------------------------------
