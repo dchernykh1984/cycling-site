@@ -253,6 +253,23 @@ class MapsTests(SimpleTestCase):
             )
             self.assertGreater(length, 1000)
 
+    def test_the_cosmostation_turns_round_a_circle_where_its_road_ends(self):
+        # its road, drawn along a turn from edge to edge of its 7 m, broke into triangles at the top: a turning circle
+        # there, its asphalt round the rider's way, and no road on past it
+        route = next(r for r in _routes() if r["id"] == "kosmostantsiya")
+        ((lat, lon, radius),) = route["circles"]
+        kx = 111320 * math.cos(math.radians(lat))
+        off = [math.hypot((p[1] - lon) * kx, (p[0] - lat) * 111195) for p in route["pts"]]
+        inside = [i for i, d in enumerate(off) if d < radius - route["width"] / 2]
+        # one run of points round it, the rider on the right lane all the way, the asphalt beyond the road's edge
+        self.assertEqual(sum(1 for i in inside if i - 1 not in inside), 1)
+        self.assertEqual({route["pts"][i][3] for i in inside}, {min(3.2, route["width"] / 2 - 1.5)})
+        self.assertGreater(len(inside), 50)
+        onward = [r for r in route["roads"] if r.get("onward")]
+        self.assertEqual(len(onward), 1)  # past its start only
+        far = [math.hypot((q[1] - lon) * kx, (q[0] - lat) * 111195) for q in onward[0]["pts"]]
+        self.assertGreater(min(far), 1000)
+
     def test_medeu_s_road_goes_on_past_its_finish_as_the_route_s_own(self):
         # the serpentine on up to Shymbulak was pieces of a grey side road, cut off at the arch
         route = next(r for r in _routes() if r["id"] == "medeu")

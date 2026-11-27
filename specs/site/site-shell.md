@@ -281,7 +281,9 @@ road is drawn once, each way in its own lane, and a route that ends where it sta
 under one arch for both; turned round on its road at its start as at its far end -- from edge to edge, its
 curvature easing in and out, the road going on past each turn as OpenStreetMap has it and drawn as the route's
 own -- it is a loop ridden lap after lap, a race finishing on its way back past its line, before the turn at its
-start (Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_on_road.py`). A route from one place to another stops at its finish, its road going on past it
+start (Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_on_road.py`). Where its road ends, it turns round a circle
+of asphalt instead, bearing right into it and round it to the left, no road going on past it (the Cosmostation's
+top; `tests/test_virtual_ride_maps.py`). A route from one place to another stops at its finish, its road going on past it
 as the route's own (Medeu's serpentine on to Shymbulak; `scripts/virtual_ride/road_past_finish.py`). A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
 scenery's own ground as it is: the real ranges, hills and valleys, lowered by the Earth's curve as a rider sees
 them, and not drawn over that ground; within 400 m of that ground's edge the ground comes to
