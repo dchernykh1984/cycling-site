@@ -1,12 +1,43 @@
 'use strict';
-/* An earth dam across a gorge, with a stair up its face. */
-addObject('dam', (G, lm, T, { lam, box, sink }) => {
-  // земляная плотина поперёк ущелья; a deeper foot keeps to its faces' slopes, which the gorge's walls close in on
-  const g = new THREE.BoxGeometry(1, 1, 1), p = g.attributes.position, f = (170 + sink) / 170;
-  for (let i = 0; i < p.count; i++) { const top = p.getY(i) > 0; p.setXYZ(i, p.getX(i) * (top ? 720 : Math.max(20, 720 - 580 * f)), top ? 150 : -20 - sink, p.getZ(i) * (top ? 36 : 36 + 344 * f)); }
-  g.computeVertexNormals(); const m = new THREE.Mesh(g, lam(0x9a9566)); G.add(m);
-  box(1440, 4, 40, 0xb9b6ae, 0, 148);
-  const stairs = new THREE.Mesh(new THREE.BoxGeometry(22, 2, 250), lam(0xe6e3dc)); stairs.position.set(0, 66, -104); stairs.rotation.x = -Math.atan2(170, 172); G.add(stairs);
-  [-1, 1].forEach(k => { const t = new THREE.Mesh(new THREE.BoxGeometry(6, 1.5, 250), lam(0x5f6b3c)); t.position.set(k * 80, 66, -104); t.rotation.x = stairs.rotation.x; G.add(t); });
-  const o = sampleAt(T, T.L, {}); G.rotation.y = Math.atan2(lm.x - o.x, lm.z - o.z);
+/* An earth dam across a gorge, along its crest as OpenStreetMap draws it (lm.crest, [[latitude, longitude], ...]),
+   lm.h metres over the ground at its place: a crest DAM_CREST metres wide, its faces falling at two to one to the
+   gorge's floor and running into its walls -- drawn only where it stands over the land -- a road along the crest
+   between parapets, and a stair up the middle of the face towards the route, in flights between landings. */
+const DAM_SLOPE = 2, DAM_CREST = 50, DAM_STEP = 8, DAM_INTO_WALLS = 160;
+addObject('dam', (G, lm, T, { lam, box, land }) => {
+  G.userData.spread = true; // it lies on the land it crosses, its surface a metre under it wherever it is not over it
+  const ends = [lm.crest[0], lm.crest[lm.crest.length - 1]].map(p => { const q = proj(p[0], p[1], T.origin); return [q.x - lm.x, q.z - lm.z]; });
+  let ux = ends[1][0] - ends[0][0], uz = ends[1][1] - ends[0][1]; const len = Math.hypot(ux, uz) || 1; ux /= len; uz /= len;
+  // the face towards the route's end, where the stair climbs
+  const o = sampleAt(T, T.L, {}), nx0 = -uz, nz0 = ux, toward = (o.x - lm.x) * nx0 + (o.z - lm.z) * nz0 > 0 ? 1 : -1, nx = nx0 * toward, nz = nz0 * toward;
+  const mx = (ends[0][0] + ends[1][0]) / 2, mz = (ends[0][1] + ends[1][1]) / 2, H = lm.h || 150, y0 = G.position.y;
+  const put = (a, b) => [mx + ux * a + nx * b, mz + uz * a + nz * b]; // a along the crest, b out towards the route
+  const ground = (a, b) => { const [x, z] = put(a, b); return land(lm.x + x, lm.z + z) - y0; };
+  const face = b => H - Math.max(0, Math.abs(b) - DAM_CREST / 2) / DAM_SLOPE;
+  // the dam as a surface over the land: its height where it stands over the ground, a metre under the ground elsewhere
+  const half = len / 2 + DAM_INTO_WALLS, wide = DAM_CREST / 2 + DAM_SLOPE * H + 40, na = Math.ceil(2 * half / DAM_STEP), nb = Math.ceil(2 * wide / DAM_STEP);
+  const pos = [], col = [], idx = [], c = new THREE.Color(), earth = new THREE.Color(0x7d8456), top = new THREE.Color(0xa9a48a);
+  for (let i = 0; i <= na; i++) for (let j = 0; j <= nb; j++) {
+    const a = -half + 2 * half * i / na, b = -wide + 2 * wide * j / nb, g = ground(a, b), y = face(b), [x, z] = put(a, b);
+    pos.push(x, y > g ? y : g - 1, z); c.copy(Math.abs(b) <= DAM_CREST / 2 ? top : earth); col.push(c.r, c.g, c.b);
+  }
+  for (let i = 0; i < na; i++) for (let j = 0; j < nb; j++) { const p = i * (nb + 1) + j, q = p + nb + 1; idx.push(p, p + 1, q, q, p + 1, q + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals(); G.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+  const along = Math.atan2(ux, uz), crestY = H + .5;
+  // the crest's road between its parapets, as long as the crest OpenStreetMap draws
+  [[0, 14, 1, 0x8f8c84], [-7.5, 1, 1.2, 0xe6e3dc], [7.5, 1, 1.2, 0xe6e3dc]].forEach(([b, w, h, cl]) => {
+    const [x, z] = put(0, b), m = box(w, h, len, cl, x, crestY, z); m.rotation.y = along;
+  });
+  // the stair: flights up the face from where it leaves the ground to the crest, a landing between each two
+  let from = DAM_CREST / 2 + DAM_SLOPE * H; while (from > DAM_CREST / 2 && face(from) < ground(0, from)) from -= 2;
+  const FLIGHTS = 12, run = (from - DAM_CREST / 2) / FLIGHTS, white = lam(0xe6e3dc), green = lam(0x5f6b3c), turn = Math.atan2(nx, nz);
+  for (let k = 0; k < FLIGHTS && run > 8; k++) {
+    const b0 = from - k * run, b1 = b0 - run + 6, ya = face(b0), yb = face(b1), span = Math.hypot(b0 - b1, yb - ya);
+    [[0, 8, white, .8], [-6, 2.5, green, 1], [6, 2.5, green, 1]].forEach(([side, w, mat, lift]) => {
+      const [x, z] = put(side, (b0 + b1) / 2), m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.2, span), mat);
+      m.position.set(x, (ya + yb) / 2 + lift, z); m.rotation.order = 'YXZ'; m.rotation.y = turn; m.rotation.x = Math.atan2(yb - ya, b0 - b1); G.add(m);
+    });
+    const [lx, lz] = put(0, b1 - 3), landing = box(12, 1, 6, white, lx, face(b1 - 3), lz); landing.rotation.y = turn;
+  }
 });

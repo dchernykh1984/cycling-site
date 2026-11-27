@@ -336,8 +336,9 @@ def test_every_tree_house_and_sight_stands_in_the_ground(page: Page, live_server
             });
             const placed = o => world.lms.some(l => l.x === o.position.x && l.z === o.position.z);
             const sights = kids.filter(o => o.isGroup && placed(o));
-            // a sight that spreads over the land -- a cable car, ski jumps -- stands on each of the parts it marks;
-            // any other on the lowest of its whole floor plan
+            // a sight that spreads over the land -- a cable car, ski jumps -- stands on each of the parts it marks (a
+            // dam marks none: it is the land's own surface where it is not over it); any other on the lowest of its
+            // floor plan
             const standing = G => G.userData.spread ? G.children.filter(m => m.userData.stands) : [G];
             sights.forEach(G => standing(G).forEach(part => {
               const box = new THREE.Box3().setFromObject(part), w = box.max.x - box.min.x, d = box.max.z - box.min.z;
