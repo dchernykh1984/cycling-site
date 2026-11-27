@@ -12,8 +12,8 @@ addObject('cablecar', (G, lm, T, { lam, box, cyl, land }) => {
   const dir = (i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(last, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1; return { x: (b.x - a.x) / L, z: (b.z - a.z) / L }; };
   // the stations, long along the line; the pylons, tapering to a cross-beam that carries both cables
   [0, last].forEach(i => {
-    const d = dir(i), st = box(12, 10, 26, 0xd9d4c8, pts[i].x, pts[i].g - .5, pts[i].z);
-    st.rotation.y = Math.atan2(d.x, d.z); st.userData.stands = true;
+    const d = dir(i), st = box(12, 10, 26, 0xd9d4c8, pts[i].x, pts[i].g - .5, pts[i].z), roof = box(15, 1, 30, 0x6e7377, pts[i].x, pts[i].g + 9.5, pts[i].z);
+    st.rotation.y = roof.rotation.y = Math.atan2(d.x, d.z); st.userData.stands = true;
   });
   for (let i = 1; i < last; i++) {
     const p = pts[i], d = dir(i);
@@ -36,10 +36,10 @@ addObject('cablecar', (G, lm, T, { lam, box, cyl, land }) => {
   }
   const g = new THREE.BufferGeometry().setFromPoints(wires);
   G.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x3b3e42 })));
-  const n = lm.cabins || 16, red = lam(0xc8372f);
+  const n = lm.cabins || 16, red = lam(0xc8372f), glass = lam(0x2d3a45);
   for (let k = 0; k < n; k++) {
     const line = spots[k % 2], at = line[Math.min(line.length - 1, Math.round((k + .5) / n * (line.length - 1)))];
-    box(2.2, 2.4, 2.4, red, at.x, at.y - 4.2, at.z);
+    box(2.2, 2.4, 2.4, red, at.x, at.y - 4.2, at.z); box(2.28, .8, 2.48, glass, at.x, at.y - 3.4, at.z); // its windows all round
     cyl(.06, .06, 1.8, 0x3b3e42, at.x, at.y - 1.9, at.z, 4);
   }
 });
