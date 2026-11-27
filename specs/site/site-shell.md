@@ -259,7 +259,10 @@ their tops where they were; a sight that spreads over the land, a cable car or s
 pylons, stations and legs. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
 it over the next 500 m, to the land SRTM has there -- a city's slopes and hills, Kok-Tobe and the Sunkar hill on
 finer grids of their own; a gorge's walls rise to it from a few metres off its road, the Medeu gorge's on a grid a
-thousandth of a degree fine over its whole scenery, and only a gorge on a map without a relief has its walls drawn. What a route carries from OpenStreetMap stands round it: the
+thousandth of a degree fine over its whole scenery, and only a gorge on a map without a relief has its walls drawn.
+Outside a tunnel's cutting the ground as drawn keeps 10 cm under the road and what lies beside it: where a plane of
+it leaning on a wall would rise over them, its vertices go down as far. What a route carries from OpenStreetMap
+stands round it: the
 buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it, the roads onto a road bridge climbing onto its deck up ramps between retaining walls; roads

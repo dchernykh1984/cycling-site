@@ -61,6 +61,23 @@ function groundOf(pos, x0, z0, x1, z1, nx, nz) {
     return u + v <= 1 ? a + (d - a) * u + (b - a) * v : c + (b - c) * (1 - u) + (d - c) * (1 - v);
   };
 }
+// The ground under the road and beside it, wide metres across, kept 10 cm below them: between the grid's vertices,
+// tens of metres apart, the ground is a plane, and one leaning on a gorge's wall rose over the road (Medeu's, by up to
+// 4 m). Where it does, its three vertices go down together as far as it rose; a tunnel's cutting is left as it is.
+function sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, wide) {
+  const w = nx + 1, o = {}, drawn = groundOf(pos, x0, z0, x1, z1, nx, nz);
+  for (let s = 0; s <= T.L; s += 2) {
+    if (T.route.tunnels && cutGround(T, s) != null) continue;
+    sampleAt(T, s, o);
+    for (let off = -wide / 2; off <= wide / 2 + 1e-6; off += 1) {
+      const x = o.x + o.rx * off, z = o.z + o.rz * off, over = drawn(x, z) - (o.y - .1);
+      if (over <= 0) continue;
+      const fx = clamp((x - x0) / (x1 - x0) * nx, 0, nx - 1e-6), fz = clamp((z - z0) / (z1 - z0) * nz, 0, nz - 1e-6);
+      const ix = Math.floor(fx), iz = Math.floor(fz), first = fx - ix + fz - iz <= 1;
+      for (const [a, b] of first ? [[ix, iz], [ix, iz + 1], [ix + 1, iz]] : [[ix + 1, iz + 1], [ix, iz + 1], [ix + 1, iz]]) pos.setY(a + w * b, pos.getY(a + w * b) - over);
+    }
+  }
+}
 // how deep a trunk goes into the ground: a slope under it leaves no gap at its foot
 const ROOT_M = .3;
 let world_osmKept = 0;
@@ -88,6 +105,7 @@ function buildWorld(route) {
     else tmp.copy(cGrass).lerp(cDust, clamp(1 - (n.d - W) / 60, 0, 1) * .7 + nz2 * .3);
     cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
   }
+  sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, W + 2 * (gorge || steppe ? 2.5 : 5));
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   grp.add(new THREE.Mesh(tg, landMaterial(T, W)));
   const ground = groundOf(pos, x0, z0, x1, z1, nx, nz);
