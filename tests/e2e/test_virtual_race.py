@@ -248,6 +248,24 @@ def test_a_link_to_a_ride_switches_a_workout_to_its_mode_once_and_leaves_a_mode_
 
 
 @pytest.mark.django_db(transaction=True)
+def test_an_organizer_s_calendar_box_comes_once_the_site_says_who_they_are(page: Page, live_server):
+    """A race at a date and time restored from the last visit showed no calendar box to an organizer until they
+    touched a control: the site's answer came after the block was drawn."""
+    _trainer_in_its_menu(page, live_server)
+    page.click("#modeSeg [data-mode='race']")
+    page.select_option("#mpDelay", "at")
+    expect(page.locator("#mpEventL")).to_be_hidden()
+    page.evaluate(
+        """async () => {
+            Site.get = async path => path === '/me' ? { authenticated: true, organizes: true, user_id: 1 } : {};
+            Records.pull = async () => {};
+            await Records.connect();
+        }"""
+    )
+    expect(page.locator("#mpEventL")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_the_calendar_box_is_kept_as_it_was_left_and_unticked_the_button_only_gathers(page: Page, live_server):
     """Two buttons, "Gather a ride" and "Add event", read as two ways of doing one thing: one button, and a box that
     sends its ride or race on to the event form -- left ticked or not as it was last time."""
