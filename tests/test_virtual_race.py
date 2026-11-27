@@ -129,6 +129,9 @@ class MakingARaceTests(RaceTestCase):
         lobby = someone.post(f"{API}/presence", {"status": "lobby"}, content_type="application/json").json()
         self.assertEqual(lobby["groups"], [])
         self.assertEqual(self.join(_member("dana"), group).status_code, 404)
+        # nor its riders' names, bibs and times, nor a leave that rewrote its start list for a stranger
+        self.assertEqual(someone.get(f"{API}/groups/{group}/results").status_code, 404)
+        self.assertEqual(someone.post(f"{API}/groups/{group}/leave").status_code, 404)
         organizer = self.client_of(self.organizer)
         self.assertEqual(organizer.get(f"{API}/groups/{group}").json()["event"]["id"], self.event.pk)
         # a deleted event's race stays its host's to cancel, named after no event

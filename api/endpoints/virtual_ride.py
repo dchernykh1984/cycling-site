@@ -994,6 +994,8 @@ def leave_group(request, group_id: int):
     keeps the bib of a rider who leaves for them. A time trial under way keeps its order: a rider who left it would
     move every later rider's start."""
     opened = _open_group(group_id)
+    if not _shown(opened, request.auth):  # a race whose event they may not open is none of theirs to leave
+        raise Http404
     if opened.mode == GroupRide.Mode.ITT and opened.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     with transaction.atomic():
@@ -1044,6 +1046,8 @@ def change_group(request, group_id: int, payload: GroupWindIn):
 @router.get("/groups/{group_id}/results", response=GroupResultsOut, auth=member_auth, summary="Group race results")
 def group_results(request, group_id: int):
     group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
+    if not _shown(group, request.auth):  # its riders and times are its event's, as the race itself is
+        raise Http404
     groups = records.categories_of(group) if group.competition_id else {}
     finished = [
         GroupResultOut(
