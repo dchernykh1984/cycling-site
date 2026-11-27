@@ -139,7 +139,10 @@ else:  # out to its farthest point and back -- a way out alone to its end --: th
             k -= 1
         (ax, ay), (bx, by), last = xy(there[k]), xy(there[-1]), there[-1]
         n = max(1, round(math.hypot(bx - ax, by - ay) / STEP_M))
-        on = [[*ll(ax + (bx - ax) * j / n, ay + (by - ay) * j / n), last[2]] for j in range(1, n)]
+        h0, h1 = there[k][2], last[2]  # the heights between, as the road climbs: all at the end's put a step there
+        on = [
+            [*ll(ax + (bx - ax) * j / n, ay + (by - ay) * j / n), round(h0 + (h1 - h0) * j / n, 1)] for j in range(1, n)
+        ]
         there = [*there[: k + 1], *on, last]
     pts = [*there, *there[::-1][1:]]
     k1 = k2 = len(there) - 1
