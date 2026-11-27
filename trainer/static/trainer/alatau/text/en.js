@@ -50,7 +50,7 @@ const TEXT_EN = {
     "mp.createRide": "Gather a ride",
     "mp.hint": "For members of the site. A race follows the route chosen in block 1, without bots: in a group race everyone starts together when the countdown ends, in a time trial one by one, an interval apart, in the order they joined; the results are saved in each member's profile. “Share” gives a link to the race: friends open it here and join.",
     "mp.hintRide": "For members of the site. A ride together follows the route chosen in block 1, without bots: everyone starts together when the countdown ends, and the results are saved in each member's profile. “Share” gives a link to the ride: friends open it here and join. In a free ride you see everyone riding the same route right now.",
-    "mp.planNote": "In a workout everyone rides their own plan, so riding with friends does not work here. To gather a ride or a race, choose “Free ride” or “Race with rivals” in block 2.",
+    "mp.planNote": "In a workout everyone rides their own plan, so riding with friends does not work here. To gather a ride or a race, choose “Free ride” or “Race against rivals” in block 2.",
     "mp.guest": "Rides and races together are for members of the site.",
     "mp.offSite": "Riding together works when the page is open on the site.",
     "mp.others": "On the page besides you: {n}.",
