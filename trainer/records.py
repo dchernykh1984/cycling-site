@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from django.db.models import Count, Max, Min, Sum
 
 from . import race, services, strava
-from .models import StravaConnection, VirtualRide
+from .models import GroupRide, StravaConnection, VirtualRide
 
 PEAK_FIELDS = ("peak_5s_w", "peak_1m_w", "peak_5m_w", "peak_20m_w")
 
@@ -113,8 +113,12 @@ def rank_group(group) -> None:
     """Give every finished ride of a group race its place among the members, fastest first.
 
     Places come from the saved times, not from what each rider's page counted at its own finish line:
-    a page that lost sight of the others for a moment would otherwise call itself the winner.
+    a page that lost sight of the others for a moment would otherwise call itself the winner. A ride together names
+    no winner: its riders have no places, whatever their pages claimed.
     """
+    if group.kind == GroupRide.Kind.RIDE:
+        group.rides.exclude(place=None, field_size=None).update(place=None, field_size=None)
+        return
     finishers = group_results(group)
     if not group.competition_id:
         _place(finishers, max(group.memberships.count(), len(finishers)))
