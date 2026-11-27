@@ -1832,6 +1832,31 @@ def test_the_medeu_gorge_s_walls_are_srtm_s(page: Page, live_server):
     assert seen["off"] < 6 and seen["top"] <= seen["peaks"] + 5, seen
 
 
+_WHEELS_ROUND_GRANFONDO = """() => {
+    if (!scene) {
+        scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } };
+        makeMaterials();
+    }
+    const w = buildWorld(ROUTES.find(r => r.id === 'granfondo'));
+    return w.lms.filter(l => l.type === 'wheel').map(l => {
+        const G = scenery.children.find(g => g.isGroup && g.position.x === l.x && g.position.z === l.z);
+        const ring = G.children.find(m => m.geometry && m.geometry.type === 'TorusGeometry');
+        return { name: l.name, dist: l.dist, h: l.h || 30, base: G.position.y, tube: ring.geometry.parameters.tube };
+    });
+}"""
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_ferris_wheel_s_rim_is_as_thick_as_a_rider_sees_it_from_the_route(page: Page, live_server):
+    """Kok-Tobe's wheel, 1.4 km off Granfondo, had a rim under half a metre across: a ring thinner than a pixel from
+    there. A wheel's rim grows with its distance from the route; one beside the road keeps its own."""
+    _trainer_in_its_menu(page, live_server)
+    wheels = {w["name"]: w for w in page.evaluate(_WHEELS_ROUND_GRANFONDO)}
+    far, near = wheels["Kok-Tobe Ferris wheel"], wheels["Ferris wheel at MEGA Alma-Ata"]
+    assert far["dist"] > 1000 and abs(far["tube"] - far["dist"] / 1500) < 0.01, far
+    assert near["dist"] < far["dist"] and abs(near["tube"] - max(near["h"] / 60, near["dist"] / 1500)) < 0.01, near
+
+
 @pytest.mark.django_db(transaction=True)
 def test_a_route_far_from_its_map_s_others_is_drawn_from_its_own_origin_and_range(page: Page, live_server):
     """A region's routes lie tens of kilometres apart: one far from the map's origin carries its own, and its own
