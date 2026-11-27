@@ -234,15 +234,16 @@ def test_block_three_gathers_what_the_mode_rides_together(page: Page, live_serve
 def test_a_link_to_a_ride_switches_a_workout_to_its_mode_once_and_leaves_a_mode_chosen_after_it(
     page: Page, live_server
 ):
-    """A member who opened a ride's link in a free ride and then picked a workout was flipped back by the next poll."""
-    page.add_init_script("localStorage.setItem('alatau:settings', JSON.stringify({ mode: 'free' }))")
+    """A ride's link switches a workout to a free ride the first time it is listed; a member who then picked a workout
+    again was flipped back by the next poll."""
+    page.add_init_script("localStorage.setItem('alatau:settings', JSON.stringify({ mode: 'plan' }))")
     page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en&group=7")
     page.wait_for_function("typeof mpFollowLink === 'function' && typeof LINKED !== 'undefined'")
     modes = page.evaluate(
         """() => {
             MP.groups = [{ id: 7, kind: 'ride', route: 'center', host: { user_id: 2, name: 'Anna' }, members: [] }];
-            mpFollowLink(); const first = settings.mode;   // listed while the member rides free: theirs stays
-            settings.mode = 'plan'; mpFollowLink();         // then a workout, picked after it
+            mpFollowLink(); const first = settings.mode;   // listed while the member's page is set to a workout
+            settings.mode = 'plan'; mpFollowLink();         // then a workout, picked after it, stays
             return [first, settings.mode, MP.linkFollowed];
         }"""
     )
