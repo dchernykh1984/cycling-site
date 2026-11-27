@@ -2,6 +2,8 @@
 route's control points and the crossings the page reports, the bib on the kit, what block 3 gathers in each mode,
 and the phone told a heavy route may run slowly."""
 
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -338,7 +340,8 @@ def test_a_member_waits_on_the_start_line_for_the_real_start_however_far_ahead(p
     page.evaluate("drawFrame(200)")
     left = page.evaluate("cdT")
     assert 2 * 3600 - 60 < left <= 2 * 3600, left
-    expect(page.locator("#count")).to_contain_text(page.evaluate("t('mp.countdown', { t: '' })").strip())
+    # the time left alone: on the line it can only be the start's
+    expect(page.locator("#count")).to_have_text(re.compile(r"^(1 h 59 min \d\d|2 h 00 min 00) s$"))
     # back to the menu before the start: the button takes them there again
     page.evaluate("startMenu()")
     assert page.evaluate("MP.started.has(4)") is False

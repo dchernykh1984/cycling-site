@@ -164,7 +164,7 @@ others they are in. Others join, and every
 member's page starts it at the same server time; a page waits only for its member's race starting within the hour,
 and a card further ahead names its day and time; on the card of a ride or race the member is in, the time to its
 start counts down each second in days, hours, minutes and seconds, and "Go to the start" takes them onto its
-start line whenever they like, counting down there by the clock to its start (the last ten seconds large); back
+start line whenever they like, counting down there by the clock to its start -- the time left alone, the last ten seconds large; back
 in the menu before it, they may come again, and the ride takes them there by itself seven seconds before it. A time trial without an event starts its riders an interval
 apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
 its last rider's. At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
