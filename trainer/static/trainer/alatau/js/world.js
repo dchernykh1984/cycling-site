@@ -265,6 +265,7 @@ function buildWorld(route) {
   }
   addTrees(grp, trees);
   if (route.barriers) addBarriers(grp, T, W, route.barriers.gap, ground, (x, z) => !!osmB && osmB.near(x, z, 2));
+  if (route.signals) addSignals(grp, T, W, route.signals, ground);
 
   // --- the land beyond the scenery: the map's relief as it is, else a range to the south where a route or map has one ---
   const range = route.mountains || mapOf(route).mountains;
@@ -320,6 +321,26 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
       const x = x0 + r() * (x1 - x0), z = z0 + r() * (z1 - z0);
       if (insideRing(ring, x, z)) { add(x, z, kind); put++; }
     }
+  });
+}
+// Traffic lights where the route's road has them: a pole each side beyond the edge, its lights turned to the riders
+// coming on that side -- a ride's lights always green
+const SIGNAL_POLE_M = 4.2;
+function addSignals(grp, T, W, list, ground) {
+  const pole = new THREE.MeshLambertMaterial({ color: 0x55595e }), dark = new THREE.MeshLambertMaterial({ color: 0x24272a });
+  const lens = [0x3a1512, 0x3a3112, null].map(c => c == null ? new THREE.MeshBasicMaterial({ color: 0x3dff6e }) : new THREE.MeshLambertMaterial({ color: c }));
+  const o = {};
+  list.forEach(p => {
+    const q = proj(p[0], p[1], T.origin), n = routeNearest(T, q.x, q.z);
+    sampleAt(T, n.s, o);
+    [-1, 1].forEach(side => {
+      const g = new THREE.Group(), x = o.x + o.rx * (W / 2 + 1.2) * side, z = o.z + o.rz * (W / 2 + 1.2) * side, y = ground(x, z);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, SIGNAL_POLE_M + .5, 8), pole); post.position.y = (SIGNAL_POLE_M - .5) / 2; g.add(post);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(.4, 1.1, .3), dark); head.position.y = SIGNAL_POLE_M - .1; g.add(head);
+      lens.forEach((m, k) => { const l = new THREE.Mesh(new THREE.CircleGeometry(.12, 12), m); l.position.set(0, SIGNAL_POLE_M + .25 - k * .35, .16); g.add(l); });
+      // the riders on the right side of the road come along it, those on the left against it: the lights face them
+      g.position.set(x, y, z); g.rotation.y = Math.atan2(-o.tx * side, -o.tz * side); grp.add(g);
+    });
   });
 }
 // A racetrack's guardrail along both edges, gap metres beyond the road, and its catch fence of mesh on posts a metre
