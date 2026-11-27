@@ -1442,9 +1442,11 @@ class DraftPictureView(ParticipantRequiredMixin, View):
 
 
 def _race_not_held(comp) -> str:
-    """Why an organizer's event does not hold their race, in the words the form tells them: it waits for review, it is
-    closed to the public -- a race's event is named on every rider's card --, or it registers nobody or the race has
-    started (_apply_draft)."""
+    """Why an organizer's event does not hold their race, in the words the form tells them: it is over -- no review
+    changes that --, it waits for review, it is closed to the public -- a race's event is named on every rider's card
+    --, or it registers nobody or the race has started (_apply_draft)."""
+    if (comp.date_end or comp.date_start) < timezone.localdate():
+        return _("The race is not held by this event: the event is over, and only one still to come holds a race.")
     if comp.status != Competition.Status.APPROVED:
         return _("The race is not held by this event: it awaits review, and only a published event holds a race.")
     if comp.is_hidden or comp.invite_only:

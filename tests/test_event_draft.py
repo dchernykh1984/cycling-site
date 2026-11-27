@@ -434,7 +434,11 @@ class VirtualRaceDraftTests(TestCase):
     def test_the_warning_names_why_the_event_does_not_hold_the_race(self):
         # it said "only an event with registration" to an organizer whose event was invite-only, or awaited review
         told = {}
-        cases = (("invite-only", {"invite_only": "on"}), ("on a place under review", {"under_review": True}))
+        cases = (
+            ("invite-only", {"invite_only": "on"}),
+            ("on a place under review", {"under_review": True}),
+            ("over", {"date_start": "2020-01-02"}),  # it was told to register on the site, which it did
+        )
         for case, extra in cases:
             race = self.race()
             self.draft(virtual_ride=str(race.pk), registration="1")
@@ -457,6 +461,12 @@ class VirtualRaceDraftTests(TestCase):
                 "on a place under review": [
                     gettext(
                         "The race is not held by this event: it awaits review, and only a published event holds a race."
+                    )
+                ],
+                "over": [
+                    gettext(
+                        "The race is not held by this event: the event is over, and only one still to come holds a "
+                        "race."
                     )
                 ],
             },
