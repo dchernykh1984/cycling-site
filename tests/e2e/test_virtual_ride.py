@@ -2127,6 +2127,30 @@ def test_the_wind_is_kept_with_the_settings_and_named_before_the_start(page: Pag
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_mini_map_shows_the_wind_as_an_arrow_the_way_it_blows_with_its_speed(page: Page, live_server):
+    """The HUD said only how much of the wind was ahead or behind: the map, north up, shows where it blows."""
+    _trainer_in_its_menu(page, live_server)
+    page.check("#windOn")
+    page.select_option("#windFrom", "270")
+    page.fill("#windMs", "7")
+    page.locator("#windMs").dispatch_event("change")
+    page.evaluate("() => { settings.mode = 'free'; startRace(); }")
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    drawn = page.evaluate(
+        """() => {
+            const g = $('#mini').getContext('2d'), texts = [], was = g.fillText.bind(g);
+            g.fillText = (text, x, y) => { texts.push(String(text)); was(text, x, y); };
+            drawMini();
+            return texts;
+        }"""
+    )
+    assert "7 m/s" in drawn, drawn
+    # a west wind blows east, to the map's right; a north wind south, down it
+    east, south = page.evaluate("[windArrow(270), windArrow(0)].map(v => v.map(n => Math.round(n * 1000) / 1000))")
+    assert east == [1, 0] and south == [0, 1], (east, south)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_box_is_ticked_from_its_box_and_words_not_from_the_empty_row_beside_them(page: Page, live_server):
     """The wind's row stretched across the setup page: a click far from the word "Wind" turned it on, and a rider rode
     in a 5 m/s wind they never chose."""
