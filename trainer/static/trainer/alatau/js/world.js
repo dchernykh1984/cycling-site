@@ -7,23 +7,31 @@ function disposeWorld() {
   scenery.traverse(o => { if (o.geometry) o.geometry.dispose(); [].concat(o.material || []).forEach(m => { if (m === buildingMat || m === treeMat || m === osmMat) return; if (m.map) m.map.dispose(); m.dispose(); }); });
   scenery = null; world = null;
 }
+// A grid of heights (js/maps.js) at a latitude and longitude, or null outside it
+function gridAt(g, lat, lon) {
+  const [la0, dla, nr] = g.lat, [lo0, dlo, nc] = g.lon, fi = (lat - la0) / dla, fj = (lon - lo0) / dlo;
+  if (fi < 0 || fj < 0 || fi > nr - 1 || fj > nc - 1) return null;
+  const i = Math.min(nr - 2, Math.floor(fi)), j = Math.min(nc - 2, Math.floor(fj)), u = fi - i, v = fj - j, H = g.h;
+  return H[i * nc + j] * (1 - u) * (1 - v) + H[(i + 1) * nc + j] * u * (1 - v) + H[i * nc + j + 1] * (1 - u) * v + H[(i + 1) * nc + j + 1] * u * v;
+}
 // The map's SRTM ground at (x, z) on the route's metres, or null outside its grid: a detail grid where one covers
 // the place, else the map's own (js/maps.js)
 function reliefAt(T, x, z) {
   const rel = mapOf(T.route).relief;
   if (!rel) return null;
   const { lat, lon } = unproj(x, z, T.origin);
-  for (const g of (rel.detail || []).concat([rel])) {
-    const [la0, dla, nr] = g.lat, [lo0, dlo, nc] = g.lon, fi = (lat - la0) / dla, fj = (lon - lo0) / dlo;
-    if (fi < 0 || fj < 0 || fi > nr - 1 || fj > nc - 1) continue;
-    const i = Math.min(nr - 2, Math.floor(fi)), j = Math.min(nc - 2, Math.floor(fj)), u = fi - i, v = fj - j, H = g.h;
-    return H[i * nc + j] * (1 - u) * (1 - v) + H[(i + 1) * nc + j] * u * (1 - v) + H[i * nc + j + 1] * (1 - u) * v + H[(i + 1) * nc + j + 1] * u * v;
-  }
+  for (const g of (rel.detail || []).concat([rel])) { const h = gridAt(g, lat, lon); if (h != null) return h; }
   return null;
 }
+// The far relief's own surface at (x, z): the map's grid alone, lowered by the Earth's curve as addRelief lays it
+function farReliefAt(T, x, z) {
+  const rel = mapOf(T.route).relief, { lat, lon } = unproj(x, z, T.origin), h = rel ? gridAt(rel, lat, lon) : null;
+  return h == null ? null : h - (x * x + z * z) / (2 * EARTH_R) * REFRACTION;
+}
 // A route's land: under the road a little below it, and away from it, over 80 to 580 m, the ground SRTM has there --
-// the hills and slopes round a city's or the steppe's roads (a gorge keeps its own walls)
-const RELIEF_FROM = 80, RELIEF_OVER = 500;
+// the hills and slopes round a city's or the steppe's roads; a gorge's walls rise from 6 to 66 m off its road, its
+// road in SRTM's valley (Medeu's within metres of it); a gorge on a map without a relief has walls drawn for it
+const RELIEF_FROM = 80, RELIEF_OVER = 500, GORGE_FROM = 6, GORGE_OVER = 60;
 function terrainH(T, x, z) {
   const n = nearest(T, x, z); let h = n.y - 1.2;
   // round a tunnel and its ramps the land keeps the ground line up to their walls: the road goes down into a cutting,
@@ -35,7 +43,9 @@ function terrainH(T, x, z) {
     if (far != null) { const k = clamp((n.d - T.route.width / 2 - RELIEF_FROM) / RELIEF_OVER, 0, 1); h += (far - 1.2 - h) * k * k * (3 - 2 * k); }
   }
   if (T.route.scenery === 'gorge') {
-    if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
+    const real = reliefAt(T, x, z);
+    if (real != null) { const k = clamp((n.d - T.route.width / 2 - GORGE_FROM) / GORGE_OVER, 0, 1); h += (real - 1.2 - h) * k * k * (3 - 2 * k); }
+    else if (n.d > 45) { const k = n.d - 45, f = clamp((n.s - 1200) / 3000, .12, 1); h += f * (k * .46 + fbm(x * .004, z * .004) * Math.min(1, k / 120) * 70); }
   } else if (n.d > 70) { h += (fbm(x * .003, z * .003) - .5) * 5 * Math.min(1, (n.d - 70) / 250); }
   return h;
 }
@@ -71,7 +81,7 @@ function buildWorld(route) {
   const cGrass = new THREE.Color(0x7c8a58), cDust = new THREE.Color(0x9a9684), cForest = new THREE.Color(0x3c5536), cRock = new THREE.Color(0x837a6c), cSnow = new THREE.Color(0xeef2f5), tmp = new THREE.Color();
   const cDry = new THREE.Color(0xa49b67), cMeadow = new THREE.Color(0x8b8e58); // the steppe: dry grass, and greener hollows
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = terrainH(T, x, z); pos.setY(i, h);
+    const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z), x0, x1, z0, z1); pos.setY(i, h);
     const nz2 = fbm(x * .01, z * .01, 3);
     if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > 2900) tmp.lerp(cSnow, clamp((h - 2900) / 300, 0, 1)); }
     else if (steppe) tmp.copy(cDry).lerp(cMeadow, clamp(fbm(x * .0012, z * .0012, 3) * 1.6 - .45, 0, 1) * .85).lerp(cDust, clamp(1 - (n.d - W) / 30, 0, 1) * .5 + nz2 * .12);
@@ -204,7 +214,7 @@ function buildWorld(route) {
 
   // --- the land beyond the scenery: the map's relief as it is, else a range to the south where a route or map has one ---
   const range = route.mountains || mapOf(route).mountains;
-  if (rel) addRelief(grp, T, rel, plain, x0, x1, z0, z1); else if (range) addMountains(grp, T, range.south, plain);
+  if (rel) addRelief(grp, T, rel, plain, x0, x1, z0, z1, ground); else if (range) addMountains(grp, T, range.south, plain);
   // --- ориентиры ---
   // the land as drawn: the scenery's ground, and past its edge the map's relief
   const land = (x, z) => x > x0 && x < x1 && z > z0 && z < z1 ? ground(x, z) : (reliefAt(T, x, z) ?? terrainH(T, x, z));
@@ -334,17 +344,26 @@ function farHaze(mat) {
 // A map's relief (js/maps.js): SRTM heights on a grid of latitude and longitude, the real mountains, hills and
 // valleys round its routes, laid out from the route's origin and lowered by the Earth's curve as a rider sees it -- a
 // peak 100 km off stands about 680 m lower, the air's bending taken off (0.87 of the drop). Under the scenery's own
-// ground (x0..x1, z0..z1) it sinks out of the way; beyond RANGE_CLEAR_M it shows through a quarter of the haze.
-const EARTH_R = 6371000, REFRACTION = .87;
+// ground (x0..x1, z0..z1) it keeps RELIEF_UNDER below it, so the two meet at that ground's edge -- sunk out of the way
+// there, a slope met it as a wall a cell of the grid high; beyond RANGE_CLEAR_M it shows through a quarter of the haze.
+const EARTH_R = 6371000, REFRACTION = .87, RELIEF_UNDER = 30, RELIEF_EDGE = 400;
+// The scenery's ground within RELIEF_EDGE of its edge comes to the far relief's surface, so the two meet there: the
+// finer grids and a gorge's walls are the scenery's alone
+function edgeLand(T, x, z, h, x0, x1, z0, z1) {
+  const e = Math.min(x - x0, x1 - x, z - z0, z1 - z), far = e < RELIEF_EDGE ? farReliefAt(T, x, z) : null;
+  if (far == null) return h;
+  const k = clamp(e / RELIEF_EDGE, 0, 1);
+  return far + (h - far) * k * k * (3 - 2 * k);
+}
 const reliefLow = rel => rel.low != null ? rel.low : (rel.low = rel.h.reduce((a, b) => Math.min(a, b), Infinity));
-function addRelief(grp, T, rel, plain, x0, x1, z0, z1) {
+function addRelief(grp, T, rel, plain, x0, x1, z0, z1, ground) {
   const [la0, dla, nr] = rel.lat, [lo0, dlo, nc] = rel.lon, H = rel.h, O = T.origin;
   const P = new Float32Array(nr * nc * 3), cols = new Float32Array(nr * nc * 3), I = [];
   const c = new THREE.Color(), low = new THREE.Color(plain), forest = new THREE.Color(0x40563a), rock = new THREE.Color(0x7d766c), snow = new THREE.Color(0xf3f6f8);
   for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) {
     const k = i * nc + j, q = proj(la0 + i * dla, lo0 + j * dlo, O), d = Math.hypot(q.x, q.z), m = H[k];
     let h = m - d * d / (2 * EARTH_R) * REFRACTION;
-    if (q.x > x0 && q.x < x1 && q.z > z0 && q.z < z1) h = Math.min(h, T.minY - 40);
+    if (q.x > x0 && q.x < x1 && q.z > z0 && q.z < z1) h = Math.min(h, ground(q.x, q.z) - RELIEF_UNDER);
     const n = fbm(q.x * .0004, q.z * .0004, 3);
     c.copy(low).lerp(forest, clamp((m - 1100) / 500, 0, 1)).lerp(rock, clamp((m - 2300 - n * 300) / 500, 0, 1));
     if (m > 3300 + n * 400) c.copy(snow);

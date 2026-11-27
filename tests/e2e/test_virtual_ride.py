@@ -1520,31 +1520,108 @@ def test_a_range_runs_on_past_where_the_view_reaches(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_a_map_s_relief_stands_where_srtm_has_it_and_sinks_under_the_scenery_s_ground(page: Page, live_server):
+def test_a_map_s_relief_stands_where_srtm_has_it_and_keeps_under_the_scenery_s_ground(page: Page, live_server):
     """The land beyond the scenery is the map's SRTM relief: the snowy range where it really rises, south of
     Kyrbaltabay, lowered by the Earth's curve, going on past where the view reaches; under the scenery's own
-    ground it sinks out of the way, so the near ground and its trees are the scenery's."""
+    ground it keeps 30 m below it, so the near ground and its trees are the scenery's."""
     _trainer_in_its_menu(page, live_server)
     seen = page.evaluate(
         """() => {
             const T = buildWorld(ROUTES.find(r => r.id === 'kyrbaltabay-tuganbay')).T;
             const relief = scenery.children.find(o => o.name === 'relief'), a = relief.geometry.attributes.position;
-            let poking = 0, top = { y: -1e9, z: 0 }, minX = 1e9, maxX = -1e9;
+            const land = scenery.children.find(
+                m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors
+            );
+            const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+            let poking = 0, under = 0, top = { y: -1e9, z: 0 }, minX = 1e9, maxX = -1e9;
             const x0 = T.minX - 1600, x1 = T.maxX + 1600, z0 = T.minZ - 1600, z1 = T.maxZ + 1600;
             for (let i = 0; i < a.count; i++) {
                 const x = a.getX(i), y = a.getY(i), z = a.getZ(i);
-                if (x > x0 && x < x1 && z > z0 && z < z1 && y > T.minY - 39) poking++;
+                if (x > x0 && x < x1 && z > z0 && z < z1) {
+                    ray.set(new THREE.Vector3(x, 9000, z), down);
+                    const hit = ray.intersectObject(land)[0];
+                    if (hit) { under++; if (y > hit.point.y - 29) poking++; }
+                }
                 if (y > top.y) top = { y, z };
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x);
             }
             const ranges = scenery.children.filter(o => o.name === 'range').length;
-            return { poking, top: Math.round(top.y), south: Math.round(top.z / 1000), west: Math.round(minX / 1000),
-                     east: Math.round(maxX / 1000), ranges };
+            return { poking, under, top: Math.round(top.y), south: Math.round(top.z / 1000),
+                     west: Math.round(minX / 1000), east: Math.round(maxX / 1000), ranges };
         }"""
     )
-    assert seen["poking"] == 0 and seen["ranges"] == 0, seen
+    assert seen["poking"] == 0 and seen["under"] > 0 and seen["ranges"] == 0, seen
     assert seen["top"] > 3000 and seen["south"] > 20, seen
     assert seen["west"] < -100 and seen["east"] > 100, seen
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_far_relief_meets_the_scenery_s_ground_at_its_edge_without_a_wall(page: Page, live_server):
+    """Medeu's start showed a mountain cut off: past its scenery's edge the relief had sunk under it, a gorge's wall
+    met it there as a cliff, kilometres high. Along every edge of every route's scenery the two now meet."""
+    _trainer_in_its_menu(page, live_server)
+    steps = page.evaluate(
+        """() => {
+            if (!scene) {
+                scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } };
+                makeMaterials();
+            }
+            const out = {}, ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+            for (const r of ROUTES.filter(x => mapOf(x).relief)) {
+                const T = buildWorld(r).T, relief = scenery.children.find(o => o.name === 'relief');
+                const m = r.scenery === 'gorge' ? 2400 : 1600;
+                const x0 = T.minX - m, x1 = T.maxX + m, z0 = T.minZ - m, z1 = T.maxZ + m;
+                let worst = 0;
+                const edges = [[x0, z0, x1, z0], [x1, z0, x1, z1], [x1, z1, x0, z1], [x0, z1, x0, z0]];
+                for (const [ax, az, bx, bz] of edges) {
+                    const L = Math.hypot(bx - ax, bz - az);
+                    for (let s = 0; s <= L; s += 250) {
+                        const x = ax + (bx - ax) * s / L, z = az + (bz - az) * s / L;
+                        ray.set(new THREE.Vector3(x, 9000, z), down);
+                        const hit = ray.intersectObject(relief)[0];
+                        const ground = edgeLand(T, x, z, terrainH(T, x, z), x0, x1, z0, z1);
+                        if (hit) worst = Math.max(worst, Math.abs(ground - hit.point.y));
+                    }
+                }
+                out[r.id] = Math.round(worst);
+            }
+            return out;
+        }"""
+    )
+    assert steps and max(steps.values()) < 100, steps
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_medeu_gorge_s_walls_are_srtm_s(page: Page, live_server):
+    """Its walls were drawn rising half a metre a metre off the road, to kilometres over any real peak: now they are
+    the ground SRTM has there, a few metres off the road on."""
+    _trainer_in_its_menu(page, live_server)
+    seen = page.evaluate(
+        """() => {
+            if (!scene) {
+                scene = new THREE.Scene(); renderer = { capabilities: { getMaxAnisotropy: () => 1 } };
+                makeMaterials();
+            }
+            const r = ROUTES.find(x => x.id === 'medeu'), T = buildWorld(r).T, o = {};
+            const land = scenery.children.find(
+                m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors
+            );
+            let off = 0;
+            for (let s = 500; s < T.L; s += 500) {
+                sampleAt(T, s, o);
+                for (const k of [-1, 1]) {
+                    const x = o.x + o.rx * k * 300, z = o.z + o.rz * k * 300;
+                    if (nearest(T, x, z).d > 250) off = Math.max(off, Math.abs(terrainH(T, x, z) - reliefAt(T, x, z)));
+                }
+            }
+            const a = land.geometry.attributes.position; let top = -1e9;
+            for (let i = 0; i < a.count; i++) top = Math.max(top, a.getY(i));
+            const peaks = mapOf(r).relief.detail.reduce((m, g) => Math.max(m, ...g.h), 0);
+            return { off: Math.round(off), top: Math.round(top), peaks };
+        }"""
+    )
+    # 300 m off its road the land is SRTM's but for the scenery's few metres of roughness; nowhere above its peaks
+    assert seen["off"] < 6 and seen["top"] <= seen["peaks"] + 5, seen
 
 
 @pytest.mark.django_db(transaction=True)

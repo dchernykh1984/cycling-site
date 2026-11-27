@@ -239,7 +239,8 @@ A route may come back onto road it rode -- out to a turn and back along one road
 road is drawn once, each way in its own lane, and a route that ends where it starts finishes on its start's line,
 under one arch for both. A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
 scenery's own ground as it is: the real ranges, hills and valleys, lowered by the Earth's curve as a rider sees
-them, and sunk under that ground near the road. A map without one raises a range instead, which runs 150 km either
+them, and 30 m under that ground where the two overlap; within 400 m of that ground's edge the ground comes to
+the relief's own surface, so they meet there without a wall. A map without one raises a range instead, which runs 150 km either
 way from the origin, so it never ends in view. A range or relief farther
 than 9.5 km from the route's origin rises to its foot from the plain and
 shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses and sights
@@ -247,7 +248,8 @@ stand on the ground as drawn -- flat between the terrain's vertices -- and reach
 their tops where they were; a sight that spreads over the land, a cable car or ski jumps, stands on each of its
 pylons, stations and legs. The scenery's own ground lies a little under the road beside it and rises, from 80 m off
 it over the next 500 m, to the land SRTM has there -- a city's slopes and hills, Kok-Tobe and the Sunkar hill on
-finer grids of their own (a gorge keeps its walls). What a route carries from OpenStreetMap stands round it: the
+finer grids of their own; a gorge's walls rise to it from a few metres off its road, the Medeu gorge's on a grid a
+thousandth of a degree fine over its whole scenery, and only a gorge on a map without a relief has its walls drawn. What a route carries from OpenStreetMap stands round it: the
 buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
 its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it, the roads onto a road bridge climbing onto its deck up ramps between retaining walls; roads
