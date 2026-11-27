@@ -92,7 +92,9 @@ const Work = {
 function raceCrossings(from, to, dt) {
   const rules = raceRules(); if (!rules || !rules.me || to <= from) return;
   const T = world.T, S0 = world.S0, L = T.L, found = [];
-  if (T.loop) { for (let k = Math.floor((from - S0) / L) + 1; S0 + k * L <= to; k++) if (k >= 1 && k <= rules.me.laps) found.push({ s: S0 + k * L, point: 0, last: k === rules.me.laps }); }
+  // the line, each lap: on a loop turned back at its start, where its way back passes it (lineBack)
+  const B = world.finBack || 0;
+  if (T.loop) { for (let k = Math.floor((from - S0 + B) / L) + 1; S0 + k * L - B <= to; k++) if (k >= 1 && k <= rules.me.laps) found.push({ s: S0 + k * L - B, point: 0, last: k === rules.me.laps }); }
   else if (from < world.FIN && to >= world.FIN) found.push({ s: world.FIN, point: 0, last: true });
   turnPoints(T).forEach((p, i) => {
     if (!T.loop) { if (from < p && to >= p) found.push({ s: p, point: i + 1, last: false }); return; }
@@ -130,8 +132,8 @@ function stepRide(dt, inp, t) {
         if (lap > me.lap && (T.loop || rideMode === 'plan')) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
         if (rideMode === 'plan' && Work.active && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
       } else if (me.s >= world.FIN) { me.finishT = raceT; rideEvent('finish'); }
-      else if (T.loop && world.FIN - world.S0 > T.L * 1.5) { // a race of several laps: each one said
-        const lap = Math.floor((me.s - world.S0) / T.L);
+      else if (T.loop && world.FIN - world.S0 > T.L * 1.5) { // a race of several laps: each one said, at its line
+        const lap = Math.floor((me.s - world.S0 + (world.finBack || 0)) / T.L);
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
       }
       world.lms.forEach(l => { if (l.done || l.dist > 700) return; let past = me.s - sightCue(T, l); if (T.loop) past = ((past % T.L) + T.L) % T.L; if (past >= 0 && past < SIGHT_CUE_SPAN_M) { l.done = true; rideEvent('sight', l); } });

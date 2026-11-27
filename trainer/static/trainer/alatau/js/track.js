@@ -213,8 +213,24 @@ function sightCue(T, l) {
 }
 // the course of a ride: its track, where it starts and finishes, and the sights along it
 // a route out and back ends where it starts: its finish is the start's line, under the one arch of both
+// A loop turned back at its start (Kyrbaltabay's): its way back passes the start line heading the other way before
+// that turn, and a race finishes there, as in life -- its last lap so many metres short of a whole one (race.js).
+// 0 for any other loop: one that passes its line once a lap. Its way back is looked for over the loop's last
+// LINE_BACK_M, half a metre at a time.
+const LINE_BACK_M = 300;
+function lineBack(T, S0) {
+  if (!T.loop) return 0;
+  const line = sampleAt(T, S0, {}), o = {};
+  let best = 1, at = null;
+  for (let s = T.L; s > T.L - LINE_BACK_M; s -= .5) {
+    sampleAt(T, s, o);
+    const d = Math.hypot(o.x - line.x, o.z - line.z);
+    if (d < best && o.tx * line.tx + o.tz * line.tz < -.9) { best = d; at = s; }
+  }
+  return at == null ? 0 : T.L + S0 - at;
+}
 function buildCourse(route) {
   const T = buildTrack(route), S0 = 20, back = !T.loop && Math.hypot(T.X[T.N - 1] - T.X[0], T.Z[T.N - 1] - T.Z[0]) < route.width;
   const FIN = T.loop ? S0 + T.L : back ? T.L - S0 : T.L - 8;
-  return { T, S0, FIN, FIN1: FIN, back, route, lms: nearLandmarks(T) };
+  return { T, S0, FIN, FIN1: FIN, finBack: lineBack(T, S0), back, route, lms: nearLandmarks(T) };
 }
