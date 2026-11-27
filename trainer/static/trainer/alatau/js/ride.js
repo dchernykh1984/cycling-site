@@ -125,8 +125,9 @@ function stepRide(dt, inp, t) {
         // loop only: on a route from one place to another it ends at the finish, saved as when its rider ends it
         if (rideMode === 'free' && !T.loop && me.s >= world.FIN) rideEvent('routeEnd');
         else if (rideMode === 'plan' && !T.loop && me.s >= T.L - 15) { me.s = world.S0; rideEvent('backToStart'); }
+        // laps: a loop's, or a workout's brought back to its start; a free ride from one place to another has none
         const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
-        if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
+        if (lap > me.lap && (T.loop || rideMode === 'plan')) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
         if (rideMode === 'plan' && Work.active && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');
       } else if (me.s >= world.FIN) { me.finishT = raceT; rideEvent('finish'); }
       else if (T.loop && world.FIN - world.S0 > T.L * 1.5) { // a race of several laps: each one said
