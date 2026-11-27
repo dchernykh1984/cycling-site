@@ -1,7 +1,7 @@
 """An out-and-back route turned round on the road itself, at its far end and at its start, as riders turn round a
 cone -- a loop ridden lap after lap -- and the road going on past each turn as OpenStreetMap has it:
 
-python -I turn_on_road.py map.js osm.json route_id
+python -I turn_on_road.py map.js osm.json route_id [circle]
 
 - the turns: the route's loop round at its far end (the shortest stretch from a point back to that same point) -- or,
   a route out to a point and straight back the same road, that point (a way out alone, build_route.py's out_and_back:
@@ -15,6 +15,12 @@ python -I turn_on_road.py map.js osm.json route_id
   the turn begins, as a road of the route's width and lanes marked "onward": drawn as the route's own road is, which
   gives way to it ONWARD_LEAD_M on (js/surroundings.js)
 - heights: a turn's at the height of the point it starts from
+- ``circle``, for a way out alone whose road ends where it turns (the Cosmostation's, where the asphalt ends among
+  its buildings): there no turn from edge to edge on a 7 m road -- its road, drawn along the rider's turn, broke into
+  triangles -- but a turning circle: the way there bears right off the road's end into a circle CIRCLE_R_M round its
+  middle, goes round it to the left and bears right back onto the road, the circle's far edge where the road ends;
+  the route's "circles" ([[lat, lon, radius]]) its asphalt, drawn over the road there (js/world.js), and no road on
+  past it
 
 osm.json: extract_boxes.py's ways, [{"t": "w", "id", "tags", "ll": [[lat, lon], ...]}].
 """
@@ -25,6 +31,7 @@ import sys
 from pathlib import Path
 
 map_path, osm_path, rid = sys.argv[1:4]
+circle = sys.argv[4:5] == ["circle"]
 SHIFT_M = 15.0  # the way there moving from the road's middle to where the rider rides, before the turn
 STEP_M = 2.5  # the points' spacing there
 RAMP_M = 2.0  # the turn's curvature eases in and out over this, so the rider never swings round at once
@@ -35,6 +42,8 @@ SAME_POINT_M = 0.5
 REACH_M = 2.0  # with no loop round to say how far its riders went: the turn begins so far past its last point
 STRAIGHT_M = 12.0  # a way out alone runs straight so far on to its far turn
 PAST_END_M = 8.0  # a way ending at a turn goes on so far past it, straight
+CIRCLE_R_M = 8.0  # a turning circle: its middle line's radius, the road's inner edge 4.5 m from its centre
+CIRCLE_BEND_M = 6.0  # the bends off the road's end into the circle and back, round their middle lines
 
 src = Path(map_path).read_text(encoding="utf-8")
 data = json.loads(src[src.index("addMap(") + 7 : src.rindex(")")])
@@ -108,6 +117,48 @@ ROUND = round_the_turn()
 TURN_M = SHIFT_M + max(a for a, _ in ROUND)  # from where the way there leaves the road's middle to the turn's far point
 
 
+def round_the_circle():
+    """The road's middle round a turning circle from the end of the way there, (0, 0) heading on: a bend to the right,
+    round the circle to the left, a bend to the right back to (0, 0) heading back, each change of curvature eased over
+    RAMP_M or twice that -- [(along, aside)] every POINT_M, aside to the right, its two ends left out; and the circle's
+    centre, (along, aside)."""
+    ds, bend, ring = 0.005, -1 / CIRCLE_BEND_M, 1 / CIRCLE_R_M
+
+    def trace(hold, around):
+        parts = [(0, bend, RAMP_M), (bend, bend, hold), (bend, ring, 2 * RAMP_M), (ring, ring, around)]
+        parts += [(ring, bend, 2 * RAMP_M), (bend, bend, hold), (bend, 0, RAMP_M)]
+        way, along, aside, out, s = 0.0, 0.0, 0.0, [], 0
+        for k0, k1, length in parts:
+            n = round(length / ds)
+            for k in range(n):
+                if s % round(POINT_M / ds) == 0:
+                    out.append((along, aside))
+                way += (k0 + (k1 - k0) * (k + 0.5) / n) * ds
+                along += math.cos(way) * ds
+                aside -= math.sin(way) * ds
+                s += 1
+        return out, way, (along, aside)
+
+    def around_for(hold):  # round the circle as far as turns the way round by half a turn in all
+        _, way, _ = trace(hold, 0.0)
+        return (math.pi - way) / ring
+
+    low, high = 0.0, 30.0
+    for _ in range(50):  # the bends' hold that brings the way back onto the road's middle
+        hold = (low + high) / 2
+        _, _, (_, aside) = trace(hold, around_for(hold))
+        low, high = (hold, high) if aside < 0 else (low, hold)
+    out, _, end = trace(low, around_for(low))
+    if math.dist(end, (0, 0)) > 0.05:
+        raise SystemExit(f"a turning circle that does not come back onto its road: ends at {end}")
+    far = max(out, key=lambda p: p[0])
+    return [p for p in out[1:] if math.dist(p, end) > POINT_M / 2], (far[0] - CIRCLE_R_M, far[1])
+
+
+CIRCLE, CIRCLE_AT = round_the_circle() if circle else ([], (0.0, 0.0))
+CIRCLE_ASPHALT_M = max(CIRCLE_R_M + entry["width"] / 2, math.hypot(CIRCLE_AT[0], entry["width"] / 2)) + 0.5
+
+
 loops = [(a, b) for a, b in pairs if same(pts[a], pts[b])] if homes else []  # a way out alone turns at its end
 
 
@@ -129,7 +180,8 @@ if loops:
     k1, k2 = min(loops, key=lambda ab: ab[1] - ab[0])
 else:  # out to its farthest point and back -- a way out alone to its end --: the way back is the way there reversed
     top = max(range(len(pts)), key=lambda i: math.dist(xy(pts[i]), xy(pts[0]))) if homes else len(pts) - 1
-    there = cut_before(top, TURN_M + REACH_M)
+    # a turning circle's far edge where the road ends
+    there = cut_before(top, CIRCLE_AT[0] + CIRCLE_R_M + entry["width"] / 2 if circle else TURN_M + REACH_M)
     if not homes:  # a way out alone: its last STRAIGHT_M runs straight on to the turn, laid along it, a point every
         # STEP_M as the turn's own -- a car park's bend there (the Cosmostation's) had the rider swing 13 degrees in
         # half a metre onto the turn's line, points 13 m and then 2 m apart
@@ -173,6 +225,18 @@ def turn(at, ux, uy, far):
         f = k / shift
         put(into - SHIFT_M * f, -EDGE * (1 - f), LANE * f)
     return out
+
+
+def round_circle(at, ux, uy):
+    """The points round a turning circle from ``at``, the end of the way there, running (ux, uy), each at its height,
+    the rider on the right lane; and the circle's asphalt, [lat, lon, radius]."""
+    ax, ay = xy(at)
+    rx, ry = uy, -ux
+
+    def put(along, aside):
+        return ll(ax + ux * along + rx * aside, ay + uy * along + ry * aside)
+
+    return [[*put(a, b), at[2], LANE] for a, b in CIRCLE], [*put(*CIRCLE_AT), round(CIRCLE_ASPHALT_M, 1)]
 
 
 def onward(at, ux, uy, far):
@@ -225,19 +289,18 @@ sux, suy = way_to(pts[back_home - 1], pts[back_home])
 start_loop = [p[:3] for p in entry["pts"][back_home:]] if loops else []
 start_at = reach(pts[back_home], sux, suy, start_loop) if len(start_loop) > 2 else TURN_M + REACH_M
 with_line = [[*p, LANE] for p in pts]
-entry["pts"] = (
-    with_line[: k1 + 1]
-    + turn(pts[k1], fux, fuy, far_at)
-    + with_line[k2 : back_home + 1]
-    + turn(pts[back_home], sux, suy, start_at)
-)
+if circle:
+    far_turn, asphalt = round_circle(pts[k1], fux, fuy)
+    entry["circles"] = [asphalt]
+    far_said = f"round a circle of {asphalt[2]} m after point {k1}"
+else:
+    far_turn, far_said = turn(pts[k1], fux, fuy, far_at), f"{far_at:.1f} m past point {k1}"
+entry["pts"] = with_line[: k1 + 1] + far_turn + with_line[k2 : back_home + 1] + turn(pts[back_home], sux, suy, start_at)
 entry["loop"] = True
 roads = [r for r in entry.get("roads", []) if not r.get("onward")]
-entry["roads"] = [*roads, onward(pts[k1], fux, fuy, far_at), onward(pts[back_home], sux, suy, start_at)]
-print(
-    f"{rid}: turns {far_at:.1f} m past point {k1} and {start_at:.1f} m past the start, {len(entry['pts'])} points",
-    file=sys.stderr,
-)
+ends = ([] if circle else [onward(pts[k1], fux, fuy, far_at)]) + [onward(pts[back_home], sux, suy, start_at)]
+entry["roads"] = [*roads, *ends]
+print(f"{rid}: turns {far_said} and {start_at:.1f} m past the start, {len(entry['pts'])} points", file=sys.stderr)
 
 
 def dump(v):

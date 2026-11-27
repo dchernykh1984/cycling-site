@@ -185,6 +185,7 @@ function buildWorld(route) {
   }
   sinkUnderRoad(T, pos, x0, z0, x1, z1, nx, nz, W + 2 * (gorge || steppe ? 2.5 : 5));
   lms.forEach(lm => { const pad = PADS[lm.type] && PADS[lm.type](lm, T); if (pad) sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, pad); });
+  turningCircles(T, route).forEach(c => sinkUnderPad(pos, x0, z0, x1, z1, nx, nz, { ring: c.ring, margin: 1, y: c.y - .1 }));
   if (gorge && route.water) carveRivers(T, route.water, pos, x0, z0, x1, z1, nx, nz, W + 2 * 2.5);
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   grp.add(new THREE.Mesh(tg, landMaterial(T, W)));
@@ -240,6 +241,11 @@ function buildWorld(route) {
   ribbon(i => -W / 2 - sideOf(0, sideWide)(i), -W / 2, sideLift, sideMat, 1, mouth(0, sideWide));
   ribbon(W / 2, i => W / 2 + sideOf(1, sideWide)(i), sideLift, sideMat, 1, mouth(1, sideWide));
   addMedianBarriers(grp, T, W, room);
+  // a turning circle where the road ends: its asphalt over the road ridden round it, which there crosses itself
+  turningCircles(T, route).forEach(c => {
+    const g = new THREE.CircleGeometry(c.r, 48); g.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(g, circleMat()); m.position.set(c.x, c.y + .1, c.z); m.name = 'turning circle'; grp.add(m);
+  });
   // none where a sight is the land (a dam climbed in hairpins): a plain slope with the road on it, as in life
   if (gorge) addFills(grp, T, W, ground, (x, z) => onRoad(x, z, 0) || shapes.some(f => f(x, z) != null), onOnward, sideWide);
   // the roads round the route, what crosses over it and under it, its own bridges and tunnels, lines and water
@@ -374,6 +380,25 @@ function plantOwnTrees(T, own, r, tooClose, ground, W, trees) {
       if (insideRing(ring, x, z)) { add(x, z, kind); put++; }
     }
   });
+}
+// A route's turning circles (turn_on_road.py's "circles", [[lat, lon, radius]]): each at its road's height, a ring
+// round it for the land to sink under
+function turningCircles(T, route) {
+  return (route.circles || []).map(([lat, lon, r]) => {
+    const c = xzOf(T, [lat, lon]);
+    return { x: c.x, z: c.z, r, y: routeNearest(T, c.x, c.z).y, ring: Array.from({ length: 24 }, (_, k) => [c.x + Math.cos(k / 24 * Math.PI * 2) * r, c.z + Math.sin(k / 24 * Math.PI * 2) * r]) };
+  });
+}
+// asphalt without lines, as the road's, a tile every 8 m
+let world_circleMat = null;
+function circleMat() {
+  if (world_circleMat) return world_circleMat;
+  const tex = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#3a3c3f'; g.fillRect(0, 0, w, h);
+    const r = rng(7); for (let i = 0; i < 2600; i++) { const c = 40 + r() * 40 | 0; g.fillStyle = 'rgba(' + c + ',' + c + ',' + (c + 3) + ',.55)'; g.fillRect(r() * w, r() * h, 1 + r() * 2, 1 + r() * 2); }
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(4, 4);
+  return (world_circleMat = new THREE.MeshLambertMaterial({ map: tex }));
 }
 // A gorge's road on its slope: where the land beside it lies under its shoulder, a slope falls from the shoulder's edge
 // at FILL_SLOPE to one down to the land -- the land's cells, 40 m across, cannot follow a road's shelf, and its road
