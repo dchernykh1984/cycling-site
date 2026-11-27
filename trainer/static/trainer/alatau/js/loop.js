@@ -8,7 +8,7 @@ Object.assign(rideHooks, {
   go: () => updateModeUI(),
   backToStart: () => { cam.cinit = false; cam.init = false; },
   lap: n => toast(t('hud.lapToast', { n }), 2.5),
-  sight: l => toast(t(l.said === 'mountains' ? 'sight.mountains' : l.side === 'right' ? 'sight.right' : 'sight.left', { name: l.name }), 4.5),
+  sight: l => toast(l.said === 'mountains' ? t('sight.mountains', { name: l.name }) : l.side === 'right' ? t('sight.right', { name: l.name }) : t('sight.left', { name: l.name }), 4.5),
   finish: () => finishRace(),
   routeEnd: () => finishFree(),
   crossing: (point, last, ago) => mpCrossing(point, last, ago),
