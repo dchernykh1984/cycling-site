@@ -156,9 +156,13 @@ function laneOf(R, o) {
 }
 // where a rider is on the map: the route's point at their distance, moved sideways to their lane
 function riderPos(R, out, s = R.s) { const o = sampleAt(world.T, s, out), lane = laneOf(R, o); o.px = o.x + o.rx * lane; o.pz = o.z + o.rz * lane; return o; }
-// the way a rider faces: along the line they ride, from a metre behind them to a metre ahead
 const _hb = {}, _hf = {};
-function riderHeading(R) { const b = riderPos(R, _hb, R.s - 1), f = riderPos(R, _hf, R.s + 1); return Math.atan2(f.px - b.px, f.pz - b.pz); }
+// the way a rider faces: along the line they ride, from a metre behind them to a metre ahead -- or, where those two
+// meet, past the end of a route that is not a loop (a finisher rolling on), the route's own way there
+function riderHeading(R) {
+  const b = riderPos(R, _hb, R.s - 1), f = riderPos(R, _hf, R.s + 1), dx = f.px - b.px, dz = f.pz - b.pz;
+  return dx * dx + dz * dz > 1e-6 ? Math.atan2(dx, dz) : Math.atan2(f.tx, f.tz);
+}
 function nearLandmarks(T) {
   const out = [];
   LANDMARKS.filter(lm => lm.city === T.route.city).forEach(lm => { // a map's own sights: two maps may show one each
