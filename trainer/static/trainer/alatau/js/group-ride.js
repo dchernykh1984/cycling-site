@@ -338,6 +338,7 @@ function renderMP() {
   [...box.children].forEach(c => { if (!ids.includes(c.dataset.gid)) c.remove(); });
   MP.groups.forEach(g => {
     const left = Math.max(0, Math.ceil((mpStartLocal(g) - Date.now()) / 1000)), far = left * 1000 >= MP_HOUR;
+    const own = Math.max(0, Math.ceil((mpStartOf(g) - Date.now()) / 1000)); // a time trial's rider's own start
     const when = far ? new Date(mpStartLocal(g)).toLocaleString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '';
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
@@ -352,8 +353,8 @@ function renderMP() {
     card.querySelector('b').textContent = who + ': ' + routeTitle(g);
     // a ride or race the member is in: the time left to its start, ticking each second, from the day they joined
     // its riders count down: its members -- a host of a race no event holds always one -- and an event's registered riders
-    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || mpRegistered(g)) && left > 0;
-    count.classList.toggle('hidden', !counting); if (counting) count.textContent = t('mp.countdown', { t: fmtCountdown(left) });
+    const count = card.querySelector('.mp-countdown'), counting = (g.is_member || mpRegistered(g)) && own > 0;
+    count.classList.toggle('hidden', !counting); if (counting) count.textContent = t('mp.countdown', { t: fmtCountdown(own) });
     const small = card.querySelector('small');
     small.textContent = (g.id === LINKED ? t('mp.byLink') : '') + (far ? t('mp.startsOn', { when }) : left ? t('mp.startsIn', { t: fmtTime(left) }) : t('mp.starting')) + (g.members.length ? t('mp.members', { list: g.members.map(m => ((Records.me && m.user_id === Records.me.user_id) ? t('youLower') : m.name) + (m.bib ? ' #' + m.bib : '')).join(', ') }) : '.') + (groupWind(g) ? t('mp.wind', { ms: Math.round(g.wind_ms), from: windFrom(g.wind_from_deg) }) : '');
     if (g.event) { // a race with protocols: its event, linked; a time trial said so; the member's own bib, category, laps and start

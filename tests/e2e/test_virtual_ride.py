@@ -102,6 +102,7 @@ def test_a_group_race_card_keeps_its_button_while_the_lobby_ticks(page: Page):
             const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpRegistered = () => false; // no event holds these races
+            const mpStartOf = g => mpStartLocal(g); // nobody's own start apart from the race's
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = path => { window.asked = path; };
             eval(words + render);
             window.renderMP = renderMP;
@@ -130,6 +131,7 @@ def test_a_race_far_ahead_names_its_day_and_wind_and_one_too_near_a_member_s_own
             r"^const groupWind = .*?;$",
             r"^const WIND_STEP_DEG = .*?;",
             r"^const mpRegistered = .*?;$",
+            r"^const mpStartOf = .*?;$",
             r"^const windFrom = .*?;$",
             r"^function renderMP\(\) \{.*?^\}",
         )
@@ -549,6 +551,7 @@ def test_a_linked_group_race_stands_out_and_its_link_can_be_copied(page: Page):
             const mpKind = () => 'race'; // the page set to race
             const mpClash = () => false, MP_HOUR = 3600e3, LOCALE = 'en-GB'; // starting within the hour
             const mpRegistered = () => false; // no event holds these races
+            const mpStartOf = g => mpStartLocal(g); // nobody's own start apart from the race's
             const mpMyGroup = () => null, renderStartSum = () => {}, mpAction = () => {};
             eval(words + code);
             window.t = t;

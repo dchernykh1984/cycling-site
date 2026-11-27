@@ -424,6 +424,24 @@ def test_the_host_of_a_race_their_event_holds_registers_before_they_go_to_its_st
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_time_trial_s_card_counts_down_to_the_rider_s_own_start(page: Page, live_server):
+    """A time trial's later riders saw the count reach its first start, then "Starting" for minutes, and lost the
+    button to its line: the card counts down to their own start, and the line is open till then."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_A_RACE, 300)  # their own start five minutes after the race's
+    page.evaluate(
+        """() => {
+            MP.status = 'on'; mpSchedule = () => {};
+            Object.assign(MP.groups[0], { mode: 'itt', start_at: new Date(Date.now() - 60e3).toISOString() });
+            renderMP();
+        }"""
+    )
+    card = page.locator('#mpGroups .mp-group[data-gid="9"]')
+    expect(card.locator(".mp-countdown")).to_contain_text(re.compile(r"\b(4 min [0-5]\d|3 min 5\d) s"))
+    expect(card.locator(".go")).to_be_visible()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
