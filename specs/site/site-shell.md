@@ -253,7 +253,8 @@ named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`)
 page too; a new kind of sight is its object's file and that line.
 A route may come back onto road it rode -- out to a turn and back along one road, round a loop of a turn: that
 road is drawn once, each way in its own lane, and a route that ends where it starts finishes on its start's line,
-under one arch for both. A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
+under one arch for both; turned round at its start as at its far end, it is a loop ridden lap after lap
+(Kyrbaltabay-Tuganbay; `scripts/virtual_ride/turn_at_start.py`). A map's relief -- SRTM heights on a grid round its routes -- draws the land beyond the
 scenery's own ground as it is: the real ranges, hills and valleys, lowered by the Earth's curve as a rider sees
 them, and 30 m under that ground where the two overlap; within 400 m of that ground's edge the ground comes to
 the relief's own surface, so they meet there without a wall. A map without one raises a range instead, which runs 150 km either
