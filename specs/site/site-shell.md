@@ -264,8 +264,8 @@ them, and not drawn over that ground; within 400 m of that ground's edge the gro
 the relief's own surface, on the triangles the relief is drawn as, so they meet there within a metre. A map without one raises a range instead, which runs 150 km either
 way from the origin, so it never ends in view. A range or relief farther
 than 9.5 km from the route's origin rises to its foot from the plain and
-shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses and sights
-stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
+shows through a quarter of the haze beyond 9.5 km; a nearer one keeps the scene's haze. Trees, houses, OpenStreetMap's
+buildings (down to the lowest land along their walls) and sights stand on the ground as drawn -- flat between the terrain's vertices -- and reach into it at its lowest under them,
 their tops where they were; a sight that spreads over the land, a cable car or ski jumps, stands on each of its
 pylons, stations and legs; one that lies flat on it, a rink, has the ground under it and round it laid at its
 level -- Medeu's ice, its oval, stands and floodlights, in a bowl of the valley's floor; a dam lies on the land
