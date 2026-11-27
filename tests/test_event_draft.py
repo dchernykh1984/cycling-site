@@ -8,6 +8,7 @@ import io
 import json
 import tempfile
 from datetime import timedelta
+from unittest import mock
 
 from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -280,7 +281,9 @@ class VirtualRaceDraftTests(TestCase):
         self.draft(track_name="oldtown", track_gpx=GPX)
         page = self.form_page()
         self.assertContains(page, 'id="route-draft-track"')
-        self.submit(page.context["draft_key"])
+        with mock.patch.object(Competition, "save", autospec=True, side_effect=Competition.save) as saved:
+            self.submit(page.context["draft_key"])
+        self.assertEqual(saved.call_count, 1)  # the track goes on without the event saved, logged and pinged again
         event = Competition.objects.get(title_ru="Virtual race")
         self.assertTrue(event.file_route.name.endswith("oldtown.gpx"), event.file_route.name)
         self.assertEqual(event.file_route.read().decode(), GPX)

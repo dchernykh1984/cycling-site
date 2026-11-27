@@ -1450,8 +1450,9 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> bool:
     from trainer.models import GroupRide
 
     track = draft.get("track")
-    if track and not comp.file_route:
-        comp.file_route.save(track["name"], ContentFile(track["gpx"].encode()), save=True)
+    if track and not comp.file_route:  # the file, and its name on the event: not the whole event saved again
+        comp.file_route.save(track["name"], ContentFile(track["gpx"].encode()), save=False)
+        Competition.objects.filter(pk=comp.pk).update(file_route=comp.file_route.name)
     picture = None if comp.preview_image else _draft_picture(draft)
     if picture:
         comp.preview_image.save(f"ride-{comp.pk}.jpg", ContentFile(picture), save=False)
