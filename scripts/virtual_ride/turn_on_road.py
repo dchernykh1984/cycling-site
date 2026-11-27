@@ -34,6 +34,7 @@ ONWARD_LEAD_M = 6.0  # it begins so far before the turn, under the route's own r
 SAME_POINT_M = 0.5
 REACH_M = 2.0  # with no loop round to say how far its riders went: the turn begins so far past its last point
 STRAIGHT_M = 12.0  # a way out alone runs straight so far on to its far turn
+PAST_END_M = 8.0  # a way ending at a turn goes on so far past it, straight
 
 src = Path(map_path).read_text(encoding="utf-8")
 data = json.loads(src[src.index("addMap(") + 7 : src.rindex(")")])
@@ -203,6 +204,14 @@ def onward(at, ux, uy, far):
             break
         road.append((px, py))
         left -= step
+    # a way that ends at the turn (the Cosmostation's car park) goes on straight under the whole turn: the route's own
+    # road, drifting to the edge for it, showed as a second road beside a stub of onward road
+    walked = sum(math.dist(road[k], road[k + 1]) for k in range(len(road) - 1))
+    if walked < TURN_M + ONWARD_LEAD_M + REACH_M + PAST_END_M:
+        (px, py), (qx, qy) = road[-2] if len(road) > 1 else (bx - ux, by - uy), road[-1]
+        step = math.hypot(qx - px, qy - py) or 1
+        more = TURN_M + ONWARD_LEAD_M + REACH_M + PAST_END_M - walked
+        road.append((qx + (qx - px) / step * more, qy + (qy - py) / step * more))
     return {"w": entry["width"], "pts": [list(ll(x, y)) for x, y in road], "lanes": entry["lanes"], "onward": True}
 
 
