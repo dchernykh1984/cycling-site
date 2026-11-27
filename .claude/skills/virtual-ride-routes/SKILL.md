@@ -130,7 +130,36 @@ under it and marks them (`userData.stands`), a dam lies on the land it crosses; 
 rink) gives its pad (`addObject`'s third argument) and the ground under it is laid at its level; a building
 OpenStreetMap outlines is the `building` object, its name lit on its roof; its `reach` keeps it to the routes it
 stands on drawn land for. A hill a
-sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m apart, through OpenTopoData).
+sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m apart, through OpenTopoData), and the
+summit itself one 30 m fine: between points 150 m apart Kok-Tobe's wheel stood in a dip 24 m under its top.
+
+## Mistakes made on earlier routes -- look for each on a new one
+
+Each was found by the maintainer riding a route; the engine or a tool now avoids it, and a test pins it.
+
+- **Turning back.** A loop round twice the road's width was drawn as a ring where the road goes straight on
+  (Kyrbaltabay): riders turn on the road itself, from edge to edge, and the road goes on past the turn as OSM has it
+  (`turn_on_road.py`, `"onward"` roads). A loop turned at its start finishes a race on its way back past its line.
+- **Laps.** A route from one place to another stops at its finish; only a loop is ridden lap after lap.
+- **The land under a sight.** A coarse relief grid set a sight in a dip (the wheel above) or buried it (Medeu's
+  rink, 22 m): give a summit a fine grid, a flat sight its pad, and compare the sight's base with SRTM's height there.
+- **A sight no rider sees.** A ring thinner than a pixel from the route (the wheel's rim from 1.4 km), a tower behind
+  buildings, a business centre no route passed: check each sight from the route at the game's field of view (98
+  degrees, not only zoomed in) -- the line of sight over the land and past the buildings -- and draw what is thin
+  from afar as lines (wireframe) or thicker the further it stands.
+- **Land and roads that do not meet.** Ground over the road (984 points on Medeu), roads round the route sunk in
+  folds of the land (6 m), OpenStreetMap's buildings hanging over it (9 m), a street beside a tunnel's ramp over its
+  cutting (3 m): the engine handles each now (`sinkUnderRoad`, `onLand`, `footOf`, streets narrowed to the ramp's
+  wall); the scene tests find a new case.
+- **Jerks.** Heights in steps of 10 points of grade, corners as straight lines between points, a rider swinging round
+  a corner in four jerks, a turn of a lane's radius entered at once: heights averaged, positions on a cubic,
+  curvature easing in -- the smoothness tests (`test_a_rider_turns_through_every_corner_smoothly`) pin them.
+- **A place passed twice.** A loop that passes its start again put that turn's points -- and their rider's line -- at
+  its end: a point lies where the route first passes it.
+- **Testing a part.** A run of a few tests missed a failing API call and tests whose stubs the page outgrew: after a
+  change to the engine or a map, run the four files whole -- `tests/test_virtual_ride_maps.py`,
+  `tests/e2e/test_virtual_ride.py`, `tests/e2e/test_virtual_race.py`, `tests/e2e/test_virtual_ride_surroundings.py`
+  (`-n 6`; a test that fails only under that load passes on its own: rerun it alone before chasing it).
 
 ## Checks before calling a route done
 
