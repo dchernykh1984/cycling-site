@@ -104,7 +104,7 @@ class MakingARaceTests(RaceTestCase):
         self.event.save(update_fields=["date_start", "date_end"])
         self.assertEqual(self.make().status_code, 403)
 
-    def test_a_hidden_or_invite_only_event_takes_no_race_and_one_closed_later_is_not_named(self):
+    def test_a_hidden_or_invite_only_event_takes_no_race_and_one_closed_later_shows_to_who_may_open_it(self):
         for closed in ("is_hidden", "invite_only"):
             setattr(self.event, closed, True)
             self.event.save(update_fields=[closed])
@@ -115,8 +115,20 @@ class MakingARaceTests(RaceTestCase):
         group = self.make().json()["id"]
         self.event.invite_only = True
         self.event.save(update_fields=["invite_only"])
-        # every member's lobby lists the race: an event that is no longer public is not named there
-        self.assertIsNone(self.client_of(_member("someone")).get(f"{API}/groups/{group}").json()["event"])
+        # it sent anyone else to register on a page that does not open for them: no one else's lobby lists it, a link
+        # to it opens nothing and no one else joins it; its organizer sees it, its event named
+        someone = self.client_of(_member("someone"))
+        self.assertEqual(someone.get(f"{API}/groups/{group}").status_code, 404)
+        self.assertEqual(someone.get(f"{API}/groups").json(), [])
+        lobby = someone.post(f"{API}/presence", {"status": "lobby"}, content_type="application/json").json()
+        self.assertEqual(lobby["groups"], [])
+        self.assertEqual(self.join(_member("dana"), group).status_code, 404)
+        organizer = self.client_of(self.organizer)
+        self.assertEqual(organizer.get(f"{API}/groups/{group}").json()["event"]["id"], self.event.pk)
+        # a deleted event's race stays its host's to cancel, named after no event
+        self.event.is_deleted = True
+        self.event.save(update_fields=["is_deleted"])
+        self.assertIsNone(organizer.get(f"{API}/groups/{group}").json()["event"])
 
     def test_the_organizer_s_list_of_events_holds_their_own_to_come(self):
         mine = self.client_of(self.organizer).get(f"{API}/events").json()

@@ -11,6 +11,7 @@ from http import HTTPStatus
 from typing import Any
 
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -25,7 +26,7 @@ from accounts.access import needs_email_confirmation
 from api.auth import OptionalApiTokenAuth, member_auth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
-from calendar_app.visibility import is_public, public_events
+from calendar_app.visibility import can_see, public_events
 from trainer import intervals, live, race, records, services, strava
 from trainer.models import (
     GroupRide,
@@ -427,6 +428,23 @@ def _member(user, membership: GroupRideMember | None = None) -> MemberOut:
     )
 
 
+def _sees_event(user, competition: Competition) -> bool:
+    """Whether the member may open the event a race is held by: published -- approved, not deleted -- and theirs."""
+    return (
+        competition.status == Competition.Status.APPROVED and not competition.is_deleted and can_see(user, competition)
+    )
+
+
+def _shown(group: GroupRide, user) -> bool:
+    """A race an event holds is the business of whoever may open the event, its host and its riders; any other race is
+    everybody's. A lobby lists, a link opens and joining takes only a race shown to the member: one whose event they
+    cannot open would send them to register on a page that does not open for them."""
+    event = group.competition
+    if event is None or group.host_id == user.pk:
+        return True
+    return any(m.user_id == user.pk for m in group.memberships.all()) or _sees_event(user, event)
+
+
 def _event_out(competition: Competition, registered: bool) -> RaceEventOut:
     return RaceEventOut(
         id=competition.pk,
@@ -466,13 +484,13 @@ def _group_out(group: GroupRide, user, registered: set[int] | None = None) -> Gr
         wind_ms=group.wind_ms,
         wind_from_deg=group.wind_from_deg,
         kind=GroupRide.Kind(group.kind),
-        # every member's lobby lists the race: its event named only while the event is public
+        # its event named to whoever may open it (_shown: the lobby lists it to them, its host and its riders)
         event=_event_out(
             group.competition,
             group.competition_id
             in (registered if registered is not None else race.registered_for(user, {group.competition_id})),
         )
-        if group.competition and is_public(group.competition)
+        if group.competition and _sees_event(user, group.competition)
         else None,
         mode=GroupRide.Mode(group.mode),
         group_gap_s=group.group_gap_s,
@@ -838,7 +856,7 @@ def keep_settings(request, payload: TrainerSettingsIn):
 
 @router.get("/groups", response=list[GroupOut], auth=member_auth, summary="Group races open to join")
 def list_groups(request):
-    groups = list(live.open_groups())
+    groups = [g for g in live.open_groups() if _shown(g, request.auth)]
     registered = race.registered_for(request.auth, {g.competition_id for g in groups if g.competition_id})
     return [_group_out(g, request.auth, registered) for g in groups]
 
@@ -948,13 +966,17 @@ def _enter(group: GroupRide, user, quiet: bool = False) -> None:
 @router.get("/groups/{group_id}", response=GroupOut, auth=member_auth, summary="One group race, as a link names it")
 def get_group(request, group_id: int):
     """What a shared link opens: the race even when it has started or was cancelled, so the page can say so."""
-    group = get_object_or_404(GroupRide.objects.select_related("host"), pk=group_id)
+    group = get_object_or_404(GroupRide.objects.select_related("host", "competition"), pk=group_id)
+    if not _shown(group, request.auth):
+        raise Http404
     return _group_out(group, request.auth)
 
 
 @router.post("/groups/{group_id}/join", response=GroupOut, auth=member_auth, summary="Join a group race")
 def join_group(request, group_id: int):
     group = _open_group(group_id)
+    if not _shown(group, request.auth):
+        raise Http404
     if group.start_at <= timezone.now():
         raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     _enter(group, request.auth)
@@ -1080,7 +1102,7 @@ def presence(request, payload: PresenceIn):
     # riding, the lobby is not drawn; on a race's line before its start, the race alone -- its host may change its wind
     listed = []
     if not riding:
-        listed = list(live.open_groups(now))
+        listed = [g for g in live.open_groups(now) if _shown(g, request.auth)]
     elif me_row.group_id is not None:
         listed = list(live.open_groups(now).filter(pk=me_row.group_id, start_at__gt=now))
     registered = race.registered_for(request.auth, {g.competition_id for g in listed if g.competition_id})
