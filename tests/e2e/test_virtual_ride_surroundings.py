@@ -414,6 +414,25 @@ def test_a_guardrail_stands_on_a_post_every_4_m(page: Page, live_server):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_road_going_on_ahead_goes_down_only_where_the_route_crosses_over_it(page: Page, live_server):
+    # Granfondo's Al-Farabi goes on into its tunnel under the frontage roads' crossing; Medeu's road on past its
+    # finish, which the route's nearest point runs on along, went down a cutting 6.5 m deep with it
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof ROUTES !== 'undefined' && typeof onwardUnder === 'function'")
+    dips = page.evaluate(
+        """() => Object.fromEntries(ROUTES.filter(r => (r.roads || []).some(x => x.onward)).map(r => {
+          const T = buildTrack(r);
+          return [r.id, r.roads.filter(x => x.onward).map(x => {
+            const u = onwardUnder(T, r.width, x), k = u.floor.indexOf(Math.min(...u.floor));
+            return u.floor[k] === Infinity ? null : Math.round(routeNearest(T, u.q[k].x, u.q[k].z).y - u.floor[k]);
+          })];
+        }))"""
+    )
+    assert dips.pop("granfondo") == [None, None, 6, 6], dips
+    assert all(d is None for depths in dips.values() for d in depths), dips
+
+
+@pytest.mark.django_db(transaction=True)
 def test_power_lines_stand_off_the_road_and_hang_high_over_it(page: Page, live_server):
     faults = _faults(
         page,
