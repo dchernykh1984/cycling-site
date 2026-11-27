@@ -405,10 +405,10 @@ def test_a_road_ridden_out_and_back_is_drawn_once_and_finishes_at_its_start(page
           });
         }"""
     )
-    back = [route for route in found if route["back"]]
-    assert back, found  # a route out and back is on the maps
     assert [route["twice"] for route in found] == [0] * len(found), found
-    # it finishes on its start's line, under one arch for both
+    # one out and back that is not a loop finishes on its start's line, under one arch for both (Kyrbaltabay, ridden
+    # out and back, turns round at its start too and is a loop: the maps have no such route now)
+    back = [route for route in found if route["back"]]
     assert all(route["finish"] == pytest.approx(route["end"]) and route["arches"] == 1 for route in back), back
 
 

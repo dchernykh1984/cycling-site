@@ -82,9 +82,14 @@ def test_a_race_reports_each_lap_and_turn_once_and_its_last_lap_as_the_finish(pa
     ], loop
     # at the moment each happened, on the site's clock
     assert all(loop["before"] - 1000 <= at <= loop["after"] for *_, at in loop["got"]), loop
-    out_and_back = page.evaluate(_CROSSINGS, ["kyrbaltabay-tuganbay", 3])
-    # a route out and back is ridden once: its turn, then its finish
-    assert [(p, last) for _, p, last, _ in out_and_back["got"]] == [(1, False), (0, True)], out_and_back
+    out_and_back = page.evaluate(_CROSSINGS, ["kyrbaltabay-tuganbay", 2])
+    # a road out and back turned round at both ends is a loop: its far turn and its line each lap
+    assert [(p, last) for _, p, last, _ in out_and_back["got"]] == [(1, False), (0, False), (1, False), (0, True)], (
+        out_and_back
+    )
+    one_way = page.evaluate(_CROSSINGS, ["medeu", 3])
+    # a route from one place to another is ridden once: its finish is its one point
+    assert [(p, last) for _, p, last, _ in one_way["got"]] == [(0, True)], one_way
 
 
 _A_RACE = """offset => {

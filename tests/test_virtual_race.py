@@ -159,7 +159,7 @@ class JoiningTests(RaceTestCase):
         self.assertEqual(self.join(anna, group).json()["me"]["bib"], "77")
 
     def test_a_route_that_is_not_a_loop_is_ridden_once_whatever_the_category_s_laps(self):
-        group = self.make(route="kyrbaltabay-tuganbay", loop=False).json()["id"]
+        group = self.make(route="medeu", loop=False).json()["id"]
         anna = self.rider("anna", self.elite)
         self.assertEqual(self.join(anna, group).json()["me"]["laps"], 1)
         self.assertEqual(self.stream(StartListUpload)[0].split("#")[3], "1")
