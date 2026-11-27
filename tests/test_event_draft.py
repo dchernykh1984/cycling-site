@@ -10,12 +10,13 @@ from datetime import timedelta
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.translation import gettext
 
 from accounts.models import User
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.views import _selected_discipline_ids
-from locations.models import Location
+from locations.models import Location, LocationProposal
 from trainer.models import GroupRide
 
 DRAFT = {
@@ -106,13 +107,13 @@ class VirtualRaceDraftTests(TestCase):
         cls.organizer = User.objects.create_user(
             username="org", email="org@example.com", password="Pass1234!", role=User.Role.ORGANIZER
         )
-        city = (
+        cls.city = (
             Location.add_root(name_ru="KZ", name_en="KZ")
             .add_child(name_ru="Region", name_en="Region")
-            .add_child(name_ru="City", name_en="City")
+            .add_child(name_ru="City", name_en="City", lat=43.2500, lng=76.9300)
         )
-        cls.start = city.add_child(name_ru="Start", name_en="Start", lat=43.2380, lng=76.9450)
-        city.add_child(name_ru="Far", name_en="Far", lat=43.2600, lng=76.9450)  # 2.4 km on
+        # a real place at the route's start: a virtual ride's event never takes it for its meeting point
+        cls.start = cls.city.add_child(name_ru="Start", name_en="Start", lat=43.2380, lng=76.9450)
 
     def setUp(self):
         self.client.force_login(self.organizer)
@@ -131,10 +132,49 @@ class VirtualRaceDraftTests(TestCase):
         payload = {"title_ru": title, "date_start": "2026-12-02", "location": str(self.start.pk), "draft_key": key}
         return self.client.post(reverse("calendar_submit"), payload)
 
-    def test_the_venue_at_the_route_s_start_is_chosen_and_none_further_than_300_m(self):
-        self.draft(start_lat="43.2381", start_lng="76.9452")
-        self.assertEqual(self.form_page().context["form"]["location"].value(), self.start.pk)
-        self.draft(start_lat="43.2490", start_lng="76.9450")  # 1.2 km from either
+    def chosen(self, **extra):
+        start = {"start_lat": "43.2381", "start_lng": "76.9452"}
+        self.draft(**start, route_name_ru="Staryi tsentr", route_name_en="Old centre", **extra)
+        return self.form_page().context["form"]["location"].value()
+
+    def test_a_route_s_start_becomes_its_venue_in_the_virtual_world_once(self):
+        venue = Location.objects.get(pk=self.chosen())
+        self.assertNotEqual(venue.pk, self.start.pk)
+        # named so in every language that nobody comes to the place to meet
+        self.assertEqual(venue.name_en, 'Virtual world: start of the route "Old centre"')
+        with translation.override("ru"):
+            self.assertEqual(
+                venue.name_ru, gettext('Virtual world: start of the route "%(route)s"') % {"route": "Staryi tsentr"}
+            )
+        # where the route starts, under its city, public at once for an organizer
+        self.assertEqual((float(venue.lat), float(venue.lng)), (43.2381, 76.9452))
+        self.assertEqual(venue.get_parent(), self.city)
+        self.assertFalse(LocationProposal.objects.filter(location=venue).exists())
+        # the next event on that route finds it: one venue for the route's start
+        self.assertEqual(self.chosen(), venue.pk)
+        self.assertEqual(Location.objects.filter(name_en=venue.name_en).count(), 1)
+
+    def test_a_participant_s_draft_proposes_the_start_for_review(self):
+        rider = User.objects.create_user(
+            username="rider2", email="rider2@example.com", password="Pass1234!", role=User.Role.PARTICIPANT
+        )
+        self.client.force_login(rider)
+        venue = Location.objects.get(pk=self.chosen())
+        self.assertTrue(LocationProposal.objects.filter(location=venue, submitted_by=rider).exists())
+
+    def test_a_start_renamed_or_deleted_is_made_again(self):
+        first = Location.objects.get(pk=self.chosen())
+        first.name_ru = "Renamed by a moderator"
+        first.save(update_fields=["name_ru"])
+        second = self.chosen()
+        self.assertNotEqual(second, first.pk)
+        Location.objects.filter(pk=second).update(is_deleted=True)
+        self.assertNotIn(self.chosen(), (first.pk, second))
+
+    def test_a_start_far_from_every_city_has_no_venue(self):
+        self.draft(start_lat="44.5", start_lng="78.9", route_name_ru="Staryi tsentr")
+        self.assertIsNone(self.form_page().context["form"]["location"].value())
+        self.draft(start_lat="43.2381", start_lng="76.9452")  # no route's name to give it
         self.assertIsNone(self.form_page().context["form"]["location"].value())
 
     def test_a_race_s_registration_comes_on_with_its_categories(self):
