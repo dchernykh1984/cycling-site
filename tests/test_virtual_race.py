@@ -11,6 +11,7 @@ from unittest import mock
 from django.db import connections
 from django.db.models import F
 from django.test import Client, TestCase, TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone, translation
 from ninja.errors import HttpError
@@ -138,6 +139,22 @@ class MakingARaceTests(RaceTestCase):
         with self.assertRaises(HttpError):
             _enter(stale, stranger)
         self.assertFalse(GroupRideMember.objects.filter(group=loose, user=stranger).exists())
+
+    def test_a_race_s_answer_costs_as_many_queries_whatever_its_riders(self):
+        # its members, their registrations and categories were read one by one: three queries a rider an answer
+        group = self.make().json()["id"]
+        viewer = self.client_of(self.organizer)
+
+        def cost():
+            with CaptureQueriesContext(connections["default"]) as asked:
+                self.assertEqual(viewer.get(f"{API}/groups/{group}").status_code, 200)
+            return len(asked)
+
+        self.join(self.rider("anna", self.women), group)
+        few = cost()
+        for name in ("bella", "carla", "dina", "elza"):
+            self.join(self.rider(name, self.women), group)
+        self.assertEqual(cost(), few)
 
     def test_an_event_without_registration_on_the_site_takes_no_race(self):
         # nobody could join it: its riders join by their registration, as the event's page refuses it too
