@@ -21,7 +21,7 @@ $('#btnRecReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.arm
     if (id === '#bikeKg') $('#bikeKg').value = settings.bikeKg;
     if (id === '#height' || id === '#mass' || id === '#bikeType' || id === '#bikeKg') { if (id === '#height' || id === '#mass') $(id).value = id === '#height' ? settings.height : settings.mass; renderBodyHint(); setPlayerChar(settings.char); setPreview(settings.char); renderStartSum(); } if (id === '#view' && phase === 'menu') setView(settings.view, true); updateModeUI(); }));
 ['#windOn', '#windFrom', '#windMs'].forEach(id => $(id).addEventListener('change', () => { readSettings(); renderWind(); renderStartSum(); }));
-$('#demoP').addEventListener('input', e => { demoP = +e.target.value; $('#demoV').textContent = demoP + ' ' + t('u.w'); });
+$('#demoP').addEventListener('input', e => setDemo(+e.target.value));
 $('#gUp').onclick = () => { gearR = Math.min(bikeR().length, gearR + 1); updateModeUI(); };
 $('#gDown').onclick = () => { gearR = Math.max(1, gearR - 1); updateModeUI(); };
 $('#gearV').parentElement.style.pointerEvents = 'auto'; $('#gearV').title = t('plan.chainringTitle');
@@ -56,8 +56,9 @@ $('#pStamp').addEventListener('change', e => $('#stamp').classList.toggle('hidde
 $('#pHud').addEventListener('change', e => $('#hud').classList.toggle('hidden', !e.target.checked));
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key === 'ArrowUp' || e.key === 'w') { demoP = clamp(demoP + 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' ' + t('u.w'); }
-  if (e.key === 'ArrowDown' || e.key === 's') { demoP = clamp(demoP - 10, 0, 450); $('#demoP').value = demoP; $('#demoV').textContent = demoP + ' ' + t('u.w'); }
+  // a hundredth of the slider a key, as fine as it is where the power stands
+  if (e.key === 'ArrowUp' || e.key === 'w') setDemo(+$('#demoP').value + 10);
+  if (e.key === 'ArrowDown' || e.key === 's') setDemo(+$('#demoP').value - 10);
   if (e.key === ']') $('#gUp').click(); if (e.key === '[') $('#gDown').click();
   if ((e.key === 'v' || e.key === 'м') && !photo) $('#btnView').click();
   if (e.key === 'p' || e.key === 'з') photo ? exitPhoto() : enterPhoto();

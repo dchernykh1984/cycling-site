@@ -21,6 +21,16 @@ function readInput() {
   if (mode === 'cadence' && (byGear || settings.cadSpeed === 'direct')) direct = true;
   return { P, cad, mode, wheelKmh, direct, hr: Sensors.hr() };
 }
+// The demo's power from its slider's place, 0..1000, and back: up to 1.5 kW on a curve, finer where most ride -- a
+// step of the slider is a watt near nothing, 3 at 150 W, 24 at the top -- in 5 W
+const DEMO_MAX_W = 1500, DEMO_CURVE = 3;
+function demoWatts(pos) { return Math.round(DEMO_MAX_W * Math.expm1(DEMO_CURVE * pos / 1000) / Math.expm1(DEMO_CURVE) / 5) * 5; }
+function demoPos(w) { return Math.round(1000 * Math.log1p(w / DEMO_MAX_W * Math.expm1(DEMO_CURVE)) / DEMO_CURVE); }
+// the slider at a place, its power ridden, shown, and said to a screen reader in watts rather than the place
+function setDemo(pos) {
+  const p = clamp(Math.round(pos / 5) * 5, 0, 1000), el = $('#demoP'), said = demoWatts(p) + ' ' + t('u.w');
+  demoP = demoWatts(p); el.value = p; el.setAttribute('aria-valuetext', said); $('#demoV').textContent = said;
+}
 function updateModeUI() {
   const mode = Sensors.mode(), inRace = phase === 'race' || phase === 'countdown';
   $('#demo').classList.toggle('hidden', !(inRace && mode === 'demo'));
