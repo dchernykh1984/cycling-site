@@ -121,8 +121,10 @@ function stepRide(dt, inp, t) {
       const st = me.stats, y1 = sampleAt(T, me.s, _ry).y; if (y1 > y0) st.gain += y1 - y0;
       st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); } if (inp.mode === 'power') st.real = true; if (inp.hr) { st.sumHR += inp.hr; st.nHR++; st.maxHR = Math.max(st.maxHR, inp.hr); }
       if (rideMode === 'plan' || rideMode === 'free') {
-        // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг
-        if (!T.loop && me.s >= T.L - 15) { me.s = world.S0; rideEvent('backToStart'); }
+        // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг; a free ride laps a
+        // loop only: on a route from one place to another it ends at the finish, saved as when its rider ends it
+        if (rideMode === 'free' && !T.loop && me.s >= world.FIN) rideEvent('routeEnd');
+        else if (rideMode === 'plan' && !T.loop && me.s >= T.L - 15) { me.s = world.S0; rideEvent('backToStart'); }
         const lap = Math.floor(me.stats.dist / (world.FIN - world.S0));
         if (lap > me.lap) { me.lap = lap; world.lms.forEach(l => { l.done = false; }); rideEvent('lap', lap + 1); }
         if (rideMode === 'plan' && Work.active && Work.update(dt, inp.cad, inp.mode, inp.P)) rideEvent('planDone');

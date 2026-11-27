@@ -214,7 +214,8 @@ rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`)
 the start's summary says a route with many buildings and streets (Granfondo 2026, the Medeu climb, the centre's
 loop) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It
 includes rider height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
-default. Free rides can be finished from the pause menu; a workout whose plan is done rides on as a free ride, the
+default. Free rides can be finished from the pause menu, and lap a loop only: on a route from one place to another a free
+ride is over at its finish, saved as when its rider ends it (a workout rides its plan on from the start); a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
 it too. During a ride the HUD shows, in one row on top, the speed,
 the distance, the metres climbed and the time over a bar of the route (or the plan, or the lap) done; under it the
