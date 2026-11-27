@@ -12,6 +12,8 @@ import json
 import math
 import secrets
 
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils import timezone, translation
 from django.utils.translation import gettext
 
@@ -31,6 +33,7 @@ MAX_CATEGORIES = 10
 MAX_LAPS = 1000
 _CATEGORY_NAME_CHARS = 100  # RegistrationCategory.name
 _TRACK_NAME_CHARS = 60
+_URL_CHARS = 200  # Competition's URLFields
 _METRES_PER_DEGREE = 111_000
 
 
@@ -122,6 +125,15 @@ def categories(raw: str) -> list[dict]:
             }
         )
     return out
+
+
+def web_link(url: str) -> str | None:
+    """An http(s) address the event form's link fields take, else None."""
+    try:
+        URLValidator(schemes=("http", "https"))(url)
+    except ValidationError:
+        return None
+    return url if len(url) <= _URL_CHARS else None
 
 
 def track(name: str, gpx: str) -> dict | None:

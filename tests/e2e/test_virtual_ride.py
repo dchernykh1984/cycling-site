@@ -1828,8 +1828,11 @@ def test_add_event_gathers_a_ride_and_opens_the_event_form_filled_from_the_route
     expect(page.locator("#id_title_ru")).to_have_value(re.compile(r"\S"))
     expect(page.locator("#id_date_start")).to_have_value(day)
     description = page.locator("#id_description_en").input_value()
-    assert f"{live_server.url}/en/virtual-ride/?group={ride.pk}" in description, description
+    link = f"{live_server.url}/en/virtual-ride/?group={ride.pk}"
+    # the words name the ride's page and are its link; the same page is the event's announcement
+    assert re.search(rf'<a href="{re.escape(link)}"[^>]*>on the ride\'s page</a>', description), description
     assert "19:00 (UTC" in description and "Abay, Dostyk" in description and "{" not in description, description
+    expect(page.locator("#id_url_announcement")).to_have_value(link)
     assert f"/kk/virtual-ride/?group={ride.pk}" in page.locator("#id_description_kk").input_value()
     types = page.locator("#id_event_types option:checked").evaluate_all("options => options.map(o => +o.value)")
     assert types == [lists["virtual"].pk], types

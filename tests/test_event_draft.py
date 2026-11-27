@@ -190,6 +190,13 @@ class VirtualRaceDraftTests(TestCase):
         shown = [(r["name"], r["male"], r["female"], r["laps"]) for r in json.loads(page.context["categories_json"])]
         self.assertEqual(shown, [("Men", True, False, 3), ("Women", False, True, 3)])
 
+    def test_the_ride_s_page_is_its_announcement_and_no_other_kind_of_address_is(self):
+        link = "https://example.com/en/virtual-ride/?group=7"
+        self.draft(url_announcement=link)
+        self.assertEqual(self.form_page().context["form"]["url_announcement"].value(), link)
+        self.draft(url_announcement="javascript:alert(1)")
+        self.assertFalse(self.form_page().context["form"]["url_announcement"].value())
+
     def test_the_route_s_track_is_attached_unless_the_member_chose_a_file(self):
         self.draft(track_name="oldtown", track_gpx=GPX)
         page = self.form_page()

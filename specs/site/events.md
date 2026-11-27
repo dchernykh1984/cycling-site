@@ -62,7 +62,8 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 6. **Given** another page hands the form a draft (the virtual ride's "Add event": a POST to
    `/<lang>/calendar/submit/draft/` with the titles, link preview lines and descriptions in each language,
    the start date, and event types and disciplines named in English, as every database's lists name them;
-   besides, a route's start and names, registration with its categories, a route's track and a virtual race
+   besides, a route's start and names, the ride's page as the announcement's link (an http(s) address only),
+   registration with its categories, a route's track and a virtual race
    of the member's own),
    **Then** it is kept for the member's session and the form opens filled with it
    (`/calendar/submit/?draft=1`) -- the descriptions cleaned as an event's are, a name no list has left out, the
