@@ -60,7 +60,7 @@ _CROSSINGS = """([id, laps]) => {
     MP.offset = 0; MP.crossings = [];
     world = buildCourse(ROUTES.find(r => r.id === id));
     groupRide = { gid: 9, race: { mode: 'group', draftBetween: true, me: { bib: '51', group: 'Women', laps } } };
-    if (world.T.loop) world.FIN = world.S0 + laps * world.T.L;
+    if (world.T.loop) world.FIN = world.S0 + laps * world.T.L - world.finBack; // as race.js sets a race's
     const before = Date.now();
     for (let s = world.S0; s < world.FIN + 50; s += 7) raceCrossings(s, s + 7, .5);
     const after = Date.now(), turns = turnPoints(world.T);

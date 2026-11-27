@@ -99,7 +99,10 @@ function startRace() {
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;
     // a race with protocols: the rider's bib and category, and their category's laps on a loop
     const rules = groupRide && groupRide.race, mine = rules && rules.me;
-    world.FIN = world.T.loop && mine ? world.S0 + mine.laps * world.T.L : world.FIN1;
+    // a loop turned back at its start finishes a race on its way back, before that turn (lineBack); a free ride or a
+    // workout laps it whole
+    const laps = world.T.loop && mine ? mine.laps : 1;
+    world.FIN = world.T.loop ? world.S0 + laps * world.T.L - (rideMode === 'race' ? world.finBack : 0) : world.FIN1;
     me.bib = mine ? mine.bib : ''; me.group = mine ? mine.group : ''; setBib(playerAvatar, me.bib);
     stravaShow(null, null); intervalsShow(null, null);
     const planMode = rideMode === 'plan', freeMode = rideMode === 'free';

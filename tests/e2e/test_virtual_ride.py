@@ -340,6 +340,18 @@ def test_a_free_ride_from_one_place_to_another_ends_at_its_finish_and_a_loop_lap
     )
     # back into its start one way, out of it the other
     assert turned[0] and turned[1] > 170, turned
+    finished = page.evaluate(
+        """() => ['kyrbaltabay-tuganbay', 'granfondo'].map(id => {
+            const c = buildCourse(ROUTES.find(r => r.id === id)), T = c.T, line = {}, at = {};
+            sampleAt(T, c.S0, line); sampleAt(T, c.S0 + T.L - c.finBack, at);
+            const there = Math.hypot(at.x - line.x, at.z - line.z) < 1;
+            return [Math.round(c.finBack), there, at.tx * line.tx + at.tz * line.tz];
+        })"""
+    )
+    # turned back at its start, it finishes a race on its way back past its line, before that turn, as in life: its
+    # finish there, heading the other way; a loop that passes its line once a lap finishes a whole lap on
+    (back, there, way), (whole, *_rest) = finished
+    assert 60 < back < 120 and there and way < -0.98 and whole == 0, finished
 
 
 @pytest.mark.django_db(transaction=True)
