@@ -77,7 +77,8 @@ function renderPlanChart() {
     }
     x += w;
   });
-  $('#plChartCap').textContent = t(byPower ? 'plan.chartPower' : 'plan.chartCad', { v: lo === hi ? hi : lo + '–' + hi, u: unit, t: fmtTime(total) });
+  const said = { v: lo === hi ? hi : lo + '–' + hi, u: unit, t: fmtTime(total) };
+  $('#plChartCap').textContent = byPower ? t('plan.chartPower', said) : t('plan.chartCad', said);
 }
 // a picked workout still loading, or one that failed to: no plan ride starts until it is there or another is picked
 const planWaits = () => icuPicked() != null && !Icu.plan;
