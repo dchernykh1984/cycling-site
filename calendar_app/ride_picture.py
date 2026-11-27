@@ -23,6 +23,12 @@ LOGO = 150
 SHADE_FROM = 0.4  # the dark under the words rises from this share of the height down
 SHADE = 0.85
 WHEN_PX, TITLE_PX, FACTS_PX, SMALLEST_PX = 64, 42, 30, 20
+WHEN_WEIGHT, TITLE_WEIGHT, FACTS_WEIGHT = 800, 700, 500
+#: A skin's fonts by their role (skin-<key>-heading, skin-<key>-body) and style, as its stylesheet names them.
+HEADING, BODY = "heading", "body"
+NORMAL, ITALIC = "normal", "italic"
+#: The faces the picture draws with: its day and time in the heading's italic, its title and facts upright.
+FACES = ((HEADING, NORMAL), (BODY, NORMAL), (HEADING, ITALIC))
 WHITE, SOFT, ACCENT = (255, 255, 255), (235, 235, 235), (255, 140, 60)
 QUALITY = 86
 #: How long a line of the picture may be, as a draft brings it.
@@ -50,10 +56,10 @@ def _faces(skin: str, role: str, style: str) -> tuple[tuple[Path, tuple[tuple[in
     for face in _FACE.finditer(css.read_text(encoding="utf-8")):
         body = face["body"]
         family = re.search(r'font-family:\s*"([^"]+)"', body)
-        italic = re.search(r"font-style:\s*italic", body) is not None
+        italic = re.search(rf"font-style:\s*{ITALIC}", body) is not None
         src = re.search(r'src:\s*url\("([^"]+)"\)', body)
         ranges = re.search(r"unicode-range:\s*([^;]+);", body)
-        if not (family and src and ranges) or family[1] != f"skin-{skin}-{role}" or italic != (style == "italic"):
+        if not (family and src and ranges) or family[1] != f"skin-{skin}-{role}" or italic != (style == ITALIC):
             continue
         spans = []
         for part in ranges[1].split(","):
@@ -66,7 +72,7 @@ def _faces(skin: str, role: str, style: str) -> tuple[tuple[Path, tuple[tuple[in
 class _Type:
     """A skin's type at one size and weight: each character drawn from the file that serves it."""
 
-    def __init__(self, skin: str, role: str, size: int, weight: int, style: str = "normal"):
+    def __init__(self, skin: str, role: str, size: int, weight: int, style: str = NORMAL):
         self.size, self.fonts = size, []
         for path, spans in _faces(skin, role, style):
             font = ImageFont.truetype(str(path), size)
@@ -101,7 +107,7 @@ class _Type:
             x += font.getlength(run)
 
 
-def _fitted(skin: str, role: str, px: int, weight: int, text: str, room: int, style: str = "normal") -> _Type:
+def _fitted(skin: str, role: str, px: int, weight: int, text: str, room: int, style: str = NORMAL) -> _Type:
     """The type at px, or smaller down to SMALLEST_PX, so the line fits the room."""
     while True:
         kind = _Type(skin, role, px, weight, style)
@@ -115,10 +121,11 @@ def _clean(line) -> str:
 
 
 def draw(route: str, when: str, title: str, facts: str) -> bytes | None:
-    """The event's picture as a JPEG, or None where the route has no view or the skin no logo and fonts."""
+    """The event's picture as a JPEG, or None where the route has no view or the skin no logo or one of the faces it
+    draws with (FACES: a skin without its heading's italic made a page fail, and with it the event being saved)."""
     view, skin = view_of(route), settings.RIDE_PICTURE_SKIN
     logo = Path(settings.BASE_DIR) / "skins" / skin / "img" / "logo.png"
-    if view is None or not logo.is_file() or not all(_faces(skin, role, "normal") for role in ("heading", "body")):
+    if view is None or not logo.is_file() or not all(_faces(skin, role, style) for role, style in FACES):
         return None
     when, title, facts = _clean(when), _clean(title), _clean(facts)
     picture = Image.open(view).convert("RGB").resize((WIDTH, HEIGHT))
@@ -137,13 +144,13 @@ def draw(route: str, when: str, title: str, facts: str) -> bytes | None:
     d, room = ImageDraw.Draw(picture), WIDTH - 2 * PAD
     y = HEIGHT - PAD
     if facts:
-        _fitted(skin, "body", FACTS_PX, 500, facts, room).draw(d, PAD, y, facts, SOFT)
+        _fitted(skin, BODY, FACTS_PX, FACTS_WEIGHT, facts, room).draw(d, PAD, y, facts, SOFT)
         y -= FACTS_PX + 22
     if title:
-        _fitted(skin, "heading", TITLE_PX, 700, title, room).draw(d, PAD, y, title, ACCENT)
+        _fitted(skin, HEADING, TITLE_PX, TITLE_WEIGHT, title, room).draw(d, PAD, y, title, ACCENT)
         y -= TITLE_PX + 24
     if when:
-        _fitted(skin, "heading", WHEN_PX, 800, when, room, "italic").draw(d, PAD, y, when, WHITE)
+        _fitted(skin, HEADING, WHEN_PX, WHEN_WEIGHT, when, room, ITALIC).draw(d, PAD, y, when, WHITE)
     out = io.BytesIO()
     picture.save(out, "JPEG", quality=QUALITY, optimize=True, progressive=True)
     return out.getvalue()
