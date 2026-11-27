@@ -534,7 +534,10 @@ if cfg.get("out_and_back"):
             raise SystemExit(f"the way out never comes within {END_M:.0f} m of its end {cfg['end']}")
         far = min(range(first, min(len(line), first + 10)), key=lambda i: dist(line[i], end_at))
         rides = [i for i, r in enumerate(laps[0]) if r["lat"] is not None]
-        up = laps[0][: next(i for i in rides if dist(xy(laps[0][i]["lat"], laps[0][i]["lon"]), end_at) < END_M) + 1]
+        reach = next((i for i in rides if dist(xy(laps[0][i]["lat"], laps[0][i]["lon"]), end_at) < END_M), None)
+        if reach is None:  # the matched road came there, the ride itself never did: a StopIteration said nothing
+            raise SystemExit(f"the ride never comes within {END_M:.0f} m of its end {cfg['end']}")
+        up = laps[0][: reach + 1]
     f = (begin - cum[k]) / (cum[k + 1] - cum[k])
     there = [(line[k][0] + (line[k + 1][0] - line[k][0]) * f, line[k][1] + (line[k + 1][1] - line[k][1]) * f)]
     there += line[k + 1 : far + 1]
