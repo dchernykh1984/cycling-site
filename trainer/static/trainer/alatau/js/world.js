@@ -129,8 +129,9 @@ function buildWorld(route) {
   const cDry = new THREE.Color(0xa49b67), cMeadow = new THREE.Color(0x8b8e58); // the steppe: dry grass, and greener hollows
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i), n = nearest(T, x, z), h = edgeLand(T, x, z, terrainH(T, x, z), x0, x1, z0, z1); pos.setY(i, h);
+    // a gorge's snow lies where the far relief's does, from 3250 to 3650 m: from 2900 m the Cosmostation stood in it in June
     const nz2 = fbm(x * .01, z * .01, 3);
-    if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); if (h > 2900) tmp.lerp(cSnow, clamp((h - 2900) / 300, 0, 1)); }
+    if (gorge) { const rise = h - n.y; tmp.copy(cForest).lerp(cGrass, clamp(1 - n.d / 120, 0, 1) * .6).lerp(cRock, clamp((rise - 250) / 350, 0, 1) * .8 + nz2 * .15); const snowline = 3250 + nz2 * 400; if (h > snowline) tmp.lerp(cSnow, clamp((h - snowline) / 300, 0, 1)); }
     else if (steppe) tmp.copy(cDry).lerp(cMeadow, clamp(fbm(x * .0012, z * .0012, 3) * 1.6 - .45, 0, 1) * .85).lerp(cDust, clamp(1 - (n.d - W) / 30, 0, 1) * .5 + nz2 * .12);
     else tmp.copy(cGrass).lerp(cDust, clamp(1 - (n.d - W) / 60, 0, 1) * .7 + nz2 * .3);
     cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
