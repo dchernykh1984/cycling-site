@@ -915,7 +915,8 @@ def race_events(request):
     if not roles.at_least(request.auth, roles.MANAGE_ALL_EVENTS):
         events = events.filter(submitted_by=request.auth)
     chosen = [e for e in events.distinct().order_by("date_start", "pk")[:100] if race.can_tie(request.auth, e)]
-    return [RaceEventChoiceOut(**_event_out(e).dict(), date_start=e.date_start) for e in chosen]
+    registered = race.registered_for(request.auth, {e.pk for e in chosen})
+    return [RaceEventChoiceOut(**_event_out(e, e.pk in registered).dict(), date_start=e.date_start) for e in chosen]
 
 
 def _enter(group: GroupRide, user, quiet: bool = False) -> None:

@@ -120,7 +120,12 @@ class MakingARaceTests(RaceTestCase):
 
     def test_the_organizer_s_list_of_events_holds_their_own_to_come(self):
         mine = self.client_of(self.organizer).get(f"{API}/events").json()
-        self.assertEqual([e["id"] for e in mine], [self.event.pk])
+        self.assertEqual([(e["id"], e["registered"]) for e in mine], [(self.event.pk, False)])
+        make_registration(
+            self.event, user=self.organizer, category=self.elite, first_name="Organizer", last_name="Rider"
+        )
+        mine = self.client_of(self.organizer).get(f"{API}/events").json()
+        self.assertEqual([(e["id"], e["registered"]) for e in mine], [(self.event.pk, True)])
         self.assertEqual(self.client_of(_member("someone")).get(f"{API}/events").json(), [])
 
 
