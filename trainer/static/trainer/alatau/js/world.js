@@ -442,8 +442,11 @@ function addFills(grp, T, W, ground, onRoad, onOnward, shoulder) {
             const q = at(d), y = top - (d - from) / FILL_SLOPE, g = ground(q.x, q.z), gap = routeGap(T, q.x, q.z);
             if (g >= y) end = { x: q.x, y: g, z: q.z };
             else if (gap < d - 1) {
-              const n = routeNearest(T, q.x, q.z), theirs = n.y - .05 - Math.max(0, gap - W / 2) / FILL_SLOPE;
-              if (gap <= W / 2) end = { x: q.x, y: Math.min(y, n.y - .05), z: q.z };
+              // another stretch's, not this one's own on the inside of its bend, nearer than straight out
+              const n = routeNearest(T, q.x, q.z), along = Math.abs(n.s - s), own = (T.loop ? Math.min(along, T.L - along) : along) < 2 * d + W;
+              const theirs = n.y - .05 - Math.max(0, gap - W / 2) / FILL_SLOPE;
+              if (own) { /* on: out to the land */ }
+              else if (gap <= W / 2) end = { x: q.x, y: Math.min(y, n.y - .05), z: q.z };
               else if (theirs >= y) end = { x: q.x, y, z: q.z };
             }
             if (!end && d + 1 > from + FILL_MAX_M) end = { x: q.x, y: g, z: q.z };
