@@ -504,6 +504,23 @@ def test_a_refusal_to_gather_a_ride_for_the_calendar_stays_in_the_status_line(pa
 
 
 @pytest.mark.django_db(transaction=True)
+def test_a_second_press_before_the_first_is_answered_asks_the_site_nothing(page: Page, live_server):
+    _trainer_in_its_menu(page, live_server)
+    asked = page.evaluate(
+        """async () => {
+            MP.status = 'on'; MP.groups = []; mpSchedule = () => {};
+            const asked = []; let answer;
+            Site.post = path => { asked.push(path); return new Promise(done => { answer = done; }); };
+            const first = mpAction('/groups/9/leave');
+            await mpAction('/groups/9/leave'); // pressed again while the first is on its way
+            answer({}); await first;
+            return asked;
+        }"""
+    )
+    assert asked == ["/groups/9/leave"]
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_refusal_stays_in_the_lobby_s_status_line_while_it_is_drawn_again(page: Page, live_server):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(
