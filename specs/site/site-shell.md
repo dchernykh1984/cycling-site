@@ -277,8 +277,9 @@ thousandth of a degree fine over its whole scenery, and only a gorge on a map wi
 Outside a tunnel's cutting the ground as drawn keeps 10 cm under the road and what lies beside it: where a plane of
 it leaning on a wall would rise over them, its vertices go down as far. What a route carries from OpenStreetMap
 stands round it: the
-buildings with their heights and, where known, colours; the roads it meets and passes, on the ground and rising onto
-its road where they meet it, under it where they cross; footbridges and road bridges over it, clear of its road on
+buildings with their heights and, where known, colours; the roads it meets and passes, on the ground -- never under
+a fold of it between their points -- and rising onto its road where they meet it (not down a tunnel's ramp, nor to
+the valley drawn on past a finish), under it where they cross; footbridges and road bridges over it, clear of its road on
 piers beside it, the roads onto a road bridge climbing onto its deck up ramps between retaining walls; roads
 under it down a cutting between walls; parapets along its own bridges; its tunnels, the road
 down a ramp between walls under a roof the crossing street runs over, closed at each portal by its face and the

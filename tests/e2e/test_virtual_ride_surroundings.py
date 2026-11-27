@@ -88,6 +88,44 @@ def test_a_road_the_route_meets_lies_under_its_road_where_they_cross(page: Page,
 
 
 @pytest.mark.django_db(transaction=True)
+def test_the_roads_round_the_route_lie_on_the_land_not_under_it(page: Page, live_server):
+    # a stretch between two points of a road crossed a fold of the land drawn -- its planes tens of metres wide --
+    # and went under it, by up to 6 m on Medeu's slopes; a road beside a tunnel's ramp or by the valley drawn on past
+    # Medeu's finish was pulled down to them. Inside every triangle of the roads' mesh: at most half a metre under,
+    # at one point in a hundred
+    faults = _faults(
+        page,
+        live_server,
+        """
+        const land = kids.find(m => m.isMesh && m.geometry.type === 'PlaneGeometry' && m.material.vertexColors);
+        const roads = kids.find(m => m.isMesh && m.name === 'roads');
+        if (!roads) return;
+        out.push('seen:' + r.id);
+        const g = land.geometry; g.computeBoundingBox();
+        const b = g.boundingBox, drawn = groundOf(g.attributes.position, b.min.x, b.min.z, b.max.x, b.max.z,
+          g.parameters.widthSegments, g.parameters.heightSegments);
+        const p = roads.geometry.attributes.position, idx = roads.geometry.index.array;
+        let all = 0, under = 0, worst = 0;
+        for (let t = 0; t < idx.length; t += 3) {
+          for (const [u, v] of [[.33, .33], [.6, .2], [.2, .6]]) {
+            const w = 1 - u - v, at = k => [p.getX(idx[t + k]), p.getY(idx[t + k]), p.getZ(idx[t + k])];
+            const [a, c, d] = [at(0), at(1), at(2)];
+            const mix = j => a[j] * w + c[j] * u + d[j] * v, x = mix(0), y = mix(1), z = mix(2);
+            if (x <= b.min.x || x >= b.max.x || z <= b.min.z || z >= b.max.z) continue;
+            all++;
+            const deep = drawn(x, z) - y;
+            if (deep > .02) { under++; worst = Math.max(worst, deep); }
+          }
+        }
+        if (worst > .6 || under > all / 100) {
+          out.push(r.id + ': ' + under + ' of ' + all + ', down to ' + worst.toFixed(2) + ' m');
+        }
+        """,
+    )
+    assert not faults, faults
+
+
+@pytest.mark.django_db(transaction=True)
 def test_a_bridge_over_the_route_clears_its_road_and_stands_beside_it(page: Page, live_server):
     faults = _faults(
         page,
