@@ -7,6 +7,11 @@ config (JSON):
   start                     [lat, lon] of the start line, or null: the loop then begins at the lap's first pass
   out                       the JSON written: the route's points and what stands round it
   near                      optional {buildings, roads, lines, water, trees} distances in metres
+  out_and_back              optional true: the lap rides out to a far point and back the same road (a climb to a
+                            pass and down): the route is the way out alone, from 20 m before the start line to its
+                            farthest point, its heights the barometer's on the way out (turn_on_road.py lays the
+                            way back and its turns) -- by place along the lap they took the way back's for the way
+                            out's, hundreds of metres apart on a mountain road
   against_oneway            optional true: the course rides one-way carriageways against their direction (the
                             one closed to it -- the Institute of Nuclear Physics' does the Alatau road's both
                             ways), so a lap is matched to the carriageway it was ridden on, whichever way it runs
@@ -18,6 +23,7 @@ mean track. Heights: the barometer, each lap's mean taken off, the laps averaged
 (+ right), smoothed over 30 m, used where the road turns and the right lane elsewhere.
 """
 
+import itertools
 import json
 import math
 import sys
@@ -506,9 +512,78 @@ print(
     file=sys.stderr,
 )
 
+loop = True
+RADIUS_MIN = 6.0  # metres: the road's middle round a hairpin, its rider 2 m inside it
+GRADE_TURN = 1.0  # points of grade in 10 m: the trainer's resistance turns smoothly, the tests take 1.5
+if cfg.get("out_and_back"):
+    # the way out: from 20 m before the start line, put there, to the point furthest from it
+    _, s_start, _ = project(xy(*cfg["start"]), bearing=cfg.get("start_bearing"))
+    begin = (s_start - 20) % LEN
+    far = max(range(len(line)), key=lambda i: dist(line[i], line[0]))
+    k = max(i for i in range(far) if cum[i] <= begin)
+    up = laps[0][: max(range(len(laps[0])), key=lambda i: dist(xy(laps[0][i]["lat"], laps[0][i]["lon"]), line[0]))]
+    f = (begin - cum[k]) / (cum[k + 1] - cum[k])
+    there = [(line[k][0] + (line[k + 1][0] - line[k][0]) * f, line[k][1] + (line[k + 1][1] - line[k][1]) * f)]
+    there += line[k + 1 : far + 1]
+    keep = [-1, *range(k + 1, far + 1)]  # each point's index on the lap's line, the first put between two of them
+    # a corner whose rounding came out uneven -- a hairpin's two roundings met, a turn of 36 degrees in a metre and a
+    # half (the Cosmostation's to Big Almaty Lake) -- evened out: a point turning tighter than RADIUS_MIN moves half
+    # way to the middle of its neighbours, until none does
+    for _ in range(300):
+        moved = False
+        for i in range(1, len(there) - 1):
+            a, b, c = there[i - 1], there[i], there[i + 1]
+            turn = abs(ang(math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(b[1] - a[1], b[0] - a[0])))
+            if turn > (dist(a, b) + dist(b, c)) / 2 / RADIUS_MIN:
+                mid = ((a[0] + c[0]) / 2, (a[1] + c[1]) / 2)
+                there[i] = ((b[0] + mid[0]) / 2, (b[1] + mid[1]) / 2)
+                moved = True
+        if not moved:
+            break
+    # heights: the barometer on the way out, each point's from the record nearest it, the records taken in order
+    up = [r for r in up if r["alt"] is not None]
+    hs_out, j = [], 0
+    for q in there:  # the next kilometre of the ride, however long it stood still (at the lake, at the top)
+        end = j
+        while end + 1 < len(up) and up[end + 1]["dist"] - up[j]["dist"] < 1000:
+            end += 1
+        j = min(range(j, end + 1), key=lambda i: dist(xy(up[i]["lat"], up[i]["lon"]), q))
+        hs_out.append(up[j]["alt"])
+    for _ in range(3):  # smoothed over about 60 m: the points are 20 m apart
+        hs_out = [sum(hs_out[max(0, i - 1) : i + 2]) / len(hs_out[max(0, i - 1) : i + 2]) for i in range(len(hs_out))]
+    # and where the grade still turns sharply -- the barometer's foot of a descent, a ramp off a bridge -- only there,
+    # a point at a time, until it changes by at most GRADE_TURN points in 10 m: the rest keeps the barometer's shape
+    spans = [dist(a, b) or 1.0 for a, b in itertools.pairwise(there)]
+    for _ in range(400):
+        sharp = [
+            i
+            for i in range(1, len(hs_out) - 1)
+            if abs((hs_out[i + 1] - hs_out[i]) / spans[i] - (hs_out[i] - hs_out[i - 1]) / spans[i - 1]) * 1000
+            > GRADE_TURN * (spans[i - 1] + spans[i]) / 2
+        ]
+        if not sharp:
+            break
+        for i in sharp:  # half way to the line between its neighbours
+            line_h = (hs_out[i - 1] * spans[i] + hs_out[i + 1] * spans[i - 1]) / (spans[i - 1] + spans[i])
+            hs_out[i] = (line_h + hs_out[i]) / 2
+    first = out_pts[k][3]
+    out_pts = [
+        [round(ll(q)[0], 6), round(ll(q)[1], 6), round(h, 1), out_pts[i][3] if i >= 0 else first]
+        for q, h, i in zip(there, hs_out, keep, strict=True)
+    ]
+    wgt = [wgt[i] if i >= 0 else 0.0 for i in keep]
+    line = there
+    thin = [out_pts[0]]
+    for i in range(1, len(out_pts)):
+        prev = thin[-1]
+        if abs(wgt[i]) > 0.05 or dist(xy(prev[0], prev[1]), line[i]) >= 19 or i == len(out_pts) - 1:
+            thin.append(out_pts[i])
+    loop = False
+    print(f"the way out: {len(thin)} points, {thin[0][2]:.0f}..{max(p[2] for p in thin):.0f} m", file=sys.stderr)
+
 route = {
     "pts": thin,
-    "loop": True,
+    "loop": loop,
     "width": WIDTH,
     "lanes": LANES,
     "oneway": ONEWAY,

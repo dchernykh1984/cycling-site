@@ -4,7 +4,8 @@ cone -- a loop ridden lap after lap -- and the road going on past each turn as O
 python -I turn_on_road.py map.js osm.json route_id
 
 - the turns: the route's loop round at its far end (the shortest stretch from a point back to that same point) -- or,
-  a route out to a point and straight back the same road, that point, its way back then the way there reversed -- and
+  a route out to a point and straight back the same road, that point (a way out alone, build_route.py's out_and_back:
+  its last point), its way back then the way there reversed -- and
   the one turn_at_start.py put after its last point, or none there, become turns on the road where each reached: the
   way there keeps the road's middle to SHIFT_M before the turn, then moves to where its rider rides as the rider's
   line (each point's fourth value) comes to the middle -- the rider drifting from their lane to the road's edge --;
@@ -56,7 +57,8 @@ def same(a, b):
 
 
 # the way back reaches the start again at the last point equal to the first; what follows is the turn put there
-back_home = max(i for i in range(1, len(pts)) if same(pts[i], pts[0]))
+homes = [i for i in range(1, len(pts)) if same(pts[i], pts[0])]
+back_home = max(homes) if homes else len(pts) - 1  # a way out alone (build_route.py's out_and_back) comes back to none
 pts = pts[: back_home + 1]
 pairs = [(a, b) for a in range(1, len(pts) - 1) for b in range(a + 3, min(len(pts) - 1, a + 200))]
 
@@ -104,7 +106,7 @@ ROUND = round_the_turn()
 TURN_M = SHIFT_M + max(a for a, _ in ROUND)  # from where the way there leaves the road's middle to the turn's far point
 
 
-loops = [(a, b) for a, b in pairs if same(pts[a], pts[b])]
+loops = [(a, b) for a, b in pairs if same(pts[a], pts[b])] if homes else []  # a way out alone turns at its end
 
 
 def cut_before(i, metres):
@@ -123,8 +125,8 @@ def cut_before(i, metres):
 
 if loops:
     k1, k2 = min(loops, key=lambda ab: ab[1] - ab[0])
-else:  # out to its farthest point and back: the way back is the way there reversed, the turn reaching that point
-    top = max(range(len(pts)), key=lambda i: math.dist(xy(pts[i]), xy(pts[0])))
+else:  # out to its farthest point and back -- a way out alone to its end --: the way back is the way there reversed
+    top = max(range(len(pts)), key=lambda i: math.dist(xy(pts[i]), xy(pts[0]))) if homes else len(pts) - 1
     there = cut_before(top, TURN_M + REACH_M)
     pts = [*there, *there[::-1][1:]]
     k1 = k2 = len(there) - 1
