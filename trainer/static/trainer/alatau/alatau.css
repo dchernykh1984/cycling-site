@@ -229,7 +229,6 @@ button{cursor:pointer}
 .hist li.empty{display:block;color:var(--muted)}
 .newrec{background:color-mix(in srgb,var(--amber) 18%,transparent);border:1px solid var(--amber);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px}
 .newrec ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
-#btnRecords{margin:-8px 0 4px}
 .res li.me{background:color-mix(in srgb,var(--apple) 18%,transparent)}
 .row2{display:flex;gap:8px;margin-top:16px}
 .row2 .btn{flex:1}
