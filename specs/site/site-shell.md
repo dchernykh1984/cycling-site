@@ -271,7 +271,8 @@ a first visit, or a remembered route no map has any more, starts on the first ma
 route's key is its own across every map and stays as it is: the members' saved rides and group races
 keep it. The objects the sights are built from are shared by every map, a file each in `objects/`,
 named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the
-page too; a new kind of sight is its object's file and that line. A gorge's road lies on a shelf: where the land
+page too; a new kind of sight is its object's file and that line. A building sight stands as one block or as its
+OpenStreetMap parts, each its own height and colours (the Almaty Museum of Arts by Granfondo 2026's start). A gorge's road lies on a shelf: where the land
 beside it falls away it stands on a slope down to the land from its shoulder's edge -- or, toward another stretch of a serpentine, down to that
 one's slope or its edge, never ending in the air --, grass as the slopes round it, earthier at the road's edge; a road ridden
 out and back keeps its shoulders. A gorge's land is grass, stone from 2600 to 2800 m and snow from 3000 m, white from

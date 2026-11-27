@@ -195,6 +195,21 @@ class MapsTests(SimpleTestCase):
                 self.assertTrue(-90 <= sight["lat"] <= 90 and -180 <= sight["lon"] <= 180, sight["type"])
                 self.assertGreater(sight["r"], 0, sight["type"])
 
+    def test_a_building_of_parts_has_each_part_s_outline_height_and_colours(self):
+        # the Almaty Museum of Arts on Granfondo: OpenStreetMap's building:part, limestone and aluminium, 3 to 12 m
+        parts = [
+            sight
+            for data in trainer_page.maps().values()
+            for sight in data.get("landmarks", [])
+            if sight["type"] == "building" and "parts" in sight
+        ]
+        self.assertIn("Almaty Museum of Arts", [s["name"]["en"].removeprefix("the ") for s in parts])
+        for sight in parts:
+            for part in sight["parts"]:
+                self.assertGreaterEqual(len(part["outline"]), 3)
+                self.assertGreater(part["h"], 0)
+                self.assertRegex(part["c"], r"^#[0-9a-f]{6}$")
+
     def test_a_route_s_key_is_its_own_across_every_map_and_one_the_site_takes(self):
         keys = [route["id"] for route in _routes()]
         self.assertEqual(len(keys), len(set(keys)))
