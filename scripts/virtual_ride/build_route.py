@@ -7,6 +7,9 @@ config (JSON):
   start                     [lat, lon] of the start line, or null: the loop then begins at the lap's first pass
   out                       the JSON written: the route's points and what stands round it
   near                      optional {buildings, roads, lines, water, trees} distances in metres
+  against_oneway            optional true: the course rides one-way carriageways against their direction (the
+                            one closed to it -- the Institute of Nuclear Physics' does the Alatau road's both
+                            ways), so a lap is matched to the carriageway it was ridden on, whichever way it runs
 
 The road is the OSM ways the median lap ran on (map-matched with Viterbi: distance, direction, one-way, class and
 continuity), corners rounded to the road's width, gaps OSM does not cover (a turn across a median) from the laps' own
@@ -138,7 +141,7 @@ def candidates(i):
         if d > 25:
             continue
         turn = abs(ang(math.atan2(dy, dx) - h))
-        if oneway(w["tags"]) and turn > math.pi / 2:
+        if oneway(w["tags"]) and turn > math.pi / 2 and not cfg.get("against_oneway"):
             continue
         off = min(turn, math.pi - turn)
         cost = (d / SIGMA) ** 2 / 2 + 6 * off * off + RIDE_CLASSES[w["tags"]["highway"]]
