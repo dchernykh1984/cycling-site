@@ -22,9 +22,11 @@ async function mpShare(g) {
 }
 // A link names a ride or a race: a page set to a workout, which gathers neither, turns once to the mode that rides it
 function mpFollowLink() {
-  const g = LINKED && !MP.linkFollowed && settings.mode === 'plan' && MP.groups.find(x => x.id === LINKED);
+  const g = LINKED && !MP.linkFollowed && MP.groups.find(x => x.id === LINKED);
   if (!g) return;
-  MP.linkFollowed = true; settings.mode = (g.kind || 'race') === 'ride' ? 'free' : 'race'; saveSettings(); renderPlanEditor();
+  MP.linkFollowed = true; // once, the first time it is listed: a mode picked after it is the member's
+  if (settings.mode !== 'plan') return;
+  settings.mode = (g.kind || 'race') === 'ride' ? 'free' : 'race'; saveSettings(); renderPlanEditor();
 }
 // a linked race that is not open any more says why, once
 async function mpCheckLink() {
