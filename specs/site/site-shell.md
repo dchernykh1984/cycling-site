@@ -257,8 +257,10 @@ each a key, a name and a description, the points (latitude, longitude, height in
 is a loop, the road's width and lanes (one lane, a racetrack's, has no centre line), the scenery drawn along it
 (`city`, `gorge`, `steppe`, or `racetrack`: the steppe with no tree along its edges), its own buildings, barriers and
 trees when it has them (footprints with a height; a guardrail and a catch fence a gap beyond each edge, broken at the
-buildings; rows and woods, in the steppe or on a racetrack, instead of trees scattered at random -- all as
-OpenStreetMap maps them) and the way and the finish
+buildings; rows and woods instead of trees scattered at random -- in a gorge only when its woods carry their leaves,
+spruces, broadleaved or mixed, the others spruces in the spruce belt -- all as OpenStreetMap maps them), its traffic
+lights (always green for its riders), a mountain road's guardrails from one place to another (black and white, over
+the drops, none across a road meeting it) with chevrons at its hairpins, and the way and the finish
 an event on it is written round (`event`); and the
 sights along them, each the object it is built from, a name, a place and the room it takes -- a route
 passes its own map's sights only. Every name is in ru, kk and en. The page lists each map's file, a
@@ -268,7 +270,10 @@ a first visit, or a remembered route no map has any more, starts on the first ma
 route's key is its own across every map and stays as it is: the members' saved rides and group races
 keep it. The objects the sights are built from are shared by every map, a file each in `objects/`,
 named after the object it adds (`addObject('<type>', build)`, `js/landmarks.js`), and listed by the
-page too; a new kind of sight is its object's file and that line.
+page too; a new kind of sight is its object's file and that line. A gorge's road lies on a shelf: where the land
+beside it falls away it stands on a fill of earth down to the land, coloured as the land at its height; a road ridden
+out and back keeps its shoulders. A gorge's land is grass, stone from 2600 to 2800 m and snow from 3000 m, white from
+3200 m.
 A route may come back onto road it rode -- out to a turn and back along one road, round a loop of a turn: that
 road is drawn once, each way in its own lane, and a route that ends where it starts finishes on its start's line,
 under one arch for both; turned round on its road at its start as at its far end -- from edge to edge, its
