@@ -894,6 +894,14 @@ def _ride_alone(page: Page) -> list[str]:
     return errors
 
 
+def test_a_rider_past_the_end_of_a_route_faces_its_way_not_south(page: Page):
+    # a finisher rolling on past a route's end turned to face south: the points a metre either side of them met there
+    errors = _ride_alone(page)
+    faced = page.evaluate("() => riderHeading(Object.assign({}, me, { s: world.T.L + 5 }))")
+    assert faced == pytest.approx(math.pi), faced  # the flat road runs north, as its last point says
+    assert not errors, errors
+
+
 def test_the_ride_rides_without_the_page_the_scene_or_the_devices(page: Page):
     errors = _ride_alone(page)
     ridden = page.evaluate(
