@@ -916,6 +916,9 @@ def create_group(request, payload: GroupIn):
         )
         # a race with protocols takes its host as a rider only when they are registered for the event
         _enter(group, request.auth, quiet=True)
+        # and its event's page opens it, as an event made from the race on the page does (Competition.virtual_ride)
+        if event is not None:
+            Competition.objects.filter(pk=event.pk, virtual_ride__isnull=True).update(virtual_ride=group.pk)
     return Status(HTTPStatus.CREATED, _group_out(group, request.auth))
 
 

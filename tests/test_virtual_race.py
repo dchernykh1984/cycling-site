@@ -82,6 +82,12 @@ class MakingARaceTests(RaceTestCase):
         self.assertEqual((body["mode"], body["itt_interval_s"], body["draft_between_groups"]), ("itt", 45, False))
         # the organizer is not registered: they host the race without riding it
         self.assertEqual((body["is_host"], body["is_member"], body["members"]), (True, False, []))
+        # the event's page opens it, as one made from the race on the page does; a second race leaves that link be
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.virtual_ride, body["id"])
+        self.make(start_in_s=7200)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.virtual_ride, body["id"])
 
     def test_nobody_else_ties_a_race_to_the_event_and_an_admin_ties_one_to_any(self):
         other = _member("other", User.Role.ORGANIZER)
