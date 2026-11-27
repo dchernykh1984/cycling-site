@@ -5919,8 +5919,8 @@ msgid "The virtual ride page sets it, and it cannot be changed."
 msgstr "Её задаёт страница виртуального заезда, изменить её нельзя."
 
 #: calendar_app/templates/calendar_app/detail.html
-msgid "Open the ride"
-msgstr "Открыть заезд"
+msgid "Go to the virtual ride"
+msgstr "Перейти к виртуальному заезду"
 
 #: calendar_app/templates/calendar_app/submit.html
 msgid "The ride's picture below is attached when the event is saved, unless you choose a picture of your own."

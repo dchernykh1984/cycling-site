@@ -173,7 +173,7 @@ that route at that minute) and sends the whole window to the event form filled f
 "Road Race" or "Individual Time Trial" for a race by its mode; the route's start as its venue in the virtual world
 -- "Virtual world: start of the route ...", so that nobody comes there to meet -- the one so named within 100 m of it,
 else one proposed then under the nearest public city (public for an organizer, awaiting review for anyone else); the
-ride or race itself, which the event's page opens as "Open the ride" and its forms show as its link, set by the site
+ride or race itself, which the event's page opens as "Go to the virtual ride" and its forms show as its link, set by the site
 and never typed (`Competition.virtual_ride`; `virtual_ride_url` in the API), the words "on the ride's page" linking to it
 in the description; the route's track, attached as the event's track file when it is saved unless the member chose a
 file of their own; the ride's picture for a chat's card, 1200 by 630 -- the route's view in the virtual world
