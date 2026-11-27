@@ -52,7 +52,9 @@ the speed never does: that comes from the route's own grade and the power -- and
 rolling resistance of their bike
 and CdA x air density from their height, weight and bike, the numbers the ride moves them by, less
 the share a wake ahead takes), and the scene and the HUD are drawn from the ride's state; what
-happened in the step reaches the page through `rideHooks`. The air's density is the International
+happened in the step reaches the page through `rideHooks`. Without a power source -- a smart trainer or a power
+meter -- the power comes from a wheel or cadence sensor by the trainer type the setup page names (fluid, magnetic,
+rollers; a smart one counts as fluid), and the page says the type matters only then. The air's density is the International
 Standard Atmosphere's at the height of the road under each rider. A rider close behind another, the
 rider and the bots alike, rides in the best wake ahead: the share of the air drag saved follows
 on-site measurements of riders pedalling (Spoelstra et al. 2020: 45 % in line 0.7 m behind the

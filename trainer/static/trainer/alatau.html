@@ -121,12 +121,13 @@
         <option value="2068" data-tyre="26×2.1"></option>
       </select></div>
     <div class="field"><label for="trainer" data-t="trainer.label"></label>
-      <select id="trainer">
+      <select id="trainer" aria-describedby="trainerHint">
         <option value="fluid" selected data-t="trainer.fluid"></option>
         <option value="mag" data-t="trainer.mag"></option>
         <option value="rollers" data-t="trainer.rollers"></option>
         <option value="smart" data-t="trainer.smart"></option>
       </select></div>
+    <p class="hint" id="trainerHint" data-t="trainer.hint"></p>
     <div class="field"><label for="plFront" data-t="bike.front"></label><select id="plFront"></select></div>
     <div class="field hidden" id="plFrontCustomF"><label for="plFrontCustom" data-t="bike.frontCustom"></label><input id="plFrontCustom" placeholder="50-34" inputmode="numeric"></div>
     <div class="field"><label for="plCass" data-t="bike.cass"></label><select id="plCass"></select></div>
