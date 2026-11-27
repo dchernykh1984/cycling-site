@@ -1445,6 +1445,7 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
     """The draft's track, picture and ride for the event made from it (calendar_app.draft): the track and the picture
     unless the member chose a file of their own; the ride or race -- their own, not cancelled -- as the one the event
     is ridden in, and a race, still to come, held by an organizer's event, which registers its riders."""
+    from trainer import race as races
     from trainer.models import GroupRide
 
     track = draft.get("track")
@@ -1459,7 +1460,8 @@ def _apply_draft(draft: dict, comp, user, is_organizer: bool) -> None:
         return
     comp.virtual_ride = ride.pk
     Competition.objects.filter(pk=comp.pk).update(virtual_ride=ride.pk)
-    if is_organizer and ride.kind == GroupRide.Kind.RACE:
+    # held only by an event that registers riders and may hold it -- public and not over -- so that it can be joined
+    if is_organizer and ride.kind == GroupRide.Kind.RACE and comp.registration_enabled and races.can_tie(user, comp):
         GroupRide.objects.filter(pk=ride.pk, competition__isnull=True, start_at__gt=timezone.now()).update(
             competition=comp
         )

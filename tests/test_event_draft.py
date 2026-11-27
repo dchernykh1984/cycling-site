@@ -141,8 +141,10 @@ class VirtualRaceDraftTests(TestCase):
     def form_page(self):
         return self.client.get(reverse("calendar_submit") + "?draft=1")
 
-    def submit(self, key, title="Virtual race"):
-        payload = {"title_ru": title, "date_start": "2026-12-02", "location": str(self.start.pk), "draft_key": key}
+    def submit(self, key, title="Virtual race", registers=False, day="2026-12-02"):
+        payload = {"title_ru": title, "date_start": day, "location": str(self.start.pk), "draft_key": key}
+        if registers:  # registration on the site, as a race's draft ticks it
+            payload["registration_enabled"] = "on"
         return self.client.post(reverse("calendar_submit"), payload)
 
     def chosen(self, **extra):
@@ -323,9 +325,21 @@ class VirtualRaceDraftTests(TestCase):
     def test_the_race_is_held_by_the_event_made_from_its_draft(self):
         race = self.race()
         self.draft(virtual_ride=str(race.pk), registration="1")
-        self.submit(self.form_page().context["draft_key"])
+        self.submit(self.form_page().context["draft_key"], registers=True)
         race.refresh_from_db()
-        self.assertEqual(race.competition, Competition.objects.get(title_ru="Virtual race"))
+        event = Competition.objects.get(title_ru="Virtual race")
+        self.assertTrue(event.registration_enabled)
+        self.assertEqual(race.competition, event)
+
+    def test_an_event_that_registers_nobody_or_is_over_holds_no_race(self):
+        # a race held by them could be joined by no one: joining asks for a registration
+        for title, registers, day in (("No registration", False, "2026-12-02"), ("Over", True, "2020-01-02")):
+            race = self.race()
+            self.draft(virtual_ride=str(race.pk), registration="1")
+            self.submit(self.form_page().context["draft_key"], title=title, registers=registers, day=day)
+            race.refresh_from_db()
+            self.assertTrue(Competition.objects.filter(title_ru=title).exists(), title)
+            self.assertIsNone(race.competition, title)
 
     def test_a_form_opened_otherwise_takes_nothing_of_a_draft_left_over(self):
         race = self.race()
