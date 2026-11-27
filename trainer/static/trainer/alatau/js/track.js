@@ -97,16 +97,17 @@ function ridden(X, Z, D, L, loop, W) {
 }
 // A stretch on a narrower road than the route's (narrow.py's "narrow", [[point, point, width, lanes]] -- Granfondo
 // 2026's frontage roads and their crossing over Al-Farabi at its near turn): the road's half width at each sample,
-// eased over NARROW_EASE_M at each end; null for a route with none
+// eased over NARROW_EASE_M at each end, and its lanes (T.halfLanes); null for a route with none
 const NARROW_EASE_M = 20;
 function narrowHalves(T, r) {
   if (!r.narrow) return null;
   const out = new Float32Array(T.N).fill(r.width / 2);
-  r.narrow.forEach(([i0, i1, w]) => {
+  T.halfLanes = new Uint8Array(T.N).fill(r.lanes);
+  r.narrow.forEach(([i0, i1, w, lanes]) => {
     const s0 = T.ptS[i0], s1 = T.ptS[i1];
     for (let i = 0; i < T.N; i++) {
-      const s = T.D[i], k = s < s0 ? (s0 - s) / NARROW_EASE_M : s > s1 ? (s - s1) / NARROW_EASE_M : 0;
-      if (k < 1) out[i] = Math.min(out[i], w / 2 + (r.width - w) / 2 * k * k * (3 - 2 * k));
+      const s = T.D[i], k = s < s0 ? (s0 - s) / NARROW_EASE_M : s > s1 ? (s - s1) / NARROW_EASE_M : 0, h = w / 2 + (r.width - w) / 2 * k * k * (3 - 2 * k);
+      if (k < 1 && h < out[i]) { out[i] = h; T.halfLanes[i] = lanes; }
     }
   });
   return out;

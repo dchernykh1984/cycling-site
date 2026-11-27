@@ -228,10 +228,12 @@ function buildWorld(route) {
   // a stretch on a narrower road (T.half): its own width, marked for its own lanes, the switch half way through its ease
   const narrowest = T.half ? Math.min(...T.half) : W / 2, half = i => T.half ? T.half[i] : W / 2, thin = i => T.half != null && T.half[i] < (W / 2 + narrowest) / 2;
   ribbon(i => -half(i), half, .06, roadMat, 9, i => onOnward(i) || (thin(i) && thin(i - 1)));
-  if (T.half) {
-    const narrowTex = roadTexture(route.narrow[0][3], route.oneway); narrowTex.wrapS = THREE.ClampToEdgeWrapping; narrowTex.wrapT = THREE.RepeatWrapping;
-    ribbon(i => -half(i), half, .06, new THREE.MeshLambertMaterial({ map: narrowTex }), 9, i => onOnward(i) || (!thin(i) && !thin(i - 1)));
-  }
+  // each narrow stretch marked for its own lanes
+  new Set(route.narrow ? route.narrow.map(n => n[3]) : []).forEach(lanes => {
+    const tex = roadTexture(lanes, route.oneway); tex.wrapS = THREE.ClampToEdgeWrapping; tex.wrapT = THREE.RepeatWrapping;
+    const mine = i => thin(i) && T.halfLanes[i] === lanes;
+    ribbon(i => -half(i), half, .06, new THREE.MeshLambertMaterial({ map: tex }), 9, i => onOnward(i) || (!mine(i) && !mine(i - 1)));
+  });
   // what lies beside the road on each side: as wide as the land the route leaves -- half the strip between a dual
   // carriageway's two halves -- broken where a road round it meets it
   const room = roomBeside(T, W), onRoad = roadsNear(T, route.roads), o2 = {};
