@@ -931,8 +931,11 @@ def join_group(request, group_id: int):
 @router.post("/groups/{group_id}/leave", response=GroupOut, auth=member_auth, summary="Leave a group race")
 def leave_group(request, group_id: int):
     """A host who leaves hands the race to the rider who joined next; alone in it, they cancel it. A race with
-    protocols stays its maker's, and keeps the bib of a rider who leaves for them."""
-    _open_group(group_id)
+    protocols stays its maker's, and keeps the bib of a rider who leaves for them. A time trial under way keeps its
+    order: a rider who left it would move every later rider's start."""
+    opened = _open_group(group_id)
+    if opened.mode == GroupRide.Mode.ITT and opened.start_at <= timezone.now():
+        raise HttpError(HTTPStatus.CONFLICT, _("This group race has already started"))
     with transaction.atomic():
         group = GroupRide.objects.select_for_update().get(pk=group_id)
         gone = GroupRideMember.objects.filter(group=group, user=request.auth).first()

@@ -417,6 +417,17 @@ class GroupRaceTests(MemberClientMixin, TestCase):
         places = dict(VirtualRide.objects.filter(group_id=group_id).values_list("user_id", "place"))
         self.assertEqual(places, {self.guest.pk: 1, self.host.pk: 2})
 
+    def test_a_time_trial_under_way_keeps_its_order(self):
+        # a rider gone from it would bring every later rider's start forward, some into the past
+        trial = GroupRide.objects.create(
+            route="center", host=self.host, mode=GroupRide.Mode.ITT, start_at=timezone.now() - timedelta(seconds=5)
+        )
+        for user in (self.host, self.guest):
+            GroupRideMember.objects.create(group=trial, user=user)
+        left = self.post(self.client_h, f"/groups/{trial.pk}/leave")
+        self.assertEqual(left.status_code, 409)
+        self.assertEqual(trial.memberships.count(), 2)
+
     def test_a_ride_together_names_no_winner(self):
         group_id = self.create(kind="ride").json()["id"]
         self.post(self.client_g, f"/groups/{group_id}/join")
