@@ -41,11 +41,16 @@ function buildTrack(r) {
   }
   const C = { x: Float32Array.from(cx), z: Float32Array.from(cz), y: Float32Array.from(cy), d: Float32Array.from(cd) };
   const L = D[N - 1], { again, over } = ridden(X, Z, D, L, !!r.loop, r.width || 8);
-  // where each of the route's points lies along it: its bridges and tunnels are stretches between two of them
-  const ptS = new Float64Array(v.length);
+  // where each of the route's points lies along it: its bridges and tunnels are stretches between two of them. The
+  // first time the route passes it: one that passes a place again later -- a loop turned back at its start comes back
+  // onto its first point -- put the points of that turn at its very end, and their rider's line with them
+  const ptS = new Float64Array(v.length), PASSED = 9; // within 3 m: the curve runs through every point, 4 m a sample
   for (let k = 0, j = 0; k < v.length; k++) {
     let best = Infinity, bj = j;
-    for (let m = j; m < Math.min(N, j + 600); m++) { const d = (X[m] - v[k].x) ** 2 + (Z[m] - v[k].z) ** 2; if (d < best) { best = d; bj = m; } }
+    for (let m = j; m < Math.min(N, j + 600); m++) {
+      const d = (X[m] - v[k].x) ** 2 + (Z[m] - v[k].z) ** 2;
+      if (d < best) { best = d; bj = m; } else if (best < PASSED) break;
+    }
     ptS[k] = D[bj]; j = bj;
   }
   // a point's fourth value is the rider's line: metres right of the road's middle, the source track's way through
