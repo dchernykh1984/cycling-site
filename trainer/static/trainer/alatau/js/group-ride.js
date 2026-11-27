@@ -1,6 +1,6 @@
 'use strict';
 /* ---------------- Совместная езда: лобби, групповые гонки и соперники онлайн ---------------- */
-const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), refused: new Set(), failed: null, lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [] };
+const MP = { status: 'connecting', online: [], groups: [], riders: [], offset: 0, busy: false, timer: null, started: new Set(), refused: new Set(), failed: null, acting: false, lastInp: null, resultsFor: null, linkShown: false, linkChecked: false, crossings: [] };
 // a group race named by the link the page was opened with (?group=)
 const LINKED = (g => /^[0-9]{1,12}$/.test(g || '') ? +g : null)(new URLSearchParams(location.search).get('group'));
 // the address of a group race: the site's page that frames the trainer, which also hands a newcomer
@@ -159,9 +159,12 @@ async function mpSetWind(g, ms, from) {
   try { await Site.patch('/groups/' + g.id, { wind_ms: ms, wind_from_deg: from }); MP.failed = null; } catch (e) { mpFailed(e); }
   mpSchedule(50);
 }
+// one press at a time: a second before the first was answered was refused, and its refusal stood over the first's success
 async function mpAction(path, body) {
+  if (MP.acting) return;
+  MP.acting = true;
   try { await Site.post(path, body); MP.failed = null; } catch (e) { mpFailed(e); }
-  mpSchedule(50);
+  MP.acting = false; mpSchedule(50);
 }
 // a ride or a race, as the mode gathers, on the chosen route in the host's wind, which is its riders'
 function mpRace(when) {
