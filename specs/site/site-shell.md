@@ -130,7 +130,8 @@ the bike, the ones set
 once last -- with the lines on where the rides go under them all; a 320 px phone never scrolls it sideways,
 whatever a remembered device is called or a menu has chosen, Safari included, and the route cards keep
 inside their section. The right corner of its top bar holds the volume of the menu's music (`data/menu-music.mp3`,
-looped), above My records on a phone, which leaves it no room beside: every start of the page is silent, the music
+looped), above My records on a phone, which leaves it no room beside: its volume is kept with the member's settings,
+as their height is -- 0, silent, for a new one, a kept one sounding from the page's first touch --, the music
 plays while the setup page is on screen and its volume is above 0 -- from the first touch of the slider, as a browser
 lets a page sound -- and stops for a ride; a browser that refuses to play it stays silent, and on an
 iPhone, whose volume a page cannot set, the slider only turns it on and off. It offers a member who
