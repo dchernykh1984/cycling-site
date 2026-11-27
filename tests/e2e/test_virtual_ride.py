@@ -263,6 +263,19 @@ def test_every_route_runs_on_without_turning_back_or_knotting(page: Page, live_s
 
 
 @pytest.mark.django_db(transaction=True)
+def test_every_object_file_loads_and_adds_its_object(page: Page, live_server):
+    # two object files naming a constant alike at their top (DAM_STEP) stopped the second from loading: Medeu's dam
+    # left the map, and no test saw it -- every file loads and adds the object it is named after
+    errors: list[str] = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(f"{live_server.url}/static/trainer/alatau.html?lang=en")
+    page.wait_for_function("typeof OBJECTS !== 'undefined' && typeof buildWorld === 'function'")
+    files = sorted(path.stem for path in (trainer_page.PAGE.parent / "alatau" / "objects").glob("*.js"))
+    assert sorted(page.evaluate("Object.keys(OBJECTS)")) == files
+    assert not [e for e in errors if "SyntaxError" in e or "already been declared" in e], errors
+
+
+@pytest.mark.django_db(transaction=True)
 def test_every_route_s_grade_rises_and_falls_without_steps(page: Page, live_server):
     # a route's points lie 4 m apart all along it, and its grade changes by under a point and a half in 10 m: spaced
     # by its map's points, from centimetres to twenty metres apart, it jumped by up to ten points in a few metres
