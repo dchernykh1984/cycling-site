@@ -87,12 +87,16 @@ give the same data byte for byte.
    lag times the slope, high one way and low the other. The rider's line: the laps' mean offset from the road's
    middle, used only where the road turns and only toward the turn's inside -- one outside is GPS and the map apart.
    The start line is given with its bearing: beside a dual carriageway its nearest road may run the other way.
+   A ride that kept to one carriageway of a dual one both ways, against its one-way tag (the Institute of Nuclear
+   Physics' Alatau road, ridden on the left), takes `"against_oneway": true` in the config: matched by traffic's way,
+   the course crossed itself.
 4. **What stands round it** (`surroundings.py route.json osm.json out.json [near]`): buildings within 250 m (tall
    ones to 500 m) with heights from `height`, `building:levels` or the kind, colours where tagged; roads that meet
    the route to 400 m, the others to 150 m, no parking aisles; bridges crossing over it, roads under it, its own
    bridges and tunnels; power lines, railways and rivers as far as they are seen (2.5 km, 1.5 km), lakes, trees; a
    pond or a wood too small to draw left out. `near` widens a reach where a rider sees further: the Institute of
-   Nuclear Physics in the steppe took `'{"buildings": 400, "trees": 1300, "side": 400}'`. About 60 KB for 7 km in
+   Nuclear Physics in the steppe took `'{"buildings": 400, "trees": 1300, "side": 400}'`; `"own_rest": 1` there draws
+   the route's own ways where it does not ride them, such as a dual carriageway's other half. About 60 KB for 7 km in
    the country, 280 KB for 15 km in a city: the map file is the page's, so keep what a rider sees.
 5. **Into the map** (`finish.py route.json around.json meta.json map.js`, meta the names, description and event in
    three languages): a tunnel gets its real profile, 6.5 m under the ground line between ramps of 100 m -- the
@@ -107,8 +111,23 @@ along them so a stretch begins and ends where they do, `surroundings.py`, a tunn
 and the entry written where it stands. Sokol keeps its buildings and trees (`buildings,trees`), set by hand. Rerun
 from the maps before it on the same extracts, it gives the same files byte for byte.
 
+Two more passes over a map entry, each writing it where it stands:
+
+- `streets.py map.js osm.json id [--whole]`: the streets the route rides, named under the mini-map in three
+  languages from OSM's names (the ones OSM lacks in its NAMES); `--whole` names a route no named street runs along
+  by its own name (the Sokol Racetrack, Kyrbaltabay -- Tuganbay).
+- `turn_at_start.py map.js id`: an out-and-back route made a loop, its far turnaround repeated at its start
+  (Kyrbaltabay -- Tuganbay); laps are a loop's, a route from one place to another ends at its finish.
+
+A route's picture for an event's link card is its view in the virtual world, `maps/<map>/views/<id>.jpg`, 1200 by
+630: rendered from its scene (headless Chromium draws it with SwiftShader), a rider in front of what the route is
+known for; the site puts the logo, the day, the time and the title over it (`calendar_app/ride_picture.py`).
+
 Sights for a route: a sight that spreads over the land (a cable car, ski jumps) stands each of its parts on the land
-under it and marks them (`userData.stands`); its `reach` keeps it to the routes it stands on drawn land for. A hill a
+under it and marks them (`userData.stands`), a dam lies on the land it crosses; one that lies flat on the land (a
+rink) gives its pad (`addObject`'s third argument) and the ground under it is laid at its level; a building
+OpenStreetMap outlines is the `building` object, its name lit on its roof; its `reach` keeps it to the routes it
+stands on drawn land for. A hill a
 sight stands on gets a detail grid in the map's relief (SRTM 30 m about 150 m apart, through OpenTopoData).
 
 ## Checks before calling a route done
