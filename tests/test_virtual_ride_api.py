@@ -203,7 +203,8 @@ class SavedRidesTests(MemberClientMixin, TestCase):
         self.assertEqual(self.post(self.client_a, "/rides", _ride(duration_s=1700)).json()["records"], ["route_first"])
 
     def test_a_wind_is_a_speed_and_a_bearing(self):
-        self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=31)).status_code, 422)
+        self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=50)).status_code, 201)
+        self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=51)).status_code, 422)
         self.assertEqual(self.post(self.client_a, "/rides", _ride(wind_ms=5, wind_from_deg=360)).status_code, 422)
 
     def test_the_profile_marks_a_ride_ridden_with_wind(self):
