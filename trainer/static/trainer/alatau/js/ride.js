@@ -43,8 +43,9 @@ function startRider(r) {
 }
 const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
 const MAX_RR = 6 * 3600 * 220 / 60; // and six hours of RR intervals at 220 beats a minute (api: _MAX_RR)
-// the strap's RR intervals since the last frame, kept when "Write HRV" is on: a heart at 27 to 270 beats a minute
-function keepRR(r, rr) { if (settings.hrv) for (const ms of rr || []) if (ms >= 220 && ms <= 2500 && r.rr.length < MAX_RR) r.rr.push(ms); }
+// the strap's RR intervals since the last frame (readInput gives them while "Write HRV" is on): those of a heart at 27
+// to 270 beats a minute
+function keepRR(r, rr) { for (const ms of rr || []) if (ms >= 220 && ms <= 2500 && r.rr.length < MAX_RR) r.rr.push(ms); }
 // [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
 function trackPoint(inp) {
   const o = riderPos(me, {}), ll = unproj(o.px, o.pz, world.T.origin);
