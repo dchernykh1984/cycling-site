@@ -6064,3 +6064,15 @@ msgstr ""
 #: calendar_app/templates/calendar_app/edit.html
 msgid "Its room:"
 msgstr "Оның бөлмесі:"
+
+#: calendar_app/discord.py
+msgid "Discord does not accept the site's bot token"
+msgstr "Discord сайт ботының токенін қабылдамайды"
+
+#: calendar_app/discord.py
+msgid "the bot may not create channels or invitations on the server"
+msgstr "ботқа серверде арналар немесе шақырулар жасауға рұқсат жоқ"
+
+#: calendar_app/discord.py
+msgid "Discord does not know the server or the category the site names"
+msgstr "Discord сайтта көрсетілген серверді немесе санатты білмейді"

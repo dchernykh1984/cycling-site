@@ -53,8 +53,19 @@ def _post(path: str, body: dict) -> dict:
     except requests.RequestException as exc:
         raise DiscordError(type(exc).__name__) from None
     if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
-        raise DiscordError(f"Discord answered {response.status_code}")
+        raise DiscordError(_refusal(response.status_code))
     return response.json()
+
+
+def _refusal(status: int) -> str:
+    """Why Discord refused, in the words that say what to set up: the organizer passes them on to the admin."""
+    if status == HTTPStatus.UNAUTHORIZED:
+        return _("Discord does not accept the site's bot token")
+    if status == HTTPStatus.FORBIDDEN:
+        return _("the bot may not create channels or invitations on the server")
+    if status == HTTPStatus.NOT_FOUND:
+        return _("Discord does not know the server or the category the site names")
+    return f"Discord answered {status}"
 
 
 def _channel_name(competition: Competition) -> str:
