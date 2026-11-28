@@ -139,7 +139,7 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    the edit page links it. It lasts the event and the whole day after it at the event's place: from then on the
    nightly cron (`scripts/close_discord_rooms.py`, `render.yaml`) has the site delete its channel and take its line
    out of the text, and an event that is over opens no room; a channel Discord does not delete, or one past the
-   twenty a night closes, waits for the next night. The cron runs at 21:07 UTC: a place west of it sees its room
+   twenty a night closes or its fifteen seconds, waits for the next night. The cron runs at 21:07 UTC: a place west of it sees its room
    close at that hour of the next night, up to a day after the day after.
 3. **Given** the bot is not set up or Discord refuses, **Then** the event is saved with its box, the organizer is
    told why there is no room -- a server or a category with no room for another channel (Discord takes 500 on a
