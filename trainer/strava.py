@@ -372,8 +372,19 @@ def _efforts(connection: StravaConnection, segment_id: int) -> list[dict] | None
 
 
 def _effort_times(connection: StravaConnection, effort_id: int) -> list[list[float]]:
-    """How far into the segment the effort was at each of its seconds: [[metres, seconds], ...] from its start."""
-    streams = _json(_read(connection, EFFORT_STREAMS_URL.format(effort_id), keys="distance,time", key_by_type="true"))
+    """How far into the segment the effort was at each of its seconds: [[metres, seconds], ...] from its start.
+
+    None to be had -- an activity Strava will not give the streams of -- leaves the page the effort's time spread
+    evenly along the segment, not the segment without its best time.
+    """
+    try:
+        streams = _json(
+            _read(connection, EFFORT_STREAMS_URL.format(effort_id), keys="distance,time", key_by_type="true")
+        )
+    except StravaError as exc:
+        if exc.revoked:
+            raise
+        return []
     dist, time = (streams.get("distance") or {}).get("data") or [], (streams.get("time") or {}).get("data") or []
     if not dist or len(dist) != len(time):
         return []

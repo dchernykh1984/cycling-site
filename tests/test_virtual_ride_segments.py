@@ -183,6 +183,15 @@ class SegmentsApiTests(MemberClientMixin, TestCase):
         self.assertEqual((seg["efforts"], seg["best"], len(seg["points"])), (None, None, 3))
 
     @mock.patch("trainer.strava.requests.request")
+    def test_a_best_effort_without_its_streams_keeps_its_time(self, call):
+        def no_streams(method, url, **kw):
+            return _answer(404) if url == strava.EFFORT_STREAMS_URL.format(8) else _strava(url, kw.get("params"))
+
+        call.side_effect = no_streams
+        best = self.client_m.get(f"{API}/strava/segments/101").json()["best"]
+        self.assertEqual((best["elapsed_s"], best["times"]), (245.0, []))
+
+    @mock.patch("trainer.strava.requests.request")
     def test_a_long_line_is_thinned_to_what_the_page_draws_with_its_end_kept(self, call):
         n = 1000
         line = {
