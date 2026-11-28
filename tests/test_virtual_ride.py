@@ -1,6 +1,7 @@
 """The "Virtual ride" tab: the trainer page in the site's frame, linked from the navbar in every skin."""
 
 import re
+from collections import Counter
 
 from django.contrib.staticfiles import finders
 from django.test import TestCase, override_settings
@@ -75,6 +76,17 @@ class VirtualRideTests(TestCase):
         for path in files:
             name = path.relative_to(trainer_page.PAGE.parent.parent).as_posix()
             self.assertIsNotNone(finders.find(name), name)
+
+    def test_no_two_files_of_the_trainer_declare_one_name(self):
+        # the page's files share one scope: a second "const segDist" stopped the page before its menu
+        declared = re.compile(r"^(?:async )?(?:function\*?|const|let|var|class) ([A-Za-z_$][\w$]*)", re.MULTILINE)
+        names = Counter(
+            name
+            for path in trainer_page.local_files()
+            if path.suffix == ".js"
+            for name in declared.findall(path.read_text(encoding="utf-8"))
+        )
+        self.assertEqual([name for name, count in names.items() if count > 1], [])
 
     def test_the_trainer_talks_to_the_site_in_one_place(self):
         # a ride is ridden in the browser: what reaches the site goes through Site.req, to the trainer's API
