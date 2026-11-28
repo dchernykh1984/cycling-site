@@ -240,7 +240,8 @@ function renderSegState() {
   if (!who || !who.authenticated) { el.append(t('seg.signIn') + ' ', link(Site.loginHref(), t('seg.signInLink'))); return; }
   if (!who.strava_available) { el.textContent = t('seg.unavailable'); return; }
   if (!who.strava_segments) { el.append(t('seg.allow') + ' ', link(langPath(who.strava_segments_url) + '&next=' + encodeURIComponent(topPath()), t('seg.allowLink'))); return; }
-  if (Segs.failed) { el.textContent = t('seg.failed', { msg: Segs.failed }); return; }
+  // said once: the member's next step in the setup asks Strava again (never this answer itself: Strava down, a loop)
+  if (Segs.failed) { el.textContent = t('seg.failed', { msg: Segs.failed }); Segs.failed = null; return; }
   if (!Segs.list) { el.textContent = t('seg.loading'); Segs.starred().then(() => { if (segOn()) renderSegState(); }); return; }
   // the segments the ride will race: their ends by the route and their lines along it the way it runs -- a segment
   // by a one-way road ridden the other way is not named
