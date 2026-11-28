@@ -329,6 +329,14 @@ def _json(response: requests.Response):
     return response.json()
 
 
+def _streams(response: requests.Response) -> dict:
+    """Streams keyed by their type, as ``key_by_type`` asks: any other shape is Strava's trouble, not the site's."""
+    body = _json(response)
+    if not isinstance(body, dict):
+        raise StravaError("Strava gave the streams in another shape")
+    return body
+
+
 def _thin(rows: list, most: int = SEGMENT_POINTS) -> list:
     """At most ``most`` of the rows, evenly, the last one kept: where the line or the times end."""
     if len(rows) <= most:
@@ -378,7 +386,7 @@ def _effort_times(connection: StravaConnection, effort_id: int) -> list[list[flo
     evenly along the segment, not the segment without its best time.
     """
     try:
-        streams = _json(
+        streams = _streams(
             _read(connection, EFFORT_STREAMS_URL.format(effort_id), keys="distance,time", key_by_type="true")
         )
     except StravaError as exc:
@@ -393,7 +401,7 @@ def _effort_times(connection: StravaConnection, effort_id: int) -> list[list[flo
 
 def segment(connection: StravaConnection, segment_id: int) -> dict:
     """One starred segment to ride: its line with heights, the member's own efforts' times and their best one's pace."""
-    streams = _json(
+    streams = _streams(
         _read(
             connection,
             SEGMENT_STREAMS_URL.format(segment_id),
