@@ -67,6 +67,8 @@ DOCUMENT_EXTENSIONS = frozenset(
     {"pdf", "doc", "docx", "xls", "xlsx", "gpx", "kml", "zip", "jpg", "jpeg", "png", "gif", "webp"}
     # presentations: PowerPoint's, its slide shows, LibreOffice Impress's and Keynote's
     | {"ppt", "pptx", "pps", "ppsx", "odp", "key"}
+    # plain text and Markdown: a readme, notes
+    | {"txt", "md"}
 )
 
 
