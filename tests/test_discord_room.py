@@ -201,7 +201,7 @@ class DiscordRoomApiTests(TestCase):
         )
         answer = self.call("patch", f"/{event.pk}", self.organizer, {"discord_room": True}).json()
         self.assertEqual(answer["discord_invite_url"], "")
-        self.assertIn("Discord answered 403", answer["discord_note"])
+        self.assertIn(gettext("the bot may not create channels or invitations on the server"), answer["discord_note"])
 
     def test_a_participant_author_cannot_ask_for_a_room(self):
         event = Competition.objects.create(
