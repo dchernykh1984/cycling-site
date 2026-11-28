@@ -54,7 +54,10 @@ def _post(path: str, body: dict) -> dict:
         raise DiscordError(type(exc).__name__) from None
     if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
         raise DiscordError(_refusal(response.status_code))
-    return response.json()
+    try:
+        return response.json()
+    except ValueError:  # a proxy's page in place of Discord's answer: the event is saved already, the room waits
+        raise DiscordError("Discord answered without JSON") from None
 
 
 def _refusal(status: int) -> str:

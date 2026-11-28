@@ -133,6 +133,15 @@ class DiscordRoomFormTests(TestCase):
         self.assertEqual([c.args[0].rsplit("/", 2)[-2:] for c in post.call_args_list], [["333", "invites"]])
 
     @mock.patch("calendar_app.discord.requests.post")
+    def test_an_answer_that_is_not_discord_s_keeps_the_event_and_says_so(self, post):
+        post.return_value = _answer(200)
+        post.return_value.json.side_effect = ValueError("not JSON")
+        page = self.submit(self.organizer)
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(Competition.objects.get(title_ru="Night race").discord_invite_url, "")
+        self.assertContains(page, "Discord answered without JSON")
+
+    @mock.patch("calendar_app.discord.requests.post")
     def test_without_the_bot_the_box_waits_and_the_organizer_is_told(self, post):
         with override_settings(DISCORD_BOT_TOKEN=""):
             page = self.submit(self.organizer)
