@@ -18,7 +18,6 @@ import logging
 import re
 import time
 from http import HTTPStatus
-from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
@@ -116,13 +115,13 @@ def _events(group: GroupRide):
     return Competition.objects.filter(Q(virtual_races=group) | Q(virtual_ride=group.pk)).distinct()
 
 
-def zone_of(group: GroupRide) -> ZoneInfo:
-    """The zone the race's days are counted in: its event's place, else UTC."""
+def zone_of(group: GroupRide, default=None):
+    """The zone of the race's event's place; else ``default``, else UTC -- the zone its days are counted in."""
     event = _events(group).select_related("location").first()
-    return event.timezone if event is not None else timezone_of(None)
+    return event.timezone if event is not None else default or timezone_of(None)
 
 
-def _channel_name(group: GroupRide, zone: ZoneInfo) -> str:
+def _channel_name(group: GroupRide, zone) -> str:
     """The route and the start, as a rider looks for the room: "2026-12-01 18:00 Central loop"."""
     start = timezone.localtime(group.start_at, zone)
     return f"{start:%Y-%m-%d %H:%M} {group.route_name or group.route}"[:CHANNEL_NAME_MAX]
@@ -139,7 +138,8 @@ def open_room(group: GroupRide) -> str:
             channel = _post(
                 f"/guilds/{settings.DISCORD_GUILD_ID}/channels",
                 {
-                    "name": _channel_name(group, zone_of(group)),
+                    # its start on its event's clock, else on its host's: the page they gather it on sends their zone
+                    "name": _channel_name(group, zone_of(group, timezone.get_current_timezone())),
                     "type": VOICE_CHANNEL,
                     **({"parent_id": settings.DISCORD_CATEGORY_ID} if settings.DISCORD_CATEGORY_ID else {}),
                 },
