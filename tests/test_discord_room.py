@@ -139,7 +139,10 @@ class DiscordRoomFormTests(TestCase):
         event = Competition.objects.get(title_ru="Night race")
         self.assertTrue(event.discord_room)
         self.assertEqual(event.discord_invite_url, "")
-        self.assertContains(page, gettext("Discord is not set up on this site yet").split(":")[0])
+        said = gettext(
+            "Discord is not set up on this site yet: the room is opened once it is, on the event's next save."
+        )
+        self.assertEqual([str(m) for m in page.context["messages"]], [said])
         post.assert_not_called()
 
     @mock.patch("calendar_app.discord.requests.post", side_effect=_discord)
