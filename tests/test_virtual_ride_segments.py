@@ -192,6 +192,11 @@ class SegmentsApiTests(MemberClientMixin, TestCase):
         self.assertEqual((best["elapsed_s"], best["times"]), (245.0, []))
 
     @mock.patch("trainer.strava.requests.request")
+    def test_streams_in_another_shape_are_strava_s_trouble(self, call):
+        call.return_value = _answer(200, [{"type": "latlng", "data": []}])
+        self.assertEqual(self.client_m.get(f"{API}/strava/segments/101").status_code, 502)
+
+    @mock.patch("trainer.strava.requests.request")
     def test_a_long_line_is_thinned_to_what_the_page_draws_with_its_end_kept(self, call):
         n = 1000
         line = {
