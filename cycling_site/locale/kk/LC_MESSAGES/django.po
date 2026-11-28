@@ -6087,3 +6087,7 @@ msgstr ""
 #: calendar_app/forms.py
 msgid "File"
 msgstr "Файл"
+
+#: calendar_app/forms.py
+msgid "The site's disk is nearly full: the file cannot be kept now."
+msgstr "Сайттың дискісі толуға жақын: файлды қазір сақтау мүмкін емес."

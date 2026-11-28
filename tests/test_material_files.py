@@ -4,6 +4,7 @@ import datetime
 import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -72,6 +73,19 @@ class MaterialFileTests(TestCase):
         response = self._post({"title": "Tool", "url": "", "file": upload})
         self.assertFalse(self.comp.materials.exists())
         self.assertTrue(response.context["material_formset"].errors[0]["file"])
+
+    def test_a_file_that_would_take_the_disk_s_last_reserve_is_refused(self):
+        reserve = 200 * 1024 * 1024
+        with (
+            override_settings(GALLERY_DISK_RESERVE_MB=200),
+            mock.patch("cycling_site.system.media_disk", return_value=mock.Mock(free=reserve + 10)),
+        ):
+            response = self._post({"title": "Results", "url": "", "file": _pdf()})
+        self.assertFalse(self.comp.materials.exists())
+        self.assertEqual(
+            response.context["material_formset"].errors[0]["file"],
+            [gettext("The site's disk is nearly full: the file cannot be kept now.")],
+        )
 
     def test_a_name_without_a_link_or_a_file_is_refused(self):
         response = self._post({"title": "Nothing", "url": ""})
