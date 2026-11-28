@@ -128,6 +128,9 @@ def serve_media(request, path):
 # What a browser opens as a page when it comes inline: HTML and XML documents, every "+xml" type too
 # except SVG, which pages show as an image
 _PAGE_TYPES = ("text/html", "application/xhtml+xml", "text/xml", "application/xml")
+# text a member uploads -- a readme, notes -- which the server names without its encoding: read as UTF-8, today's
+# usual one, else a browser may show Cyrillic as mojibake
+_TEXT_TYPES = ("text/plain", "text/markdown")
 
 
 def _sandboxed(response):
@@ -143,6 +146,8 @@ def _sandboxed(response):
         return response
     if content_type != "application/pdf":
         response["Content-Security-Policy"] = "sandbox"
+    if content_type in _TEXT_TYPES and "charset" not in response["Content-Type"]:
+        response["Content-Type"] = f"{content_type}; charset=utf-8"
     if content_type in _PAGE_TYPES or (content_type.endswith("+xml") and content_type != "image/svg+xml"):
         disposition = response.get("Content-Disposition", "")
         rest = disposition[len("inline") :] if disposition.startswith("inline") else ""
