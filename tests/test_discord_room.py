@@ -3,6 +3,7 @@
 import datetime
 import json
 from unittest import mock
+from zoneinfo import ZoneInfo
 
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
@@ -70,13 +71,22 @@ class GatheringWithARoomTests(TestCase):
         self.assertEqual(channel["headers"], {"Authorization": "Bot bot-tok-7c1e"})
         self.assertEqual(channel["json"]["type"], discord.VOICE_CHANNEL)
         self.assertEqual(channel["json"]["parent_id"], "222")
-        start = timezone.localtime(group.start_at, datetime.UTC)
+        start = timezone.localtime(group.start_at, timezone.get_default_timezone())  # no zone sent: the site's
         self.assertEqual(channel["json"]["name"], f"{start:%Y-%m-%d %H:%M} Central loop")
         # an invitation that never runs out
         self.assertEqual(post.call_args_list[1].kwargs["json"], {"max_age": 0, "max_uses": 0, "unique": False})
         # every rider who sees the race sees its room
         listed = self.client_of(self.participant).get(f"{API}/groups").json()
         self.assertEqual(listed[0]["discord_invite_url"], INVITE)
+
+    @mock.patch("trainer.discord.requests.post", side_effect=_discord)
+    def test_the_room_is_named_by_the_start_on_its_host_s_clock(self, post):
+        client = self.client_of(self.organizer)
+        client.cookies["tz"] = "Asia/Tokyo"
+        body = {"route": "center", "route_name": "Central loop", "start_in_s": 600, "discord_room": True}
+        client.post(f"{API}/groups", json.dumps(body), content_type="application/json")
+        start = timezone.localtime(GroupRide.objects.get().start_at, ZoneInfo("Asia/Tokyo"))
+        self.assertEqual(post.call_args_list[0].kwargs["json"]["name"], f"{start:%Y-%m-%d %H:%M} Central loop")
 
     @mock.patch("trainer.discord.requests.post", side_effect=_discord)
     def test_without_the_box_no_room_is_opened(self, post):
