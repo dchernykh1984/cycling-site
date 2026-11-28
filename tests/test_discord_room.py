@@ -139,7 +139,7 @@ class GatheringWithARoomTests(TestCase):
         self.assertEqual(discord.re.sub(pattern, "", kept), "<p>Start at 18:00.</p>")
 
 
-@override_settings(**DISCORD_ON)
+@override_settings(**DISCORD_ON, TIME_ZONE="UTC")
 class RoomClosingTests(TestCase):
     """A room lasts the day of the start and the whole day after it, then its channel is deleted."""
 
@@ -194,6 +194,13 @@ class RoomClosingTests(TestCase):
         # 18:00 UTC on the 1st is the 2nd in Tokyo: the room is the 2nd's and the 3rd's, there
         self.assertEqual(self.close(datetime.datetime(2026, 12, 3, 12, 0, tzinfo=datetime.UTC))[0], 0)
         self.assertEqual(self.close(datetime.datetime(2026, 12, 3, 15, 30, tzinfo=datetime.UTC))[0], 1)
+
+    @override_settings(TIME_ZONE="Asia/Almaty")
+    def test_without_an_event_the_days_are_the_site_s(self):
+        Competition.objects.filter(pk=self.event.pk).update(virtual_ride=None)
+        # 18:00 UTC on the 1st is 23:00 in Almaty: the room is the 1st's and the 2nd's there, closed at 00:00 on the 3rd
+        self.assertEqual(self.close(datetime.datetime(2026, 12, 2, 18, 59, tzinfo=datetime.UTC))[0], 0)
+        self.assertEqual(self.close(datetime.datetime(2026, 12, 2, 19, 1, tzinfo=datetime.UTC))[0], 1)
 
     def test_a_cancelled_race_s_room_goes_the_next_night(self):
         GroupRide.objects.filter(pk=self.group.pk).update(cancelled=True)
