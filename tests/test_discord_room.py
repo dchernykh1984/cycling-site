@@ -23,7 +23,7 @@ def _user(name, role):
 
 
 def _answer(status, body=None):
-    response = mock.Mock(status_code=status)
+    response = mock.Mock(status_code=status, text="")
     response.json.return_value = body or {}
     return response
 
@@ -69,10 +69,9 @@ class DiscordRoomFormTests(TestCase):
         )
         channel = post.call_args_list[0]
         self.assertEqual(channel.kwargs["headers"], {"Authorization": "Bot bot-tok-7c1e"})
-        self.assertEqual(channel.kwargs["json"]["type"], discord.TEXT_CHANNEL)
+        self.assertEqual(channel.kwargs["json"]["type"], discord.VOICE_CHANNEL)
         self.assertEqual(channel.kwargs["json"]["parent_id"], "222")
         self.assertEqual(channel.kwargs["json"]["name"], f"{event.date_start:%Y-%m-%d}-night-race")
-        self.assertTrue(channel.kwargs["json"]["topic"].endswith(event.get_absolute_url()))
         # an invitation that never runs out
         self.assertEqual(post.call_args_list[1].kwargs["json"], {"max_age": 0, "max_uses": 0, "unique": False})
         # the line in the text the event has, in its language; the others fall back to it
@@ -131,6 +130,20 @@ class DiscordRoomFormTests(TestCase):
         event.refresh_from_db()
         self.assertEqual(event.discord_invite_url, "https://discord.gg/AbC12")
         self.assertEqual([c.args[0].rsplit("/", 2)[-2:] for c in post.call_args_list], [["333", "invites"]])
+
+    @mock.patch("calendar_app.discord.requests.post")
+    def test_a_category_with_no_room_for_another_channel_is_said_in_words(self, post):
+        post.return_value = _answer(400)
+        post.return_value.text = (
+            '{"code": 50035, "errors": {"parent_id": {"_errors": [{"code": "CHANNEL_PARENT_MAX_CHANNELS",'
+            ' "message": "Maximum number of channels in category reached (50)"}]}}, "message": "Invalid Form Body"}'
+        )
+        page = self.submit(self.organizer)
+        self.assertContains(
+            page,
+            gettext("the server or its category has no room for another channel: 500 on a server, 50 in a category"),
+        )
+        self.assertEqual(Competition.objects.get(title_ru="Night race").discord_channel_id, "")
 
     @mock.patch("calendar_app.discord.requests.post")
     def test_an_answer_that_is_not_discord_s_keeps_the_event_and_says_so(self, post):

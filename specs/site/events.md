@@ -131,15 +131,15 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 ### Story 4b -- A Discord room for an event
 
 1. **Given** an organizer ticks "Create a Discord room" on the event form (`discord_room`, kept with the event and
-   copied by a clone), **Then** once the event is saved the site's bot opens a text channel for it on the server
-   `DISCORD_GUILD_ID` names, under `DISCORD_CATEGORY_ID` where set, named after its date and Russian title with the
-   event's page as its topic, makes an invitation that never runs out and writes it as a line of its own at the end
+   copied by a clone), **Then** once the event is saved the site's bot opens a voice channel for it on the server
+   `DISCORD_GUILD_ID` names, under `DISCORD_CATEGORY_ID` where set, named after its date and Russian title, makes an invitation that never runs out and writes it as a line of its own at the end
    of the event's text in each language that has text, in all three when none has; a cloned event's old line gives
    way to its own room's (`calendar_app/discord.py`, `tests/test_discord_room.py`).
 2. **Given** the room is open, **Then** later saves leave it as it is, and unticking the box leaves it on Discord;
    the edit page links it.
 3. **Given** the bot is not set up or Discord refuses, **Then** the event is saved with its box, the organizer is
-   told why there is no room, and the next save tries again -- in the channel already opened, if only its
+   told why there is no room -- a server or a category with no room for another channel (Discord takes 500 on a
+   server, 50 in a category) in those words --, and the next save tries again -- in the channel already opened, if only its
    invitation failed. A participant's box is neither offered nor read.
 
 ### Story 5 -- Invite-only events (P3, issue #313)
