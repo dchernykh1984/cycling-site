@@ -59,6 +59,13 @@
       <select id="windFrom"><option value="0" data-t="wind.n"></option><option value="45" data-t="wind.ne"></option><option value="90" data-t="wind.e"></option><option value="135" data-t="wind.se"></option><option value="180" data-t="wind.s"></option><option value="225" data-t="wind.sw"></option><option value="270" data-t="wind.w"></option><option value="315" data-t="wind.nw"></option></select></div>
     <div class="field"><label for="windMs" data-t="wind.ms"></label><input id="windMs" type="number" min="1" max="30" step="1" value="5" inputmode="numeric"></div></div>
     <p class="hint hidden" id="windHint" data-t="wind.hint"></p>
+    <!-- Strava live segments: the member's starred segments on the route, raced against their own times (js/segments.js) -->
+    <label class="chk"><input type="checkbox" id="segOn" aria-describedby="segHint"> <span data-t="seg.on"></span></label>
+    <p class="hint" id="segHint" data-t="seg.hint"></p>
+    <div id="segOpts" class="hidden">
+      <p class="hint" id="segState" role="status"></p>
+      <fieldset class="seg-fields"><legend data-t="seg.fields"></legend><div id="segFields"></div></fieldset>
+    </div>
 
       </section>
       <section class="box wide" aria-labelledby="hMp">
@@ -191,6 +198,12 @@
   <div class="hud" id="hudTR">
     <div class="mapcard panel"><div id="grade"><b id="vGrade">0%</b><span id="uGrade" data-t="hud.grade"></span></div><div id="hudWind" class="hidden"></div><div id="hudTrainer" class="hidden" data-t="hud.trainerIdle"></div><canvas id="mini" width="300" height="300" data-t-label="a11y.minimap"></canvas><div id="hudStreet" class="hidden"></div></div>
     <div class="panel hidden" id="board"><div class="bh" data-t="hud.near"></div><ol id="boardList"></ol></div>
+  </div>
+  <!-- beside the road: a Strava segment ahead, under way or just ridden, as a bike computer shows it -->
+  <div class="hud panel hidden" id="segBox">
+    <div class="sgh"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><b id="segName"></b></div>
+    <dl id="segRows"></dl>
+    <canvas id="segProf" data-t-label="seg.f.profile"></canvas>
   </div>
   <!-- left: the steps of a cadence plan -->
   <div class="hud panel hidden" id="planList">
@@ -349,6 +362,7 @@
 <script src="alatau/js/workout.js"></script>
 <script src="alatau/js/site.js"></script>
 <script src="alatau/js/strava.js"></script>
+<script src="alatau/js/segments.js"></script>
 <script src="alatau/js/workouts.js"></script>
 <script src="alatau/js/site-records.js"></script>
 <script src="alatau/js/group-ride.js"></script>

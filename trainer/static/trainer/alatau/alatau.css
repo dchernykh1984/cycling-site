@@ -158,6 +158,12 @@ button{cursor:pointer}
   .vol input{width:72px}
 }
 
+/* the Strava segments' fields, two columns of boxes under their box; one on a phone */
+.seg-fields{border:0;padding:0;margin:2px 0 0;min-width:0}
+.seg-fields legend{font-size:13px;font-weight:600;padding:0;margin:0 0 2px}
+#segFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+@media (max-width:420px){ #segFields{grid-template-columns:1fr} }
+
 /* ---------- hud (always over 3D, theme-independent) ---------- */
 .hud{position:fixed;z-index:10;color:var(--hud-ink);font-family:var(--body);pointer-events:none}
 .panel{background:var(--hud);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:16px}
@@ -364,6 +370,25 @@ button{cursor:pointer}
   #hudTR{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 86px)}
   #board,#planList{display:none}
 }
+
+/* ---------- a Strava segment beside the road: on the left over the profile, its fields as a bike computer lists them;
+   Strava's orange marks it as theirs, the gap green ahead of the best and red behind it ---------- */
+#segBox{left:calc(env(safe-area-inset-left,0px) + 12px);bottom:calc(env(safe-area-inset-bottom,0px) + 88px);width:214px;padding:8px 10px;border-radius:14px;border-left:4px solid #FC4C02}
+#segBox .sgh{display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:4px;min-width:0}
+#segBox .sgh svg{width:14px;height:14px;flex:none;color:#FC4C02}
+#segBox .sgh b{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.2}
+#segRows{margin:0;display:grid;gap:2px}
+#segRows div{display:flex;justify-content:space-between;gap:8px;align-items:baseline;min-width:0}
+#segRows dt{font-size:11.5px;line-height:1.2;color:var(--hud-dim);min-width:0} /* a long label wraps rather than loses its end */
+#segRows dd{margin:0;font-family:var(--display);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#segRows .big dd{font-size:24px}
+#segRows .ahead dd{color:#8FD19E}
+#segRows .behind dd{color:#FF9A90}
+#segProf{display:block;width:100%;height:46px;margin-top:6px}
+/* a plan's steps and the segment share the left side: the list stops above the window */
+#hud.seg-on #planList{max-height:calc(100% - 420px)}
+@media (max-height:520px){ #segBox{bottom:calc(env(safe-area-inset-bottom,0px) + 76px);width:180px;padding:5px 8px} #segRows .big dd{font-size:18px} #segProf{height:30px} }
+@media (max-width:640px) and (orientation:portrait){ #segBox{bottom:calc(env(safe-area-inset-bottom,0px) + 262px);width:180px} }
 
 /* ---------- a phone held upright: one column on top, the map and the controls at the bottom ---------- */
 @media (max-width:640px) and (orientation:portrait){

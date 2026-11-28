@@ -9,7 +9,7 @@ function renderBodyHint() {
 let paused = false, photo = false, demoP = 150;
 let routeSel = store.get('route', null);
 if (!ROUTES.some(r => r.id === routeSel)) routeSel = ROUTES[0].id; // the first visit, or a route no map has any more
-const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me', wind: { on: false, from: 0, ms: 5 } }, store.get('settings', {}));
+const settings = Object.assign({ circ: 2105, trainer: 'fluid', ring: 50, mass: 75, bots: 6, level: 'mid', look: 'bodycam', difficulty: 50, hrmax: 185, view: 'chase', char: 'me', wind: { on: false, from: 0, ms: 5 }, segments: { on: false, fields: {} } }, store.get('settings', {}));
 // the wind the settings ask for, { ms, from }, or none; the words for it: "5 m/s from the north"
 const ownWind = () => settings.wind && settings.wind.on && settings.wind.ms > 0 ? { ms: settings.wind.ms, from: settings.wind.from || 0 } : null;
 const windFrom = (from, lang = LANG) => [t('wind.n', null, lang), t('wind.ne', null, lang), t('wind.e', null, lang), t('wind.se', null, lang), t('wind.s', null, lang), t('wind.sw', null, lang), t('wind.w', null, lang), t('wind.nw', null, lang)][Math.round((from || 0) / 45) % 8];
@@ -62,7 +62,7 @@ function startMenu() { // страница 1: настройки (3D-сцена 
   // back from a start line before its start: the ride waits for the member again, by itself or their button -- but not
   // in its last seconds, when it would take them straight back
   if (phase === 'countdown' && groupRide && typeof MP !== 'undefined' && groupRide.startAt - Date.now() > MP_ENTER_BEFORE_MS) MP.started.delete(groupRide.gid);
-  phase = 'menu'; paused = false; photo = false;
+  phase = 'menu'; paused = false; photo = false; Segs.stop();
   $('#menu').classList.remove('hidden'); $('#gl').classList.add('hidden'); $('#hud').classList.add('hidden'); $('#count').classList.add('hidden');
   $('#resM').classList.add('hidden'); $('#pauseM').classList.add('hidden'); $('#photoUI').classList.add('hidden'); $('#stamp').classList.add('hidden');
   bots.forEach(removeRiderModel); bots = [];
@@ -96,6 +96,7 @@ function startRace() {
   setTimeout(() => {
     $('#gl').classList.remove('hidden'); onResize();
     if (!world || world.route.id !== route.id) buildWorld(route);
+    Segs.prepare(world); // the member's Strava segments on this route, read while the countdown runs
     world.lms.forEach(l => { l.done = false; });
     me = startRider(newRider(t('you'), kitted(charById(settings.char)).a, settings.mass, world.S0, keepLane(route.width)));
     const bt = bikeType(); me.CdA = riderAero(settings.height, settings.mass).CdA * bt.aero; me.bike = settings.bikeKg || bt.kg; me.Crr = bt.crr;

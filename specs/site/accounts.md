@@ -315,8 +315,11 @@ an account of their own, or to another mentor, staying without one (8 and 9 belo
   refreshed when they expire, and are revoked at Strava and deleted when the member disconnects it there
   or through the API, or their account is deleted. Without the key uploading is not offered (a startup
   warning names a Strava application left without it); a grant the key cannot open is dropped as one
-  Strava refused, and the member connects again. Nothing
-  reads the member's Strava activities. Its box "Send my rides to Strava" (`send_rides`) is on for a new
+  Strava refused, and the member connects again. The trainer's live segments ask the same connection for
+  `activity:read_all` as well (`?segments=1`; a member who allowed it is asked for it again on connecting anew), kept
+  as the scope Strava answered (`StravaConnection.scope`): with it the site reads, for the member's own page only and
+  keeping none of it, their starred segments, each one's line and their own efforts on it; nothing else reads the
+  member's Strava activities. Its box "Send my rides to Strava" (`send_rides`) is on for a new
   connection; turned off, rides are not sent on their own, though the member can still send one
   through `POST /api/v1/virtual-ride/rides/{id}/strava`.
 - **FR-ACC-008**: The profile lists the member's own submitted events (those needing attention
