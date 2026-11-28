@@ -303,6 +303,16 @@ class DiscordRoomClosingTests(TestCase):
         self.event.refresh_from_db()
         self.assertEqual(self.event.discord_channel_id, "333")
 
+    def test_one_night_closes_a_bounded_number_of_rooms_the_oldest_first(self):
+        older = Competition.objects.create(
+            title_ru="Older", date_start=self.LAST_DAY - datetime.timedelta(days=1), discord_channel_id="111"
+        )
+        with mock.patch.object(discord, "CLOSE_PER_CALL", 1):
+            closed, delete = self.close(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC))
+        self.assertEqual((closed, delete.call_args.args[0]), (1, f"{discord.API}/channels/111"))
+        older.refresh_from_db()
+        self.assertEqual((older.discord_channel_id, self.event.discord_channel_id), ("", "333"))
+
     def test_a_deleted_event_s_room_is_closed_too(self):
         Competition.objects.filter(pk=self.event.pk).update(is_deleted=True)
         self.assertEqual(self.close(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC))[0], 1)
