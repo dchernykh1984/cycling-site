@@ -228,9 +228,12 @@ def test_render_runs_the_script_every_night_inside_the_window():
     assert env["DEPLOY_WINDOW_UTC"]["value"] == window, "the Render run and the fallback deploy in one window"
     (night,) = _daily(cron["schedule"], NIGHT)
     assert deploy.in_window(night, window)
-    script = cron["startCommand"].removeprefix("python ")
-    assert (ROOT / script).is_file(), cron["startCommand"]
-    assert script in cron["buildFilter"]["paths"], "a change to the script would not reach the cron"
+    scripts = [command.strip().removeprefix("python ") for command in cron["startCommand"].split(";")]
+    # the Discord rooms are closed first; the deploy is last, so the run's verdict is the deploy's
+    assert scripts == ["scripts/close_discord_rooms.py", "scripts/deploy_if_behind.py"], cron["startCommand"]
+    for script in scripts:
+        assert (ROOT / script).is_file(), script
+        assert script in cron["buildFilter"]["paths"], f"a change to {script} would not reach the cron"
     assert cron["branch"] == "main", "the cron would run the script of the branch its Blueprint was made from"
 
 

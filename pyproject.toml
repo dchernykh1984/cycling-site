@@ -86,6 +86,7 @@ select = [
 "assistant/llm.py" = ["S310"]
 # The nightly deploy opens only the site's, GitHub's and the deploy hook's https addresses.
 "scripts/deploy_if_behind.py" = ["S310"]
+"scripts/close_discord_rooms.py" = ["S310"]  # the site's own address, from the cron's settings
 "**/migrations/*.py" = ["N806", "RUF001", "RUF012", "E501"]
 "cycling_site/settings/*.py" = ["F403", "F405", "S105"]
 

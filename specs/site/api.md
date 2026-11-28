@@ -32,7 +32,8 @@ and protocols with the event's upload token. The API has no language prefix.
    or mark it a top event (`is_top`, read by everybody; a 403 for anybody else);
    an organizer or above may ask for the event's Discord room (`discord_room`, a 403 for anybody else), opened
    once the event is saved: `discord_invite_url` names it, and `discord_note` says why it is not open yet
-   ([events](events.md), story 4b);
+   ([events](events.md), story 4b); `POST /competitions/discord-rooms/close-due`, open to anyone and changing
+   nothing before its time, closes the rooms of the events that are over -- the nightly cron's call;
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
    the others). Reads preserve empty languages, so writing a response back keeps the chat's

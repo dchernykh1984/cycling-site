@@ -484,6 +484,19 @@ def list_organizers(request):
     return [OrganizerOut(user_id=row["pk"], name=row["name"]) for row in organizers.choices()]
 
 
+class ClosedRoomsOut(Schema):
+    closed: int
+
+
+@router.post(
+    "/discord-rooms/close-due", response=ClosedRoomsOut, auth=None, summary="Close the Discord rooms of events over"
+)
+def close_discord_rooms(request):
+    """The nightly cron's call (scripts/close_discord_rooms.py). Open to anyone: it closes only the rooms whose
+    events are over by the site's own clock, so a call more or a call sooner changes nothing."""
+    return ClosedRoomsOut(closed=discord.close_due_rooms())
+
+
 @router.get("/{competition_id}", response=CompetitionDetailOut, auth=optional_auth, summary="Get competition detail")
 def get_competition(request, competition_id: int):
     competition = _get_or_404(competition_id)
