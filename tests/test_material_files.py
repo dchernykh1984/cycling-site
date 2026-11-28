@@ -147,11 +147,11 @@ class MaterialInAdminTests(TestCase):
         self.assertIn("url", form.errors)
 
 
-class PresentationsInEveryFileFieldTests(TestCase):
-    def test_every_file_field_of_the_event_takes_a_presentation_in_each_format_it_is_made_in(self):
+class PresentationsAndTextInEveryFileFieldTests(TestCase):
+    def test_every_file_field_of_the_event_takes_presentations_and_plain_text(self):
         from calendar_app.forms import validate_document
 
-        for ext in ("ppt", "pptx", "pps", "ppsx", "odp", "key"):
+        for ext in ("ppt", "pptx", "pps", "ppsx", "odp", "key", "txt", "md"):
             with self.subTest(ext=ext):
                 upload = SimpleUploadedFile(f"talk.{ext}", b"slides", content_type="application/octet-stream")
                 self.assertIs(validate_document(upload), upload)
