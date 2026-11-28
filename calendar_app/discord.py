@@ -1,7 +1,7 @@
-"""A Discord room for an event: a text channel the site's bot opens on the club's server, and its invitation.
+"""A Discord room for an event: a voice channel the site's bot opens on the club's server, and its invitation.
 
 An organizer ticks the event form's box "Create a Discord room" (``Competition.discord_room``); once the event is
-saved the site opens a text channel named after it, under the category ``DISCORD_CATEGORY_ID`` names where one is
+saved the site opens a voice channel named after it, under the category ``DISCORD_CATEGORY_ID`` names where one is
 set, makes an invitation that never runs out and writes it into the event's text in each language. The room is
 opened once: the channel and its invitation stay with the event (``discord_channel_id``, ``discord_invite_url``),
 and unticking the box later leaves the room on Discord. A failure keeps the event and its box, and the next save
@@ -22,9 +22,10 @@ from .models import Competition
 
 API = "https://discord.com/api/v10"
 INVITE_BASE = "https://discord.gg/"
-TEXT_CHANNEL = 0  # Discord's type of a text channel
+VOICE_CHANNEL = 2  # Discord's type of a voice channel
 CHANNEL_NAME_MAX = 100  # Discord's longest channel name
-TOPIC_MAX = 1024
+# Discord's codes for a server or a category with no room for another channel (500 on a server, 50 in a category)
+_NO_ROOM_CODES = ("30013", "CHANNEL_PARENT_MAX_CHANNELS")
 # Saving an event waits for Discord on one of the site's request threads: a slow Discord fails the room, which the
 # next save opens, rather than hold the thread
 _TIMEOUT = 10
@@ -53,15 +54,17 @@ def _post(path: str, body: dict) -> dict:
     except requests.RequestException as exc:
         raise DiscordError(type(exc).__name__) from None
     if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
-        raise DiscordError(_refusal(response.status_code))
+        raise DiscordError(_refusal(response.status_code, response.text))
     try:
         return response.json()
     except ValueError:  # a proxy's page in place of Discord's answer: the event is saved already, the room waits
         raise DiscordError("Discord answered without JSON") from None
 
 
-def _refusal(status: int) -> str:
+def _refusal(status: int, body: str = "") -> str:
     """Why Discord refused, in the words that say what to set up: the organizer passes them on to the admin."""
+    if status == HTTPStatus.BAD_REQUEST and any(code in body for code in _NO_ROOM_CODES):
+        return _("the server or its category has no room for another channel: 500 on a server, 50 in a category")
     if status == HTTPStatus.UNAUTHORIZED:
         return _("Discord does not accept the site's bot token")
     if status == HTTPStatus.FORBIDDEN:
@@ -108,8 +111,7 @@ def open_room(competition: Competition) -> str:
                 f"/guilds/{settings.DISCORD_GUILD_ID}/channels",
                 {
                     "name": _channel_name(competition),
-                    "type": TEXT_CHANNEL,
-                    "topic": f"{settings.SITE_BASE_URL}{competition.get_absolute_url()}"[:TOPIC_MAX],
+                    "type": VOICE_CHANNEL,
                     **({"parent_id": settings.DISCORD_CATEGORY_ID} if settings.DISCORD_CATEGORY_ID else {}),
                 },
             )

@@ -6100,3 +6100,11 @@ msgstr "Файл"
 #: calendar_app/forms.py
 msgid "The site's disk is nearly full: the file cannot be kept now."
 msgstr "Диск сайта почти заполнен: сейчас файл сохранить нельзя."
+
+#: calendar_app/discord.py
+msgid ""
+"the server or its category has no room for another channel: 500 on a server,"
+" 50 in a category"
+msgstr ""
+"на сервере или в его категории нет места для нового канала: Discord "
+"разрешает 500 на сервере и 50 в категории"
