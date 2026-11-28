@@ -2,6 +2,8 @@
 /* ---------------- События ---------------- */
 $('#btnConnect').onclick = () => Sensors.add();
 $('#btAuto').onchange = e => Sensors.setAuto(e.target.checked);
+// "Write HRV", kept with the settings and so with the account
+$('#hrvOn').addEventListener('change', e => { settings.hrv = e.target.checked; saveSettings(); });
 $('#btnStart').onclick = async () => {
   // a workout picked from intervals.icu that has not loaded: the line under the list says why, and nothing starts
   if (settings.mode === 'plan' && planWaits()) { $('#plIcuInfo').scrollIntoView({ block: 'center' }); return; }

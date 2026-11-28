@@ -38,10 +38,13 @@ function airAround(r, y) {
 // a rider at the start of a ride: nothing ridden yet
 function startRider(r) {
   r.stats = { dist: 0, gain: 0, sumP: 0, sumCad: 0, nCad: 0, maxV: 0, t: 0, sumHR: 0, nHR: 0, maxHR: 0, real: false, demoT: 0 };
-  r.powerLog = []; r.pAcc = 0; r.pT = 0; r.track = []; r.lap = 0;
+  r.powerLog = []; r.pAcc = 0; r.pT = 0; r.track = []; r.rr = []; r.lap = 0;
   return r;
 }
 const MAX_TRACK = 6 * 3600; // the site keeps six hours of a ride's track, a point a second
+const MAX_RR = 6 * 3600 * 220 / 60; // and six hours of RR intervals at 220 beats a minute (api: _MAX_RR)
+// the strap's RR intervals since the last second, kept when "Write HRV" is on: a heart at 27 to 270 beats a minute
+function takeRR(r) { const rr = Sensors.takeRR(); if (settings.hrv) for (const ms of rr) if (ms >= 220 && ms <= 2500 && r.rr.length < MAX_RR) r.rr.push(ms); }
 // [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm]: the route's place on the map, not a GPS fix
 function trackPoint(inp) {
   const o = riderPos(me, {}), ll = unproj(o.px, o.pz, world.T.origin);
@@ -122,7 +125,7 @@ function stepRide(dt, inp, t) {
       if (rideMode === 'race') raceCrossings(s0, me.s, dt);
       rideEvent('moved', s0, me.s, dt, inp); // the Strava segments the rider is on (js/segments.js)
       const st = me.stats, y1 = sampleAt(T, me.s, _ry).y; if (y1 > y0) st.gain += y1 - y0;
-      st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); } if (inp.mode === 'power') st.real = true; if (inp.hr) { st.sumHR += inp.hr; st.nHR++; st.maxHR = Math.max(st.maxHR, inp.hr); }
+      st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); takeRR(me); } if (inp.mode === 'power') st.real = true; if (inp.hr) { st.sumHR += inp.hr; st.nHR++; st.maxHR = Math.max(st.maxHR, inp.hr); }
       if (rideMode === 'plan' || rideMode === 'free') {
         // тренировка по плану: маршрут крутится кругами, финиш — когда закончится последний шаг; a free ride laps a
         // loop only: on a route from one place to another it ends at the finish, saved as when its rider ends it

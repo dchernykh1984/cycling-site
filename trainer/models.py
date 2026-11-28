@@ -177,6 +177,9 @@ class RideTrack(models.Model):
 
     ride = models.OneToOneField(VirtualRide, on_delete=models.CASCADE, primary_key=True, related_name="track")
     points = models.JSONField()
+    # the RR intervals of the rider's heart, ms, one after another, when their page wrote them ("Write HRV"): a ride
+    # that has them goes to Strava and intervals.icu as a FIT file, which has a place for them (trainer.fit)
+    rr = models.JSONField(default=list, blank=True)
 
     def __str__(self) -> str:
         return f"track of {self.ride_id}"

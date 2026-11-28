@@ -7,7 +7,6 @@ intervals-icu/609). The key is checked when the member gives it and kept sealed
 goes through ``requests``, which the tests patch -- they never reach intervals.icu.
 """
 
-import gzip
 from datetime import date, timedelta
 from http import HTTPStatus
 from typing import Any
@@ -176,10 +175,9 @@ def upload(ride: VirtualRide) -> IntervalsUpload:
         "external_id": f"universalbicycle-virtual-ride-{ride.pk}",
         "device_name": "Universal Bicycle Team virtual ride",
     }
-    # the TCX Strava gets, unpacked: intervals.icu does not document taking it gzipped
-    files = {
-        "file": (f"virtual-ride-{ride.pk}.tcx", gzip.decompress(strava.tcx(ride, track.points)), "application/xml")
-    }
+    # the file Strava gets -- a FIT with the rider's RR intervals, else the TCX unpacked: intervals.icu does not
+    # document taking it gzipped
+    files = {"file": strava.ride_file(ride, track, gzipped=False)}
     try:
         response = _call(key, "POST", f"/athlete/{connection.athlete_id}/activities", params=params, files=files)
         if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):

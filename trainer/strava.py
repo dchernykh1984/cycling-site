@@ -23,7 +23,7 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.views.decorators.debug import sensitive_variables
 
-from . import secret_box
+from . import fit, secret_box
 from .invitation import invitation
 from .models import RideTrack, StravaConnection, StravaUpload, VirtualRide
 
@@ -219,6 +219,16 @@ def tcx(ride: VirtualRide, points: list) -> bytes:
     return gzip.compress(ET.tostring(root, xml_declaration=True, encoding="UTF-8"))
 
 
+def ride_file(ride: VirtualRide, track: RideTrack, gzipped: bool = True) -> tuple[str, bytes, str]:
+    """The ride's file for an upload: a FIT when it carries the rider's RR intervals, which a TCX has no place for,
+    else the TCX, gzipped for Strava; as (name, bytes, type)."""
+    if track.rr:
+        return f"virtual-ride-{ride.pk}.fit", fit.activity(ride, track.points, track.rr), "application/octet-stream"
+    if gzipped:
+        return f"virtual-ride-{ride.pk}.tcx.gz", tcx(ride, track.points), "application/gzip"
+    return f"virtual-ride-{ride.pk}.tcx", gzip.decompress(tcx(ride, track.points)), "application/xml"
+
+
 def _fail(record: StravaUpload, message: str) -> StravaUpload:
     record.status, record.error = StravaUpload.Status.FAILED, strip_tags(message)[:300]
     record.save()
@@ -269,14 +279,14 @@ def upload(ride: VirtualRide) -> StravaUpload:
     if connection is None or track is None:
         return _fail(record, "Not connected to Strava" if connection is None else "The ride has no track")
     data = {
-        "data_type": "tcx.gz",
+        "data_type": "fit" if track.rr else "tcx.gz",
         # the type Strava would guess from a TCX is a plain ride; this is a ride on a trainer in a virtual world
         "sport_type": "VirtualRide",
         "name": ride.route_name or ride.route,
         "description": invitation(ride.user),
         "external_id": f"universalbicycle-virtual-ride-{ride.pk}",
     }
-    files = {"file": (f"virtual-ride-{ride.pk}.tcx.gz", tcx(ride, track.points), "application/gzip")}
+    files = {"file": ride_file(ride, track)}
     try:
         response = _call(connection, "POST", UPLOADS_URL, data=data, files=files)
     except StravaError as exc:
