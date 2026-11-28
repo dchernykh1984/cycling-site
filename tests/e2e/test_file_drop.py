@@ -175,3 +175,18 @@ def test_the_chats_hint_to_drag_takes_one_line_and_leaves_every_button_whole(
     )
     assert lines == 1
     assert whole
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_file_dropped_on_a_material_s_row_is_its_file_in_a_row_added_in_the_page_too(
+    page: Page, live_server, organizer, kz_competition
+):
+    inject_session(page, live_server, organizer)
+    page.goto(f"{live_server.url}/en/calendar/{kz_competition.pk}/edit/")
+    if not _desktop(page):
+        pytest.skip("a phone has nothing to drag")
+    page.locator("#add-material-btn").click()
+    for index, name in ((0, "photos.pdf"), (1, "results.pdf")):
+        zone = f"#id_materials-{index}-file"
+        assert page.evaluate(DROP, [zone, ".material-row", name, "application/pdf"])
+        assert page.eval_on_selector(zone, "i => i.files.length ? i.files[0].name : ''") == name
