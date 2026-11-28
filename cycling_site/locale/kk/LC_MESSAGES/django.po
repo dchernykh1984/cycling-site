@@ -1737,14 +1737,8 @@ msgid "External registration link"
 msgstr "Сыртқы тіркеуге сілтеме"
 
 #: calendar_app/templates/calendar_app/edit.html:174
-msgid ""
-"Photo and video coverage and other files of the event. Each one needs a name"
-" and a link or a file of up to 10 MB; a file uploaded takes the place of the"
-" link."
-msgstr ""
-"Іс-шараның фото, бейне материалдары және басқа файлдары. Әрқайсысына атау "
-"және сілтеме немесе 10 МБ-қа дейінгі файл керек; жүктелген файл сілтеменің "
-"орнын басады."
+msgid "A name and a link or a file up to 10 MB."
+msgstr "Атауы және сілтеме не 10 МБ-қа дейінгі файл."
 
 #: calendar_app/templates/calendar_app/edit.html:200
 #: calendar_app/templates/calendar_app/edit.html:204

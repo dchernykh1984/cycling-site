@@ -194,7 +194,7 @@
 
       <hr class="my-4">
       <h2 class="mb-1 h5">{% trans "Additional materials" %}</h2>
-      <p class="form-text mt-0 mb-3">{% trans "Photo and video coverage and other files of the event. Each one needs a name and a link or a file of up to 10 MB; a file uploaded takes the place of the link." %}</p>
+      <p class="form-text mt-0 mb-3">{% trans "A name and a link or a file up to 10 MB." %}</p>
       {{ material_formset.management_form }}
       {% if material_formset.non_form_errors %}
       <div class="alert alert-danger">{% for e in material_formset.non_form_errors %}{{ e }}{% endfor %}</div>
