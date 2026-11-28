@@ -197,6 +197,13 @@ class SegmentsApiTests(MemberClientMixin, TestCase):
         self.assertEqual(self.client_m.get(f"{API}/strava/segments/101").status_code, 502)
 
     @mock.patch("trainer.strava.requests.request")
+    def test_an_answer_that_is_not_strava_s_is_strava_s_trouble(self, call):
+        call.return_value = _answer(200)
+        call.return_value.json.side_effect = ValueError("not JSON")
+        answer = self.client_m.get(f"{API}/strava/segments")
+        self.assertEqual((answer.status_code, answer.json()["detail"]), (502, "Strava answered without JSON"))
+
+    @mock.patch("trainer.strava.requests.request")
     def test_a_long_line_is_thinned_to_what_the_page_draws_with_its_end_kept(self, call):
         n = 1000
         line = {
