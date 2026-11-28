@@ -6025,42 +6025,13 @@ msgid "Strava no longer accepts this connection: connect it again"
 msgstr "Strava бұл қосылымды енді қабылдамайды: оны қайта қосыңыз"
 
 #: calendar_app/discord.py
-msgid "Discord room"
-msgstr "Discord бөлмесі"
-
-#: calendar_app/discord.py
-msgid ""
-"Discord is not set up on this site yet: the room is opened once it is, on "
-"the event's next save."
-msgstr ""
-"Сайтта Discord әлі бапталмаған: ол бапталған соң іс-шараны келесі сақтағанда"
-" бөлме ашылады."
+msgid "Discord is not set up on this site yet: ask its admin."
+msgstr "Сайтта Discord әлі бапталмаған: әкімшіге хабарласыңыз."
 
 #: calendar_app/discord.py
 #, python-format
-msgid ""
-"The Discord room could not be opened (%(reason)s): saving the event again "
-"tries once more."
-msgstr ""
-"Discord бөлмесін ашу мүмкін болмады (%(reason)s): қайта көру үшін іс-шараны "
-"тағы бір рет сақтаңыз."
-
-#: calendar_app/templates/calendar_app/submit.html
-msgid "Create a Discord room"
-msgstr "Discord бөлмесін ашу"
-
-#: calendar_app/templates/calendar_app/submit.html
-msgid ""
-"The site opens a voice channel on the club's Discord server and adds its "
-"invitation to the event's text; the channel is deleted once the day after "
-"the event is over."
-msgstr ""
-"Сайт клубтың Discord серверінде дауыстық арна ашып, шақыруын іс-шара "
-"мәтініне қосады; арна іс-шарадан кейінгі күн аяқталғанда жойылады."
-
-#: calendar_app/templates/calendar_app/edit.html
-msgid "Its room:"
-msgstr "Оның бөлмесі:"
+msgid "The Discord room could not be opened (%(reason)s)."
+msgstr "Discord бөлмесін ашу мүмкін болмады (%(reason)s)."
 
 #: calendar_app/discord.py
 msgid "Discord does not accept the site's bot token"
@@ -6099,3 +6070,7 @@ msgid ""
 msgstr ""
 "серверде немесе оның санатында жаңа арнаға орын жоқ: Discord серверде 500, "
 "санатта 50 арнаға рұқсат береді"
+
+#: api/endpoints/virtual_ride.py
+msgid "Only organizers can open a Discord room"
+msgstr "Discord бөлмесін тек ұйымдастырушылар аша алады"

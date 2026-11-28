@@ -234,12 +234,6 @@ class Competition(index.Indexed, models.Model):
     # Permanent lock: True once registration is first activated; never reset to False.
     registration_mode_locked = models.BooleanField(default=False)
 
-    # A Discord room for the event (calendar_app/discord.py): the organizer's box, and the voice channel the site
-    # opened for it with its invitation, which the event's text carries. Set by the site, never typed.
-    discord_room = models.BooleanField(default=False)
-    discord_channel_id = models.CharField(max_length=30, blank=True, default="", editable=False)
-    discord_invite_url = models.URLField(blank=True, default="", editable=False)
-
     is_hidden = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
     # Invite-only (issue #313): published, but only to the people who may edit it and to everyone

@@ -41,6 +41,7 @@ PUBLISH_EVENTS = Role.ORGANIZER  # publish at once, switch registration on, mana
 MODERATE_EVENTS = Role.ORGANIZER  # approve or reject anybody's event
 MANAGE_ALL_EVENTS = Role.ADMIN  # every event: hidden, invite-only, reported, deleted
 MARK_TOP_EVENTS = Role.ADMIN
+OPEN_DISCORD_ROOMS = Role.ORGANIZER  # a virtual race's room takes one of the server's 500 channels (trainer.discord)
 EVENT_ASSISTANT = Role.ORGANIZER  # it spends the site's key (specs/353-event-assistant, decision 27)
 SEE_ANY_CONVERSATION = Role.ADMIN  # an assistant conversation somebody else started
 

@@ -8,7 +8,7 @@
 (moderation banner)
 **Tests**: `calendar_app/tests.py` (model, submit, moderation, detail, edit, comments, reports,
 materials, upload token, rich description, several event types), `calendar_app/test_timezones.py`,
-`tests/test_invite_only_events.py`, `tests/test_discord_room.py`,
+`tests/test_invite_only_events.py`,
 `tests/test_clone_competition.py`, `tests/test_event_draft.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
@@ -127,24 +127,6 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
    public; pending and hidden events cannot be reported.
 2. **Given** an admin, **Then** reported events appear once in the queue with their reports, and
    dismissing clears them; organizers do not see reports.
-
-### Story 4b -- A Discord room for an event
-
-1. **Given** an organizer ticks "Create a Discord room" on the event form (`discord_room`, kept with the event and
-   copied by a clone), **Then** once the event is saved the site's bot opens a voice channel for it on the server
-   `DISCORD_GUILD_ID` names, under `DISCORD_CATEGORY_ID` where set, named after its date and Russian title, makes an invitation that never runs out and writes it as a line of its own at the end
-   of the event's text in each language that has text, in all three when none has; a cloned event's old line gives
-   way to its own room's (`calendar_app/discord.py`, `tests/test_discord_room.py`).
-2. **Given** the room is open, **Then** later saves leave it as it is, and unticking the box leaves it on Discord;
-   the edit page links it. It lasts the event and the whole day after it at the event's place: from then on the
-   nightly cron (`scripts/close_discord_rooms.py`, `render.yaml`) has the site delete its channel and take its line
-   out of the text, and an event that is over opens no room; a channel Discord does not delete, or one past the
-   twenty a night closes or its fifteen seconds, waits for the next night. The cron runs at 21:07 UTC: a place west of it sees its room
-   close at that hour of the next night, up to a day after the day after.
-3. **Given** the bot is not set up or Discord refuses, **Then** the event is saved with its box, the organizer is
-   told why there is no room -- a server or a category with no room for another channel (Discord takes 500 on a
-   server, 50 in a category) in those words --, and the next save tries again -- in the channel already opened, if only its
-   invitation failed. A participant's box is neither offered nor read.
 
 ### Story 5 -- Invite-only events (P3, issue #313)
 

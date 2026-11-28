@@ -106,6 +106,9 @@ class GroupRide(models.Model):
     # the last rider's own start, after the gaps between categories or the intervals of a time trial: the lobby lists
     # the race until a little after it, so every rider's page is there to start them
     last_start_at = models.DateTimeField(null=True, blank=True)
+    # its Discord room, when its host asked for one (trainer.discord): the voice channel and its invitation
+    discord_channel_id = models.CharField(max_length=30, blank=True, default="", editable=False)
+    discord_invite_url = models.URLField(blank=True, default="", editable=False)
 
     class Meta:
         ordering = ("start_at",)

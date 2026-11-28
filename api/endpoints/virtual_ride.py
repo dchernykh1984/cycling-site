@@ -28,7 +28,7 @@ from api.auth import OptionalApiTokenAuth, member_auth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
 from calendar_app.visibility import can_see, public_events
-from trainer import intervals, live, race, records, services, strava
+from trainer import discord, intervals, live, race, records, services, strava
 from trainer.models import (
     GroupRide,
     GroupRideMember,
@@ -83,6 +83,8 @@ class MeOut(Schema):
     event_draft_url: str = ""
     # whether the member may make a race an event with its registration, as the event form lets an organizer
     organizes: bool = False
+    # whether the member may gather a race with a Discord room: the site has a bot, and they are an organizer or up
+    discord_rooms: bool = False
     # Sending rides to Strava: whether the site can, whether this member turned it on, where to turn it on
     strava_available: bool = False
     strava_connected: bool = False
@@ -348,6 +350,9 @@ class GroupOut(Schema):
     draft_between_groups: bool = True
     loop: bool = True
     me: RaceMeOut | None = None
+    # its Discord room's invitation, and after gathering it why the room asked for is not there
+    discord_invite_url: str = ""
+    discord_note: str = ""
 
 
 class GroupWindIn(Schema):
@@ -376,6 +381,8 @@ class GroupIn(Schema):
     draft_between_groups: bool = True
     # the route is a loop, its riders riding their categories' laps; else each rides it once
     loop: bool = True
+    # a voice room for it on the club's Discord server (trainer.discord): an organizer's or up
+    discord_room: bool = False
 
 
 class RaceEventChoiceOut(RaceEventOut):
@@ -539,6 +546,7 @@ def _group_out(group: GroupRide, user, registered: set[int] | None = None) -> Gr
         draft_between_groups=group.draft_between_groups,
         loop=group.loop,
         me=me,
+        discord_invite_url=group.discord_invite_url,
     )
 
 
@@ -600,6 +608,7 @@ def me(request):
         page_url=reverse("virtual_ride"),
         event_draft_url=reverse("calendar_submit_draft"),
         organizes=roles.at_least(user, roles.PUBLISH_EVENTS),
+        discord_rooms=discord.configured() and roles.at_least(user, roles.OPEN_DISCORD_ROOMS),
         strava_available=strava.available(),
         strava_connected=connection is not None,
         strava_athlete=connection.athlete_name if connection else "",
@@ -981,6 +990,8 @@ def create_group(request, payload: GroupIn):
         raise HttpError(HTTPStatus.CONFLICT, many % {"n": live.MAX_WAITING})
     if mine.filter(start_at__gt=start - live.RACE_GAP, start_at__lt=start + live.RACE_GAP).exists():
         raise HttpError(HTTPStatus.CONFLICT, _("You already have a group race starting within an hour of that time"))
+    if payload.discord_room and not roles.at_least(request.auth, roles.OPEN_DISCORD_ROOMS):
+        raise HttpError(HTTPStatus.FORBIDDEN, _("Only organizers can open a Discord room"))
     event = None
     if payload.competition_id is not None:
         event = Competition.objects.filter(pk=payload.competition_id).first()
@@ -1012,7 +1023,24 @@ def create_group(request, payload: GroupIn):
             Competition.objects.filter(pk=event.pk).filter(
                 Q(virtual_ride__isnull=True) | Q(virtual_ride__in=stale.values("pk"))
             ).update(virtual_ride=group.pk)
-    return Status(HTTPStatus.CREATED, _answer(group, request.auth))
+    # after the race is saved and its transaction over: Discord is not waited for inside it
+    note = discord.open_room(group) if payload.discord_room else ""
+    answer = _answer(group, request.auth)
+    answer.discord_note = note
+    return Status(HTTPStatus.CREATED, answer)
+
+
+class ClosedRoomsOut(Schema):
+    closed: int
+
+
+@router.post(
+    "/discord-rooms/close-due", response=ClosedRoomsOut, auth=None, summary="Close the Discord rooms of races over"
+)
+def close_discord_rooms(request):
+    """The nightly cron's call (scripts/close_discord_rooms.py). Open to anyone: it closes only the rooms of races
+    over by the site's own clock, or cancelled, so a call more or a call sooner changes nothing."""
+    return ClosedRoomsOut(closed=discord.close_due_rooms())
 
 
 @router.get(

@@ -65,6 +65,7 @@ function renderRaceOpts() {
   $('#mpCreate').textContent = ride ? t('mp.createRide') : t('mp.create');
   $('#mpHint').textContent = ride ? t('mp.hintRide') : t('mp.hint');
   $('#mpEventHint').textContent = ride ? t('mp.eventHintRide') : t('mp.eventHint');
+  renderDiscordBox();
   $('#mpRaceOpts').classList.toggle('hidden', kind !== 'race');
   $('#mpRaceGapL').classList.toggle('hidden', itt); $('#mpRaceDraftL').classList.toggle('hidden', itt);
   $('#mpRaceIntervalL').classList.toggle('hidden', !itt); renderWhen();
@@ -165,7 +166,7 @@ async function mpSetWind(g, ms, from) {
 async function mpAction(path, body) {
   if (MP.acting) return;
   MP.acting = true;
-  try { await Site.post(path, body); MP.failed = null; } catch (e) { mpFailed(e); }
+  try { mpRoomNote(await Site.post(path, body)); MP.failed = null; } catch (e) { mpFailed(e); }
   MP.acting = false; mpSchedule(50);
 }
 // a ride or a race, as the mode gathers, on the chosen route in the host's wind, which is its riders'
@@ -173,8 +174,17 @@ function mpRace(when) {
   const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], w = ownWind(), kind = mpKind();
   // a race's mode, and the gaps and the drafting rule an event's registration gives categories to
   const race = kind === 'race' ? { mode: $('#mpRaceMode').value, group_gap_s: clamp(Math.round(+$('#mpRaceGap').value || 0), 0, 3600), itt_interval_s: clamp(Math.round(+$('#mpRaceInterval').value || 30), 5, 600), draft_between_groups: $('#mpRaceDraft').checked } : {};
-  return Object.assign({ route: r.id, route_name: r.name, kind, loop: !!r.loop, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0 }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
+  return Object.assign({ route: r.id, route_name: r.name, kind, loop: !!r.loop, wind_ms: w ? w.ms : 0, wind_from_deg: w ? w.from : 0, discord_room: mpDiscordAsked() }, race, when.start_at ? { start_at: when.start_at } : { start_in_s: when.start_in_s });
 }
+// the Discord box: offered to an organizer on a site with a bot (MeOut.discord_rooms), ticked as they left it
+const mpDiscordAsked = () => !!(Records.me && Records.me.discord_rooms) && $('#mpDiscord').checked;
+function renderDiscordBox() {
+  const offered = !!(Records.me && Records.me.discord_rooms) && mpKind() !== null;
+  ['#mpDiscordL', '#mpDiscordHint'].forEach(id => $(id).classList.toggle('hidden', !offered));
+  $('#mpDiscord').checked = !!settings.discordRoom;
+}
+// a race gathered: why its Discord room asked for is not there, if it is not
+function mpRoomNote(g) { if (g && g.discord_note) mpNote(t('mp.discordNote', { msg: g.discord_note })); return g; }
 function mpCreateGroup() {
   if (MP.status !== 'on' || !mpKind()) return;
   // at a date and time with "Add it to the calendar" ticked: the ride or race, and its event's form
@@ -191,7 +201,7 @@ async function mpAddEvent() {
   try {
     const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
     const kind = mpKind(), same = x => x.is_host && x.route === r.id && (x.kind || 'race') === kind && Math.abs(Date.parse(x.start_at) - when.at) < 60e3;
-    const g = MP.groups.find(same) || await Site.post('/groups', mpRace(when));
+    const g = MP.groups.find(same) || mpRoomNote(await Site.post('/groups', mpRace(when)));
     sendEventDraft(r, g, new Date(Date.parse(g.start_at)));
   } catch (e) { mpFailed(e); }
   MP.eventBusy = false; mpSchedule(50);
@@ -251,7 +261,9 @@ function sendEventDraft(r, g, at) {
       ? [t('ev.raceTitle', null, lang), t('ev.racePreview', null, lang), t('ev.raceText', null, lang)]
       : [t('ev.rideTitle', null, lang), t('ev.ridePreview', null, lang), t('ev.rideText', null, lang)];
     put('title_' + lang, fillIn(words[0], v)); put('preview_text_' + lang, fillIn(words[1], v));
-    put('description_' + lang, fillIn(words[2], v, escapeHTML));
+    // and its Discord room's invitation, as a line of its own: the site takes it out when the room closes
+    const room = g.discord_invite_url ? '<p>' + escapeHTML(t('ev.discord', null, lang)) + ': <a href="' + escapeHTML(g.discord_invite_url) + '">' + escapeHTML(g.discord_invite_url) + '</a></p>' : '';
+    put('description_' + lang, fillIn(words[2], v, escapeHTML) + room);
   });
   EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);
   put('virtual_ride', g.id); // the ride or race the event is ridden in: its page opens it
@@ -354,7 +366,7 @@ function renderMP() {
     let card = box.querySelector('[data-gid="' + g.id + '"]');
     if (!card) {
       card = document.createElement('div'); card.dataset.gid = g.id;
-      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-wind hidden"><label class="mp-field"><span></span><input class="ms" type="number" min="0" max="30" step="1" inputmode="numeric"></label><label class="mp-field"><span></span><select class="from"></select></label></div><div class="mp-acts"><button class="btn primary go hidden" type="button"></button><button class="btn act" type="button"></button><button class="btn share" type="button"></button></div>';
+      card.innerHTML = '<div><b></b><span class="mp-countdown hidden"></span><small></small></div><div class="mp-wind hidden"><label class="mp-field"><span></span><input class="ms" type="number" min="0" max="30" step="1" inputmode="numeric"></label><label class="mp-field"><span></span><select class="from"></select></label></div><div class="mp-acts"><button class="btn primary go hidden" type="button"></button><button class="btn act" type="button"></button><button class="btn share" type="button"></button><a class="btn discord hidden" target="_blank" rel="noopener"></a></div>';
       box.appendChild(card);
     }
     card.className = 'mp-group' + (g.is_member ? ' on' : '') + (g.id === LINKED ? ' linked' : '');
@@ -391,6 +403,9 @@ function renderMP() {
     go.classList.toggle('hidden', !counting && !unregistered); go.textContent = unregistered ? t('mp.register') : t('mp.toStart');
     go.onclick = unregistered ? () => window.open(langPath(g.event.register_url), '_top') : () => { if (!MP.started.has(g.id)) { MP.refused.delete(g.id); mpEnter(g); } };
     const share = card.querySelector('.share'); share.textContent = t('mp.share'); share.onclick = () => mpShare(g);
+    // its Discord room, when its host opened one: a voice channel on the club's server
+    const room = card.querySelector('.discord'); room.classList.toggle('hidden', !g.discord_invite_url);
+    if (g.discord_invite_url) { room.href = g.discord_invite_url; room.textContent = t('mp.discordRoom'); }
     const btn = card.querySelector('.act'); btn.disabled = false;
     const ev = g.event;
     if (g.is_host) { btn.textContent = t('mp.cancel'); btn.onclick = () => mpAction('/groups/' + g.id + '/cancel'); }

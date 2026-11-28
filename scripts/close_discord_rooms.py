@@ -1,4 +1,4 @@
-"""Ask the site to close the Discord rooms of the events that are over (calendar_app/discord.py).
+"""Ask the site to close the Discord rooms of the virtual races that are over (trainer/discord.py).
 
 Run each night by the Render Cron Job before the deploy (render.yaml). Its failure is said and the deploy still
 runs: a room not closed tonight is closed the next night. Environment: SITE_BASE_URL.
@@ -13,7 +13,7 @@ USER_AGENT = "UniversalBicycleTeam-Rooms/1.0"
 
 
 def run(site: str, opener=urllib.request.urlopen) -> int:
-    url = f"{site.rstrip('/')}/api/v1/competitions/discord-rooms/close-due"
+    url = f"{site.rstrip('/')}/api/v1/virtual-ride/discord-rooms/close-due"
     request = urllib.request.Request(url, data=b"", method="POST", headers={"User-Agent": USER_AGENT})
     try:
         with opener(request, timeout=120) as response:
