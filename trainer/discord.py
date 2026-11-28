@@ -8,7 +8,7 @@ and an event made from the race carries it in its text, as it carries the race's
 says why. Every call goes through ``requests``, which the tests patch -- they never reach Discord.
 
 A room lasts the day of the start and the whole day after it, in the zone of the race's event where it has one, else
-UTC; a cancelled race's goes at once. ``close_due_rooms``, which the nightly cron asks for
+the site's (``TIME_ZONE``); a cancelled race's goes at once. ``close_due_rooms``, which the nightly cron asks for
 (scripts/close_discord_rooms.py), deletes the channel and takes the invitation out of the event's text. Discord keeps
 500 channels on a server, 50 in a category, so only the rooms of races to come take them.
 """
@@ -27,7 +27,6 @@ from django.utils.translation import gettext as _
 from django.views.decorators.debug import sensitive_variables
 
 from calendar_app.models import Competition
-from locations.models import timezone_of
 
 from .models import GroupRide
 
@@ -116,9 +115,9 @@ def _events(group: GroupRide):
 
 
 def zone_of(group: GroupRide, default=None):
-    """The zone of the race's event's place; else ``default``, else UTC -- the zone its days are counted in."""
+    """The zone of the race's event's place; else ``default``, else the site's -- the zone its days are counted in."""
     event = _events(group).select_related("location").first()
-    return event.timezone if event is not None else default or timezone_of(None)
+    return event.timezone if event is not None else default or timezone.get_default_timezone()
 
 
 def _channel_name(group: GroupRide, zone) -> str:

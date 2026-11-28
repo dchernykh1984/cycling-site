@@ -187,7 +187,7 @@ settings and so with the account): the ride or race it gathers gets a voice chan
 after its start and route, under the category the site names, with an invitation that never runs out; its card links
 it, and a refusal of Discord's keeps the race and is said in words -- a server or a category with no room for
 another channel (500 on a server, 50 in a category) so named. A room lasts the day of the start and the whole day
-after it, counted at the place of the race's event, else in UTC, and a cancelled race's goes at once: the nightly cron
+after it, counted at the place of the race's event, else in the site's time zone, and a cancelled race's goes at once: the nightly cron
 (`scripts/close_discord_rooms.py` before the deploy, `render.yaml`) has the site delete its channel and take its line
 out of the event's text -- twenty a night at most, in fifteen seconds, the rest the next night (`trainer/discord.py`,
 `tests/test_discord_room.py`). At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
