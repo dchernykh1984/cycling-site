@@ -6026,3 +6026,41 @@ msgstr "Алдымен Strava-ға сегменттеріңізді оқуға �
 #: api/endpoints/virtual_ride.py
 msgid "Strava no longer accepts this connection: connect it again"
 msgstr "Strava бұл қосылымды енді қабылдамайды: оны қайта қосыңыз"
+
+#: calendar_app/discord.py
+msgid "Discord room"
+msgstr "Discord бөлмесі"
+
+#: calendar_app/discord.py
+msgid ""
+"Discord is not set up on this site yet: the room is opened once it is, on "
+"the event's next save."
+msgstr ""
+"Сайтта Discord әлі бапталмаған: ол бапталған соң іс-шараны келесі сақтағанда"
+" бөлме ашылады."
+
+#: calendar_app/discord.py
+#, python-format
+msgid ""
+"The Discord room could not be opened (%(reason)s): saving the event again "
+"tries once more."
+msgstr ""
+"Discord бөлмесін ашу мүмкін болмады (%(reason)s): қайта көру үшін іс-шараны "
+"тағы бір рет сақтаңыз."
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "Create a Discord room"
+msgstr "Discord бөлмесін ашу"
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid ""
+"Once the event is saved, the site opens a text channel for it on the club's "
+"Discord server and adds its invitation to the event's text in every "
+"language."
+msgstr ""
+"Іс-шара сақталғанда сайт оған клубтың Discord серверінде мәтіндік арна ашып,"
+" шақыруды іс-шара мәтініне барлық тілде қосады."
+
+#: calendar_app/templates/calendar_app/edit.html
+msgid "Its room:"
+msgstr "Оның бөлмесі:"

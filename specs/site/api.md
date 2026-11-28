@@ -30,6 +30,9 @@ and protocols with the event's upload token. The API has no language prefix.
    is created approved -- unless its geography is still pending. The event's author or an admin may
    update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it,
    or mark it a top event (`is_top`, read by everybody; a 403 for anybody else);
+   an organizer or above may ask for the event's Discord room (`discord_room`, a 403 for anybody else), opened
+   once the event is saved: `discord_invite_url` names it, and `discord_note` says why it is not open yet
+   ([events](events.md), story 4b);
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
    the others). Reads preserve empty languages, so writing a response back keeps the chat's

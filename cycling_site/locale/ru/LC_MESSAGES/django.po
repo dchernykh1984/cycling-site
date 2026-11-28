@@ -6034,3 +6034,42 @@ msgstr "Сначала разрешите Strava читать ваши сегм�
 #: api/endpoints/virtual_ride.py
 msgid "Strava no longer accepts this connection: connect it again"
 msgstr "Strava больше не принимает это подключение: подключите её ещё раз"
+
+#: calendar_app/discord.py
+msgid "Discord room"
+msgstr "Комната в Discord"
+
+#: calendar_app/discord.py
+msgid ""
+"Discord is not set up on this site yet: the room is opened once it is, on "
+"the event's next save."
+msgstr ""
+"Discord на сайте ещё не настроен: комната откроется при следующем сохранении"
+" мероприятия после его настройки."
+
+#: calendar_app/discord.py
+#, python-format
+msgid ""
+"The Discord room could not be opened (%(reason)s): saving the event again "
+"tries once more."
+msgstr ""
+"Комнату в Discord открыть не удалось (%(reason)s): сохраните мероприятие ещё"
+" раз, чтобы попробовать снова."
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid "Create a Discord room"
+msgstr "Создать комнату в Discord"
+
+#: calendar_app/templates/calendar_app/submit.html
+msgid ""
+"Once the event is saved, the site opens a text channel for it on the club's "
+"Discord server and adds its invitation to the event's text in every "
+"language."
+msgstr ""
+"Когда мероприятие сохранится, сайт откроет для него текстовый канал на "
+"Discord-сервере клуба и добавит приглашение в текст мероприятия на всех "
+"языках."
+
+#: calendar_app/templates/calendar_app/edit.html
+msgid "Its room:"
+msgstr "Её комната:"

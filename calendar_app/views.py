@@ -52,8 +52,8 @@ from locations.models import (
 from protocols import sections as protocol_sections
 from protocols.access import shows_protocols
 
+from . import discord, organizers, ride_picture
 from . import draft as drafts
-from . import organizers, ride_picture
 from .forms import (
     AddCompetitionCommentForm,
     CompetitionFilterForm,
@@ -1286,6 +1286,8 @@ def _competition_initial(comp, *, with_dates: bool = True, with_results: bool = 
         "url_route": comp.url_route,
         "url_regulations": comp.url_regulations,
         "invite_only": comp.invite_only,
+        # the box, not the room: a copy of an event with a room gets a room of its own
+        "discord_room": comp.discord_room,
     }
     if with_dates:
         initial["date_start"] = comp.date_start
@@ -1599,6 +1601,7 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                         location=location,
                         submitted_by=request.user,
                         invite_only=is_organizer and cd.get("invite_only", False),
+                        discord_room=is_organizer and cd.get("discord_room", False),
                         is_top=cd.get("is_top", False),
                     )
                     _fill_from_form(comp, cd)
@@ -1632,6 +1635,10 @@ class SubmitCompetitionView(ParticipantRequiredMixin, View):
                     request.session.pop(EVENT_DRAFT, None)
                 if not_held:
                     messages.warning(request, not_held)
+                # after the event is saved and its transaction over: Discord is not waited for inside it
+                no_room = discord.open_room(comp)
+                if no_room:
+                    messages.warning(request, no_room)
                 return redirect("calendar_list")
         return render(request, self.template_name, self._error_context(request, form, reg_form, is_organizer))
 
@@ -1698,6 +1705,7 @@ class EditCompetitionView(View):
             is_org = roles.at_least(request.user, roles.PUBLISH_EVENTS)
             if is_org:
                 comp.invite_only = cd.get("invite_only", False)
+                comp.discord_room = cd.get("discord_room", False)
             if "is_top" in form.fields:  # an admin's form only; an author's edit leaves the mark alone
                 comp.is_top = cd.get("is_top", False)
             try:
@@ -1720,6 +1728,9 @@ class EditCompetitionView(View):
             except LocationConflictError:
                 form.add_error("location", _("This location is not available."))
             else:
+                no_room = discord.open_room(comp)
+                if no_room:
+                    messages.warning(request, no_room)
                 return redirect("competition_detail", pk=comp.pk)
         # In the shape the editor reads, for the birth date mode just submitted: a YEAR event's
         # bounds as raw dates fit no number field, and the next save would drop them.
