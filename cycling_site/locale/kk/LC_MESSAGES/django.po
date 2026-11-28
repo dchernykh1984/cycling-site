@@ -6051,12 +6051,12 @@ msgstr "Discord бөлмесін ашу"
 
 #: calendar_app/templates/calendar_app/submit.html
 msgid ""
-"Once the event is saved, the site opens a text channel for it on the club's "
-"Discord server and adds its invitation to the event's text in every "
-"language."
+"The site opens a voice channel on the club's Discord server and adds its "
+"invitation to the event's text; the channel is deleted once the day after "
+"the event is over."
 msgstr ""
-"Іс-шара сақталғанда сайт оған клубтың Discord серверінде мәтіндік арна ашып,"
-" шақыруды іс-шара мәтініне барлық тілде қосады."
+"Сайт клубтың Discord серверінде дауыстық арна ашып, шақыруын іс-шара "
+"мәтініне қосады; арна іс-шарадан кейінгі күн аяқталғанда жойылады."
 
 #: calendar_app/templates/calendar_app/edit.html
 msgid "Its room:"

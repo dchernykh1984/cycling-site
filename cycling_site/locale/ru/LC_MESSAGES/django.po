@@ -6059,13 +6059,13 @@ msgstr "Создать комнату в Discord"
 
 #: calendar_app/templates/calendar_app/submit.html
 msgid ""
-"Once the event is saved, the site opens a text channel for it on the club's "
-"Discord server and adds its invitation to the event's text in every "
-"language."
+"The site opens a voice channel on the club's Discord server and adds its "
+"invitation to the event's text; the channel is deleted once the day after "
+"the event is over."
 msgstr ""
-"Когда мероприятие сохранится, сайт откроет для него текстовый канал на "
-"Discord-сервере клуба и добавит приглашение в текст мероприятия на всех "
-"языках."
+"Сайт откроет голосовой канал на Discord-сервере клуба и добавит приглашение "
+"в текст мероприятия; канал удаляется, когда закончится следующий день после "
+"мероприятия."
 
 #: calendar_app/templates/calendar_app/edit.html
 msgid "Its room:"

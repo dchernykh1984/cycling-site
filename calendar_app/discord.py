@@ -104,7 +104,7 @@ def _refusal(status: int, body: str = "") -> str:
 
 
 def _channel_name(competition: Competition) -> str:
-    """The event's title as Discord names a text channel -- lower case, words joined by dashes -- with its date."""
+    """The event's title as a channel's name -- lower case, words joined by dashes -- with its date."""
     words = slugify(competition.title_ru or competition.title or "", allow_unicode=True) or f"event-{competition.pk}"
     return f"{competition.date_start:%Y-%m-%d}-{words}"[:CHANNEL_NAME_MAX]
 

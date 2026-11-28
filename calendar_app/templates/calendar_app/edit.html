@@ -263,7 +263,7 @@
       <div class="form-check mb-4">
         {{ form.discord_room }}
         <label class="form-check-label fw-semibold" for="{{ form.discord_room.id_for_label }}">{% trans "Create a Discord room" %}</label>
-        <div class="form-text">{% trans "Once the event is saved, the site opens a text channel for it on the club's Discord server and adds its invitation to the event's text in every language." %}{% if competition.discord_invite_url %} {% trans "Its room:" %} <a href="{{ competition.discord_invite_url }}" target="_blank" rel="noopener">{{ competition.discord_invite_url }}</a>{% endif %}</div>
+        <div class="form-text">{% trans "The site opens a voice channel on the club's Discord server and adds its invitation to the event's text; the channel is deleted once the day after the event is over." %}{% if competition.discord_invite_url %} {% trans "Its room:" %} <a href="{{ competition.discord_invite_url }}" target="_blank" rel="noopener">{{ competition.discord_invite_url }}</a>{% endif %}</div>
       </div>
       {% endif %}
 

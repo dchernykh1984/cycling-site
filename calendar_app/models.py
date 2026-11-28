@@ -234,7 +234,7 @@ class Competition(index.Indexed, models.Model):
     # Permanent lock: True once registration is first activated; never reset to False.
     registration_mode_locked = models.BooleanField(default=False)
 
-    # A Discord room for the event (calendar_app/discord.py): the organizer's box, and the text channel the site
+    # A Discord room for the event (calendar_app/discord.py): the organizer's box, and the voice channel the site
     # opened for it with its invitation, which the event's text carries. Set by the site, never typed.
     discord_room = models.BooleanField(default=False)
     discord_channel_id = models.CharField(max_length=30, blank=True, default="", editable=False)
