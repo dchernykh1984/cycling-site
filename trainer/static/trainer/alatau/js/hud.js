@@ -112,6 +112,7 @@ function updateHUD(inp, grade) {
       return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>';
     }).join('');
   }
+  segHUD();
   drawMini(); drawProfile();
   updateTagText();
 }

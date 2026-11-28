@@ -85,7 +85,12 @@ and protocols with the event's upload token. The API has no language prefix.
    A saved ride may carry its track; with Strava connected, a ride that is not in demo mode goes to
    Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
-   available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007). The page's
+   available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007), and whether the member
+   allowed the live segments and where to allow them (`strava_segments`, `strava_segments_url`). With that
+   permission `GET /strava/segments` lists the member's starred Strava ride segments with their best time, and
+   `GET /strava/segments/{id}` gives one's line with heights, the member's own times on it (none without Strava's
+   subscription) and their best effort's pace, read from Strava each time and kept nowhere; without it both answer
+   409, Strava's trouble 502 (`tests/test_virtual_ride_segments.py`). The page's
    settings are kept with the member: `GET /settings` hands back the copy kept and the site's stamp of it,
    `PUT /settings` keeps the page's object (64 KB at most) under a new stamp when the page names the copy
    it had (`base`), and otherwise leaves the later copy in place and answers with it

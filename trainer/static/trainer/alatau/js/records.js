@@ -13,7 +13,7 @@ const Records = {
     try {
       const me = await Site.get('/me'); this.me = me; this.loginUrl = langPath(me.login_url || '');
       if (!me.authenticated) return;
-      this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote(); renderIntervalsNote(); loadIcuWorkouts();
+      this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote(); renderIntervalsNote(); renderSegState(); loadIcuWorkouts();
       renderRaceOpts(); // an organizer's calendar box, now that the site says who the member is
       SettingsSync.pull();
       await this.pull(); renderMenu();

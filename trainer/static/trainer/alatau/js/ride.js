@@ -120,6 +120,7 @@ function stepRide(dt, inp, t) {
     if (phase === 'race') {
       raceT += dt; const s0 = me.s, ds = inp.direct ? directStep(me, inp.wheelKmh, dt) : stepRider(me, inp.P, grade, dt); me.s += ds; me.stats.dist += ds;
       if (rideMode === 'race') raceCrossings(s0, me.s, dt);
+      rideEvent('moved', s0, me.s, dt, inp); // the Strava segments the rider is on (js/segments.js)
       const st = me.stats, y1 = sampleAt(T, me.s, _ry).y; if (y1 > y0) st.gain += y1 - y0;
       st.t += dt; st.sumP += inp.P * dt; if (inp.cad > 0) { st.sumCad += inp.cad; st.nCad++; } st.maxV = Math.max(st.maxV, me.v); if (inp.mode === 'demo') st.demoT += dt; me.pAcc += inp.P * dt; me.pT += dt; if (me.pT >= 1) { me.powerLog.push(me.pAcc / me.pT); me.pAcc = 0; me.pT = 0; if (me.track.length < MAX_TRACK) me.track.push(trackPoint(inp)); } if (inp.mode === 'power') st.real = true; if (inp.hr) { st.sumHR += inp.hr; st.nHR++; st.maxHR = Math.max(st.maxHR, inp.hr); }
       if (rideMode === 'plan' || rideMode === 'free') {
