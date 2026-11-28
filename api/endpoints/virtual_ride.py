@@ -90,6 +90,10 @@ class MeOut(Schema):
     strava_connect_url: str = ""
     # whether the member's box sends their rides there (issue #471)
     strava_send: bool = False
+    # the live segments: whether the member allowed reading their starred segments and their own efforts on them, and
+    # where to allow it (Strava's connection again, asking for that too)
+    strava_segments: bool = False
+    strava_segments_url: str = ""
     intervals_available: bool = False
     intervals_connected: bool = False
     intervals_athlete: str = ""
@@ -183,6 +187,31 @@ class StravaOut(Schema):
     status: str
     activity_url: str = ""
     error: str = ""
+
+
+class StarredSegmentOut(Schema):
+    id: int
+    name: str
+    distance_m: float
+    average_grade: float
+    start: list[float]  # [latitude, longitude]
+    end: list[float]
+    pr_s: float | None = None  # the member's best time on it, where Strava gives it
+
+
+class BestEffortOut(Schema):
+    elapsed_s: float
+    date: str
+    # how far into the segment the effort was at each of its seconds: [[metres, seconds], ...] from its start
+    times: list[list[float]]
+
+
+class SegmentOut(Schema):
+    id: int
+    distance_m: float
+    points: list[list[float]]  # [[latitude, longitude, height m, metres from its start], ...]
+    efforts: list[float] | None = None  # the member's own times on it, fastest first; None without the subscription
+    best: BestEffortOut | None = None
 
 
 class IntervalsOut(Schema):
@@ -576,6 +605,8 @@ def me(request):
         strava_athlete=connection.athlete_name if connection else "",
         strava_connect_url=reverse("virtual_ride_strava_connect") if strava.available() else "",
         strava_send=sent[services.STRAVA]["send_rides"],
+        strava_segments=strava.available() and strava.reads_segments(connection),
+        strava_segments_url=reverse("virtual_ride_strava_connect") + "?segments=1" if strava.available() else "",
         intervals_available=sent[services.INTERVALS]["available"],
         intervals_connected=sent[services.INTERVALS]["connected"],
         intervals_athlete=sent[services.INTERVALS]["athlete"],
@@ -811,6 +842,47 @@ def disconnect_strava(request):
     if connection is not None:
         strava.disconnect(connection)
     return Status(HTTPStatus.NO_CONTENT, None)
+
+
+def _segments_connection(user) -> StravaConnection:
+    connection = StravaConnection.objects.filter(user=user).first()
+    if connection is None or not strava.available() or not strava.reads_segments(connection):
+        raise HttpError(HTTPStatus.CONFLICT, _("Allow Strava to read your segments first"))
+    return connection
+
+
+def _from_strava(read):
+    try:
+        return read()
+    except strava.StravaError as exc:
+        if exc.revoked:
+            raise HttpError(
+                HTTPStatus.CONFLICT, _("Strava no longer accepts this connection: connect it again")
+            ) from None
+        raise HttpError(HTTPStatus.BAD_GATEWAY, str(exc)) from None
+
+
+@router.get(
+    "/strava/segments",
+    response=list[StarredSegmentOut],
+    auth=member_auth,
+    summary="My starred Strava segments, for the live segments",
+)
+def starred_segments(request):
+    """Read from Strava each time, for the member's own ride: the site keeps nothing of it."""
+    connection = _segments_connection(request.auth)
+    return _from_strava(lambda: strava.starred_segments(connection))
+
+
+@router.get(
+    "/strava/segments/{segment_id}",
+    response=SegmentOut,
+    auth=member_auth,
+    summary="One of my Strava segments with my efforts on it",
+)
+def strava_segment(request, segment_id: int = Path(..., ge=1, le=2**53)):
+    connection = _segments_connection(request.auth)
+    return _from_strava(lambda: strava.segment(connection, segment_id))
 
 
 @router.get("/rides", response=list[RideOut], auth=member_auth, summary="My rides, newest first")

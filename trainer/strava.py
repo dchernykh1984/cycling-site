@@ -31,8 +31,19 @@ AUTHORIZE_URL = "https://www.strava.com/oauth/authorize"
 TOKEN_URL = "https://www.strava.com/oauth/token"  # noqa: S105 -- an address, not a secret
 DEAUTHORIZE_URL = "https://www.strava.com/oauth/deauthorize"
 UPLOADS_URL = "https://www.strava.com/api/v3/uploads"
+STARRED_URL = "https://www.strava.com/api/v3/segments/starred"
+SEGMENT_STREAMS_URL = "https://www.strava.com/api/v3/segments/{}/streams"
+EFFORTS_URL = "https://www.strava.com/api/v3/segment_efforts"
+EFFORT_STREAMS_URL = "https://www.strava.com/api/v3/segment_efforts/{}/streams"
 # "read" keeps the athlete's name in the token answer; "activity:write" is what uploading needs
 SCOPE = "read,activity:write"
+# what the live segments add: the member's own efforts on a segment and their streams (Strava's reference asks
+# "read_all" for an effort's streams); the starred list and a segment's own line need "read" alone
+SEGMENTS_SCOPE = "activity:read_all"
+# a segment's line and the best effort's times come thinned to this many points: a phone's page draws and reads them
+SEGMENT_POINTS = 400
+STARRED_PAGE = 200  # Strava's most a page: one request lists a member's starred segments
+EFFORTS_PAGE = 200
 # Saving a ride waits for Strava (a token refresh, then the upload) on one of the site's four request
 # threads: a slow Strava fails the upload, which can be sent again, rather than hold the thread
 _TIMEOUT = 10
@@ -67,13 +78,18 @@ def available() -> bool:
     return configured() and secret_box.available()
 
 
-def authorize_url(redirect_uri: str, state: str) -> str:
+def reads_segments(connection: StravaConnection | None) -> bool:
+    """The member allowed the live segments: their starred segments and their own efforts on them."""
+    return connection is not None and SEGMENTS_SCOPE in connection.scope.split(",")
+
+
+def authorize_url(redirect_uri: str, state: str, segments: bool = False) -> str:
     query = {
         "client_id": _app()["client_id"],
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "approval_prompt": "auto",
-        "scope": SCOPE,
+        "scope": f"{SCOPE},{SEGMENTS_SCOPE}" if segments else SCOPE,
         "state": state,
     }
     return f"{AUTHORIZE_URL}?{urlencode(query)}"
@@ -103,8 +119,8 @@ def _token(**data) -> dict:
 
 
 @sensitive_variables("code", "data")
-def connect(user, code: str) -> StravaConnection:
-    """Trade the code Strava sent back for tokens and keep them for this member."""
+def connect(user, code: str, scope: str = SCOPE) -> StravaConnection:
+    """Trade the code Strava sent back for tokens and keep them for this member, with what Strava said they allowed."""
     data = _token(code=code, grant_type="authorization_code")
     athlete = data.get("athlete") or {}
     name = " ".join(part for part in (athlete.get("firstname"), athlete.get("lastname")) if part)
@@ -116,6 +132,7 @@ def connect(user, code: str) -> StravaConnection:
             "access_token": secret_box.seal(data["access_token"]),
             "refresh_token": secret_box.seal(data["refresh_token"]),
             "expires_at": _when(data["expires_at"]),
+            "scope": scope[:200],
         },
     )
     return connection
@@ -288,3 +305,114 @@ def refresh(record: StravaUpload) -> StravaUpload:
     if response.status_code != HTTPStatus.OK:
         return record
     return _apply(record, response.json())
+
+
+# -- Live segments: the member's starred segments and their own efforts on them, read for their own ride -----------
+# Strava's API agreement lets a member's data be shown to that member only: what these read goes to the member's own
+# page and is kept nowhere on the site.
+
+
+def _read(connection: StravaConnection, url: str, **params) -> requests.Response:
+    """A read with the member's grant; a grant Strava no longer accepts is forgotten, as an upload forgets it."""
+    try:
+        return _call(connection, "GET", url, params=params)
+    except StravaError as exc:
+        if exc.revoked:
+            connection.revoked = True
+            connection.delete()
+        raise
+
+
+def _json(response: requests.Response):
+    if response.status_code != HTTPStatus.OK:
+        raise StravaError(f"Strava answered {response.status_code}")
+    return response.json()
+
+
+def _thin(rows: list, most: int = SEGMENT_POINTS) -> list:
+    """At most ``most`` of the rows, evenly, the last one kept: where the line or the times end."""
+    if len(rows) <= most:
+        return rows
+    step = (len(rows) - 1) / (most - 1)
+    return [rows[round(i * step)] for i in range(most)]
+
+
+def _pair(value) -> list[float] | None:
+    return [float(value[0]), float(value[1])] if isinstance(value, list) and len(value) == 2 else None
+
+
+def starred_segments(connection: StravaConnection) -> list[dict]:
+    """The member's starred segments to ride (Strava's "Ride" ones), with their best time where Strava gives it."""
+    out = []
+    for seg in _json(_read(connection, STARRED_URL, per_page=STARRED_PAGE)) or []:
+        start, end = _pair(seg.get("start_latlng")), _pair(seg.get("end_latlng"))
+        if seg.get("activity_type") != "Ride" or start is None or end is None:
+            continue
+        pr = (seg.get("athlete_pr_effort") or {}).get("pr_elapsed_time")
+        out.append(
+            {
+                "id": int(seg["id"]),
+                "name": str(seg.get("name") or "")[:200],
+                "distance_m": float(seg.get("distance") or 0),
+                "average_grade": float(seg.get("average_grade") or 0),
+                "start": start,
+                "end": end,
+                "pr_s": float(pr) if pr else None,
+            }
+        )
+    return out
+
+
+def _efforts(connection: StravaConnection, segment_id: int) -> list[dict] | None:
+    """The member's own efforts on a segment, or None without the Strava subscription that lists them."""
+    response = _read(connection, EFFORTS_URL, segment_id=segment_id, per_page=EFFORTS_PAGE)
+    if response.status_code in (HTTPStatus.PAYMENT_REQUIRED, HTTPStatus.FORBIDDEN):
+        return None
+    return [e for e in _json(response) or [] if e.get("elapsed_time")]
+
+
+def _effort_times(connection: StravaConnection, effort_id: int) -> list[list[float]]:
+    """How far into the segment the effort was at each of its seconds: [[metres, seconds], ...] from its start."""
+    streams = _json(_read(connection, EFFORT_STREAMS_URL.format(effort_id), keys="distance,time", key_by_type="true"))
+    dist, time = (streams.get("distance") or {}).get("data") or [], (streams.get("time") or {}).get("data") or []
+    if not dist or len(dist) != len(time):
+        return []
+    return _thin([[round(d - dist[0], 1), round(t - time[0], 1)] for d, t in zip(dist, time, strict=True)])
+
+
+def segment(connection: StravaConnection, segment_id: int) -> dict:
+    """One starred segment to ride: its line with heights, the member's own efforts' times and their best one's pace."""
+    streams = _json(
+        _read(
+            connection,
+            SEGMENT_STREAMS_URL.format(segment_id),
+            keys="latlng,distance,altitude",
+            key_by_type="true",
+        )
+    )
+    ll = (streams.get("latlng") or {}).get("data") or []
+    dist = (streams.get("distance") or {}).get("data") or []
+    alt = (streams.get("altitude") or {}).get("data") or [0] * len(ll)
+    if len(ll) < 2 or len(dist) != len(ll) or len(alt) != len(ll):
+        raise StravaError("Strava gave no line for this segment")
+    points = _thin(
+        [[round(p[0], 6), round(p[1], 6), round(a, 1), round(d, 1)] for p, d, a in zip(ll, dist, alt, strict=True)]
+    )
+    efforts = _efforts(connection, segment_id)
+    best = min(efforts, key=lambda e: e["elapsed_time"]) if efforts else None
+    return {
+        "id": segment_id,
+        "distance_m": float(dist[-1]),
+        "points": points,
+        # None: Strava lists a member's efforts only with its subscription
+        "efforts": None if efforts is None else sorted(float(e["elapsed_time"]) for e in efforts),
+        "best": (
+            {
+                "elapsed_s": float(best["elapsed_time"]),
+                "date": str(best.get("start_date_local") or best.get("start_date") or "")[:10],
+                "times": _effort_times(connection, int(best["id"])),
+            }
+            if best
+            else None
+        ),
+    }

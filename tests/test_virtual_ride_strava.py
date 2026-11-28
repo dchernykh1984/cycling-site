@@ -389,7 +389,8 @@ class PrivacyTests(TestCase):
     def test_the_privacy_policy_says_what_the_virtual_ride_keeps_and_sends_to_strava(self):
         body = Client().get(in_language(reverse("privacy_policy"), "en")).content.decode()
         self.assertIn("upload each ride you finish as a virtual ride", body)
-        self.assertIn("we still do not read your Strava activities", body)
+        self.assertIn("your starred segments and your own times on them while you ride", body)
+        self.assertIn("we keep none of it and read nothing else of your Strava activities", body)
 
 
 @override_settings(SOCIALACCOUNT_PROVIDERS=STRAVA_ON)

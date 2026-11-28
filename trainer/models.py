@@ -197,6 +197,9 @@ class StravaConnection(models.Model):
     connected_at = models.DateTimeField(auto_now_add=True)
     # the member's box on the profile: off keeps the connection and sends nothing on its own (issue #471)
     send_rides = models.BooleanField(default=True)
+    # what the member allowed at Strava, as its answer named it: uploading, and reading their starred segments and
+    # their own efforts on them for the virtual ride's live segments (``activity:read_all``) where they allowed that
+    scope = models.CharField(max_length=200, default="read,activity:write")
     # not stored: set before deleting a grant Strava itself refused, which leaves nothing to revoke there
     revoked = False
 
