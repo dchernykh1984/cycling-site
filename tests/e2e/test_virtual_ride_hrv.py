@@ -28,13 +28,25 @@ def test_the_hrv_box_is_kept_and_the_strap_s_rr_intervals_go_with_the_ride(page:
     # the ride keeps those a heart beats in, only with the box on
     kept = page.evaluate(
         """() => {
-            Sensors.takeRR = () => [800, 100, 900, 3000];
+            const real = Sensors.takeRR; Sensors.takeRR = () => [800, 100, 900, 3000];
             const on = { rr: [] }; takeRR(on);
-            settings.hrv = false; const off = { rr: [] }; takeRR(off); settings.hrv = true;
+            settings.hrv = false; const off = { rr: [] }; takeRR(off); settings.hrv = true; Sensors.takeRR = real;
             return [on.rr, off.rr];
         }"""
     )
     assert kept == [[800, 900], []], kept
+    # what the strap sent in the menu, the countdown or a pause is let go each frame, not kept for the ride's first
+    # second
+    left = page.evaluate(
+        """() => {
+            const strap = { hrV: 70, rrQ: [700, 710], roles: new Set(['hr']), status: 'online' };
+            const live = Sensors.live; Sensors.live = role => role === 'hr' ? [strap] : [];
+            frame(performance.now() + 16);
+            Sensors.live = live;
+            return strap.rrQ;
+        }"""
+    )
+    assert left == [], left
     # and the saved ride carries them with its track
     body = page.evaluate(
         """async () => {
