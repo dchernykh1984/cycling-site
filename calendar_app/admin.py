@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.db import models
 from django.forms import Textarea
 
+from .forms import CompetitionMaterialForm
 from .models import (
     Competition,
     CompetitionComment,
@@ -19,6 +20,7 @@ class CompetitionMaterialInline(admin.TabularInline):
     """The coverage links, so staff can fix or pull a bad one without going through the event page."""
 
     model = CompetitionMaterial
+    form = CompetitionMaterialForm  # a link or a file, as the event's edit page takes them
     extra = 0
 
 

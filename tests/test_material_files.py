@@ -116,3 +116,13 @@ class MaterialFileTests(TestCase):
         self._post({"title": "Results", "url": "", "DELETE": "on"}, saved=material)
         self.assertFalse(self.comp.materials.exists())
         self.assertFalse(path.exists())
+
+
+class MaterialInAdminTests(TestCase):
+    def test_the_admin_refuses_a_material_without_a_link_or_a_file(self):
+        from calendar_app.admin import CompetitionMaterialInline
+
+        form_class = CompetitionMaterialInline.form
+        form = form_class(data={"title": "Nothing", "url": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("url", form.errors)
