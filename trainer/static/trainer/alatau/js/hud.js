@@ -100,7 +100,8 @@ function updateHUD(inp, grade) {
   else if (st.t > 10) avg = t('hud.avgPower', { w: Math.round(st.sumP / st.t) });
   $('#avgLine').textContent = avg;
   if (rideMode === 'plan') updatePlanHUD(inp.cad, inp.P);
-  // the riders nearby: this rider and up to six around them, with the gap in seconds
+  // the riders nearby: this rider and up to six around them, with the gap in seconds and the power each rides at now
+  // (a finished rider's none)
   const board = $('#board'); board.classList.toggle('hidden', !bots.length);
   if (bots.length) {
     const all = [me].concat(bots).slice().sort((a, b) => (b.finishT != null ? 1e9 - b.finishT : b.s) - (a.finishT != null ? 1e9 - a.finishT : a.s));
@@ -109,7 +110,8 @@ function updateHUD(inp, grade) {
       const dt = Math.round((r.s - me.s) / Math.max((r.v + me.v) / 2, 3));
       const gap = r === me ? '' : (dt > 0 ? '+' : dt < 0 ? '−' : '') + Math.abs(dt) + ' ' + t('u.s');
       const col = r === me ? '#fff' : '#' + r.color.toString(16).padStart(6, '0');
-      return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span>' + escapeHTML(r.name) + '</span><span class="gap">' + gap + '</span></li>';
+      const pw = r.finishT != null ? '' : Math.round((r === me ? inp.P : r.P) || 0) + ' ' + t('u.w');
+      return '<li class="' + (r === me ? 'me' : '') + '"><span class="dot" style="background:' + col + '"></span><span class="nm">' + escapeHTML(r.name) + '</span><span class="pw">' + pw + '</span><span class="gap">' + gap + '</span></li>';
     }).join('');
   }
   segHUD();
