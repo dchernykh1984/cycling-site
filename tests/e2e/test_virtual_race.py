@@ -680,4 +680,4 @@ def test_an_organizer_s_discord_box_is_kept_sent_with_the_race_shown_on_its_card
     )
     for lang, text in zip(("ru", "kk", "en"), texts, strict=True):
         said = page.evaluate(f"t('ev.discord', null, '{lang}')")
-        assert text.endswith(f'<p>{said}: <a href="{_INVITE}">{_INVITE}</a></p>'), (lang, text[-160:])
+        assert text.endswith(f'<p><a href="{_INVITE}">{said}</a></p>'), (lang, text[-160:])

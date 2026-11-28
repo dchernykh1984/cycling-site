@@ -51,6 +51,7 @@ from locations.models import (
 )
 from protocols import sections as protocol_sections
 from protocols.access import shows_protocols
+from trainer import discord
 
 from . import draft as drafts
 from . import organizers, ride_picture
@@ -1000,6 +1001,8 @@ class CompetitionDetailView(View):
             # Photo and video coverage, in the order its author arranged it. Shown to everyone who
             # can see the event at all -- the links are public pages, not a manager's business.
             "materials": competition.materials.all(),
+            # the voice room of its virtual race, beside the button that opens the race (trainer.discord)
+            "discord_room_url": discord.room_of(competition) if competition.virtual_ride else "",
             "show_upload_token": can_edit,
             "is_manager": is_manager,
             # The author (any role) may edit/delete/resubmit their own submission (#200); Hide and

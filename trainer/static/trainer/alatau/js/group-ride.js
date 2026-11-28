@@ -261,8 +261,8 @@ function sendEventDraft(r, g, at) {
       ? [t('ev.raceTitle', null, lang), t('ev.racePreview', null, lang), t('ev.raceText', null, lang)]
       : [t('ev.rideTitle', null, lang), t('ev.ridePreview', null, lang), t('ev.rideText', null, lang)];
     put('title_' + lang, fillIn(words[0], v)); put('preview_text_' + lang, fillIn(words[1], v));
-    // and its Discord room's invitation, as a line of its own: the site takes it out when the room closes
-    const room = g.discord_invite_url ? '<p>' + escapeHTML(t('ev.discord', null, lang)) + ': <a href="' + escapeHTML(g.discord_invite_url) + '">' + escapeHTML(g.discord_invite_url) + '</a></p>' : '';
+    // and its Discord room, its words the link, as a line of its own: the site takes it out when the room closes
+    const room = g.discord_invite_url ? '<p><a href="' + escapeHTML(g.discord_invite_url) + '">' + escapeHTML(t('ev.discord', null, lang)) + '</a></p>' : '';
     put('description_' + lang, fillIn(words[2], v, escapeHTML) + room);
   });
   EVENT_TYPES.forEach(n => put('event_type', n)); put('discipline', EVENT_DISCIPLINE[race ? g.mode : 'ride']);

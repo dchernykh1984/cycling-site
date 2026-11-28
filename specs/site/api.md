@@ -78,7 +78,7 @@ and protocols with the event's upload token. The API has no language prefix.
    en), whether the asking member is registered for it, where to register and where its registered riders are
    listed (`registered`, `register_url`, `participants_url`), and, for a member riding it, `me` -- their bib,
    category, laps and own start; made through the API, it becomes the race its event's page opens when it opens
-   none yet (`virtual_ride_url` on the event). Joining one needs a registration for the event that is not rejected
+   none yet (`virtual_ride_url` on the event; the event's detail names the race's Discord room, `discord_room_url`). Joining one needs a registration for the event that is not rejected
    (403 with the event's link) and a free bib in the category's range (409); a race whose event the member may not
    open is no business of theirs -- not listed, 404 by its id and on joining. `/presence` takes the rider's drag area (`cda`) and up to 50 `crossings` (a point, its moment
    `at_ms`, `last` for the finish), each written once into the event's timing streams while the event has its

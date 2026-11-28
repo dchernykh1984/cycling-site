@@ -133,7 +133,7 @@ class GatheringWithARoomTests(TestCase):
 
     def test_the_room_s_line_in_an_event_s_text_comes_through_the_sanitizer_as_the_closing_finds_it(self):
         """group-ride.js writes the line; what the site keeps of it must still be the line it takes out."""
-        line = f'<p>Voice room on Discord: <a href="{INVITE}">{INVITE}</a></p>'
+        line = f'<p><a href="{INVITE}">Voice room on Discord</a></p>'
         kept = sanitize_rich_html(f"<p>Start at 18:00.</p>{line}")
         pattern = discord._ROOM_LINE.format(url=discord.re.escape(INVITE))
         self.assertEqual(discord.re.sub(pattern, "", kept), "<p>Start at 18:00.</p>")
@@ -155,7 +155,7 @@ class RoomClosingTests(TestCase):
             discord_channel_id="333",
             discord_invite_url=INVITE,
         )
-        line = f'<p>Voice room on Discord: <a href="{INVITE}">{INVITE}</a></p>'
+        line = f'<p><a href="{INVITE}">Voice room on Discord</a></p>'
         self.other = '<p>Our server: <a href="https://discord.gg/Club1">https://discord.gg/Club1</a></p>'
         self.event = Competition.objects.create(
             title_ru="Night race",
@@ -238,3 +238,35 @@ class RoomClosingTests(TestCase):
         ):
             answer = Client().post(f"{API}/discord-rooms/close-due")
         self.assertEqual((answer.status_code, answer.json()), (200, {"closed": 1}))
+
+
+class RoomOnTheEventPageTests(TestCase):
+    """The event made from a race offers its room beside the button that opens the race, and says it in the API."""
+
+    def setUp(self):
+        host = _user("host", User.Role.ORGANIZER)
+        self.group = GroupRide.objects.create(
+            route="center", host=host, start_at=timezone.now() + datetime.timedelta(days=1), discord_invite_url=INVITE
+        )
+        self.event = Competition.objects.create(
+            title_ru="Night race",
+            date_start=timezone.localdate() + datetime.timedelta(days=1),
+            status=Competition.Status.APPROVED,
+            virtual_ride=self.group.pk,
+        )
+
+    def page(self):
+        from django.urls import reverse
+
+        return self.client.get(reverse("competition_detail", args=[self.event.pk]))
+
+    def test_the_room_s_button_stands_beside_the_race_s(self):
+        page = self.page()
+        self.assertContains(page, f'href="{INVITE}"')
+        self.assertContains(page, gettext("Voice chat on Discord"))
+        self.assertEqual(Client().get(f"/api/v1/competitions/{self.event.pk}").json()["discord_room_url"], INVITE)
+
+    def test_a_race_without_a_room_or_cancelled_offers_none(self):
+        GroupRide.objects.filter(pk=self.group.pk).update(cancelled=True)
+        self.assertNotContains(self.page(), "discord-room-link")
+        self.assertEqual(Client().get(f"/api/v1/competitions/{self.event.pk}").json()["discord_room_url"], "")
