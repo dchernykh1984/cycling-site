@@ -87,13 +87,18 @@ def strava_callback(request):
         return redirect(back)
     granted = request.GET.get("scope", "")
     if "activity:write" not in granted.split(","):
-        messages.warning(
-            request,
-            _(
+        if pending.get("segments"):
+            # the live segments ride on the connection for rides: without its upload permission there is neither
+            refused = _(
+                "Strava did not allow uploading activities: the live segments come with the Strava connection "
+                "for your rides, which needs it. Connect again and keep both permissions on."
+            )
+        else:
+            refused = _(
                 "Strava did not allow uploading activities, so rides are not sent there. "
                 "Connect again and keep that permission on."
-            ),
-        )
+            )
+        messages.warning(request, refused)
         return redirect(back)
     try:
         connection = strava.connect(request.user, request.GET.get("code", ""), granted)

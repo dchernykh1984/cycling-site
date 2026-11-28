@@ -6076,3 +6076,13 @@ msgstr "ботқа серверде арналар немесе шақырула
 #: calendar_app/discord.py
 msgid "Discord does not know the server or the category the site names"
 msgstr "Discord сайтта көрсетілген серверді немесе санатты білмейді"
+
+#: trainer/views.py
+msgid ""
+"Strava did not allow uploading activities: the live segments come with the "
+"Strava connection for your rides, which needs it. Connect again and keep "
+"both permissions on."
+msgstr ""
+"Strava жаттығуларды жүктеуге рұқсат бермеді: live сегменттер заездтерге "
+"арналған Strava қосылымы арқылы жұмыс істейді, ал оған бұл рұқсат керек. "
+"Қайта қосып, екі рұқсатты да қосулы қалдырыңыз."
