@@ -102,17 +102,24 @@ const Segs = {
     if (!this.details.has(id)) this.details.set(id, Site.get('/strava/segments/' + id).catch(e => { this.details.delete(id); throw e; }));
     return this.details.get(id);
   },
+  // the member's segments a route takes, each with its line read and where it lies on the route: [{ s, d, places }]
+  async onRoute(route, T, list) {
+    const found = await Promise.all(segCandidates(T, list).map(s => this.detail(s.id).then(d => ({ s, d })).catch(() => null)));
+    return found.filter(Boolean).map(({ s, d }) => {
+      const key = route.id + ':' + s.id; if (!this.places.has(key)) this.places.set(key, segPlaces(T, d));
+      return { s, d, places: this.places.get(key) };
+    }).filter(x => x.places.length);
+  },
   // the segments the route about to be ridden takes, timed from its start
   async prepare(w) {
     const gen = ++this.gen; this.on = []; this.result = null;
     if (!segOn() || !segAllowed()) return;
     const list = await this.starred(); if (gen !== this.gen || !list) return;
-    const found = await Promise.all(segCandidates(w.T, list).map(s => this.detail(s.id).then(d => ({ s, d })).catch(() => null)));
+    const found = await this.onRoute(w.route, w.T, list);
     if (gen !== this.gen) return;
-    found.filter(Boolean).forEach(({ s, d }) => {
-      const key = w.route.id + ':' + s.id; if (!this.places.has(key)) this.places.set(key, segPlaces(w.T, d));
+    found.forEach(({ s, d, places }) => {
       const Ls = d.distance_m || s.distance_m;
-      this.places.get(key).forEach(p => this.on.push({ seg: s, d, s0: p.s0, len: p.len, Ls, scale: p.len / Ls, run: null }));
+      places.forEach(p => this.on.push({ seg: s, d, s0: p.s0, len: p.len, Ls, scale: p.len / Ls, run: null }));
     });
   },
   stop() { this.gen++; this.on = []; this.result = null; },
@@ -235,8 +242,13 @@ function renderSegState() {
   if (!who.strava_segments) { el.append(t('seg.allow') + ' ', link(langPath(who.strava_segments_url) + '&next=' + encodeURIComponent(topPath()), t('seg.allowLink'))); return; }
   if (Segs.failed) { el.textContent = t('seg.failed', { msg: Segs.failed }); return; }
   if (!Segs.list) { el.textContent = t('seg.loading'); Segs.starred().then(() => { if (segOn()) renderSegState(); }); return; }
-  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0];
+  // the segments the ride will race: their ends by the route and their lines along it the way it runs -- a segment
+  // by a one-way road ridden the other way is not named
+  const r = ROUTES.find(x => x.id === routeSel) || ROUTES[0], list = Segs.list;
   if (!Segs.tracks.has(r.id)) Segs.tracks.set(r.id, buildTrack(r));
-  const found = segCandidates(Segs.tracks.get(r.id), Segs.list);
-  el.textContent = found.length ? t('seg.onRoute', { n: found.length, list: found.map(s => s.name).join(', ') }) : t('seg.noneOnRoute', { n: Segs.list.length });
+  el.textContent = t('seg.loading');
+  Segs.onRoute(r, Segs.tracks.get(r.id), list).then(found => {
+    if (!segOn() || routeSel !== r.id && ROUTES.some(x => x.id === routeSel)) return; // the menu moved on meanwhile
+    el.textContent = found.length ? t('seg.onRoute', { n: found.length, list: found.map(x => x.s.name).join(', ') }) : t('seg.noneOnRoute', { n: list.length });
+  });
 }
