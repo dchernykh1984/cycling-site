@@ -386,7 +386,7 @@ button{cursor:pointer}
 #segRows .behind dd{color:#FF9A90}
 #segProf{display:block;width:100%;height:46px;margin-top:6px}
 /* a plan's steps and the segment share the left side: the list stops above the window */
-#hud.seg-on #planList{max-height:calc(100% - 420px)}
+#hud.seg-on #planList{max-height:max(120px,calc(100% - 420px))} /* on a short screen a few steps still show */
 @media (max-height:520px){ #segBox{bottom:calc(env(safe-area-inset-bottom,0px) + 76px);width:180px;padding:5px 8px} #segRows .big dd{font-size:18px} #segProf{height:30px} }
 @media (max-width:640px) and (orientation:portrait){ #segBox{bottom:calc(env(safe-area-inset-bottom,0px) + 262px);width:180px} }
 
