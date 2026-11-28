@@ -6084,3 +6084,7 @@ msgstr ""
 #: api/endpoints/virtual_ride.py
 msgid "Only organizers can open a Discord room"
 msgstr "Комнату Discord могут открыть только организаторы"
+
+#: calendar_app/templates/calendar_app/detail.html
+msgid "Voice chat on Discord"
+msgstr "Голосовой чат в Discord"

@@ -143,9 +143,13 @@
     {% endif %}
 
     {% if competition.virtual_ride %}
-    <div class="mb-4">
+    <div class="mb-4 d-flex flex-wrap gap-2">
       <a href="{% url "virtual_ride" %}?group={{ competition.virtual_ride }}" class="btn btn-primary"
          id="virtual-ride-link">{% trans "Go to the virtual ride" %}</a>
+      {% if discord_room_url %}
+      <a href="{{ discord_room_url }}" class="btn btn-outline-primary" target="_blank" rel="noopener"
+         id="discord-room-link">{% trans "Voice chat on Discord" %}</a>
+      {% endif %}
     </div>
     {% endif %}
 

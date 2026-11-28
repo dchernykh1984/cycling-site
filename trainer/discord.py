@@ -114,6 +114,17 @@ def _events(group: GroupRide):
     return Competition.objects.filter(Q(virtual_races=group) | Q(virtual_ride=group.pk)).distinct()
 
 
+def room_of(event: Competition) -> str:
+    """The invitation to the Discord room of the race the event's page opens, else of a race it holds; "" when none."""
+    rooms = GroupRide.objects.filter(cancelled=False).exclude(discord_invite_url="")
+    opened = (
+        rooms.filter(pk=event.virtual_ride).values_list("discord_invite_url", flat=True).first()
+        if event.virtual_ride
+        else None
+    )
+    return opened or rooms.filter(competition=event).values_list("discord_invite_url", flat=True).first() or ""
+
+
 def zone_of(group: GroupRide, default=None):
     """The zone of the race's event's place; else ``default``, else the site's -- the zone its days are counted in."""
     event = _events(group).select_related("location").first()

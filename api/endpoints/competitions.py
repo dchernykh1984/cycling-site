@@ -27,6 +27,7 @@ from locations.models import (
     geography_above_is_approved,
     lock_competition_location,
 )
+from trainer import discord
 
 auth = ApiTokenAuth()
 optional_auth = OptionalApiTokenAuth()
@@ -169,6 +170,12 @@ class CompetitionDetailOut(CompetitionOut):
     # How many members have the event in favorites -- for a signed-in caller on an approved event, as its
     # page shows it under the star; null for everyone else.
     favorites_count: int | None = None
+    # the invitation to the Discord voice room of the event's virtual race, as its page offers it; else empty
+    discord_room_url: str = ""
+
+    @staticmethod
+    def resolve_discord_room_url(obj: Competition) -> str:
+        return discord.room_of(obj)
 
     @staticmethod
     def resolve_competition_token(obj: Competition) -> str | None:
