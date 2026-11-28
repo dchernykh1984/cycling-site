@@ -131,3 +131,31 @@ def test_the_live_segments_box_opens_its_fields_keeps_them_and_asks_for_strava_s
     page.locator("#segOn").uncheck()
     expect(page.locator("#segOpts")).to_be_hidden()
     assert page.evaluate("settings.segments.fields.power === true && settings.segments.on === false")
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_group_race_shows_each_rider_their_own_segments_whoever_gathered_it(page: Page, live_server):
+    """The segments are the rider's: their box and their Strava, not the race's host's."""
+    _trainer_in_its_menu(page, live_server)
+    page.evaluate(_STUB, {"route": "farabi", "a": 800, "b": 1800})
+    page.locator("#segOn").check()
+    page.evaluate(
+        """() => {
+            const at = Date.now() + 60e3;
+            groupRide = { gid: 9, startAt: at, raceAt: at, wind: null, race: null, kind: 'race' };
+            routeSel = 'farabi'; startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown' && Segs.on.length === 1", polling=100)
+    # unticked, the same race shows none
+    page.evaluate("() => { startMenu(); $('#segOn').click(); }")
+    page.evaluate(
+        """() => {
+            const at = Date.now() + 60e3;
+            groupRide = { gid: 9, startAt: at, raceAt: at, wind: null, race: null, kind: 'race' };
+            routeSel = 'farabi'; startRace();
+        }"""
+    )
+    page.wait_for_function("phase === 'countdown'", polling=100)
+    page.wait_for_timeout(500)
+    assert page.evaluate("Segs.on.length") == 0
