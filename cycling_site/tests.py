@@ -291,6 +291,19 @@ class MediaServingTests(TestCase):
                     self.assertTrue(resp["Content-Disposition"].startswith(opened), resp["Content-Disposition"])
                     self.assertEqual(resp.get("Content-Security-Policy") == "sandbox", sandboxed)
 
+    def test_an_uploaded_text_is_read_as_utf_8(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        (Path(tmp) / "competitions").mkdir()
+        for name in ("readme.md", "notes.txt"):
+            (Path(tmp) / "competitions" / name).write_bytes("Start \u0441\u0442\u0430\u0440\u0442".encode())
+        with override_settings(DEBUG=False, MEDIA_ROOT=tmp):
+            for name, kind in (("readme.md", "text/markdown"), ("notes.txt", "text/plain")):
+                with self.subTest(name=name):
+                    resp = self.client.get(f"/media/competitions/{name}")
+                    self.assertEqual(resp["Content-Type"], f"{kind}; charset=utf-8")
+                    self.assertEqual(resp.get("Content-Security-Policy"), "sandbox")
+
 
 class SanitizeRichHtmlTests(SimpleTestCase):
     def test_strips_script_keeps_formatting(self):
