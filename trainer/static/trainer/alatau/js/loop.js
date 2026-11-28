@@ -22,6 +22,8 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(MAX_FRAME, (now - last) / 1000); last = now; clockT += dt;
   Sensors.tick(now);
+  // the strap's RR intervals belong to the ride only while it is ridden: those of the menu, the countdown and a pause go
+  if (phase !== 'race' || paused || photo) Sensors.takeRR();
   // на странице настроек 3D-сцену не рисуем; a smart trainer is let go back to a flat road, not left holding a workout's power
   if (phase === 'menu') { Trainer.update(clockT, 0, me, null); renderPreview(dt); return; }
   if (!world) return;
