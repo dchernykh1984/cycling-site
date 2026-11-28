@@ -68,6 +68,11 @@ class MaterialFileTests(TestCase):
         self.assertContains(page, f'href="{material.file.url}"')
         self.assertTrue(material.file.url.startswith("/media/competitions/materials/"))
 
+    def test_a_presentation_is_a_material_too(self):
+        upload = SimpleUploadedFile("talk.pptx", b"PK\x03\x04 slides", content_type="application/octet-stream")
+        self._post({"title": "Briefing", "url": "", "file": upload})
+        self.assertTrue(self.comp.materials.get().file.name.endswith(".pptx"))
+
     def test_a_file_of_a_kind_the_site_does_not_keep_is_refused(self):
         upload = SimpleUploadedFile("tool.exe", b"MZ", content_type="application/octet-stream")
         response = self._post({"title": "Tool", "url": "", "file": upload})
@@ -140,3 +145,13 @@ class MaterialInAdminTests(TestCase):
         form = form_class(data={"title": "Nothing", "url": ""})
         self.assertFalse(form.is_valid())
         self.assertIn("url", form.errors)
+
+
+class PresentationsInEveryFileFieldTests(TestCase):
+    def test_every_file_field_of_the_event_takes_a_presentation_in_each_format_it_is_made_in(self):
+        from calendar_app.forms import validate_document
+
+        for ext in ("ppt", "pptx", "pps", "ppsx", "odp", "key"):
+            with self.subTest(ext=ext):
+                upload = SimpleUploadedFile(f"talk.{ext}", b"slides", content_type="application/octet-stream")
+                self.assertIs(validate_document(upload), upload)
