@@ -19,7 +19,7 @@ function readInput() {
   let direct = false; const byGear = Work.active && Work.idx >= 0 && Work.cur().f != null;
   if (mode === 'demo' && byGear) { const gt = gearTeeth(gearF, gearR); wheelKmh = cad * gt[0] / gt[1] * circ * 60 / 1000; P = curve(wheelKmh); direct = true; }
   if (mode === 'cadence' && (byGear || settings.cadSpeed === 'direct')) direct = true;
-  return { P, cad, mode, wheelKmh, direct, hr: Sensors.hr() };
+  return { P, cad, mode, wheelKmh, direct, hr: Sensors.hr(), rr: Sensors.takeRR() }; // rr: the strap's RR intervals since the last frame
 }
 // The demo's power from its slider's place, 0..1000, and back: up to 5 kW on a curve, finer where most ride -- a step
 // of the slider under a watt up to 150 W, 25 W at the top -- in 5 W

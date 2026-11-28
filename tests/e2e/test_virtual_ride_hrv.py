@@ -28,9 +28,9 @@ def test_the_hrv_box_is_kept_and_the_strap_s_rr_intervals_go_with_the_ride(page:
     # the ride keeps those a heart beats in, only with the box on
     kept = page.evaluate(
         """() => {
-            const real = Sensors.takeRR; Sensors.takeRR = () => [800, 100, 900, 3000];
-            const on = { rr: [] }; takeRR(on);
-            settings.hrv = false; const off = { rr: [] }; takeRR(off); settings.hrv = true; Sensors.takeRR = real;
+            const strap = [800, 100, 900, 3000];
+            const on = { rr: [] }; keepRR(on, strap);
+            settings.hrv = false; const off = { rr: [] }; keepRR(off, strap); settings.hrv = true;
             return [on.rr, off.rr];
         }"""
     )
