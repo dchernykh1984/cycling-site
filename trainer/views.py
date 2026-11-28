@@ -54,15 +54,24 @@ def _profile_card() -> str:
 
 @login_required
 def strava_connect(request):
-    """Send the member to Strava to allow uploading their virtual rides (``activity:write``)."""
+    """Send the member to Strava to allow uploading their virtual rides (``activity:write``).
+
+    ``?segments=1`` -- the trainer page's live segments -- asks to read their starred segments and their own efforts
+    on them as well; a member who allowed that before is asked for it again, so connecting anew keeps it.
+    """
     if needs_email_confirmation(request.user) or not strava.available():
         raise Http404
     back = request.GET.get("next", "")
     if not url_has_allowed_host_and_scheme(back, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
         back = _profile_card()
+    segments = request.GET.get("segments") == "1" or strava.reads_segments(
+        StravaConnection.objects.filter(user=request.user).first()
+    )
     state = secrets.token_urlsafe(24)
-    request.session[_PENDING] = {"state": state, "next": back}
-    return redirect(strava.authorize_url(request.build_absolute_uri(reverse("virtual_ride_strava_callback")), state))
+    request.session[_PENDING] = {"state": state, "next": back, "segments": segments}
+    return redirect(
+        strava.authorize_url(request.build_absolute_uri(reverse("virtual_ride_strava_callback")), state, segments)
+    )
 
 
 @login_required
@@ -76,7 +85,8 @@ def strava_callback(request):
     if request.GET.get("error"):
         messages.info(request, _("Strava was not connected: your rides stay on this site."))
         return redirect(back)
-    if "activity:write" not in request.GET.get("scope", "").split(","):
+    granted = request.GET.get("scope", "")
+    if "activity:write" not in granted.split(","):
         messages.warning(
             request,
             _(
@@ -86,11 +96,24 @@ def strava_callback(request):
         )
         return redirect(back)
     try:
-        strava.connect(request.user, request.GET.get("code", ""))
+        connection = strava.connect(request.user, request.GET.get("code", ""), granted)
     except strava.StravaError:
         messages.error(request, _("Strava could not be reached. Try connecting again later."))
         return redirect(back)
-    messages.success(request, _("Strava is connected: every ride you finish goes there as a virtual ride."))
+    if pending.get("segments") and not strava.reads_segments(connection):
+        messages.warning(
+            request,
+            _(
+                "Strava is connected for your rides, but did not allow reading your efforts on segments, so the "
+                "virtual ride has no live segments. Connect again and keep that permission on."
+            ),
+        )
+    elif pending.get("segments"):
+        messages.success(
+            request, _("Strava is connected: your rides go there, and your starred segments are on the virtual ride.")
+        )
+    else:
+        messages.success(request, _("Strava is connected: every ride you finish goes there as a virtual ride."))
     return redirect(back)
 
 

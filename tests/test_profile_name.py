@@ -54,9 +54,10 @@ SENT_THERE = [
     "so that the page shows them on every device you sign in on. While you are on that page, other signed-in "
     "members see your "
     "name, what you are riding and where you are on the route. If you connect Strava for your rides, we keep "
-    "the access Strava gives us for this and use it only to upload each ride you finish as a virtual ride; we"
-    " still do not read your Strava activities. You can disconnect Strava in your profile at any time, and we"
-    " then revoke that access.",
+    "the access Strava gives us for this and use it to upload each ride you finish as a virtual ride. If you also "
+    "turn on Strava live segments there, the same access reads your starred segments and your own times on them "
+    "while you ride, for your page alone: we keep none of it and read nothing else of your Strava activities. You "
+    "can disconnect Strava in your profile at any time, and we then revoke that access.",
     "<strong>Strava and intervals.icu.</strong> For each of them your profile shows whether it is connected, "
     "with a box that sends your rides there; you can turn the box off and keep the service connected. If you "
     "connect intervals.icu, you give us your API key from intervals.icu: we check it with intervals.icu and "
