@@ -66,6 +66,19 @@ DOCUMENT_EXTENSIONS = frozenset(
 )
 
 
+def validate_document(f, also: frozenset[str] = frozenset()):
+    """A file the event keeps for its readers: at most 10 MB, of a kind a reader's phone opens."""
+    if not f:
+        return f
+    if f.size > tracks.MAX_BYTES:
+        raise forms.ValidationError(_("File size must not exceed 10 MB."))
+    ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+    if ext not in DOCUMENT_EXTENSIONS | also:
+        allowed = ", ".join(sorted(DOCUMENT_EXTENSIONS | also))
+        raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
+    return f
+
+
 class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         # The submitting user is needed to validate location ownership (issue #111).
@@ -183,20 +196,6 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     # Offered to organizers and up as invite_only is: the site opens the event a room on Discord (calendar_app.discord)
     discord_room = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
-    _MAX_FILE_BYTES = tracks.MAX_BYTES
-    _ALLOWED_EXTENSIONS: ClassVar[frozenset[str]] = DOCUMENT_EXTENSIONS
-
-    def _validate_file(self, f, also: frozenset[str] = frozenset()):
-        if not f:
-            return f
-        if f.size > self._MAX_FILE_BYTES:
-            raise forms.ValidationError(_("File size must not exceed 10 MB."))
-        ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
-        if ext not in self._ALLOWED_EXTENSIONS | also:
-            allowed = ", ".join(sorted(self._ALLOWED_EXTENSIONS | also))
-            raise forms.ValidationError(_("Unsupported file type. Allowed: %(allowed)s.") % {"allowed": allowed})
-        return f
-
     # Descriptions arrive as raw Quill HTML in these hidden fields; sanitization happens
     # centrally in Competition.save() so every write path (form, API, admin, snippet) is
     # covered. The form only bounds their size (inline images are embedded base64).
@@ -217,17 +216,17 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         return self._clean_description_length("description_en")
 
     def clean_file_announcement(self):
-        return self._validate_file(self.cleaned_data.get("file_announcement"))
+        return validate_document(self.cleaned_data.get("file_announcement"))
 
     def clean_file_route(self):
         # Whatever a track comes in: the event's map draws every one of these (calendar_app.tracks).
-        return self._validate_file(self.cleaned_data.get("file_route"), also=tracks.EXTENSIONS)
+        return validate_document(self.cleaned_data.get("file_route"), also=tracks.EXTENSIONS)
 
     def clean_file_regulations(self):
-        return self._validate_file(self.cleaned_data.get("file_regulations"))
+        return validate_document(self.cleaned_data.get("file_regulations"))
 
     def clean_file_results(self):
-        return self._validate_file(self.cleaned_data.get("file_results"))
+        return validate_document(self.cleaned_data.get("file_results"))
 
     def clean_preview_image(self):
         """Bound it, then rewrite it: what is stored is never the bytes that were uploaded.
@@ -235,7 +234,7 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
         Returns a file ready to assign to the model, so the views keep treating this like any
         other upload. See calendar_app.preview_image for why re-encoding is the point.
         """
-        uploaded = self._validate_file(self.cleaned_data.get("preview_image"))
+        uploaded = validate_document(self.cleaned_data.get("preview_image"))
         if not uploaded:
             return uploaded
         try:
@@ -427,23 +426,23 @@ _MATERIAL_NAME = pgettext_lazy("photo or video material", "Name")
 
 
 class CompetitionMaterialForm(forms.ModelForm):
-    """One row of the coverage list: what the link is called, and where it goes.
+    """One row of the coverage list: what it is called, and the link or the file it opens.
 
-    Both halves are required, which the model's columns already say; spelling it out here is only
-    about the message the editor sees, since a half-filled row is the one mistake this form can make.
+    A name and one of the two are required; a half-filled row is the one mistake this form can make. A file
+    uploaded takes the place of the row's link, and a link given without a new file that of its kept file:
+    ``dropped`` names the file the row lets go, deleted once the row is saved.
     """
+
+    dropped = ""
 
     class Meta:
         model = CompetitionMaterial
-        fields: ClassVar[list] = ["title", "url"]
+        fields: ClassVar[list] = ["title", "url", "file"]
         # A material's name is the caption on a button, not a person's -- the plain "Name" already in
         # the catalog is the one on a registration form and translates to a personal name. The
         # context keeps the two apart while leaving the English label short.
-        labels: ClassVar[dict] = {"title": _MATERIAL_NAME, "url": _("Link")}
-        error_messages: ClassVar[dict] = {
-            "title": {"required": _("Give this material a name.")},
-            "url": {"required": _("Add a link to this material.")},
-        }
+        labels: ClassVar[dict] = {"title": _MATERIAL_NAME, "url": _("Link"), "file": _("File")}
+        error_messages: ClassVar[dict] = {"title": {"required": _("Give this material a name.")}}
         # The rows are a grid with no visible label above each field, so the placeholder is what a
         # sighted editor reads and aria-label is what everyone else gets.
         widgets: ClassVar[dict] = {
@@ -451,7 +450,25 @@ class CompetitionMaterialForm(forms.ModelForm):
                 attrs={"class": "form-control", "placeholder": _MATERIAL_NAME, "aria-label": _MATERIAL_NAME}
             ),
             "url": forms.URLInput(attrs={"class": "form-control", "placeholder": _("Link"), "aria-label": _("Link")}),
+            "file": forms.FileInput(attrs={"class": "form-control mt-1", "aria-label": _("File")}),
         }
+
+    def clean_file(self):
+        upload = self.files.get(self.add_prefix("file"))
+        return validate_document(upload, also=tracks.EXTENSIONS) if upload else self.cleaned_data.get("file")
+
+    def clean(self):
+        cleaned = super().clean()
+        kept = self.instance.file.name if self.instance.pk else ""
+        if self.files.get(self.add_prefix("file")):
+            cleaned["url"] = ""
+        elif cleaned.get("url"):
+            cleaned["file"] = False  # a FileField's way to say "none": None would keep the old file
+        elif not kept and "url" not in self.errors and "file" not in self.errors:
+            self.add_error("url", _("Add a link or a file to this material."))
+        if kept and getattr(cleaned.get("file"), "name", "") != kept:
+            self.dropped = kept
+        return cleaned
 
 
 class BaseCompetitionMaterialFormSet(forms.BaseInlineFormSet):

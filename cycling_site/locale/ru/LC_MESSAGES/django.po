@@ -811,8 +811,8 @@ msgid "Give this material a name."
 msgstr "Укажите название материала."
 
 #: calendar_app/forms.py:349
-msgid "Add a link to this material."
-msgstr "Укажите ссылку на материал."
+msgid "Add a link or a file to this material."
+msgstr "Укажите ссылку на материал или загрузите файл."
 
 #: calendar_app/forms.py:393 calendar_app/tests.py:1721 knowledge/forms.py:44
 #: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126
@@ -1739,10 +1739,12 @@ msgstr "Ссылка на внешнюю регистрацию"
 
 #: calendar_app/templates/calendar_app/edit.html:174
 msgid ""
-"Links to photo and video coverage. Each one needs both a name and a link."
+"Photo and video coverage and other files of the event. Each one needs a name"
+" and a link or a file of up to 10 MB; a file uploaded takes the place of the"
+" link."
 msgstr ""
-"Ссылки на фото- и видеоматериалы. У каждого должны быть и название, и "
-"ссылка."
+"Фото- и видеоматериалы и другие файлы мероприятия. Каждому нужны название и "
+"ссылка или файл до 10 МБ; загруженный файл заменяет ссылку."
 
 #: calendar_app/templates/calendar_app/edit.html:200
 #: calendar_app/templates/calendar_app/edit.html:204
@@ -6095,3 +6097,7 @@ msgstr ""
 "Strava не разрешила загружать тренировки: live сегменты работают через "
 "подключение Strava для заездов, а ему нужно это разрешение. Подключите её "
 "ещё раз и оставьте оба разрешения включёнными."
+
+#: calendar_app/forms.py
+msgid "File"
+msgstr "Файл"
