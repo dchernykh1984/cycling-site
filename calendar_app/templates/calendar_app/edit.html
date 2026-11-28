@@ -297,6 +297,9 @@
   var input = document.getElementById(id);
   if (input) window.fileDropInto(input, input.closest('.mb-3'));
 });
+document.querySelectorAll('#materials-container input[type="file"]').forEach(function (input) {
+  window.fileDropInto(input, input.closest('.material-row'));
+});
 </script>
 {{ form.description_ru.value|default:""|json_script:"init-desc-ru" }}
 {{ form.description_kk.value|default:""|json_script:"init-desc-kk" }}
@@ -337,6 +340,8 @@ if (regEnabled && regCollapse) {
     holder.innerHTML = tpl.innerHTML.replace(/__prefix__/g, index);
     const row = holder.firstElementChild;
     container.appendChild(row);
+    const file = row.querySelector('input[type="file"]');
+    if (file && window.fileDropInto) window.fileDropInto(file, row);
     // Only the counter moves; the new row's fields are already numbered for this index.
     totalForms.value = index + 1;
     const first = row.querySelector('input[type="text"]');
