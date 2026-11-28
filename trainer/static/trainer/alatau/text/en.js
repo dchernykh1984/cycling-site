@@ -116,6 +116,8 @@ const TEXT_EN = {
     "bt.pickFailed": "Could not open the device picker: {msg}",
     "bt.already": "This device is already connected.",
     "bt.auto": "Connect automatically",
+    "bt.hrv": "Write HRV",
+    "bt.hrvHint": "If your heart rate strap sends RR intervals (heart rate variability), they are written into the ride, which goes to Strava and intervals.icu as a FIT file with them.",
     "bt.autoBlocked": "This browser does not yet let sites connect to devices without the chooser. In Chrome the flag chrome://flags/#enable-web-bluetooth-new-permissions-backend turns it on; without it, press Connect beside the device.",
     "bt.autoSearch": "The saved devices have not connected yet: the browser finds them only while it searches for devices. Wake the sensors (turn the pedals), press “Connect a device” and close the chooser once they connect.",
     "bt.trainerCtrl": "The trainer is connected and will set the resistance from the gradient of the route.",

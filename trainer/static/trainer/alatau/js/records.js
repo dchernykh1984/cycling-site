@@ -37,6 +37,7 @@ const Records = {
       power_source: ride.demo ? 'demo' : ride.real ? 'measured' : 'estimated', place: ride.of > 1 ? ride.place : null, field_size: ride.of > 1 ? ride.of : null,
       peak_5s_w: num(peaks.p5, 0, 3000), peak_1m_w: num(peaks.p60, 0, 3000), peak_5m_w: num(peaks.p300, 0, 3000), peak_20m_w: num(peaks.p1200, 0, 3000),
       track: !ride.demo && me && me.track && me.track.length > 1 ? me.track : null,
+      rr: !ride.demo && me && me.track && me.track.length > 1 && me.rr && me.rr.length ? me.rr : null,
       wind_ms: ride.wind ? ride.wind.ms : 0, wind_from_deg: ride.wind ? ride.wind.from : 0
     };
     Site.post('/rides', body)

@@ -87,8 +87,9 @@ and protocols with the event's upload token. The API has no language prefix.
    A ride and a group race carry the wind they were ridden in (`wind_ms`, `wind_from_deg`; 0: none; a ride of a
    group race takes the race's, whatever the page sends): a ride with wind counts for power but sets no route
    record or top speed.
-   A saved ride may carry its track; with Strava connected, a ride that is not in demo mode goes to
-   Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
+   A saved ride may carry its track, and with it the rider's RR intervals (`rr`, 220 to 2500 ms each, 422
+   otherwise), which send it as a FIT file rather than a TCX; with Strava connected, a ride that is not in demo
+   mode goes to Strava as a Virtual Ride when it is saved, and the member can send one again, read how its upload
    went (`/rides/{id}/strava`) and turn Strava off (`DELETE /strava`); `/me` says whether Strava is
    available and connected and where to connect it ([accounts](accounts.md), FR-ACC-007), and whether the member
    allowed the live segments and where to allow them (`strava_segments`, `strava_segments_url`). With that

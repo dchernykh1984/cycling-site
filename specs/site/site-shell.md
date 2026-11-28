@@ -83,6 +83,11 @@ browser does not allow it, the box says which flag turns it on; where devices it
 within a few seconds -- a browser that has not searched since it started cannot reach them, Chrome on a Mac
 among them -- the page says to press Connect a device and close the chooser once they connect: its search
 finds them (`tests/e2e/test_virtual_ride.py`).
+"Write HRV" (kept with the settings, and so with the account) keeps the RR intervals a heart rate strap sends with
+its pulse -- 220 to 2500 ms each, from the start of the ride to its finish, at most six hours of them -- and the
+ride is saved with them beside its track; a ride that has them goes to Strava and intervals.icu as a FIT file,
+which has a place for them (its `hrv` messages, `trainer/fit.py`), and one without them as the TCX it always did
+(`tests/test_virtual_ride_hrv.py`, `tests/e2e/test_virtual_ride_hrv.py`).
 A smart trainer is sent one command at a time, each once it has answered the one
 before, as FTMS requires; a trainer that never answers is given two seconds a command and driven all
 the same. A trainer that no longer grants control is asked for it once more and, if it still says no,

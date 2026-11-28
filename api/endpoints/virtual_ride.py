@@ -55,6 +55,9 @@ _MAX_SETTINGS = 64 * 1024
 # One point a second for six hours; each point is
 # [t_s, lat, lon, ele_m, distance_m, speed_ms, power_w, cadence_rpm, hr_bpm] within these bounds.
 _MAX_TRACK = 6 * 3600
+# The RR intervals of six hours at 220 beats a minute, each from 220 to 2500 ms: a heart at 27 to 270 beats a minute
+_MAX_RR = 6 * 3600 * 220 // 60
+_RR_MS = (220, 2500)
 _TRACK_BOUNDS = (
     (0, 24 * 3600),
     (-90, 90),
@@ -141,6 +144,8 @@ class RideIn(Schema):
     peak_5m_w: int | None = Field(None, ge=0, le=3000)
     peak_20m_w: int | None = Field(None, ge=0, le=3000)
     track: list[list[float]] | None = Field(None, max_length=_MAX_TRACK)
+    # the rider's RR intervals, ms, when their page wrote them ("Write HRV"); kept with the track only
+    rr: list[int] | None = Field(None, max_length=_MAX_RR)
     wind_ms: float = Field(0, ge=0, le=_MAX_WIND_MS)
     wind_from_deg: int = Field(0, ge=0, le=359)
 
@@ -156,6 +161,13 @@ class RideIn(Schema):
                     " within their bounds"
                 )
         return track
+
+    @field_validator("rr")
+    @classmethod
+    def _rr_intervals(cls, rr):
+        if rr and not all(_RR_MS[0] <= ms <= _RR_MS[1] for ms in rr):
+            raise ValueError(f"each RR interval is {_RR_MS[0]} to {_RR_MS[1]} ms")
+        return rr
 
 
 class RideOut(Schema):
@@ -631,6 +643,7 @@ def save_ride(request, payload: RideIn):
     data = payload.dict()
     group_id = data.pop("group_id")
     track = data.pop("track")
+    rr = data.pop("rr") or []
     group = None
     if group_id is not None:
         group = get_object_or_404(GroupRide, pk=group_id)
@@ -644,7 +657,7 @@ def save_ride(request, payload: RideIn):
             group = GroupRide.objects.select_for_update().get(pk=group.pk)
         ride = VirtualRide.objects.create(user=request.auth, group=group, **data)
         if track:
-            RideTrack.objects.create(ride=ride, points=track)
+            RideTrack.objects.create(ride=ride, points=track, rr=rr)
         found = records.new_records(request.auth, ride)
         if group is not None:
             records.rank_group(group)

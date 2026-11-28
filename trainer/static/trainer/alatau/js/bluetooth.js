@@ -10,6 +10,16 @@ function parseCSC(dv) {
   return r;
 }
 function parseHR(dv) { const f = dv.getUint8(0); return (f & 1) ? dv.getUint16(1, true) : dv.getUint8(1); }
+// the RR intervals a heart rate measurement carries, ms: after the pulse (one byte or two) and the energy spent (two
+// bytes, when there), each in 1/1024 s -- what "Write HRV" keeps
+function parseRR(dv) {
+  const f = dv.getUint8(0), rr = [];
+  if (!(f & 16)) return rr;
+  for (let o = 1 + ((f & 1) ? 2 : 1) + ((f & 8) ? 2 : 0); o + 1 < dv.byteLength; o += 2) rr.push(Math.round(dv.getUint16(o, true) * 1000 / 1024));
+  return rr;
+}
+// a strap's RR intervals waiting to be taken by the ride, a few minutes' worth at most: none is taken in the menu
+const RR_QUEUE = 1000;
 // FTMS Indoor Bike Data (0x2AD2)
 function parseIBD(dv) {
   let o = 0; const f = dv.getUint16(o, true); o += 2; const r = {};
@@ -37,7 +47,7 @@ const ROLE_NAMES = [['speed', t('role.speed')], ['cadence', t('role.cadence')], 
 class BLEDev {
   constructor(dev) {
     this.dev = dev; this.name = dev.name || t('dev.unnamed'); this.roles = new Set(); this.status = 'connecting'; this.retries = 0; this.ls = new WeakSet();
-    this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
+    this.rrQ = []; this.wheelRpm = 0; this.crankRpm = 0; this.hrV = 0; this.powerV = 0; this.at = { w: 0, c: 0, h: 0, p: 0 };
     this.pw = null; this.pc = null; this.ctrl = false; this.busy = false; this.hasFtms = false; this.ergRange = null;
     // cpt: the FTMS control point, once a connection found one; a bike that only sends its data never has one, its
     // resistance set by hand (one found and missed on a later connection is still a trainer that can be driven)
@@ -75,7 +85,7 @@ class BLEDev {
       try { const f = await csc.getCharacteristic(UUID.cscFeat); const b = (await f.readValue()).getUint16(0, true); if (b & 1) this.roles.add('speed'); if (b & 2) this.roles.add('cadence'); } catch (e) {}
       try { await this.sub(csc, UUID.cscMeas, dv => this.onCSC(dv)); } catch (e) {}
     }
-    if (hr) { try { await this.sub(hr, UUID.hrMeas, dv => { this.hrV = parseHR(dv); this.at.h = performance.now(); }); this.roles.add('hr'); } catch (e) {} }
+    if (hr) { try { await this.sub(hr, UUID.hrMeas, dv => { this.hrV = parseHR(dv); this.at.h = performance.now(); this.rrQ.push(...parseRR(dv)); if (this.rrQ.length > RR_QUEUE) this.rrQ.splice(0, this.rrQ.length - RR_QUEUE); }); this.roles.add('hr'); } catch (e) {} }
     if (!ftms && !cp && !csc && !hr) throw new Error('no supported services');
     if (!this._d) { this._d = () => this.onDisc(); this.dev.addEventListener('gattserverdisconnected', this._d); }
     this.status = 'online'; this.retries = 0; Sensors.changed();
@@ -285,6 +295,8 @@ const Sensors = {
   wheel() { const d = this.live('speed')[0]; return d ? d.wheelRpm : null; },
   crank() { const l = this.live('cadence'); if (!l.length) return null; const fresh = l.find(d => d.crankRpm > 0); return (fresh || l[0]).crankRpm; },
   hr() { const d = this.live('hr').find(d => d.hrV > 0); return d ? d.hrV : null; },
+  // the RR intervals the strap sent since the last call, ms: one strap's, the one the pulse is read from
+  takeRR() { const d = this.live('hr').find(d => d.hrV > 0) || this.live('hr')[0]; if (!d) return []; const rr = d.rrQ; d.rrQ = []; return rr; },
   mode() { if (this.power() != null) return 'power'; if (this.wheel() != null) return 'speed'; if (this.crank() != null) return 'cadence'; return 'demo'; },
   changed() {
     // the hint to search gives way to the usual one once the devices it was about are all in, unless another said more
