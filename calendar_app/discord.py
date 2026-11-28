@@ -16,6 +16,7 @@ category, so only the rooms of events to come take them.
 import datetime
 import logging
 import re
+import time
 from http import HTTPStatus
 
 import requests
@@ -45,9 +46,11 @@ _ROOM_LINE = re.compile(r'<p>[^<]*<a href="https://discord\.gg/[\w-]+"[^>]*>[^<]
 logger = logging.getLogger(__name__)
 # the day after the event's last one is the room's too: it closes once that day is over at the event's place
 _DAYS_KEPT = 1
-# rooms closed in one call, the oldest first: each waits for Discord up to _TIMEOUT on one of the site's request
-# threads, and the rest are closed the next night
+# rooms closed in one call, the oldest first, and the seconds it starts closing one more in: each waits for Discord
+# up to _TIMEOUT on one of the site's request threads, which the server stops at 30 s, and the rest are closed the
+# next night
 CLOSE_PER_CALL = 20
+CLOSE_SECONDS = 15
 
 
 class DiscordError(Exception):
@@ -175,8 +178,8 @@ def is_over(competition: Competition) -> bool:
 def close_due_rooms() -> int:
     """Delete the channels of the events that are over, take their invitations out of the texts; how many closed.
 
-    Deleted events' rooms too. A room Discord fails to delete, or one past ``CLOSE_PER_CALL``, is left for the next
-    night.
+    Deleted events' rooms too. A room Discord fails to delete, or one past ``CLOSE_PER_CALL`` or
+    ``CLOSE_SECONDS``, is left for the next night.
     """
     if not settings.DISCORD_BOT_TOKEN:
         return 0
@@ -189,8 +192,10 @@ def close_due_rooms() -> int:
         .select_related("location")
         .order_by("last", "pk")[:CLOSE_PER_CALL]
     )
-    closed = 0
+    closed, started = 0, time.monotonic()
     for competition in due:
+        if time.monotonic() - started > CLOSE_SECONDS:
+            break
         if not is_over(competition):
             continue
         try:
