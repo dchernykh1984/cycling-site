@@ -7,6 +7,7 @@ import re
 
 import pytest
 from playwright.sync_api import Page, ViewportSize, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from accounts.models import User
 from api.endpoints.virtual_ride import PresenceIn
@@ -2297,10 +2298,14 @@ def test_an_organizer_s_race_becomes_an_event_with_its_registration_track_start_
     expect(picture).to_be_visible()
     assert picture.evaluate("img => [img.complete, img.naturalWidth, img.naturalHeight]") == [True, 1200, 630]
     # saved: the event holds the race, and the route's track draws its map
-    page.get_by_role("button", name="Save", exact=True).click()
-    page.wait_for_load_state("networkidle")
-    refused = page.locator(".text-danger, .alert-danger, .invalid-feedback").all_inner_texts()
-    assert "/calendar/submit/" not in page.url and not refused, (page.url, refused)  # off the form, to the calendar
+    # pressed from the keyboard: a tap on an iPhone that lands while the page still scrolls is lost, and the
+    # form never goes (seen on CI)
+    page.get_by_role("button", name="Save", exact=True).press("Enter")
+    try:
+        page.wait_for_url(lambda url: "/calendar/submit/" not in url, timeout=30_000)
+    except PlaywrightTimeoutError:
+        refused = page.locator(".text-danger, .alert-danger, .invalid-feedback").all_inner_texts()
+        raise AssertionError(f"the form stayed: {refused}") from None  # off the form, to the calendar
     race.refresh_from_db()
     event = race.competition
     assert event is not None and event.title_en == "Virtual race: Central loop"
