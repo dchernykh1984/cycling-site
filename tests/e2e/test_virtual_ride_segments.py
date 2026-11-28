@@ -55,8 +55,11 @@ def test_a_starred_segment_on_the_route_is_timed_from_its_start_to_its_end_again
 ):
     _trainer_in_its_menu(page, live_server)
     page.evaluate(_STUB, {"route": "farabi", "a": 800, "b": 1800})
+    page.evaluate("pickRoute('farabi')")
     page.locator("#segOn").check()
-    page.evaluate("() => { pickRoute('farabi'); settings.mode = 'free'; startRace(); }")
+    # the setup names the segment the ride will race on the chosen route
+    expect(page.locator("#segState")).to_have_text(page.evaluate("t('seg.onRoute', { n: 1, list: 'Test climb' })"))
+    page.evaluate("() => { settings.mode = 'free'; startRace(); }")
     page.wait_for_function("phase === 'countdown' && Segs.on.length === 1", polling=100)
     placed = page.evaluate("() => [Segs.on[0].s0, Segs.on[0].len]")
     assert placed[0] == pytest.approx(800, abs=SEG_STEP) and placed[1] == pytest.approx(1000, abs=2 * SEG_STEP), placed
