@@ -24,6 +24,7 @@ from pydantic import SecretStr, field_validator
 
 from accounts import roles
 from accounts.access import needs_email_confirmation
+from accounts.models import User
 from api.auth import OptionalApiTokenAuth, member_auth
 from api.schemas import LocalizedStr, localize_field
 from calendar_app.models import Competition
@@ -86,6 +87,9 @@ class MeOut(Schema):
     event_draft_url: str = ""
     # whether the member may make a race an event with its registration, as the event form lets an organizer
     organizes: bool = False
+    # whether the profile says the member is a woman: the page then says "gonshchitsa" in Russian and draws a woman
+    # on the bike
+    female: bool = False
     # whether the member may gather a race with a Discord room: the site has a bot, and they are an organizer or up
     discord_rooms: bool = False
     # Sending rides to Strava: whether the site can, whether this member turned it on, where to turn it on
@@ -415,6 +419,7 @@ class GroupResultOut(Schema):
     duration_s: float
     finished_at: datetime
     group: str = ""  # in a race with protocols the rider's category: a place is among its riders
+    female: bool = False  # the rider's profile says a woman: the results call her so
 
 
 class GroupResultsOut(Schema):
@@ -457,6 +462,7 @@ class RiderOut(OnlineOut):
     cda: float = 0.32
     bib: str = ""
     group: str = ""
+    female: bool = False  # the rider's profile says a woman: the others' pages draw a woman on the bike
 
 
 class PresenceOut(Schema):
@@ -620,6 +626,7 @@ def me(request):
         page_url=reverse("virtual_ride"),
         event_draft_url=reverse("calendar_submit_draft"),
         organizes=roles.at_least(user, roles.PUBLISH_EVENTS),
+        female=user.gender == User.Gender.FEMALE,
         discord_rooms=discord.configured() and roles.at_least(user, roles.OPEN_DISCORD_ROOMS),
         strava_available=strava.available(),
         strava_connected=connection is not None,
@@ -1195,6 +1202,7 @@ def group_results(request, group_id: int):
             duration_s=r.duration_s,
             finished_at=r.finished_at,
             group=groups.get(r.user_id, ""),
+            female=r.user.gender == User.Gender.FEMALE,
         )
         for r in records.group_results(group)
     ]
@@ -1243,6 +1251,7 @@ def presence(request, payload: PresenceIn):
             cda=row.cda,
             bib=bibs.get(row.user_id, ("", ""))[0],
             group=bibs.get(row.user_id, ("", ""))[1],
+            female=row.user.gender == User.Gender.FEMALE,
         )
         for row in live.riders_beside(me_row, now).select_related("user")
     ]

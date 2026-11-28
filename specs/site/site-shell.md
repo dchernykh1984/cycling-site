@@ -246,7 +246,11 @@ rider's browser (`tests/test_virtual_race.py`, `tests/e2e/test_virtual_race.py`)
 the start's summary says a route with many buildings and streets (Granfondo 2026, the Medeu climb, the centre's
 loop) may run slowly. The settings page is separate from the ride and offers racing, a workout and free riding. It
 includes rider height/mass and bicycle type/mass; the rider wears the UBT kit, with third-person view as the
-default. Free rides can be finished from the pause menu, and lap a loop only: on a route from one place to another a free
+default. A member whose profile says a woman rides as one: her section is "Gonshchitsa" in Russian (Kazakh and English
+have one word for both), and her figure -- in the menu's preview and on the road, and on the other members' pages as she
+rides beside them -- is a woman's, narrower in the shoulders, wider in the hips, slimmer in the arms and legs, with a
+bust and a long ponytail; the women among the bots ride the same figure, and a race's results call a woman so
+(`js/riders.js`, `tests/test_virtual_ride_female.py`, `tests/e2e/test_virtual_ride_female.py`). Free rides can be finished from the pause menu, and lap a loop only: on a route from one place to another a free
 ride is over at its finish, saved as when its rider ends it (a workout rides its plan on from the start); a workout whose plan is done rides on as a free ride, the
 trainer let go of its power, and nothing is saved or sent until the rider ends it there, the time after the plan in
 it too. During a ride the HUD shows, in one row on top, the speed,

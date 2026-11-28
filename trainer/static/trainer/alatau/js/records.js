@@ -15,6 +15,8 @@ const Records = {
       if (!me.authenticated) return;
       this.synced = true; this.accountUrl = langPath(me.profile_url || ''); renderStravaNote(); renderIntervalsNote(); renderSegState(); loadIcuWorkouts();
       renderRaceOpts(); // an organizer's calendar box, now that the site says who the member is
+      // a woman's words and figure, if she is one: a model that fails to build keeps the member signed in all the same
+      try { renderRiderWords(); setPreview(settings.char); setPlayerChar(settings.char); } catch (e) { console.error(e); }
       SettingsSync.pull();
       await this.pull(); renderMenu();
       if (!$('#recM').classList.contains('hidden')) renderRecords();

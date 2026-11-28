@@ -1,7 +1,15 @@
 'use strict';
 /* ---------------- Состояние заезда ---------------- */
 function bikeType() { return BIKE_TYPES[settings.bikeType] || BIKE_TYPES.road; }
-function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (settings.height || 178) / 178, tire: bikeType().tire }); } // размер модели — по росту
+// the player's rider in the UBT kit, its size by their height; a woman's figure when their profile says so (MeOut.female)
+function kitted(ch) { return Object.assign({}, ch, KITS.ubt.over, { size: (settings.height || 178) / 178, tire: bikeType().tire }, ch.id === PLAYER_CH.id ? { female: riderIsFemale() } : {}); }
+const riderIsFemale = () => !!(Records.me && Records.me.female);
+// the words for the player's rider in the language's own gender: "Gonshchitsa" in Russian for a woman
+function renderRiderWords() {
+  const she = riderIsFemale(), title = $('#hRider [data-t^="sec.rider"]'), prevCv = $('#charPrev');
+  if (title) { title.dataset.t = she ? 'sec.riderF' : 'sec.rider'; title.textContent = she ? t('sec.riderF') : t('sec.rider'); }
+  if (prevCv) { prevCv.dataset.tLabel = she ? 'a11y.riderPreviewF' : 'a11y.riderPreview'; prevCv.setAttribute('aria-label', she ? t('a11y.riderPreviewF') : t('a11y.riderPreview')); }
+}
 function renderBodyHint() {
   const el = $('#bodyHint'); if (!el) return; const h = settings.height || 178, m = settings.mass || 75, a = riderAero(h, m), bt = bikeType(), bk = settings.bikeKg || bt.kg, cda = a.CdA * bt.aero, bmi = m / Math.pow(h / 100, 2);
   el.textContent = t('body.hint', { a: numF(a.A, 2), cda: numF(cda, 3), total: fmt1(m + bk), bike: lc(bt.name), kg: fmt1(bk) }) + (bmi < 15 || bmi > 45 ? t('body.check') : '');

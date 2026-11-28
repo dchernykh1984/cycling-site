@@ -89,6 +89,10 @@ function sleeveTex(ch) {
 }
 const UPV = new THREE.Vector3(0, 1, 0), _sv = new THREE.Vector3();
 function placeSeg(m, a, b) { _sv.subVectors(b, a); const L = _sv.length() || 1e-4; m.position.copy(a).addScaledVector(_sv, .5); m.quaternion.setFromUnitVectors(UPV, _sv.multiplyScalar(1 / L)); m.scale.y = L; }
+// a rider's figure: the hips' and the shoulders' width, the torso's width and its top radius, the arms' and legs'
+// thickness -- a man's as the model always had them, a woman's narrower above and wider below
+const MALE_FIGURE = { hips: 1.15, shoulders: 1.45, torso: 1.25, chest: .135, limbs: 1 };
+const FEMALE_FIGURE = { hips: 1.3, shoulders: 1.22, torso: 1.12, chest: .118, limbs: .88 };
 function makeRider(ch) {
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
   const L = c => new THREE.MeshLambertMaterial({ color: c });
@@ -112,11 +116,17 @@ function makeRider(ch) {
   tube(H, V(0, .93, .49), .016, mDark); tube(V(-.21, .94, .5), V(.21, .94, .5), .013, mDark);
   [-1, 1].forEach(s => { tube(V(s * .21, .94, .5), V(s * .21, .86, .56), .012, mDark); tube(V(s * .21, .86, .56), V(s * .21, .82, .48), .012, mDark); });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(.1, .008, 6, 24), mRim); ring.rotation.y = Math.PI / 2; ring.position.set(.07, .3, .03); g.add(ring);
-  // гонщик: мультяшные пропорции, голова чуть крупнее
+  // гонщик: мультяшные пропорции, голова чуть крупнее; a woman's figure (ch.female) narrower in the shoulders and
+  // wider in the hips, slimmer in the arms and legs, with a bust and a long ponytail from under the helmet
+  const she = !!ch.female, fig = she ? FEMALE_FIGURE : MALE_FIGURE;
   const bw = ch.build || 1, hip = V(0, 1.0, -.17), sh = V(0, 1.36, .23);
-  ball(hip, .14, mBib).scale.set(1.15 * bw, .9, 1.1);
-  const torso = tube(hip, sh, .155, mJersey, .135); torso.scale.x = 1.25 * bw; torso.scale.z = .85 * bw;
-  ball(sh, .135, mSleeveBall).scale.set(1.45 * bw, .8, .9);
+  ball(hip, .14, mBib).scale.set(fig.hips * bw, .9, 1.1);
+  const torso = tube(hip, sh, .155, mJersey, fig.chest); torso.scale.x = fig.torso * bw; torso.scale.z = .85 * bw;
+  ball(sh, .135, mSleeveBall).scale.set(fig.shoulders * bw, .8, .9);
+  if (she) { // the bust, on the front of the torso as it leans over the bars, in the jersey's main colour
+    const up = V(0, sh.y - hip.y, sh.z - hip.z).normalize(), front = V(0, -up.z, up.y), at = hip.clone().lerp(sh, .8);
+    [-1, 1].forEach(s => { const b = ball(at.clone().addScaledVector(front, .085).add(V(s * .055, 0, 0)), .05, mSleeveBall); b.scale.set(1, .85, .9); });
+  }
   tube(sh, V(0, 1.47, .34), .05, mSkin);
   const hc = V(0, 1.53, .39), hr = .128; ball(hc, hr, mSkin).scale.set(1, 1.04, 1);
   const helm = new THREE.Mesh(new THREE.SphereGeometry(hr * 1.2, 20, 12, 0, Math.PI * 2, 0, Math.PI * .56), mHelm); helm.position.set(0, 1.585, .37); helm.scale.set(1, .85, 1.2); helm.rotation.x = .12; g.add(helm);
@@ -129,8 +139,14 @@ function makeRider(ch) {
   }
   const glasses = new THREE.Mesh(new THREE.BoxGeometry(.24, .05, .035), mGlass); glasses.position.set(0, 1.525, .515); g.add(glasses);
   [-1, 1].forEach(s => { const arm = new THREE.Mesh(new THREE.BoxGeometry(.012, .012, .13), mDark); arm.position.set(s * .125, 1.53, .45); g.add(arm); });
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(.032, .007, 6, 12, Math.PI), L(0x5a2a22)); mouth.rotation.z = Math.PI; mouth.position.set(0, 1.47, .508); mouth.rotation.x = -.2; g.add(mouth);
-  if (ch.hair === 'pony') { const p = ball(V(0, 1.49, .22), .05, L(ch.hairC)); p.scale.set(.8, 1.6, .8); }
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(.032, .007, 6, 12, Math.PI), L(she ? 0x9a3b45 : 0x5a2a22)); mouth.rotation.z = Math.PI; mouth.position.set(0, 1.47, .508); mouth.rotation.x = -.2; g.add(mouth);
+  if (ch.hair === 'pony' && !she) { const p = ball(V(0, 1.49, .22), .05, L(ch.hairC)); p.scale.set(.8, 1.6, .8); }
+  if (she) { // a long ponytail out of the back of the helmet, down to between the shoulder blades
+    const mh = L(ch.hairC || 0x3a2416), tail = [V(0, 1.55, .27), V(0, 1.49, .2), V(0, 1.42, .14), V(0, 1.34, .1)], r = [.05, .042, .033, .022];
+    ball(V(0, 1.5, .31), .07, mh).scale.set(1.5, .85, .75); // the hair at the nape, under the helmet's rim
+    ball(tail[0], .035, L(ch.tie || 0x17181a)); // its band
+    for (let k = 0; k < 3; k++) { tube(tail[k], tail[k + 1], r[k + 1], mh, r[k]); ball(tail[k + 1], r[k + 1], mh); }
+  }
   if (ch.hair === 'beard') { const b = new THREE.Mesh(new THREE.SphereGeometry(.1, 12, 8, 0, Math.PI * 2, Math.PI * .5, Math.PI * .5), L(ch.hairC)); b.position.set(0, 1.49, .41); g.add(b); }
   if (ch.hair === 'braids') { // две короткие косички
     const mh = L(ch.hairC);
@@ -138,10 +154,10 @@ function makeRider(ch) {
   }
   [-1, 1].forEach(s => {
     const so = V(s * .2 * bw, 1.33, .23), el = V(s * .21, 1.12, .34), ha = V(s * .21, .97, .5);
-    tube(so, el, .055 * bw, mSleeve, .048 * bw); ball(el, .045, mSkin); tube(el, ha, .042 * bw, mSkin, .036); ball(ha, .045, mDark);
+    tube(so, el, .055 * fig.limbs * bw, mSleeve, .048 * fig.limbs * bw); ball(el, .045 * fig.limbs, mSkin); tube(el, ha, .042 * fig.limbs * bw, mSkin, .036 * fig.limbs); ball(ha, .045, mDark);
   });
   const legs = [-1, 1].map(s => {
-    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(.08 * bw, .062, 1, 10), mBib), shin = new THREE.Mesh(new THREE.CylinderGeometry(.056 * bw, .04, 1, 10), mSkin);
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(.08 * fig.limbs * bw, .062 * fig.limbs, 1, 10), mBib), shin = new THREE.Mesh(new THREE.CylinderGeometry(.056 * fig.limbs * bw, .04 * fig.limbs, 1, 10), mSkin);
     const knee = new THREE.Mesh(new THREE.SphereGeometry(.058, 10, 8), mSkin), shoe = new THREE.Mesh(new THREE.BoxGeometry(.085, .065, .25), mShoe), crank = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, 1, 6), mDark);
     [thigh, shin, knee, shoe, crank].forEach(m => g.add(m));
     return { s, thigh, shin, knee, shoe, crank, hip: V(s * .1, .99, -.17) };

@@ -305,16 +305,17 @@ function mpSyncRemotes() {
   want.forEach((r, uid) => {
     let b = bots.find(x => x.remote && x.uid === uid);
     if (!b) {
-      const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col });
-      b = newRider(r.name || t('mp.rider'), col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
-      Object.assign(b, { remote: true, uid, ch, seed: 0, wkg: 0, bib: r.bib || '' });
+      // a member in the UBT kit, their helmet their colour, a woman's figure when their profile says so
+      const col = mpColor(uid), ch = Object.assign({}, kitted(PLAYER_CH), { helmet: col, stripe: col, female: !!r.female });
+      b = newRider(r.name || (r.female ? t('mp.riderF') : t('mp.rider')), col, 75, r.distance_m, clamp(r.lane_m || 2, .5, world.route.width / 2 - .8));
+      Object.assign(b, { remote: true, uid, ch, seed: 0, wkg: 0, bib: r.bib || '', female: !!r.female });
       addRiderModel(b, ch); bots.push(b);
     }
     // their drag area, for the wake they leave; their category and bib in a race with protocols
     b.CdA = r.cda || PHYS.CdA; b.group = r.group || '';
     if ((r.bib || '') !== (b.bib || '')) { b.bib = r.bib || ''; setBib(riderModels.get(b), b.bib); }
     b.seenAt = nowMs; b.sampleS = r.distance_m; b.sampleT = performance.now() - (r.age_s || 0) * 1000; b.v = r.speed_ms || 0; b.cad = r.cadence_rpm || 0; b.P = r.power_w || 0;
-    b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || t('mp.rider');
+    b.lane = clamp(r.lane_m || b.lane, .5, world.route.width / 2 - .8); b.name = r.name || (r.female ? t('mp.riderF') : t('mp.rider'));
     const f = typeof r.finished_s === 'number' ? r.finished_s : null; if (f !== b.finishT) { b.finishT = f; changedFinish = true; }
   });
   if (changedFinish && phase === 'done' && rideMode === 'race' && me.finishT != null && !MP.resultsFor) renderRaceList(raceList());
@@ -330,7 +331,7 @@ async function mpPollResults(gid, until) {
   try {
     const res = await Site.get('/groups/' + gid + '/results'), myId = Records.me && Records.me.user_id;
     const done = new Set(res.finished.map(f => f.user_id)), same = sameCategory();
-    const list = res.finished.filter(f => same(f.group)).map(f => ({ name: f.user_id === myId ? t('you') : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId }));
+    const list = res.finished.filter(f => same(f.group)).map(f => ({ name: f.user_id === myId ? t('you') : f.name, t: f.duration_s, me: f.user_id === myId, color: f.user_id === myId ? hexs(kitted(charById(settings.char)).a) : hexs(mpColor(f.user_id)), human: f.user_id !== myId, female: !!f.female }));
     if (!done.has(myId) && me.finishT != null) list.push({ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) });
     bots.filter(b => b.remote && !done.has(b.uid) && same(b.group)).forEach(b => list.push({ name: b.name, t: raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: true, human: true }));
     list.sort((a, b) => a.t - b.t); renderRaceList(list);
@@ -426,11 +427,11 @@ function sameCategory() {
 }
 function raceList() {
   const same = sameCategory();
-  const list = [{ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.filter(b => same(b.group)).map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote })));
+  const list = [{ name: t('you'), t: me.finishT, me: true, color: hexs(kitted(charById(settings.char)).a) }].concat(bots.filter(b => same(b.group)).map(b => ({ name: b.name, t: b.finishT != null ? b.finishT : raceT + (world.FIN - b.s) / Math.max(b.v, 2), color: hexs(b.color), est: b.finishT == null, human: !!b.remote, female: !!b.female })));
   list.sort((a, b) => a.t - b.t); return list;
 }
 function renderRaceList(list) {
-  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + escapeHTML(x.name) + (x.human ? ' <small style="color:var(--muted)">' + t('res.human') + '</small>' : '') + '</span><span>' + (x.est ? (x.human ? t('res.onTheWay') : '≈ ') : '') + fmtTime(x.t) + '</span></li>').join('');
+  $('#resList').innerHTML = list.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span>' + (i + 1) + '</span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + x.color + ';margin-right:8px"></span>' + escapeHTML(x.name) + (x.human ? ' <small style="color:var(--muted)">' + (x.female ? t('res.humanF') : t('res.human')) + '</small>' : '') + '</span><span>' + (x.est ? (x.human ? t('res.onTheWay') : '≈ ') : '') + fmtTime(x.t) + '</span></li>').join('');
 }
 function escapeHTML(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 setInterval(() => { if (phase === 'menu' && MP.status === 'on') { mpMaybeStart(); renderMP(); } }, 1000);

@@ -66,7 +66,9 @@ and protocols with the event's upload token. The API has no language prefix.
    in the order they joined; one under way keeps it (409 on leaving). A ride or race an event's page opens stays its
    host's when they leave it. `/me` names the event form's draft address (`event_draft_url`), where the page's
    calendar box sends a ride's or race's event, and whether the member may tie a race to an event (`organizes`)
-   and gather one with a Discord room (`discord_rooms`: the site has a bot and the member is an organizer or up).
+   and gather one with a Discord room (`discord_rooms`: the site has a bot and the member is an organizer or up), and
+   whether the profile says a woman (`female`), as the riders beside the member in `/presence` and a race's results
+   say of each.
    A ride or race gathered with `discord_room` (403 for anyone below an organizer) gets a voice room on the club's
    Discord server: every card names its invitation (`discord_invite_url`), and the gathering's answer says why one
    asked for is not there (`discord_note`). `POST /discord-rooms/close-due`, open to anyone and changing nothing
