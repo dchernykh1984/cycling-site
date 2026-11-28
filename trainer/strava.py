@@ -326,7 +326,10 @@ def _read(connection: StravaConnection, url: str, **params) -> requests.Response
 def _json(response: requests.Response):
     if response.status_code != HTTPStatus.OK:
         raise StravaError(f"Strava answered {response.status_code}")
-    return response.json()
+    try:
+        return response.json()
+    except ValueError:  # a proxy's page in place of Strava's answer
+        raise StravaError("Strava answered without JSON") from None
 
 
 def _streams(response: requests.Response) -> dict:
