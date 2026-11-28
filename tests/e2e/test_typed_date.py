@@ -171,7 +171,9 @@ def test_the_registration_page_takes_the_date_typed_and_its_categories_follow_it
     assert page.evaluate("window.openedOn") == ["2012-03-05"]
     page.select_option("#category-select", label="Kids 2010-2015")
     page.get_by_role("button", name="Register").click()
-    page.wait_for_url(f"**/competitions/{comp.pk}/**")
+    # off the registration page: its own address matched "/competitions/<pk>/" too, so the wait ended before the form
+    # was sent and a slow browser met no entry yet
+    page.wait_for_url(lambda url: f"/competitions/{comp.pk}/" in url and "/register/" not in url)
     assert CompetitionRegistration.objects.get().birth_date == datetime.date(2012, 3, 5)
 
 
