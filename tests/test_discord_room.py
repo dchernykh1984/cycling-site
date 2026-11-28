@@ -233,3 +233,92 @@ class DiscordRoomApiTests(TestCase):
             title_ru="Own", date_start=timezone.localdate(), submitted_by=self.participant
         )
         self.assertEqual(self.call("patch", f"/{event.pk}", self.participant, {"discord_room": True}).status_code, 403)
+
+
+def _at(utc):
+    """The site's clock at ``utc``."""
+    return mock.patch("django.utils.timezone.now", return_value=utc)
+
+
+@override_settings(**DISCORD_ON)
+class DiscordRoomClosingTests(TestCase):
+    """A room lasts the event and the whole day after it at the event's place, then its channel is deleted."""
+
+    LAST_DAY = datetime.date(2026, 12, 1)
+
+    def setUp(self):
+        line = '<p>Discord room: <a href="https://discord.gg/AbC12">https://discord.gg/AbC12</a></p>'
+        self.event = Competition.objects.create(
+            title_ru="Night race",
+            date_start=self.LAST_DAY,
+            description_ru=f"<p>Start at 22:00.</p>{line}",
+            discord_room=True,
+            discord_channel_id="333",
+            discord_invite_url="https://discord.gg/AbC12",
+        )
+
+    def close(self, utc):
+        with _at(utc), mock.patch("calendar_app.discord.requests.delete", return_value=_answer(200)) as delete:
+            closed = discord.close_due_rooms()
+        self.event.refresh_from_db()
+        return closed, delete
+
+    def test_the_day_after_the_event_the_room_stays(self):
+        closed, delete = self.close(datetime.datetime(2026, 12, 2, 23, 59, tzinfo=datetime.UTC))
+        self.assertEqual((closed, self.event.discord_channel_id), (0, "333"))
+        delete.assert_not_called()
+
+    def test_once_the_day_after_is_over_its_channel_is_deleted_and_its_line_leaves_the_text(self):
+        closed, delete = self.close(datetime.datetime(2026, 12, 3, 0, 1, tzinfo=datetime.UTC))
+        self.assertEqual(closed, 1)
+        self.assertEqual(delete.call_args.args[0], f"{discord.API}/channels/333")
+        self.assertEqual(delete.call_args.kwargs["headers"], {"Authorization": "Bot bot-tok-7c1e"})
+        self.assertEqual((self.event.discord_channel_id, self.event.discord_invite_url), ("", ""))
+        self.assertEqual(self.event.description_ru, "<p>Start at 22:00.</p>")
+        self.assertTrue(self.event.discord_room)  # the organizer's box stays as they left it
+
+    def test_the_day_after_is_counted_at_the_event_s_place(self):
+        from locations.models import Location
+
+        tokyo = Location.add_root(name_ru="Tokyo", name_en="Tokyo", lat="35.689500", lng="139.691700")
+        Competition.objects.filter(pk=self.event.pk).update(location=tokyo)
+        # 15:30 UTC on the 2nd is already 00:30 on the 3rd in Tokyo
+        closed, _delete = self.close(datetime.datetime(2026, 12, 2, 15, 30, tzinfo=datetime.UTC))
+        self.assertEqual(closed, 1)
+
+    def test_a_channel_already_gone_counts_as_closed(self):
+        with (
+            _at(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC)),
+            mock.patch("calendar_app.discord.requests.delete", return_value=_answer(404)),
+        ):
+            self.assertEqual(discord.close_due_rooms(), 1)
+
+    def test_a_room_discord_does_not_delete_waits_for_the_next_night(self):
+        with (
+            _at(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC)),
+            mock.patch("calendar_app.discord.requests.delete", return_value=_answer(403)),
+            self.assertLogs("calendar_app.discord", "WARNING"),
+        ):
+            self.assertEqual(discord.close_due_rooms(), 0)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.discord_channel_id, "333")
+
+    def test_a_deleted_event_s_room_is_closed_too(self):
+        Competition.objects.filter(pk=self.event.pk).update(is_deleted=True)
+        self.assertEqual(self.close(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC))[0], 1)
+
+    @mock.patch("calendar_app.discord.requests.post", side_effect=_discord)
+    def test_an_event_that_is_over_opens_no_room(self, post):
+        self.event.discord_invite_url = ""
+        self.event.discord_channel_id = ""
+        with _at(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC)):
+            self.assertEqual(discord.open_room(self.event), "")
+        post.assert_not_called()
+
+    def test_the_nightly_call_is_open_and_says_how_many_closed(self):
+        with (
+            _at(datetime.datetime(2026, 12, 5, tzinfo=datetime.UTC)),
+            mock.patch("calendar_app.discord.requests.delete", return_value=_answer(204)),
+        ):
+            answer = self.client.post("/api/v1/competitions/discord-rooms/close-due")
+        self.assertEqual((answer.status_code, answer.json()), (200, {"closed": 1}))

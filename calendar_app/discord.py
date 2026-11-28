@@ -6,13 +6,22 @@ set, makes an invitation that never runs out and writes it into the event's text
 opened once: the channel and its invitation stay with the event (``discord_channel_id``, ``discord_invite_url``),
 and unticking the box later leaves the room on Discord. A failure keeps the event and its box, and the next save
 tries again. Every call goes through ``requests``, which the tests patch -- they never reach Discord.
+
+A room lasts the event and the whole day after it at the event's place: ``close_due_rooms``, which the nightly
+cron asks for (scripts/close_discord_rooms.py), deletes its channel from then on and takes the invitation out of
+the event's text, and an event that is over opens no room. Discord keeps 500 channels on a server, 50 in a
+category, so only the rooms of events to come take them.
 """
 
+import datetime
+import logging
 import re
 from http import HTTPStatus
 
 import requests
 from django.conf import settings
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 from django.utils.translation import override
@@ -31,6 +40,11 @@ _NO_ROOM_CODES = ("30013", "CHANNEL_PARENT_MAX_CHANNELS")
 _TIMEOUT = 10
 # the line the room's invitation takes in an event's text: one of its own, so a cloned event's old room is let go
 _ROOM_LINE = re.compile(r'<p>[^<]*<a href="https://discord\.gg/[\w-]+"[^>]*>[^<]*</a></p>')
+
+
+logger = logging.getLogger(__name__)
+# the day after the event's last one is the room's too: it closes once that day is over at the event's place
+_DAYS_KEPT = 1
 
 
 class DiscordError(Exception):
@@ -59,6 +73,21 @@ def _post(path: str, body: dict) -> dict:
         return response.json()
     except ValueError:  # a proxy's page in place of Discord's answer: the event is saved already, the room waits
         raise DiscordError("Discord answered without JSON") from None
+
+
+@sensitive_variables()
+def _delete_channel(channel_id: str) -> None:
+    """Delete a channel; one already gone is as good as deleted."""
+    try:
+        response = requests.delete(
+            f"{API}/channels/{channel_id}",
+            headers={"Authorization": f"Bot {settings.DISCORD_BOT_TOKEN}"},
+            timeout=_TIMEOUT,
+        )
+    except requests.RequestException as exc:
+        raise DiscordError(type(exc).__name__) from None
+    if response.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.NOT_FOUND):
+        raise DiscordError(_refusal(response.status_code, response.text))
 
 
 def _refusal(status: int, body: str = "") -> str:
@@ -101,7 +130,7 @@ def open_room(competition: Competition) -> str:
     Answers what the organizer is told: "" when there is nothing to say -- a room opened, already there or not
     asked for --, else why there is none yet.
     """
-    if not competition.discord_room or competition.discord_invite_url:
+    if not competition.discord_room or competition.discord_invite_url or is_over(competition):
         return ""
     if not configured():
         return _("Discord is not set up on this site yet: the room is opened once it is, on the event's next save.")
@@ -132,3 +161,43 @@ def open_room(competition: Competition) -> str:
         update_fields=["discord_invite_url", "description_ru", "description_kk", "description_en", "updated_at"]
     )
     return ""
+
+
+def is_over(competition: Competition) -> bool:
+    """The event and the day after it are over at its place: its room is closed, and none is opened."""
+    today = timezone.localdate(timezone=competition.timezone)
+    return today > competition.last_day + datetime.timedelta(days=_DAYS_KEPT)
+
+
+def close_due_rooms() -> int:
+    """Delete the channels of the events that are over, take their invitations out of the texts; how many closed.
+
+    Deleted events' rooms too. A room Discord fails to delete is left for the next night.
+    """
+    if not settings.DISCORD_BOT_TOKEN:
+        return 0
+    # a superset by UTC's date -- a place ahead of UTC is a day further on -- narrowed by each event's own zone
+    latest = timezone.now().date() - datetime.timedelta(days=_DAYS_KEPT)
+    due = (
+        Competition.objects.exclude(discord_channel_id="")
+        .annotate(last=Coalesce("date_end", "date_start"))
+        .filter(last__lte=latest)
+        .select_related("location")
+    )
+    closed = 0
+    for competition in due:
+        if not is_over(competition):
+            continue
+        try:
+            _delete_channel(competition.discord_channel_id)
+        except DiscordError as exc:
+            logger.warning("Discord room of event %s not closed: %s", competition.pk, exc)
+            continue
+        texts = {
+            f"description_{lang}": _ROOM_LINE.sub("", getattr(competition, f"description_{lang}") or "").strip()
+            for lang in ("ru", "kk", "en")
+        }
+        # an update, not a save: the event's own fields and its review are not the room's to touch
+        Competition.objects.filter(pk=competition.pk).update(discord_channel_id="", discord_invite_url="", **texts)
+        closed += 1
+    return closed
