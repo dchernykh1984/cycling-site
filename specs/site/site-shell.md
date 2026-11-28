@@ -177,9 +177,17 @@ the line in its last seven seconds is not put straight back on it, and a second 
 first is answered asks the site nothing; back
 in the menu before it, they may come again, and the ride takes them there by itself seven seconds before it. A time trial without an event starts its riders an interval
 apart in the order they joined, its card naming each rider's own start, and the lobby lists it until moments after
-its last rider's. At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
+its last rider's. Beside it an organizer, on a site with a Discord bot, finds "Create a Discord room" (kept with the
+settings and so with the account): the ride or race it gathers gets a voice channel on the club's server, named
+after its start and route, under the category the site names, with an invitation that never runs out; its card links
+it, and a refusal of Discord's keeps the race and is said in words -- a server or a category with no room for
+another channel (500 on a server, 50 in a category) so named. A room lasts the day of the start and the whole day
+after it, counted at the place of the race's event, else in UTC, and a cancelled race's goes at once: the nightly cron
+(`scripts/close_discord_rooms.py` before the deploy, `render.yaml`) has the site delete its channel and take its line
+out of the event's text -- twenty a night at most, in fifteen seconds, the rest the next night (`trainer/discord.py`,
+`tests/test_discord_room.py`). At a date and time a box, "Add it to the calendar as an event" (as it was left last time, in the
 browser), sends the gather button on: it gathers the ride or the race then (or takes the member's own of that kind on
-that route at that minute) and sends the whole window to the event form filled from it
+that route at that minute) and sends the whole window to the event form filled from it -- with the line of its Discord room, when it has one --
 ([events](events.md), story 1.6): a ride's words or a race's in ru, kk and en round the route's own way and finish
 (each route of a map carries them, `event`), the type "Virtual Ride" and the discipline "Coffee Ride" for a ride,
 "Road Race" or "Individual Time Trial" for a race by its mode; the route's start as its venue in the virtual world

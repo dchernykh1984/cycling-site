@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("calendar_app", "0046_discord_room"),
+        ("calendar_app", "0045_competition_virtual_ride"),
     ]
 
     operations = [

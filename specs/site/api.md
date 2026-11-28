@@ -30,10 +30,6 @@ and protocols with the event's upload token. The API has no language prefix.
    is created approved -- unless its geography is still pending. The event's author or an admin may
    update it, resubmit it after rejection and soft-delete it; only an admin may hide or unhide it,
    or mark it a top event (`is_top`, read by everybody; a 403 for anybody else);
-   an organizer or above may ask for the event's Discord room (`discord_room`, a 403 for anybody else), opened
-   once the event is saved: `discord_invite_url` names it, and `discord_note` says why it is not open yet
-   ([events](events.md), story 4b); `POST /competitions/discord-rooms/close-due`, open to anyone and changing
-   nothing before its time, closes the rooms of the events that are over -- the nightly cron's call;
    descriptions are sanitised and size-limited. An event's link preview text is read and written
    per language like its title (up to 200 characters each; a PATCH carrying one language clears
    the others). Reads preserve empty languages, so writing a response back keeps the chat's
@@ -69,7 +65,12 @@ and protocols with the event's upload token. The API has no language prefix.
    gets the race back from `/presence` -- its wind, their own start. A time trial without an event starts its riders
    in the order they joined; one under way keeps it (409 on leaving). A ride or race an event's page opens stays its
    host's when they leave it. `/me` names the event form's draft address (`event_draft_url`), where the page's
-   calendar box sends a ride's or race's event, and whether the member may tie a race to an event (`organizes`).
+   calendar box sends a ride's or race's event, and whether the member may tie a race to an event (`organizes`)
+   and gather one with a Discord room (`discord_rooms`: the site has a bot and the member is an organizer or up).
+   A ride or race gathered with `discord_room` (403 for anyone below an organizer) gets a voice room on the club's
+   Discord server: every card names its invitation (`discord_invite_url`), and the gathering's answer says why one
+   asked for is not there (`discord_note`). `POST /discord-rooms/close-due`, open to anyone and changing nothing
+   before its time, closes the rooms of the races that are over or cancelled -- the nightly cron's call.
    A group race may be a race with protocols for an event (specs/495-virtual-race): `GET /events` lists the
    asking member's own events to come that a race may be made for (any for an admin); a race made with
    `competition_id` (403 for anyone else's event, or one that is not public) carries `mode` (`group` or `itt`),

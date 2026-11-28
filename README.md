@@ -135,9 +135,9 @@ Configuration comes from environment variables set in the Render dashboard:
   sealed with (issue #471); unset, neither intervals.icu nor uploads to Strava are offered. Generate it with
   `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"` and keep a copy:
   a lost key leaves the stored keys and tokens unreadable, and those members connect again.
-- `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CATEGORY_ID` - the bot that opens an event's Discord room
-  (`calendar_app/discord.py`): its token, the server's id and, optionally, the category the rooms go under; without
-  the token or the server no room is opened, and events keep their box until both are set
+- `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CATEGORY_ID` - the bot that opens a virtual race's Discord room
+  (`trainer/discord.py`): its token, the server's id and, optionally, the category the rooms go under; without the
+  token or the server the virtual ride page offers no room
 - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` - SMTP (Gmail)
 - `ADMINS` - comma-separated error email recipients (defaults to `DEFAULT_FROM_EMAIL`);
   `SERVER_EMAIL` - error sender (defaults to `DEFAULT_FROM_EMAIL`);

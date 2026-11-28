@@ -609,3 +609,75 @@ def test_a_phone_is_told_a_heavy_route_may_run_slowly(page: Page, live_server):
     # a racetrack with a few buildings round it is not heavy
     page.evaluate("routeSel = 'sokol'; renderStartSum()")
     expect(notice).to_have_count(0)
+
+
+_INVITE = "https://discord.gg/AbC12"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_organizer_s_discord_box_is_kept_sent_with_the_race_shown_on_its_card_and_written_into_its_event(
+    page: Page, live_server
+):
+    _trainer_in_its_menu(page, live_server)
+    page.click("#modeSeg [data-mode='race']")
+    # offered once the site says the member may open a room
+    expect(page.locator("#mpDiscordL")).to_be_hidden()
+    page.evaluate(
+        """async () => {
+            const me = { authenticated: true, organizes: true, discord_rooms: true, user_id: 1,
+                page_url: '/en/virtual-ride/', event_draft_url: '/en/calendar/submit/draft/' };
+            Site.get = async path => path === '/me' ? me : {};
+            Records.pull = async () => {};
+            await Records.connect();
+        }"""
+    )
+    expect(page.locator("#mpDiscordL")).to_have_text(page.evaluate("t('mp.discordOn')"))
+    expect(page.locator("#mpDiscordHint")).to_be_visible()
+    page.check("#mpDiscord")
+    assert page.evaluate(
+        "settings.discordRoom === true && JSON.parse(localStorage.getItem('alatau:settings')).discordRoom"
+    )
+    # gathering asks for it, and a refusal of Discord's is said
+    sent = page.evaluate(
+        """async () => {
+            let body;
+            Site.post = async (path, b) => {
+                if (path !== '/groups') return {};
+                body = b; return { id: 5, discord_note: 'Discord answered 500' };
+            };
+            MP.status = 'on'; $('#mpDelay').value = '60'; renderWhen(); await mpCreateGroup();
+            await new Promise(r => setTimeout(r, 50));
+            return body;
+        }"""
+    )
+    assert sent["discord_room"] is True, sent
+    expect(page.locator("#mpNote")).to_have_text(page.evaluate("t('mp.discordNote', { msg: 'Discord answered 500' })"))
+    # the race's card links its room
+    page.evaluate(
+        """invite => {
+            MP.offset = 0; Site.post = async () => ({});
+            MP.groups = [{ id: 5, kind: 'race', route: 'center', route_name: 'Center',
+                host: { user_id: 1, name: 'Org' }, is_host: true, is_member: true, members: [], cancelled: false,
+                wind_ms: 0, wind_from_deg: 0, start_at: new Date(Date.now() + 600e3).toISOString(), mode: 'group',
+                loop: true, discord_invite_url: invite }];
+            renderMP();
+        }""",
+        _INVITE,
+    )
+    room = page.locator(".mp-group .discord")
+    expect(room).to_have_attribute("href", _INVITE)
+    expect(room).to_have_text(page.evaluate("t('mp.discordRoom')"))
+    # and the event made from it carries the room's line in each language
+    texts = page.evaluate(
+        """invite => {
+            let form; HTMLFormElement.prototype.submit = function () { form = this; };
+            const r = ROUTES.find(x => x.id === 'center');
+            const g = Object.assign({}, MP.groups[0], { discord_invite_url: invite });
+            sendEventDraft(r, g, new Date(Date.now() + 600e3));
+            return ['ru', 'kk', 'en'].map(l => form.querySelector('[name=description_' + l + ']').value);
+        }""",
+        _INVITE,
+    )
+    for lang, text in zip(("ru", "kk", "en"), texts, strict=True):
+        said = page.evaluate(f"t('ev.discord', null, '{lang}')")
+        assert text.endswith(f'<p>{said}: <a href="{_INVITE}">{_INVITE}</a></p>'), (lang, text[-160:])

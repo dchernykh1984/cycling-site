@@ -1,4 +1,4 @@
-"""The nightly cron's call that closes the Discord rooms of the events that are over."""
+"""The nightly cron's call that closes the Discord rooms of the virtual races that are over."""
 
 import io
 import json
@@ -22,7 +22,7 @@ def test_it_asks_the_site_and_says_how_many_rooms_closed(capsys):
         return _Answer(json.dumps({"closed": 2}).encode())
 
     assert script.run("https://site.test/", opener) == 0
-    assert asked == [("https://site.test/api/v1/competitions/discord-rooms/close-due", "POST")]
+    assert asked == [("https://site.test/api/v1/virtual-ride/discord-rooms/close-due", "POST")]
     assert "closed: 2" in capsys.readouterr().out
 
 

@@ -6033,43 +6033,13 @@ msgid "Strava no longer accepts this connection: connect it again"
 msgstr "Strava больше не принимает это подключение: подключите её ещё раз"
 
 #: calendar_app/discord.py
-msgid "Discord room"
-msgstr "Комната в Discord"
-
-#: calendar_app/discord.py
-msgid ""
-"Discord is not set up on this site yet: the room is opened once it is, on "
-"the event's next save."
-msgstr ""
-"Discord на сайте ещё не настроен: комната откроется при следующем сохранении"
-" мероприятия после его настройки."
+msgid "Discord is not set up on this site yet: ask its admin."
+msgstr "Discord на сайте ещё не настроен: обратитесь к администратору."
 
 #: calendar_app/discord.py
 #, python-format
-msgid ""
-"The Discord room could not be opened (%(reason)s): saving the event again "
-"tries once more."
-msgstr ""
-"Комнату в Discord открыть не удалось (%(reason)s): сохраните мероприятие ещё"
-" раз, чтобы попробовать снова."
-
-#: calendar_app/templates/calendar_app/submit.html
-msgid "Create a Discord room"
-msgstr "Создать комнату в Discord"
-
-#: calendar_app/templates/calendar_app/submit.html
-msgid ""
-"The site opens a voice channel on the club's Discord server and adds its "
-"invitation to the event's text; the channel is deleted once the day after "
-"the event is over."
-msgstr ""
-"Сайт откроет голосовой канал на Discord-сервере клуба и добавит приглашение "
-"в текст мероприятия; канал удаляется, когда закончится следующий день после "
-"мероприятия."
-
-#: calendar_app/templates/calendar_app/edit.html
-msgid "Its room:"
-msgstr "Её комната:"
+msgid "The Discord room could not be opened (%(reason)s)."
+msgstr "Комнату Discord открыть не удалось (%(reason)s)."
 
 #: calendar_app/discord.py
 msgid "Discord does not accept the site's bot token"
@@ -6108,3 +6078,7 @@ msgid ""
 msgstr ""
 "на сервере или в его категории нет места для нового канала: Discord "
 "разрешает 500 на сервере и 50 в категории"
+
+#: api/endpoints/virtual_ride.py
+msgid "Only organizers can open a Discord room"
+msgstr "Комнату Discord могут открыть только организаторы"

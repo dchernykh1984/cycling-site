@@ -90,7 +90,7 @@
       </div>
 
       {% for field in form %}
-        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name|slice:":13" != "preview_text_" and field.html_name != "invite_only" and field.html_name != "is_top" and field.html_name != "discord_room" %}
+        {% if field.html_name|slice:":4" != "url_" and field.html_name|slice:":5" != "file_" and field.html_name|slice:":6" != "title_" and field.html_name|slice:":12" != "description_" and field.html_name != "disciplines" and field.html_name != "location" and field.html_name|slice:":10" != "new_venue_" and field.html_name != "preview_image" and field.html_name|slice:":13" != "preview_text_" and field.html_name != "invite_only" and field.html_name != "is_top" %}
         <div class="mb-3">
           <label class="form-label fw-semibold" for="{{ field.id_for_label }}">
             {{ field.label }}{% if field.field.required %} *{% endif %}
@@ -193,11 +193,6 @@
         <div class="form-text">{% trans "Only the people who may edit it, and everyone who opens its invitation link while signed in, will see it. The link appears on the event page once it is saved." %}</div>
       </div>
 
-      <div class="form-check mb-4">
-        {{ form.discord_room }}
-        <label class="form-check-label fw-semibold" for="{{ form.discord_room.id_for_label }}">{% trans "Create a Discord room" %}</label>
-        <div class="form-text">{% trans "The site opens a voice channel on the club's Discord server and adds its invitation to the event's text; the channel is deleted once the day after the event is over." %}</div>
-      </div>
 
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">

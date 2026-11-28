@@ -199,8 +199,6 @@ class SubmitCompetitionForm(LocalizedMaxLengthMixin, forms.Form):
     # Offered to organizers and up; the views ignore it from anyone else (issue #313).
     invite_only = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
     is_top = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
-    # Offered to organizers and up as invite_only is: the site opens the event a room on Discord (calendar_app.discord)
-    discord_room = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
     # Descriptions arrive as raw Quill HTML in these hidden fields; sanitization happens
     # centrally in Competition.save() so every write path (form, API, admin, snippet) is

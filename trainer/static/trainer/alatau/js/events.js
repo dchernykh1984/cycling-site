@@ -11,6 +11,8 @@ $('#mpCreate').onclick = mpCreateGroup;
 // the calendar box as it was left last time, in this browser
 $('#mpEvent').checked = store.get('mpEvent', false) === true;
 $('#mpEvent').addEventListener('change', e => store.set('mpEvent', e.target.checked));
+// the Discord box, kept with the settings and so with the account
+$('#mpDiscord').addEventListener('change', e => { settings.discordRoom = e.target.checked; saveSettings(); });
 $('#mpDelay').addEventListener('change', () => { renderWhen(); renderMP(); });
 $('#mpRaceMode').addEventListener('change', renderRaceOpts);
 renderWhen(); // a browser may bring a chosen date and time back with the page
