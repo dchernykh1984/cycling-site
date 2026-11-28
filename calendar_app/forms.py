@@ -3,12 +3,14 @@ import json
 from typing import ClassVar
 
 from django import forms
+from django.conf import settings
 from django.db.models import Field
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 from accounts import roles
+from cycling_site import system
 from cycling_site.forms import LocalizedMaxLengthMixin, comment_widget
 from cycling_site.richtext import is_too_large
 from locations.models import MAX_LATITUDE, MAX_LONGITUDE, Level, Location, competition_location_block_reason
@@ -455,7 +457,14 @@ class CompetitionMaterialForm(forms.ModelForm):
 
     def clean_file(self):
         upload = self.files.get(self.add_prefix("file"))
-        return validate_document(upload, also=tracks.EXTENSIONS) if upload else self.cleaned_data.get("file")
+        if not upload:
+            return self.cleaned_data.get("file")
+        validate_document(upload, also=tracks.EXTENSIONS)
+        # an event takes any number of materials, and the disk is the one every upload shares: like the
+        # gallery, they never take the last of it
+        if system.media_disk().free - upload.size < settings.GALLERY_DISK_RESERVE_MB * 1024 * 1024:
+            raise forms.ValidationError(_("The site's disk is nearly full: the file cannot be kept now."))
+        return upload
 
     def clean(self):
         cleaned = super().clean()
