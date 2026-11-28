@@ -13,7 +13,7 @@ from ninja.errors import HttpError
 from accounts import roles
 from api.auth import ApiTokenAuth, OptionalApiTokenAuth
 from api.schemas import LocalizedPreviewText, LocalizedStr, LocalizedTitle, Url, localize_field
-from calendar_app import organizers
+from calendar_app import discord, organizers
 from calendar_app.feeds import build_calendar, calendar_response, site_base_url
 from calendar_app.models import Competition, Discipline, EventType
 from calendar_app.tracks import route_track
@@ -53,6 +53,8 @@ class CompetitionIn(Schema):
     url_results: Url = ""
     # First wherever events are listed; admins only.
     is_top: bool = False
+    # A Discord room for the event, opened once it is saved (calendar_app.discord)
+    discord_room: bool = False
 
 
 class CompetitionPatchIn(Schema):
@@ -71,6 +73,7 @@ class CompetitionPatchIn(Schema):
     url_results: Url | None = None
     is_hidden: bool | None = None
     is_top: bool | None = None
+    discord_room: bool | None = None
 
 
 class CompetitionOut(Schema):
@@ -104,6 +107,9 @@ class CompetitionOut(Schema):
     is_hidden: bool
     is_deleted: bool
     is_top: bool
+    # the event's Discord room: whether its box asks for one, and the room's invitation once it is open
+    discord_room: bool = False
+    discord_invite_url: str = ""
 
     @staticmethod
     def resolve_virtual_ride_url(obj: Competition) -> str:
@@ -169,6 +175,12 @@ class CompetitionDetailOut(CompetitionOut):
     # How many members have the event in favorites -- for a signed-in caller on an approved event, as its
     # page shows it under the star; null for everyone else.
     favorites_count: int | None = None
+    # why the Discord room the event asks for is not open yet, after a create or an update that asked; else empty
+    discord_note: str = ""
+
+    @staticmethod
+    def resolve_discord_note(obj: Competition) -> str:
+        return getattr(obj, "_discord_note", "")
 
     @staticmethod
     def resolve_competition_token(obj: Competition) -> str | None:
@@ -547,6 +559,7 @@ def create_competition(request, payload: CompetitionIn):
         "url_regulations",
         "url_results",
         "is_top",
+        "discord_room",
     ):
         setattr(competition, field, getattr(payload, field))
 
@@ -570,7 +583,18 @@ def create_competition(request, payload: CompetitionIn):
                 competition.location.approve_with_competition(user)
     except LocationConflictError:
         raise HttpError(HTTPStatus.CONFLICT, "Location is no longer usable for a competition") from None
+    competition._discord_note = discord.open_room(competition)
     return Status(HTTPStatus.CREATED, _to_detail(competition, user))
+
+
+def _check_patch_rights(data: dict, user) -> None:
+    """The fields of a patch that need more than editing the event: visibility, the top mark, a Discord room."""
+    if "is_hidden" in data and not roles.at_least(user, roles.Role.ADMIN):
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can change visibility")
+    if "is_top" in data and not roles.at_least(user, roles.MARK_TOP_EVENTS):
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can mark a top event")
+    if "discord_room" in data and not roles.at_least(user, roles.PUBLISH_EVENTS):
+        raise HttpError(HTTPStatus.FORBIDDEN, "Only organizers can ask for a Discord room")
 
 
 @router.patch("/{competition_id}", response=CompetitionDetailOut, auth=auth, summary="Update competition")
@@ -582,10 +606,7 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
 
     data = payload.dict(exclude_unset=True)
 
-    if "is_hidden" in data and not roles.at_least(user, roles.Role.ADMIN):
-        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can change visibility")
-    if "is_top" in data and not roles.at_least(user, roles.MARK_TOP_EVENTS):
-        raise HttpError(HTTPStatus.FORBIDDEN, "Only admins can mark a top event")
+    _check_patch_rights(data, user)
     if "location_id" in data:
         _validate_location_id(data["location_id"], user)
     # Unambiguous discipline semantics: omit = leave unchanged, [] = clear, null = error.
@@ -616,7 +637,8 @@ def update_competition(request, competition_id: int, payload: CompetitionPatchIn
                 _set_event_types(competition, event_type_ids)
     except LocationConflictError:
         raise HttpError(HTTPStatus.CONFLICT, "Location is no longer usable for a competition") from None
-
+    if data.get("discord_room"):
+        competition._discord_note = discord.open_room(competition)
     return _to_detail(competition, user)
 
 

@@ -471,6 +471,14 @@ RELEASE_COMMIT = env("RELEASE_COMMIT", default="") or env("RENDER_GIT_COMMIT", d
 # Losing or changing it leaves the stored keys unreadable: those members connect again.
 INTEGRATIONS_ENCRYPTION_KEY = env("INTEGRATIONS_ENCRYPTION_KEY", default="")
 
+# Discord rooms for events: the site's bot opens a text channel for an event whose box asks for one and writes its
+# invitation into the event's text (calendar_app/discord.py). The bot's token (Discord Developer Portal -> the
+# application -> Bot -> Reset Token), the server the rooms go to and, optionally, the category they go under. Without
+# the token or the server no room is opened; the events keep their box and get a room once both are set.
+DISCORD_BOT_TOKEN = env("DISCORD_BOT_TOKEN", default="")
+DISCORD_GUILD_ID = env("DISCORD_GUILD_ID", default="")
+DISCORD_CATEGORY_ID = env("DISCORD_CATEGORY_ID", default="")
+
 # IndexNow key: a random string we also serve at /<key>.txt, which is how Bing, Yandex and Seznam
 # check that whoever submits URLs for this host controls it. Empty means no submissions at all.
 INDEXNOW_KEY = env("INDEXNOW_KEY", default="")
