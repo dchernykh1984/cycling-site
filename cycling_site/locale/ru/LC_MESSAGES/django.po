@@ -1738,13 +1738,8 @@ msgid "External registration link"
 msgstr "Ссылка на внешнюю регистрацию"
 
 #: calendar_app/templates/calendar_app/edit.html:174
-msgid ""
-"Photo and video coverage and other files of the event. Each one needs a name"
-" and a link or a file of up to 10 MB; a file uploaded takes the place of the"
-" link."
-msgstr ""
-"Фото- и видеоматериалы и другие файлы мероприятия. Каждому нужны название и "
-"ссылка или файл до 10 МБ; загруженный файл заменяет ссылку."
+msgid "A name and a link or a file up to 10 MB."
+msgstr "Название и ссылка или файл до 10 МБ."
 
 #: calendar_app/templates/calendar_app/edit.html:200
 #: calendar_app/templates/calendar_app/edit.html:204
