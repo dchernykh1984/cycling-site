@@ -166,8 +166,8 @@ function segRows(p) {
   if (p.kind === 'result') {
     const res = Segs.result;
     rows.push([t('seg.finished'), fmtTime(res.t), 'big']);
-    if (best) rows.push([t('seg.f.gapBest'), segGap(res.t - best), res.t < best ? 'ahead' : 'behind']);
-    if (res.place) rows.push([t('seg.f.place'), t('seg.placeOf', { p: res.place, n: res.of }), '']);
+    if (best) add('gapBest', segGap(res.t - best), res.t < best ? 'ahead' : 'behind');
+    if (res.place) add('place', t('seg.placeOf', { p: res.place, n: res.of }));
     add('speed', fmt1(res.speed * 3.6) + ' ' + t('u.kmh')); add('power', Math.round(res.power) + ' ' + t('u.w'));
     return rows;
   }
