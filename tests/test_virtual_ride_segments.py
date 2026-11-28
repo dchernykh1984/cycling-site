@@ -113,6 +113,17 @@ class SegmentsGrantTests(TestCase):
         self.assertEqual([str(m) for m in page.wsgi_request._messages], [said])
         self.assertFalse(self.client.get(f"{API}/me").json()["strava_segments"])
 
+    @mock.patch("trainer.strava.requests.post")
+    def test_segments_without_the_upload_permission_connect_nothing_and_say_why(self, post):
+        page = self.back(self.start(segments="1")["state"][0], f"read,{strava.SEGMENTS_SCOPE}")
+        said = gettext(
+            "Strava did not allow uploading activities: the live segments come with the Strava connection "
+            "for your rides, which needs it. Connect again and keep both permissions on."
+        )
+        self.assertEqual([str(m) for m in page.wsgi_request._messages], [said])
+        self.assertFalse(StravaConnection.objects.exists())
+        post.assert_not_called()
+
 
 @override_settings(SOCIALACCOUNT_PROVIDERS=STRAVA_ON)
 class SegmentsApiTests(MemberClientMixin, TestCase):
