@@ -72,6 +72,7 @@ from .models import (
     CompetitionComment,
     CompetitionFavorite,
     CompetitionInvite,
+    CompetitionMaterial,
     CompetitionReport,
     Discipline,
     DisciplineCategory,
@@ -1230,7 +1231,9 @@ def _material_formset(request, comp):
     never sent. The two helpers below read an unbound formset as exactly that: nothing to say.
     """
     posted = request.method == "POST" and f"{MATERIALS_PREFIX}-TOTAL_FORMS" in request.POST
-    return CompetitionMaterialFormSet(request.POST if posted else None, instance=comp, prefix=MATERIALS_PREFIX)
+    return CompetitionMaterialFormSet(
+        request.POST if posted else None, request.FILES if posted else None, instance=comp, prefix=MATERIALS_PREFIX
+    )
 
 
 def _materials_are_valid(formset) -> bool:
@@ -1242,12 +1245,15 @@ def _save_materials(formset, comp):
 
     The order is rewritten on every save rather than kept per row, so deleting a link from the
     middle closes the gap instead of leaving one, and a row moved by an edit lands where the editor
-    put it. Rows left blank never reach here: Django drops an untouched extra form.
+    put it. Rows left blank never reach here: Django drops an untouched extra form. A file a row lets go -- the
+    row removed, or its file given up for another or for a link -- leaves the disk once the save is committed.
     """
     if not formset.is_bound:
         return
     formset.instance = comp
     formset.save(commit=False)
+    storage = CompetitionMaterial._meta.get_field("file").storage
+    gone = [removed.file.name for removed in formset.deleted_objects if removed.file]
     for removed in formset.deleted_objects:
         removed.delete()
     position = 0
@@ -1259,6 +1265,10 @@ def _save_materials(formset, comp):
         material.order = position
         material.save()
         position += 1
+        if form.dropped:
+            gone.append(form.dropped)
+    for name in gone:
+        transaction.on_commit(lambda name=name: storage.delete(name))
 
 
 def _competition_initial(comp, *, with_dates: bool = True, with_results: bool = True) -> dict:

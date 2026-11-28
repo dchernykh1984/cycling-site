@@ -667,7 +667,7 @@ class Competition(index.Indexed, models.Model):
 
 
 class CompetitionMaterial(models.Model):
-    """One named link to photo or video coverage of an event.
+    """One named link to photo or video coverage of an event, or a file of it kept on the site.
 
     The documents already on a competition (announcement, route, regulations, results) are a fixed
     set of known slots, each with its own meaning. Coverage is not: an event can come back with one
@@ -678,13 +678,17 @@ class CompetitionMaterial(models.Model):
 
     The caption is not translated: it names a specific album the way its author named it, and asking
     for three spellings of "Photos by Ivan" would leave two of them empty on most events.
+
+    A material is a link or a file uploaded with it, one of the two (the edit form holds it): ``href`` is where
+    its button goes either way.
     """
 
     objects: ClassVar[models.Manager["CompetitionMaterial"]]
 
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="materials")
     title = models.CharField(max_length=255)
-    url = models.URLField()
+    url = models.URLField(blank=True)
+    file = models.FileField(upload_to="competitions/materials/", blank=True)
     # Position in the list as its author arranged it, renumbered from the form on every save. Ties
     # (rows added in the same edit before the renumbering runs) fall back to insertion order.
     order = models.PositiveIntegerField(default=0)
@@ -694,7 +698,11 @@ class CompetitionMaterial(models.Model):
         verbose_name = "Competition material"
 
     def __str__(self) -> str:
-        return f"{self.title} ({self.url})"
+        return f"{self.title} ({self.href})"
+
+    @property
+    def href(self) -> str:
+        return self.file.url if self.file else self.url
 
 
 class CompetitionTrack(models.Model):

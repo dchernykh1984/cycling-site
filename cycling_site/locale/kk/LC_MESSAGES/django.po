@@ -812,8 +812,8 @@ msgid "Give this material a name."
 msgstr "Бұл материалдың атауын жазыңыз."
 
 #: calendar_app/forms.py:349
-msgid "Add a link to this material."
-msgstr "Бұл материалға сілтеме қосыңыз."
+msgid "Add a link or a file to this material."
+msgstr "Бұл материалға сілтеме немесе файл қосыңыз."
 
 #: calendar_app/forms.py:393 calendar_app/tests.py:1721 knowledge/forms.py:44
 #: knowledge/tests.py:910 news/forms.py:113 news/forms.py:126
@@ -1738,10 +1738,13 @@ msgstr "Сыртқы тіркеуге сілтеме"
 
 #: calendar_app/templates/calendar_app/edit.html:174
 msgid ""
-"Links to photo and video coverage. Each one needs both a name and a link."
+"Photo and video coverage and other files of the event. Each one needs a name"
+" and a link or a file of up to 10 MB; a file uploaded takes the place of the"
+" link."
 msgstr ""
-"Фото және бейне материалдарға сілтемелер. Әрқайсында атауы да, сілтемесі де "
-"болуы керек."
+"Іс-шараның фото, бейне материалдары және басқа файлдары. Әрқайсысына атау "
+"және сілтеме немесе 10 МБ-қа дейінгі файл керек; жүктелген файл сілтеменің "
+"орнын басады."
 
 #: calendar_app/templates/calendar_app/edit.html:200
 #: calendar_app/templates/calendar_app/edit.html:204
@@ -6086,3 +6089,7 @@ msgstr ""
 "Strava жаттығуларды жүктеуге рұқсат бермеді: live сегменттер заездтерге "
 "арналған Strava қосылымы арқылы жұмыс істейді, ал оған бұл рұқсат керек. "
 "Қайта қосып, екі рұқсатты да қосулы қалдырыңыз."
+
+#: calendar_app/forms.py
+msgid "File"
+msgstr "Файл"

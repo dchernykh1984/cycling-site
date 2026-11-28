@@ -259,7 +259,7 @@
       <h2 class="mb-3 h5">{% trans "Additional materials" %}</h2>
       <div class="d-flex flex-wrap gap-2">
         {% for material in materials %}
-        <a href="{{ material.url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+        <a href="{{ material.href }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
           {{ material.title }}
         </a>
         {% endfor %}

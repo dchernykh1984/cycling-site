@@ -194,7 +194,7 @@
 
       <hr class="my-4">
       <h2 class="mb-1 h5">{% trans "Additional materials" %}</h2>
-      <p class="form-text mt-0 mb-3">{% trans "Links to photo and video coverage. Each one needs both a name and a link." %}</p>
+      <p class="form-text mt-0 mb-3">{% trans "Photo and video coverage and other files of the event. Each one needs a name and a link or a file of up to 10 MB; a file uploaded takes the place of the link." %}</p>
       {{ material_formset.management_form }}
       {% if material_formset.non_form_errors %}
       <div class="alert alert-danger">{% for e in material_formset.non_form_errors %}{{ e }}{% endfor %}</div>
@@ -210,6 +210,9 @@
           <div class="col-md-6">
             {{ material_form.url }}
             {% if material_form.url.errors %}<div class="text-danger small mt-1">{% for e in material_form.url.errors %}{{ e }}{% endfor %}</div>{% endif %}
+            {% if material_form.instance.file %}<div class="small mt-1">{% trans "Current file" %}: <a href="{{ material_form.instance.file.url }}" target="_blank">{% trans "Download" %}</a></div>{% endif %}
+            {{ material_form.file }}
+            {% if material_form.file.errors %}<div class="text-danger small mt-1">{% for e in material_form.file.errors %}{{ e }}{% endfor %}</div>{% endif %}
           </div>
           <div class="col-md-2">
             {% comment %}
@@ -233,7 +236,7 @@
         <div class="row g-2 align-items-start mb-2 material-row">
           {{ material_formset.empty_form.id }}
           <div class="col-md-4">{{ material_formset.empty_form.title }}</div>
-          <div class="col-md-6">{{ material_formset.empty_form.url }}</div>
+          <div class="col-md-6">{{ material_formset.empty_form.url }}{{ material_formset.empty_form.file }}</div>
           <div class="col-md-2">
             <button type="button" class="btn btn-outline-danger btn-sm clear-material-btn"
                     title="{% trans 'Remove' %}" aria-label="{% trans 'Remove' %}">&times;</button>

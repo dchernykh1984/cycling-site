@@ -12,7 +12,7 @@ materials, upload token, rich description, several event types), `calendar_app/t
 `tests/test_clone_competition.py`, `tests/test_event_draft.py`, `tests/test_preview_image.py`, `tests/test_preview_text_form.py`,
 `tests/test_competition_link_order.py`, `tests/test_event_form_fields.py`,
 `tests/test_event_wording.py`, `tests/test_moderation_banner.py`, `tests/test_event_ics.py`,
-`tests/test_top_events.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
+`tests/test_top_events.py`, `tests/test_material_files.py`, `tests/test_moderation_history.py`, `tests/test_concurrent_review.py`,
 `calendar_app/test_tracks.py`, `tests/test_route_track_page.py`,
 `assistant/tests/test_chat.py`,
 `tests/e2e/test_competition_form.py`, `test_file_drop.py`, `test_add_to_calendar.py`,
@@ -104,8 +104,10 @@ calls every entry an "event" whatever its kind -- in Russian "meropriyatie", nev
 
 1. **Given** the author or a manager, **Then** they may edit the event (fields prefilled, the
    registration deadline as the wall-clock at the event's place, issue #344), delete it, and manage its
-   materials (named links in order; rows half filled are refused without losing the rest of the
-   edit; script URLs refused).
+   materials (named links or files in order -- a file of up to 10 MB of the documents' kinds or a
+   track's, uploaded in place of the row's link, and deleted from the disk once its row is removed or
+   given another file or a link; rows half filled are refused without losing the rest of the edit;
+   script URLs refused).
 2. **Given** a manager, **Then** they may hide an event (taken down: visible to admins in listings
    and to its managers on its page) and show it again, and delete its comments.
 3. **Given** a manager or the event's author, **Then** they see its upload token and may regenerate
@@ -279,7 +281,7 @@ Where the code still assumes a place, a brand or a sport (constitution, principl
   a rejected one.
 - Registration on the site and invite-only events: enabling registration, its mode, options and
   categories; making an event invite-only and issuing a new invitation link.
-- Materials (named links), uploaded documents (announcement, regulations, route, results) and the
+- Materials (named links or files), uploaded documents (announcement, regulations, route, results) and the
   link-preview image: the API takes the five links only.
 - The upload token: the API shows it to the event's author and admins, but cannot regenerate or
   delete it.
